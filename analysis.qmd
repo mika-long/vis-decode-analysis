@@ -7,6 +7,7 @@ format:
 
 ```{r}
 #| echo: false
+#| output: false
 
 library(tidyverse)
 library(ggplot2)
@@ -22,11 +23,11 @@ df <- read.csv("vis-decode-slider_all_tidy.csv") %>% as_tibble(.)
 So far the only one that we have gone through^[... with Block 5 still a bit buggy] is the one with participantId `81860d3f-e08a-4235-a16c-055754fe1d7f`. And that's what we are going to filter for. Let's just see the simplest two columns. 
 
 ```{r}
-df %>% filter(participantId == "63fd0160-9f56-4443-9c64-6adcbbfd81cf") %>% 
+df %>% # filter(participantId == "63fd0160-9f56-4443-9c64-6adcbbfd81cf") %>% 
   filter(grepl("task", trialId)) %>% 
   filter(grepl("test", trialId)) %>% 
   filter(!grepl("task5", trialId)) %>% # we will analyze task 5 separately ...  
-  select(trialId, responseId, answer) %>% 
+  select(participantId, trialId, responseId, answer) %>% 
   mutate(answer = as.numeric(answer)) %>% 
   pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
   separate_wider_delim(trialId, delim="_", names = c("TaskType", "type", "id")) %>% 
@@ -90,7 +91,12 @@ task_df %>% filter(TaskType == "task2") %>%
   ggplot(aes(x = location.x, y = location.y)) + 
   geom_point(color = "red") + 
   theme_minimal() + ylim(0, 1) + 
-  geom_point(aes(x = answer.x, y = answer.y), color = "blue")
+  geom_point(aes(x = answer.x, y = answer.y), color = "blue") +
+  geom_segment(
+  aes(x = location.x, y = location.y, xend = answer.x, yend = answer.y),
+  color = "gray70",
+  size = 0.5
+)
 ```
 
 One can see that it tracks pretty well ... 
