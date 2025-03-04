@@ -1,0 +1,33 @@
+---
+title: "analysis"
+format: html
+---
+
+```{r}
+#| echo: false
+
+library(tidyverse)
+library(ggplot2)
+library(sgt)
+```
+
+Let first read in the file. 
+
+```{r}
+df <- read.csv("vis-decode-slider_all_tidy.csv") %>% as_tibble(.)
+```
+
+So far the only one that we have gone through^[... with Block 5 still a bit buggy] is the one with participantId `81860d3f-e08a-4235-a16c-055754fe1d7f`. And that's what we are going to filter for. Let's just see the simplest two columns. 
+
+```{r}
+df %>% filter(participantId == "81860d3f-e08a-4235-a16c-055754fe1d7f") %>% 
+  filter(grepl("task", trialId)) %>% 
+  filter(grepl("test", trialId)) %>% 
+  select(trialId, responseId, answer) %>% 
+  mutate(answer = as.numeric(answer)) %>% 
+  pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
+  separate_wider_delim(trialId, delim="_", names = c("taskType", "type", "id")) %>% 
+  select(-type, -pixel.x, -pixel.y)
+```
+
+--- Found a bug. The first two trials are not using the right parameters for mu, sigma, lambda, p and q. 
