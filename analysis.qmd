@@ -136,6 +136,45 @@ task_df %>% filter(TaskType == "task4") %>%
   geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray")
 ```
 
+--- 
+
+Task 5 --- Project from dot to axes
+
+```{r}
+df %>% filter(grepl("task5", trialId)) %>% 
+  filter(grepl("test", trialId)) %>%
+  select(participantId, trialId, responseId, answer) %>% 
+  mutate(answer = as.numeric(answer)) %>% 
+  pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
+  separate_wider_delim(trialId, delim="_", names = c("TaskType", "type", "id")) %>% 
+  select(-type) -> task_5
+
+task_5
+```
+
+How accurate where the xs? 
+
+```{r}
+task_5 %>% 
+  ggplot(aes(x = slider.x, y = location.x)) + 
+  geom_point() + 
+  theme_minimal() + 
+  geom_abline(intercept = 0, slope = 1, color = "gray", linetype = "dashed") + 
+  coord_equal()
+```
+
+How accurate where the ys? 
+
+```{r}
+task_5 %>% 
+  ggplot(aes(x = slider.y, y = location.y)) + 
+  geom_point() + 
+  theme_minimal() + 
+  geom_abline(intercept = 0, slope = 1, color = "gray", linetype = "dashed") + 
+  coord_equal()
+```
+
+
 
 <!-- ---  -->
 
