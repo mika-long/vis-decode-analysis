@@ -44,7 +44,7 @@ Note that this is after fixing the bug of captured params not equal to validated
 task_df %>% filter(TaskType == "task1") %>% 
   mutate(median.x = qsgt(0.5, param.mu, param.sigma, param.lambda, param.p, param.q), 
          median.y = dsgt(median.x, param.mu, param.sigma, param.lambda, param.p, param.q)) %>% 
-  select(TaskType, id, location.x, location.y, median.x, median.y)
+  select(participantId, TaskType, id, location.x, location.y, median.x, median.y)
 ```
 
 This doesn't quite help me get a sense of the area split though ... What we should be doing is using `psgt` on `location.x` with the other parameters: 
@@ -64,8 +64,8 @@ task_df %>% filter(TaskType == "task1") %>%
   mutate(left_area = psgt(location.x, param.mu, param.sigma, param.lambda, param.p, param.q), 
          right_area = 1 - left_area, 
          ratio = left_area / right_area) %>% 
-  select(contains("area")) %>% 
-  ggplot(aes(x = 1:length(left_area), y = left_area)) + 
+  select(contains("area"), participantId) %>% 
+  ggplot(aes(x = 1:length(left_area), y = left_area, color = participantId)) + 
   geom_point() + 
   # ylim(0, 1) + 
   theme_minimal() + 
@@ -111,7 +111,7 @@ task_df %>% filter(TaskType == "task3")
 
 ```{r}
 task_df %>% filter(TaskType == "task3") %>% 
-  ggplot(aes(x = location.x, y = location.y)) + 
+  ggplot(aes(x = location.x, y = location.y, color=participantId)) + 
   geom_point() + 
   theme_minimal() + 
   geom_hline(yintercept = 0.5, linetype="dashed", color="gray")
@@ -133,7 +133,8 @@ task_df %>% filter(TaskType == "task4") # %>%
 task_df %>% filter(TaskType == "task4") %>% 
   ggplot(aes(x = location.x, y = param.mu)) + 
   geom_point() + theme_minimal() + 
-  geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray")
+  geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray") + 
+  coord_equal()
 ```
 
 --- 
