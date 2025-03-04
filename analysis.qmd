@@ -1,6 +1,8 @@
 ---
 title: "analysis"
-format: html
+format:
+  html: 
+    code-fold: true
 ---
 
 ```{r}
@@ -20,14 +22,131 @@ df <- read.csv("vis-decode-slider_all_tidy.csv") %>% as_tibble(.)
 So far the only one that we have gone through^[... with Block 5 still a bit buggy] is the one with participantId `81860d3f-e08a-4235-a16c-055754fe1d7f`. And that's what we are going to filter for. Let's just see the simplest two columns. 
 
 ```{r}
-df %>% filter(participantId == "81860d3f-e08a-4235-a16c-055754fe1d7f") %>% 
+df %>% filter(participantId == "63fd0160-9f56-4443-9c64-6adcbbfd81cf") %>% 
   filter(grepl("task", trialId)) %>% 
   filter(grepl("test", trialId)) %>% 
+  filter(!grepl("task5", trialId)) %>% # we will analyze task 5 separately ...  
   select(trialId, responseId, answer) %>% 
   mutate(answer = as.numeric(answer)) %>% 
   pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
-  separate_wider_delim(trialId, delim="_", names = c("taskType", "type", "id")) %>% 
-  select(-type, -pixel.x, -pixel.y)
+  separate_wider_delim(trialId, delim="_", names = c("TaskType", "type", "id")) %>% 
+  select(-type, -pixel.x, -pixel.y) -> task_df
+
+task_df
 ```
 
---- Found a bug. The first two trials are not using the right parameters for mu, sigma, lambda, p and q. 
+Note that this is after fixing the bug of captured params not equal to validated params. Now, let us calculate the correct answers: 
+
+1. Task 1 --- PDF Median --- split area into equal halves
+
+```{r}
+task_df %>% filter(TaskType == "task1") %>% 
+  mutate(median.x = qsgt(0.5, param.mu, param.sigma, param.lambda, param.p, param.q), 
+         median.y = dsgt(median.x, param.mu, param.sigma, param.lambda, param.p, param.q)) %>% 
+  select(TaskType, id, location.x, location.y, median.x, median.y)
+```
+
+This doesn't quite help me get a sense of the area split though ... What we should be doing is using `psgt` on `location.x` with the other parameters: 
+
+```{r}
+task_df %>% filter(TaskType == "task1") %>% 
+  mutate(left_area = psgt(location.x, param.mu, param.sigma, param.lambda, param.p, param.q), 
+         right_area = 1 - left_area, 
+         ratio = left_area / right_area) %>% 
+  select(contains("area") | contains("ratio"))
+```
+
+Let's try to plot this! 
+
+```{r}
+task_df %>% filter(TaskType == "task1") %>% 
+  mutate(left_area = psgt(location.x, param.mu, param.sigma, param.lambda, param.p, param.q), 
+         right_area = 1 - left_area, 
+         ratio = left_area / right_area) %>% 
+  select(contains("area")) %>% 
+  ggplot(aes(x = 1:length(left_area), y = left_area)) + 
+  geom_point() + 
+  # ylim(0, 1) + 
+  theme_minimal() + 
+  geom_hline(yintercept = 0.5, linetype = "dashed")
+```
+
+---
+
+2. Task 2 --- PDF Mode --- Find highest point on the curve 
+
+```{r}
+task_df %>% filter(TaskType == "task2") %>% 
+  mutate(answer.x = param.mu, 
+         answer.y = dsgt(answer.x, param.mu, param.sigma, param.lambda, param.p, param.q)) %>% 
+  select(location.x, location.y, answer.x, answer.y) 
+```
+
+```{r}
+task_df %>% filter(TaskType == "task2") %>% 
+  mutate(answer.x = param.mu, 
+         answer.y = dsgt(answer.x, param.mu, param.sigma, param.lambda, param.p, param.q)) %>% 
+  select(location.x, location.y, answer.x, answer.y) %>% 
+  ggplot(aes(x = location.x, y = location.y)) + 
+  geom_point(color = "red") + 
+  theme_minimal() + ylim(0, 1) + 
+  geom_point(aes(x = answer.x, y = answer.y), color = "blue")
+```
+
+One can see that it tracks pretty well ... 
+
+---
+
+Task 3 --- CDF Median --- find point where `y == 0.5`
+
+```{r}
+task_df %>% filter(TaskType == "task3") 
+```
+
+```{r}
+task_df %>% filter(TaskType == "task3") %>% 
+  ggplot(aes(x = location.x, y = location.y)) + 
+  geom_point() + 
+  theme_minimal() + 
+  geom_hline(yintercept = 0.5, linetype="dashed", color="gray")
+```
+
+Can't really say anything with ten samples but hopefully we'll be able to say more ... 
+
+---
+
+Task 4 --- CDF Mode --- Find slope
+
+Recall that mode is just `param.mu` 
+
+```{r}
+task_df %>% filter(TaskType == "task4") # %>% 
+```
+
+```{r}
+task_df %>% filter(TaskType == "task4") %>% 
+  ggplot(aes(x = location.x, y = param.mu)) + 
+  geom_point() + theme_minimal() + 
+  geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray")
+```
+
+
+<!-- ---  -->
+
+<!-- ```{r} -->
+<!-- task_df %>% mutate(median.x = case_when(TaskType == "task1" | TaskType == "task2" ~ qsgt(0.5, mu = param.mu, lambda = param.lambda,  -->
+<!--                                                                                       sigma = param.sigma, p = param.p, q = param.q),  -->
+<!--                                      .default = qsgt(0.5, mu = param.mu, lambda = param.lambda,  -->
+<!--                                                      sigma = param.sigma, p = param.p, q = param.q)),  -->
+<!--                 median.y = case_when(TaskType == "task1" | TaskType == "task2" ~ dsgt(median.x, mu = param.mu, lambda = param.lambda,  -->
+<!--                                                                                       sigma = param.sigma, p = param.p, q = param.q),  -->
+<!--                                      .default = 0.5),  -->
+<!--                 mode.x = case_when(TaskType == "task1" | TaskType == "task2" ~ param.mu,  -->
+<!--                                    .default = param.mu),  -->
+<!--                 mode.y = case_when(TaskType == "task1" | TaskType == "task2" ~ dsgt(mode.x, mu = param.mu, lambda = param.lambda,  -->
+<!--                                                                                     sigma = param.sigma, p = param.p, q = param.q),  -->
+<!--                                    .default = psgt(mode.x, mu = param.mu, lambda = param.lambda,  -->
+<!--                                                    sigma = param.sigma, p = param.p, q = param.q))) %>%  -->
+<!--   select(TaskType, id, location.x, location.y, median.x, median.y, mode.x, mode.y) -->
+<!-- ``` -->
+
