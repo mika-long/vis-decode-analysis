@@ -12,6 +12,7 @@ format:
 library(tidyverse)
 library(ggplot2)
 library(sgt)
+library(numDeriv)
 ```
 
 Let first read in the file. 
@@ -20,119 +21,112 @@ Let first read in the file.
 df <- read.csv("vis-decode-slider_all_tidy.csv") %>% as_tibble(.)
 ```
 
-So far the only one that we have gone through^[... with Block 5 still a bit buggy] is the one with participantId `81860d3f-e08a-4235-a16c-055754fe1d7f`. And that's what we are going to filter for. Let's just see the simplest two columns. 
+Let us just do some very simple pruning through the data: 
 
 ```{r}
-df %>% # filter(participantId == "63fd0160-9f56-4443-9c64-6adcbbfd81cf") %>% 
-  filter(grepl("task", trialId)) %>% 
-  filter(grepl("test", trialId)) %>% 
-  filter(!grepl("task5", trialId)) %>% # we will analyze task 5 separately ...  
-  select(participantId, trialId, responseId, answer) %>% 
-  mutate(answer = as.numeric(answer)) %>% 
-  pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
-  separate_wider_delim(trialId, delim="_", names = c("TaskType", "type", "id")) %>% 
-  select(-type, -pixel.x, -pixel.y) -> task_df
+df %>% count(participantId)
+```
+
+Though where `n < 492` are those that didn't finish the full set of things. Right now we have 10 trials --- 1 done by Maryam, 1 done by Lily, 8 done by me. Those done by Maryam and Lily had some issue with the tangent line (the guideline didn't show up correctly) but they did their best for interpretation. Let's pull out these ids
+
+```{r}
+df %>% count(participantId) %>% filter(n == 492) %>% pull(participantId) -> ids
+ids
+```
+```{r}
+df %>% filter(participantId %in% ids) %>% 
+    filter(grepl("task", trialId) & grepl("test", trialId) ) %>% 
+    select(participantId, trialId, responseId, answer) %>% 
+    mutate(answer = as.numeric(answer)) %>% 
+    pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") -> task_df # %>% 
+    # separate_wider_delim(trialId, delim="_", names = c("TaskType", "type", "id")) %>% 
+    # select(-type, -pixel.x, -pixel.y) -> task_df
 
 task_df
 ```
 
-Note that this is after fixing the bug of captured params not equal to validated params. Now, let us calculate the correct answers: 
-
-1. Task 1 --- PDF Median --- split area into equal halves
+# Task 1 --- PDF Median --- split area into equal halves 
 
 ```{r}
-task_df %>% filter(TaskType == "task1") %>% 
-  mutate(median.x = qsgt(0.5, param.mu, param.sigma, param.lambda, param.p, param.q), 
-         median.y = dsgt(median.x, param.mu, param.sigma, param.lambda, param.p, param.q)) %>% 
-  select(participantId, TaskType, id, location.x, location.y, median.x, median.y)
+task_df %>% filter(grepl("task1", trialId)) %>% 
+  mutate(left_area = psgt(location.x, param.mu, param.sigma, 
+                          param.lambda, param.p, param.q)) 
 ```
 
-This doesn't quite help me get a sense of the area split though ... What we should be doing is using `psgt` on `location.x` with the other parameters: 
+Let's see if there's any relation between `lambda` and `area`: 
 
 ```{r}
-task_df %>% filter(TaskType == "task1") %>% 
-  mutate(left_area = psgt(location.x, param.mu, param.sigma, param.lambda, param.p, param.q), 
-         right_area = 1 - left_area, 
-         ratio = left_area / right_area) %>% 
-  select(contains("area") | contains("ratio"))
-```
-
-Let's try to plot this! 
-
-```{r}
-task_df %>% filter(TaskType == "task1") %>% 
-  mutate(left_area = psgt(location.x, param.mu, param.sigma, param.lambda, param.p, param.q), 
-         right_area = 1 - left_area, 
-         ratio = left_area / right_area) %>% 
-  select(contains("area"), participantId) %>% 
-  ggplot(aes(x = 1:length(left_area), y = left_area, color = participantId)) + 
-  geom_point() + 
-  # ylim(0, 1) + 
-  theme_minimal() + 
-  geom_hline(yintercept = 0.5, linetype = "dashed")
-```
-
----
-
-2. Task 2 --- PDF Mode --- Find highest point on the curve 
-
-```{r}
-task_df %>% filter(TaskType == "task2") %>% 
-  mutate(answer.x = param.mu, 
-         answer.y = dsgt(answer.x, param.mu, param.sigma, param.lambda, param.p, param.q)) %>% 
-  select(location.x, location.y, answer.x, answer.y) 
-```
-
-```{r}
-task_df %>% filter(TaskType == "task2") %>% 
-  mutate(answer.x = param.mu, 
-         answer.y = dsgt(answer.x, param.mu, param.sigma, param.lambda, param.p, param.q)) %>% 
-  select(location.x, location.y, answer.x, answer.y) %>% 
-  ggplot(aes(x = location.x, y = location.y)) + 
-  geom_point(color = "red") + 
-  theme_minimal() + ylim(0, 1) + 
-  geom_point(aes(x = answer.x, y = answer.y), color = "blue") +
-  geom_segment(
-  aes(x = location.x, y = location.y, xend = answer.x, yend = answer.y),
-  color = "gray70",
-  size = 0.5
-)
-```
-
-One can see that it tracks pretty well ... 
-
----
-
-Task 3 --- CDF Median --- find point where `y == 0.5`
-
-```{r}
-task_df %>% filter(TaskType == "task3") 
-```
-
-```{r}
-task_df %>% filter(TaskType == "task3") %>% 
-  ggplot(aes(x = location.x, y = location.y, color=participantId)) + 
-  geom_point() + 
-  theme_minimal() + 
+task_df %>% filter(grepl("task1", trialId)) %>% 
+  mutate(left_area = psgt(location.x, param.mu, param.sigma, 
+                          param.lambda, param.p, param.q, mean.cent=F)) %>% 
+  select(param.lambda, left_area) %>% 
+  ggplot(aes(x = param.lambda, y = left_area)) + 
+  geom_point(alpha = 0.5) + 
+  theme_minimal() + xlim(-1, 1) + ylim(0, 1) + 
   geom_hline(yintercept = 0.5, linetype="dashed", color="gray")
 ```
 
-Can't really say anything with ten samples but hopefully we'll be able to say more ... 
+Note that `lambda = 0` is complete symmetry ($\lambda \in (-1, 1)$). We see a definite trend here! 
+
+## Task 2 --- PDF Mode --- Find highest point on the curve 
+
+TODO --- this is where we use `numDeriv` !!! 
+
+```{r}
+task_df %>% filter(grepl("task2", trialId)) %>%
+  mutate(answer.x = param.mu, 
+         answer.y = dsgt(x=param.mu, mu = param.mu, sigma=param.sigma, 
+                         lambda=param.lambda, p=param.p, q=param.q, mean.cent = F)) %>% 
+  select(participantId, location.x, location.y, answer.x, answer.y)
+```
+
+Let's try to plot the distribution of error, first for `x`: 
+
+```{r}
+#| layout-ncol: 2
+
+task_df %>% filter(grepl("task2", trialId)) %>%
+  mutate(answer.x = param.mu, 
+         answer.y = dsgt(x=param.mu, mu = param.mu, sigma=param.sigma, 
+                         lambda=param.lambda, p=param.p, q=param.q, mean.cent = F)) %>% 
+  select(participantId, location.x, location.y, answer.x, answer.y) %>% 
+  mutate(x_diff = location.x - answer.x) %>% 
+  ggplot(aes(x = x_diff)) + geom_density() + theme_minimal()
+
+task_df %>% filter(grepl("task2", trialId)) %>%
+  mutate(answer.x = param.mu, 
+         answer.y = dsgt(x=param.mu, mu = param.mu, sigma=param.sigma, 
+                         lambda=param.lambda, p=param.p, q=param.q, mean.cent = F)) %>% 
+  select(participantId, location.x, location.y, answer.x, answer.y) %>% 
+  mutate(y_diff = location.y - answer.y) %>% 
+  ggplot(aes(x = y_diff)) + geom_density() + theme_minimal()
+```
+
+TODO: `numderiv` and angle calculations ... 
+
+## Task 3 --- CDF Median --- find point where `y == 0.5`
+
+Doesn't seem to be any particularly standing out ... 
+
+```{r}
+task_df %>% filter(grepl("task3", trialId)) %>% 
+  ggplot(aes(x = location.x, y = location.y)) + 
+  geom_point() + 
+  theme_minimal() + 
+  geom_hline(yintercept = 0.5, linetype="dashed", color="gray") # + 
+  # facet_wrap(~ participantId)
+```
 
 ---
 
 Task 4 --- CDF Mode --- Find slope
 
-Recall that mode is just `param.mu` 
+Recall that mode is just `param.mu`. 
 
 ```{r}
-task_df %>% filter(TaskType == "task4") # %>% 
-```
-
-```{r}
-task_df %>% filter(TaskType == "task4") %>% 
+task_df %>% filter(grepl("task3", trialId)) %>% 
   ggplot(aes(x = location.x, y = param.mu)) + 
-  geom_point() + theme_minimal() + 
+  geom_point(alpha=0.5) + theme_minimal() + 
   geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray") + 
   coord_equal()
 ```
@@ -158,7 +152,7 @@ How accurate where the xs?
 ```{r}
 task_5 %>% 
   ggplot(aes(x = slider.x, y = location.x)) + 
-  geom_point() + 
+  geom_point(alpha=0.5) + 
   theme_minimal() + 
   geom_abline(intercept = 0, slope = 1, color = "gray", linetype = "dashed") + 
   coord_equal()
@@ -169,7 +163,7 @@ How accurate where the ys?
 ```{r}
 task_5 %>% 
   ggplot(aes(x = slider.y, y = location.y)) + 
-  geom_point() + 
+  geom_point(alpha=0.5) + 
   theme_minimal() + 
   geom_abline(intercept = 0, slope = 1, color = "gray", linetype = "dashed") + 
   coord_equal()
