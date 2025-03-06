@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.4.550">
+<meta name="generator" content="quarto-1.6.40">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -33,7 +33,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -63,14 +63,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="analysis_files/libs/quarto-html/tippy.umd.min.js"></script>
 <script src="analysis_files/libs/quarto-html/anchor.min.js"></script>
 <link href="analysis_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="analysis_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="analysis_files/libs/quarto-html/quarto-syntax-highlighting-549806ee2085284f45b00abea8c6df48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="analysis_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="analysis_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="analysis_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<link href="analysis_files/libs/bootstrap/bootstrap-973236bd072d72a04ee9cd82dcc9cb29.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <link href="analysis_files/libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet">
 <script src="analysis_files/libs/pagedtable-1.1/js/pagedtable.js"></script>
 
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <script type="text/javascript">
@@ -105,7 +105,7 @@ window.Quarto = {
 <body>
 
 <div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
-<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
 </div>
 <main class="content page-columns page-full" id="quarto-document-content">
 
@@ -218,7 +218,7 @@ window.Quarto = {
 </details>
 </div>
 <p>We map from pixel coordinates to physical distances by using the <code>pixelsPerMM</code> parameter we captured during the calibration process.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
-<div class="no-row-height column-margin column-container"><p><sup>1</sup>&nbsp;A small problem here is that during some trials, I got impatient and didn’t fully do the calibration and just went with whatever default solutions I had. TLDR — for some trials, the <code>pixelsPerMM</code> value is 3.27. For some trials, it’s 3.73. To avoid confusion, I am manually creating a custom dataframe here but for future purposes, this should not be created by hand.</p></div><p>Some of the <code>prolificId</code> are quite long, and that’s because I was debugging an issue related to ReCAPTCHA.</p>
+<div class="no-row-height column-margin column-container"><div id="fn1"><p><sup>1</sup>&nbsp;A small problem here is that during some trials, I got impatient and didn’t fully do the calibration and just went with whatever default solutions I had. TLDR — for some trials, the <code>pixelsPerMM</code> value is 3.27. For some trials, it’s 3.73. To avoid confusion, I am manually creating a custom dataframe here but for future purposes, this should not be created by hand.</p></div></div><p>Some of the <code>prolificId</code> are quite long, and that’s because I was debugging an issue related to ReCAPTCHA.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(participantId <span class="sc">%in%</span> ids) <span class="sc">%&gt;%</span> </span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">"pixelsPerMM"</span>, responseId) <span class="sc">|</span> <span class="fu">grepl</span>(<span class="st">"prolificId"</span>, responseId)) <span class="sc">%&gt;%</span> </span>
@@ -246,7 +246,7 @@ window.Quarto = {
 <span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Now that we know what the <code>pixelsPerMM</code> parameter is, we can write functions that transform pixel values into physical distances (measured in mm). Note that we need to do some transforms<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> because of the way direction works in svgs are counter-intuitive …:</p>
-<div class="no-row-height column-margin column-container"><p><sup>2</sup>&nbsp;… specifically, distance to the x-axis would be the y-coordinate, which would be 410 - <code>pixel.y</code>. Distance to the y-axis would be the x-coordinate, which would be <code>pixel.x - margin.left</code>. </p></div><div class="cell">
+<div class="no-row-height column-margin column-container"><div id="fn2"><p><sup>2</sup>&nbsp;… specifically, distance to the x-axis would be the y-coordinate, which would be 410 - <code>pixel.y</code>. Distance to the y-axis would be the x-coordinate, which would be <code>pixel.x - margin.left</code>. </p></div></div><div class="cell">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define functions </span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>pixel_to_phy_x <span class="ot">&lt;-</span> <span class="cf">function</span>(pixel, pxMM){</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  (pixel <span class="sc">-</span> <span class="dv">50</span>) <span class="sc">*</span> pxMM</span>
@@ -257,7 +257,7 @@ window.Quarto = {
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Now that we can calculate <strong>physical distance</strong>s, we can transform them into visual angles since we know how far the participant is sitting away from the screen (<code>dist_to_screen</code>).<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a></p>
-<div class="no-row-height column-margin column-container"><p><sup>3</sup>&nbsp;Again, from some test trials, I didn’t fully do the calibration tasks, so I am again manually defining a dataframe here.</p></div><div class="cell">
+<div class="no-row-height column-margin column-container"><div id="fn3"><p><sup>3</sup>&nbsp;Again, from some test trials, I didn’t fully do the calibration tasks, so I am again manually defining a dataframe here.</p></div></div><div class="cell">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># custom data frame </span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>vis_distance <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">participantId =</span> p, </span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>                           <span class="at">dist_to_screen =</span> <span class="fu">c</span>(<span class="dv">426</span>, <span class="dv">502</span>, <span class="dv">500</span>, <span class="dv">495</span>, <span class="dv">485</span>, <span class="dv">987</span>, <span class="dv">635</span>, <span class="dv">500</span>, <span class="dv">479</span>, <span class="dv">563</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -392,16 +392,15 @@ Weird missing data error
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> param.lambda, <span class="at">y =</span> left_area)) <span class="sc">+</span> </span>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> location.x, <span class="at">y =</span> param.mu)) <span class="sc">+</span> </span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlim</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>) <span class="sc">+</span> </span>
 <span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylim</span>(<span class="dv">0</span>, <span class="dv">1</span>) <span class="sc">+</span> </span>
 <span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fl">0.5</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>participantId) <span class="sc">+</span> </span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Task 1 (data space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Task 1 (data space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 1 row containing missing values or values outside the scale range
+<pre><code>Warning: Removed 69 rows containing missing values or values outside the scale range
 (`geom_point()`).</code></pre>
 </div>
 <div class="cell-output-display">
@@ -411,15 +410,36 @@ Weird missing data error
 </figure>
 </div>
 </div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> param.lambda, <span class="at">y =</span> left_area)) <span class="sc">+</span> </span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlim</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylim</span>(<span class="dv">0</span>, <span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fl">0.5</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>participantId) <span class="sc">+</span> </span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Task 1 (data space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 1 row containing missing values or values outside the scale range
+(`geom_point()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="analysis_files/figure-html/unnamed-chunk-16-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
 </div>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> param.p, <span class="at">y =</span> left_area)) <span class="sc">+</span> </span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylim</span>(<span class="dv">0</span>, <span class="dv">1</span>) <span class="sc">+</span> </span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fl">0.5</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Task 1 (data space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> param.p, <span class="at">y =</span> left_area)) <span class="sc">+</span> </span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylim</span>(<span class="dv">0</span>, <span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fl">0.5</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Task 1 (data space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: Removed 1 row containing missing values or values outside the scale range
@@ -434,11 +454,11 @@ Weird missing data error
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> param.q, <span class="at">y =</span> left_area)) <span class="sc">+</span> </span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylim</span>(<span class="dv">0</span>, <span class="dv">1</span>) <span class="sc">+</span> </span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fl">0.5</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Task 1 (data space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> param.q, <span class="at">y =</span> left_area)) <span class="sc">+</span> </span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylim</span>(<span class="dv">0</span>, <span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fl">0.5</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Task 1 (data space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: Removed 1 row containing missing values or values outside the scale range
@@ -484,38 +504,38 @@ Experimenting with <code>numDeriv</code>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>x_val <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">5</span>, <span class="fl">0.01</span>)</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>y_val <span class="ot">&lt;-</span> <span class="fu">dsgt</span>(x_val, <span class="at">mu =</span> <span class="fl">1.7</span>, <span class="at">sigma =</span> <span class="fl">1.4</span>, <span class="at">lambda =</span> <span class="sc">-</span><span class="fl">0.5</span>, <span class="at">p =</span> <span class="fl">3.5</span>, <span class="at">q =</span> <span class="fl">7.5</span>, <span class="at">mean.cent=</span>F)</span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">x =</span> x_val, <span class="at">y =</span> y_val) <span class="sc">%&gt;%</span> </span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">y =</span> y)) <span class="sc">+</span></span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
-<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlim</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">5</span>) <span class="sc">+</span> <span class="fu">ylim</span>(<span class="dv">0</span>, <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>x_val <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">5</span>, <span class="fl">0.01</span>)</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>y_val <span class="ot">&lt;-</span> <span class="fu">dsgt</span>(x_val, <span class="at">mu =</span> <span class="fl">1.7</span>, <span class="at">sigma =</span> <span class="fl">1.4</span>, <span class="at">lambda =</span> <span class="sc">-</span><span class="fl">0.5</span>, <span class="at">p =</span> <span class="fl">3.5</span>, <span class="at">q =</span> <span class="fl">7.5</span>, <span class="at">mean.cent=</span>F)</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">x =</span> x_val, <span class="at">y =</span> y_val) <span class="sc">%&gt;%</span> </span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">y =</span> y)) <span class="sc">+</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlim</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">5</span>) <span class="sc">+</span> <span class="fu">ylim</span>(<span class="dv">0</span>, <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Trying out numDeriv</span></span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, <span class="dv">1</span>, <span class="at">mu =</span> <span class="fl">1.7</span>, <span class="at">sigma =</span> <span class="fl">1.4</span>, <span class="at">lambda =</span> <span class="sc">-</span><span class="fl">0.5</span>, <span class="at">p =</span> <span class="fl">3.5</span>, <span class="at">q =</span> <span class="fl">7.5</span>, <span class="at">mean.cent=</span>F)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Trying out numDeriv</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, <span class="dv">1</span>, <span class="at">mu =</span> <span class="fl">1.7</span>, <span class="at">sigma =</span> <span class="fl">1.4</span>, <span class="at">lambda =</span> <span class="sc">-</span><span class="fl">0.5</span>, <span class="at">p =</span> <span class="fl">3.5</span>, <span class="at">q =</span> <span class="fl">7.5</span>, <span class="at">mean.cent=</span>F)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 0.005399378</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">atan</span>(numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, <span class="dv">1</span>, <span class="at">mu =</span> <span class="fl">1.7</span>, <span class="at">sigma =</span> <span class="fl">1.4</span>, <span class="at">lambda =</span> <span class="sc">-</span><span class="fl">0.5</span>, <span class="at">p =</span> <span class="fl">3.5</span>, <span class="at">q =</span> <span class="fl">7.5</span>, <span class="at">mean.cent=</span>F))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">atan</span>(numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, <span class="dv">1</span>, <span class="at">mu =</span> <span class="fl">1.7</span>, <span class="at">sigma =</span> <span class="fl">1.4</span>, <span class="at">lambda =</span> <span class="sc">-</span><span class="fl">0.5</span>, <span class="at">p =</span> <span class="fl">3.5</span>, <span class="at">q =</span> <span class="fl">7.5</span>, <span class="at">mean.cent=</span>F))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 0.005399325</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, <span class="dv">0</span>, <span class="at">mu =</span> <span class="fl">1.7</span>, <span class="at">sigma =</span> <span class="fl">1.4</span>, <span class="at">lambda =</span> <span class="sc">-</span><span class="fl">0.5</span>, <span class="at">p =</span> <span class="fl">3.5</span>, <span class="at">q =</span> <span class="fl">7.5</span>, <span class="at">mean.cent=</span>F)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, <span class="dv">0</span>, <span class="at">mu =</span> <span class="fl">1.7</span>, <span class="at">sigma =</span> <span class="fl">1.4</span>, <span class="at">lambda =</span> <span class="sc">-</span><span class="fl">0.5</span>, <span class="at">p =</span> <span class="fl">3.5</span>, <span class="at">q =</span> <span class="fl">7.5</span>, <span class="at">mean.cent=</span>F)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 0.04467183</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">atan</span>(numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, <span class="dv">0</span>, <span class="at">mu =</span> <span class="fl">1.7</span>, <span class="at">sigma =</span> <span class="fl">1.4</span>, <span class="at">lambda =</span> <span class="sc">-</span><span class="fl">0.5</span>, <span class="at">p =</span> <span class="fl">3.5</span>, <span class="at">q =</span> <span class="fl">7.5</span>, <span class="at">mean.cent=</span>F))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">atan</span>(numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, <span class="dv">0</span>, <span class="at">mu =</span> <span class="fl">1.7</span>, <span class="at">sigma =</span> <span class="fl">1.4</span>, <span class="at">lambda =</span> <span class="sc">-</span><span class="fl">0.5</span>, <span class="at">p =</span> <span class="fl">3.5</span>, <span class="at">q =</span> <span class="fl">7.5</span>, <span class="at">mean.cent=</span>F))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 0.04464215</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, <span class="sc">-</span><span class="dv">1</span>, <span class="at">mu =</span> <span class="fl">1.7</span>, <span class="at">sigma =</span> <span class="fl">1.4</span>, <span class="at">lambda =</span> <span class="sc">-</span><span class="fl">0.5</span>, <span class="at">p =</span> <span class="fl">3.5</span>, <span class="at">q =</span> <span class="fl">7.5</span>, <span class="at">mean.cent=</span>F)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, <span class="sc">-</span><span class="dv">1</span>, <span class="at">mu =</span> <span class="fl">1.7</span>, <span class="at">sigma =</span> <span class="fl">1.4</span>, <span class="at">lambda =</span> <span class="sc">-</span><span class="fl">0.5</span>, <span class="at">p =</span> <span class="fl">3.5</span>, <span class="at">q =</span> <span class="fl">7.5</span>, <span class="at">mean.cent=</span>F)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 0.09215372</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">atan</span>(numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, <span class="sc">-</span><span class="dv">1</span>, <span class="at">mu =</span> <span class="fl">1.7</span>, <span class="at">sigma =</span> <span class="fl">1.4</span>, <span class="at">lambda =</span> <span class="sc">-</span><span class="fl">0.5</span>, <span class="at">p =</span> <span class="fl">3.5</span>, <span class="at">q =</span> <span class="fl">7.5</span>, <span class="at">mean.cent=</span>F))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">atan</span>(numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, <span class="sc">-</span><span class="dv">1</span>, <span class="at">mu =</span> <span class="fl">1.7</span>, <span class="at">sigma =</span> <span class="fl">1.4</span>, <span class="at">lambda =</span> <span class="sc">-</span><span class="fl">0.5</span>, <span class="at">p =</span> <span class="fl">3.5</span>, <span class="at">q =</span> <span class="fl">7.5</span>, <span class="at">mean.cent=</span>F))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 0.09189418</code></pre>
 </div>
@@ -531,12 +551,12 @@ Experimenting with <code>numDeriv</code>
 </div>
 </div></div><p>First we’ll create a dataframe containing only data related to task2:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task2"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>slider.x, <span class="sc">-</span>slider.y) <span class="sc">%&gt;%</span> </span>
-<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">grad.x =</span> numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, location.x, <span class="at">mu =</span> param.mu, <span class="at">sigma =</span> param.sigma, </span>
-<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>                               <span class="at">lambda =</span> param.lambda, <span class="at">p =</span> param.p, <span class="at">q =</span> param.q, <span class="at">mean.cent=</span>F))</span>
-<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task2"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>slider.x, <span class="sc">-</span>slider.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">grad.x =</span> numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, location.x, <span class="at">mu =</span> param.mu, <span class="at">sigma =</span> param.sigma, </span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>                               <span class="at">lambda =</span> param.lambda, <span class="at">p =</span> param.p, <span class="at">q =</span> param.q, <span class="at">mean.cent=</span>F))</span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
@@ -549,9 +569,9 @@ Experimenting with <code>numDeriv</code>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> grad.x, <span class="at">y =</span> <span class="dv">0</span>)) <span class="sc">+</span> <span class="co"># gradient at the mode should be 0</span></span>
-<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> grad.x, <span class="at">y =</span> <span class="dv">0</span>)) <span class="sc">+</span> <span class="co"># gradient at the mode should be 0</span></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -562,10 +582,10 @@ Experimenting with <code>numDeriv</code>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
-<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> grad.x)) <span class="sc">+</span> <span class="co"># gradient at the mode should be 0</span></span>
-<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggdist::geom_dots() + </span></span>
-<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>  ggdist<span class="sc">::</span><span class="fu">geom_swarm</span>(<span class="at">side =</span> <span class="st">"top"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> grad.x)) <span class="sc">+</span> <span class="co"># gradient at the mode should be 0</span></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggdist::geom_dots() + </span></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>  ggdist<span class="sc">::</span><span class="fu">geom_swarm</span>(<span class="at">side =</span> <span class="st">"top"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -576,12 +596,12 @@ Experimenting with <code>numDeriv</code>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co"># looking at participant level</span></span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
-<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> grad.x, <span class="at">y =</span> <span class="dv">0</span>)) <span class="sc">+</span> <span class="co"># gradient at the mode should be 0</span></span>
-<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
-<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>participantId)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="co"># looking at participant level</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> grad.x, <span class="at">y =</span> <span class="dv">0</span>)) <span class="sc">+</span> <span class="co"># gradient at the mode should be 0</span></span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>participantId)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -594,11 +614,11 @@ Experimenting with <code>numDeriv</code>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
-<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">atan.grad.x =</span> <span class="fu">atan</span>(grad.x), </span>
-<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">atan.grad.ans =</span> <span class="fu">atan</span>(<span class="dv">0</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> atan.grad.x, <span class="at">y =</span> atan.grad.ans)) <span class="sc">+</span> </span>
-<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">atan.grad.x =</span> <span class="fu">atan</span>(grad.x), </span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">atan.grad.ans =</span> <span class="fu">atan</span>(<span class="dv">0</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> atan.grad.x, <span class="at">y =</span> atan.grad.ans)) <span class="sc">+</span> </span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -616,15 +636,15 @@ Experimenting with <code>numDeriv</code>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
-<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">answer.x =</span> param.mu, </span>
-<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">answer.y =</span> <span class="fu">dsgt</span>(<span class="at">x=</span>param.mu, <span class="at">mu =</span> param.mu, <span class="at">sigma=</span>param.sigma, </span>
-<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">lambda=</span>param.lambda, <span class="at">p=</span>param.p, <span class="at">q=</span>param.q, <span class="at">mean.cent =</span> F)) <span class="sc">%&gt;%</span> </span>
-<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">x_diff =</span> location.x <span class="sc">-</span> answer.x) <span class="sc">%&gt;%</span> </span>
-<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> x_diff)) <span class="sc">+</span> </span>
-<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggdist::geom_dots() + </span></span>
-<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a>  ggdist<span class="sc">::</span><span class="fu">geom_swarm</span>(<span class="at">side =</span> <span class="st">"top"</span>) <span class="sc">+</span> </span>
-<span id="cb46-9"><a href="#cb46-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span> <span class="st">"Task 2 (data space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">answer.x =</span> param.mu, </span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">answer.y =</span> <span class="fu">dsgt</span>(<span class="at">x=</span>param.mu, <span class="at">mu =</span> param.mu, <span class="at">sigma=</span>param.sigma, </span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">lambda=</span>param.lambda, <span class="at">p=</span>param.p, <span class="at">q=</span>param.q, <span class="at">mean.cent =</span> F)) <span class="sc">%&gt;%</span> </span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">x_diff =</span> location.x <span class="sc">-</span> answer.x) <span class="sc">%&gt;%</span> </span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> x_diff)) <span class="sc">+</span> </span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggdist::geom_dots() + </span></span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>  ggdist<span class="sc">::</span><span class="fu">geom_swarm</span>(<span class="at">side =</span> <span class="st">"top"</span>) <span class="sc">+</span> </span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span> <span class="st">"Task 2 (data space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -635,15 +655,15 @@ Experimenting with <code>numDeriv</code>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">answer.x =</span> param.mu, </span>
-<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">answer.y =</span> <span class="fu">dsgt</span>(<span class="at">x=</span>param.mu, <span class="at">mu =</span> param.mu, <span class="at">sigma=</span>param.sigma, </span>
-<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">lambda=</span>param.lambda, <span class="at">p=</span>param.p, <span class="at">q=</span>param.q, <span class="at">mean.cent =</span> F)) <span class="sc">%&gt;%</span> </span>
-<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">y_diff =</span> location.y <span class="sc">-</span> answer.y) <span class="sc">%&gt;%</span> </span>
-<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> y_diff)) <span class="sc">+</span> </span>
-<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggdist::geom_dots() + </span></span>
-<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>  ggdist<span class="sc">::</span><span class="fu">geom_swarm</span>(<span class="at">side =</span> <span class="st">"top"</span>) <span class="sc">+</span> </span>
-<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span> <span class="st">"Task 2 (data space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">answer.x =</span> param.mu, </span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">answer.y =</span> <span class="fu">dsgt</span>(<span class="at">x=</span>param.mu, <span class="at">mu =</span> param.mu, <span class="at">sigma=</span>param.sigma, </span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">lambda=</span>param.lambda, <span class="at">p=</span>param.p, <span class="at">q=</span>param.q, <span class="at">mean.cent =</span> F)) <span class="sc">%&gt;%</span> </span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">y_diff =</span> location.y <span class="sc">-</span> answer.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> y_diff)) <span class="sc">+</span> </span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggdist::geom_dots() + </span></span>
+<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>  ggdist<span class="sc">::</span><span class="fu">geom_swarm</span>(<span class="at">side =</span> <span class="st">"top"</span>) <span class="sc">+</span> </span>
+<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span> <span class="st">"Task 2 (data space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -657,16 +677,16 @@ Experimenting with <code>numDeriv</code>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
-<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">grad.x =</span> numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, location.x, <span class="at">mu =</span> param.mu, <span class="at">sigma =</span> param.sigma, </span>
-<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">lambda =</span> param.lambda, <span class="at">p =</span> param.p, <span class="at">q =</span> param.q, <span class="at">mean.cent=</span>F), </span>
-<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">grad.ans =</span> <span class="dv">0</span>,</span>
-<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>         ) <span class="sc">%&gt;%</span></span>
-<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff =</span> grad.ans <span class="sc">-</span> grad.x) <span class="sc">%&gt;%</span> </span>
-<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> diff)) <span class="sc">+</span> </span>
-<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggdist::geom_dots() + </span></span>
-<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggdist::geom_weave(side = "top") + </span></span>
-<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>  ggdist<span class="sc">::</span><span class="fu">geom_swarm</span>(<span class="at">side =</span> <span class="st">"top"</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">grad.x =</span> numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, location.x, <span class="at">mu =</span> param.mu, <span class="at">sigma =</span> param.sigma, </span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">lambda =</span> param.lambda, <span class="at">p =</span> param.p, <span class="at">q =</span> param.q, <span class="at">mean.cent=</span>F), </span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">grad.ans =</span> <span class="dv">0</span>,</span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>         ) <span class="sc">%&gt;%</span></span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff =</span> grad.ans <span class="sc">-</span> grad.x) <span class="sc">%&gt;%</span> </span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> diff)) <span class="sc">+</span> </span>
+<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggdist::geom_dots() + </span></span>
+<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggdist::geom_weave(side = "top") + </span></span>
+<span id="cb50-10"><a href="#cb50-10" aria-hidden="true" tabindex="-1"></a>  ggdist<span class="sc">::</span><span class="fu">geom_swarm</span>(<span class="at">side =</span> <span class="st">"top"</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -677,17 +697,17 @@ Experimenting with <code>numDeriv</code>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
-<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">grad.x =</span> numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, location.x, <span class="at">mu =</span> param.mu, <span class="at">sigma =</span> param.sigma, </span>
-<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">lambda =</span> param.lambda, <span class="at">p =</span> param.p, <span class="at">q =</span> param.q, <span class="at">mean.cent=</span>F), </span>
-<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">grad.ans =</span> <span class="dv">0</span>,</span>
-<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>         ) <span class="sc">%&gt;%</span></span>
-<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff =</span> grad.ans <span class="sc">-</span> grad.x) <span class="sc">%&gt;%</span> </span>
-<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> diff)) <span class="sc">+</span> </span>
-<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggdist::geom_dots() + </span></span>
-<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggdist::geom_weave(side = "top") + </span></span>
-<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a>  ggdist<span class="sc">::</span><span class="fu">geom_swarm</span>(<span class="at">side =</span> <span class="st">"top"</span>) <span class="sc">+</span> </span>
-<span id="cb49-11"><a href="#cb49-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>participantId)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">grad.x =</span> numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, location.x, <span class="at">mu =</span> param.mu, <span class="at">sigma =</span> param.sigma, </span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">lambda =</span> param.lambda, <span class="at">p =</span> param.p, <span class="at">q =</span> param.q, <span class="at">mean.cent=</span>F), </span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">grad.ans =</span> <span class="dv">0</span>,</span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>         ) <span class="sc">%&gt;%</span></span>
+<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff =</span> grad.ans <span class="sc">-</span> grad.x) <span class="sc">%&gt;%</span> </span>
+<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> diff)) <span class="sc">+</span> </span>
+<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggdist::geom_dots() + </span></span>
+<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ggdist::geom_weave(side = "top") + </span></span>
+<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a>  ggdist<span class="sc">::</span><span class="fu">geom_swarm</span>(<span class="at">side =</span> <span class="st">"top"</span>) <span class="sc">+</span> </span>
+<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>participantId)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -702,10 +722,10 @@ Experimenting with <code>numDeriv</code>
 <h2 class="anchored" data-anchor-id="task-3-cdf-median-find-point-where-y-0.5">Task 3 — CDF Median — find point where <code>y == 0.5</code></h2>
 <p>First create the data frame for task 3:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>task3_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task3"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>slider.x, <span class="sc">-</span>slider.y) </span>
-<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span>  <span class="fu">head</span>(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>task3_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task3"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>slider.x, <span class="sc">-</span>slider.y) </span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span>  <span class="fu">head</span>(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
@@ -714,194 +734,77 @@ Experimenting with <code>numDeriv</code>
 </div>
 </div>
 </div>
-<div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> </span>
-<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> location.x, <span class="at">y =</span> location.y)) <span class="sc">+</span> </span>
-<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> </span>
-<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fl">0.5</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
-<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Task 3 (Data space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="co"># data space </span></span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> </span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> location.x, <span class="at">y =</span> location.y <span class="sc">-</span> <span class="fl">0.5</span>)) <span class="sc">+</span> </span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> </span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
+<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Task 3 -- CDF Median"</span>)</span>
+<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a><span class="co"># physical space</span></span>
+<span id="cb53-8"><a href="#cb53-8" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb53-9"><a href="#cb53-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.x, pixelToMM), </span>
+<span id="cb53-10"><a href="#cb53-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.y, pixelToMM), </span>
+<span id="cb53-11"><a href="#cb53-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(<span class="fl">0.5</span>), pixelToMM)) <span class="sc">%&gt;%</span> </span>
+<span id="cb53-12"><a href="#cb53-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> phy.x, <span class="at">y =</span> phy.y <span class="sc">-</span> ans.y)) <span class="sc">+</span> </span>
+<span id="cb53-13"><a href="#cb53-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> </span>
+<span id="cb53-14"><a href="#cb53-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
+<span id="cb53-15"><a href="#cb53-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Task 3 -- CDF Median"</span>) </span>
+<span id="cb53-16"><a href="#cb53-16" aria-hidden="true" tabindex="-1"></a><span class="co"># visual angle</span></span>
+<span id="cb53-17"><a href="#cb53-17" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb53-18"><a href="#cb53-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.x, pixelToMM), </span>
+<span id="cb53-19"><a href="#cb53-19" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.y, pixelToMM), </span>
+<span id="cb53-20"><a href="#cb53-20" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(<span class="fl">0.5</span>), pixelToMM), </span>
+<span id="cb53-21"><a href="#cb53-21" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.ans.y =</span> <span class="fu">vis_angle</span>(ans.y, dist_to_screen), </span>
+<span id="cb53-22"><a href="#cb53-22" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.phy.y =</span> <span class="fu">vis_angle</span>(phy.y, dist_to_screen), </span>
+<span id="cb53-23"><a href="#cb53-23" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.phy.x =</span> <span class="fu">vis_angle</span>(phy.x, dist_to_screen)) <span class="sc">%&gt;%</span> </span>
+<span id="cb53-24"><a href="#cb53-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.phy.x, <span class="at">y =</span> va.phy.y <span class="sc">-</span> va.ans.y)) <span class="sc">+</span> </span>
+<span id="cb53-25"><a href="#cb53-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> </span>
+<span id="cb53-26"><a href="#cb53-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
+<span id="cb53-27"><a href="#cb53-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Task 3 -- CDF Median"</span>) </span>
+<span id="cb53-28"><a href="#cb53-28" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb53-29"><a href="#cb53-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.x, pixelToMM), </span>
+<span id="cb53-30"><a href="#cb53-30" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.y, pixelToMM), </span>
+<span id="cb53-31"><a href="#cb53-31" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(<span class="fl">0.5</span>), pixelToMM), </span>
+<span id="cb53-32"><a href="#cb53-32" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.ans.y =</span> <span class="fu">vis_angle</span>(ans.y, dist_to_screen), </span>
+<span id="cb53-33"><a href="#cb53-33" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.phy.y =</span> <span class="fu">vis_angle</span>(phy.y, dist_to_screen), </span>
+<span id="cb53-34"><a href="#cb53-34" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.phy.x =</span> <span class="fu">vis_angle</span>(phy.x, dist_to_screen)) <span class="sc">%&gt;%</span> </span>
+<span id="cb53-35"><a href="#cb53-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.phy.x, <span class="at">y =</span> va.phy.y <span class="sc">-</span> va.ans.y)) <span class="sc">+</span> </span>
+<span id="cb53-36"><a href="#cb53-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> </span>
+<span id="cb53-37"><a href="#cb53-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
+<span id="cb53-38"><a href="#cb53-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Task 3 -- CDF Median"</span>) <span class="sc">+</span> </span>
+<span id="cb53-39"><a href="#cb53-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>participantId)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="analysis_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="analysis_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="analysis_files/figure-html/unnamed-chunk-26-2.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> </span>
-<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> location.x, <span class="at">y =</span> location.y)) <span class="sc">+</span> </span>
-<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> </span>
-<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fl">0.5</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
-<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Task 3 (Data space)"</span>) <span class="sc">+</span> </span>
-<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>participantId)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="analysis_files/figure-html/unnamed-chunk-26-2.png" class="img-fluid figure-img" width="672"></p>
-</figure>
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="analysis_files/figure-html/unnamed-chunk-26-3.png" class="img-fluid" width="672"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="analysis_files/figure-html/unnamed-chunk-26-4.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 </div>
-<p>What if we were to look at things from <strong>physical space</strong>?</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>d <span class="ot">&lt;-</span> task3_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
-<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.x, pixelToMM),</span>
-<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.y, pixelToMM)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<details class="code-fold">
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>d <span class="sc">%&gt;%</span> </span>
-<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> phy.x, <span class="at">y =</span> phy.y)) <span class="sc">+</span> </span>
-<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> </span>
-<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"physical distance (x) in mm"</span>, </span>
-<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"physical distance (y) in mm"</span>, </span>
-<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Task 3 (Physical space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="analysis_files/figure-html/unnamed-chunk-28-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-<details class="code-fold">
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>d <span class="sc">%&gt;%</span> </span>
-<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> phy.x, <span class="at">y =</span> phy.y)) <span class="sc">+</span> </span>
-<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> </span>
-<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"physical distance (x) in mm"</span>, </span>
-<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"physical distance (y) in mm"</span>, </span>
-<span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Task 3 (Physical space)"</span>) <span class="sc">+</span> </span>
-<span id="cb55-7"><a href="#cb55-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>participantId)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="analysis_files/figure-html/unnamed-chunk-28-2.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>We can see there are different variations, because depending on the <code>pixelPerMM</code> parameter, participants are seeing things of different size.</p>
-<p>Next, let’s see where things are at in terms of visual angle:</p>
-<div class="cell">
-<details class="code-fold">
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
-<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.x, pixelToMM),</span>
-<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.y, pixelToMM), </span>
-<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.x =</span> <span class="fu">vis_angle</span>(phy.x, dist_to_screen),</span>
-<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.y =</span> <span class="fu">vis_angle</span>(phy.y, dist_to_screen),) <span class="sc">%&gt;%</span> </span>
-<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.x, <span class="at">y =</span> va.y)) <span class="sc">+</span> </span>
-<span id="cb56-7"><a href="#cb56-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span> </span>
-<span id="cb56-8"><a href="#cb56-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"visual angle (x)"</span>, </span>
-<span id="cb56-9"><a href="#cb56-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"visual angle (y)"</span>, </span>
-<span id="cb56-10"><a href="#cb56-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Task 3"</span>) <span class="sc">+</span></span>
-<span id="cb56-11"><a href="#cb56-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="analysis_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-<details class="code-fold">
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
-<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.x, pixelToMM),</span>
-<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.y, pixelToMM), </span>
-<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.x =</span> <span class="fu">vis_angle</span>(phy.x, dist_to_screen),</span>
-<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.y =</span> <span class="fu">vis_angle</span>(phy.y, dist_to_screen),) <span class="sc">%&gt;%</span> </span>
-<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.x, <span class="at">y =</span> va.y)) <span class="sc">+</span> </span>
-<span id="cb57-7"><a href="#cb57-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span> </span>
-<span id="cb57-8"><a href="#cb57-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"visual angle (x)"</span>, </span>
-<span id="cb57-9"><a href="#cb57-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"visual angle (y)"</span>, </span>
-<span id="cb57-10"><a href="#cb57-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Task 3"</span>) <span class="sc">+</span></span>
-<span id="cb57-11"><a href="#cb57-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>participantId)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="analysis_files/figure-html/unnamed-chunk-29-2.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>What about the difference between the visual angle of the selection and the visual angle of the actual answer?</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="co"># task3_df %&gt;% left_join(participants, by = join_by(participantId)) %&gt;% </span></span>
-<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   mutate(ans.pixel.y = data_to_pixel_y(0.5),</span></span>
-<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a><span class="co">#          phy.y = pixel_to_phy_y(pixel.y, pixelToMM), </span></span>
-<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a><span class="co">#          ans.phy.y = pixel_to_phy_y(ans.pixel.y, pixelToMM), </span></span>
-<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a><span class="co">#          va.y = vis_angle(phy.y, dist_to_screen),</span></span>
-<span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a><span class="co">#          ans.va.y = vis_angle(ans.phy.y, dist_to_screen)</span></span>
-<span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a><span class="co">#          ) %&gt;% </span></span>
-<span id="cb58-8"><a href="#cb58-8" aria-hidden="true" tabindex="-1"></a><span class="co">#   select(va.y, ans.va.y)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<details class="code-fold">
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
-<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ans.pixel.y =</span> <span class="fu">data_to_pixel_y</span>(<span class="fl">0.5</span>),</span>
-<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.y, pixelToMM), </span>
-<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.y =</span> <span class="fu">pixel_to_phy_y</span>(ans.pixel.y, pixelToMM), </span>
-<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.y =</span> <span class="fu">vis_angle</span>(phy.y, dist_to_screen),</span>
-<span id="cb59-6"><a href="#cb59-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.va.y =</span> <span class="fu">vis_angle</span>(ans.phy.y, dist_to_screen)</span>
-<span id="cb59-7"><a href="#cb59-7" aria-hidden="true" tabindex="-1"></a>         ) <span class="sc">%&gt;%</span> </span>
-<span id="cb59-8"><a href="#cb59-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> va.y, <span class="at">x =</span> ans.va.y)) <span class="sc">+</span> </span>
-<span id="cb59-9"><a href="#cb59-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
-<span id="cb59-10"><a href="#cb59-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">slope =</span> <span class="dv">1</span>, <span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="analysis_files/figure-html/unnamed-chunk-31-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-<details class="code-fold">
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
-<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ans.pixel.y =</span> <span class="fu">data_to_pixel_y</span>(<span class="fl">0.5</span>),</span>
-<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.y, pixelToMM), </span>
-<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.y =</span> <span class="fu">pixel_to_phy_y</span>(ans.pixel.y, pixelToMM), </span>
-<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.y =</span> <span class="fu">vis_angle</span>(phy.y, dist_to_screen),</span>
-<span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.va.y =</span> <span class="fu">vis_angle</span>(ans.phy.y, dist_to_screen)</span>
-<span id="cb60-7"><a href="#cb60-7" aria-hidden="true" tabindex="-1"></a>         ) <span class="sc">%&gt;%</span> </span>
-<span id="cb60-8"><a href="#cb60-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> va.y, <span class="at">x =</span> ans.va.y)) <span class="sc">+</span> </span>
-<span id="cb60-9"><a href="#cb60-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
-<span id="cb60-10"><a href="#cb60-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">slope =</span> <span class="dv">1</span>, <span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
-<span id="cb60-11"><a href="#cb60-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>participantId)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="analysis_files/figure-html/unnamed-chunk-31-2.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-</div>
-<ul>
-<li>Indeed, Alex’s comment about getting more precise outcome is right.</li>
-</ul>
 </section>
 <section id="task-4-cdf-mode-find-slope" class="level2 page-columns page-full">
 <h2 class="anchored" data-anchor-id="task-4-cdf-mode-find-slope">Task 4 — CDF Mode — Find slope</h2>
 <p>Recall that mode is just <code>param.mu</code> based on our definition. However, it is unclear how slope in the data sense transforms to slope in the physical / visual angle sense. But let’s just get the data for task 4 first:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task4"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>slider.x, <span class="sc">-</span>slider.y) <span class="sc">%&gt;%</span> </span>
-<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">slope =</span> <span class="fu">dsgt</span>(location.x, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent=</span><span class="cn">FALSE</span>), </span>
-<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans =</span> <span class="fu">dsgt</span>(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent=</span><span class="cn">FALSE</span>))</span>
-<span id="cb61-5"><a href="#cb61-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb61-6"><a href="#cb61-6" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task4"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>slider.x, <span class="sc">-</span>slider.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">slope =</span> <span class="fu">dsgt</span>(location.x, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent=</span><span class="cn">FALSE</span>), </span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans =</span> <span class="fu">dsgt</span>(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent=</span><span class="cn">FALSE</span>))</span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
@@ -913,49 +816,50 @@ Experimenting with <code>numDeriv</code>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> </span>
-<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> slope, <span class="at">y =</span> ans)) <span class="sc">+</span> </span>
-<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
-<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">slope =</span> <span class="dv">1</span>, <span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> </span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> location.x, <span class="at">y =</span> slope <span class="sc">-</span> ans)) <span class="sc">+</span> </span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="co"># + </span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="analysis_files/figure-html/unnamed-chunk-33-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="analysis_files/figure-html/unnamed-chunk-28-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> </span>
-<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> slope, <span class="at">y =</span> ans)) <span class="sc">+</span> </span>
-<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
-<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">slope =</span> <span class="dv">1</span>, <span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
-<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>participantId)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>  <span class="co"># geom_abline(slope = 1, intercept = 0, linetype = "dashed", color="gray")</span></span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> </span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> slope, <span class="at">y =</span> ans)) <span class="sc">+</span> </span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">slope =</span> <span class="dv">1</span>, <span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
+<span id="cb56-7"><a href="#cb56-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>participantId)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="analysis_files/figure-html/unnamed-chunk-33-2.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="analysis_files/figure-html/unnamed-chunk-28-2.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <p>Things track very well, except for some outliers<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a></p>
-<div class="no-row-height column-margin column-container"><p><sup>4</sup>&nbsp;Maryam took slope to mean the smallest value of x where it starts turning. I guess you could call it first kink? Or first x location where things start to ramp up in speed?</p></div><p>If we were to plot the value of the selected <code>x</code> and the actual mode of the distribution, we get something that gives more variation:</p>
+<div class="no-row-height column-margin column-container"><div id="fn4"><p><sup>4</sup>&nbsp;Maryam took slope to mean the smallest value of x where it starts turning. I guess you could call it first kink? Or first x location where things start to ramp up in speed?</p></div></div><p>If we were to plot the value of the selected <code>x</code> and the actual mode of the distribution, we get something that gives more variation:</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> </span>
-<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> location.x, <span class="at">y =</span> param.mu)) <span class="sc">+</span> </span>
-<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha=</span><span class="fl">0.8</span>) <span class="sc">+</span> </span>
-<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">slope =</span> <span class="dv">1</span>, <span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
-<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> </span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> location.x, <span class="at">y =</span> param.mu)) <span class="sc">+</span> </span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha=</span><span class="fl">0.8</span>) <span class="sc">+</span> </span>
+<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">slope =</span> <span class="dv">1</span>, <span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
+<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="analysis_files/figure-html/unnamed-chunk-34-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="analysis_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -965,10 +869,10 @@ Experimenting with <code>numDeriv</code>
 <h2 class="anchored" data-anchor-id="task-5-project-from-dot-to-axes">Task 5 — Project from dot to axes</h2>
 <p>First we get the data frame for task 5:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task5"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(participantId, task, id, location.x, location.y, slider.x, slider.y)</span>
-<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb65-4"><a href="#cb65-4" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task5"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(participantId, task, id, location.x, location.y, slider.x, slider.y)</span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
@@ -977,69 +881,79 @@ Experimenting with <code>numDeriv</code>
 </div>
 </div>
 </div>
-<p>How accurate where the <code>x</code>s?</p>
+<section id="how-accurate-were-the-xs" class="level3">
+<h3 class="anchored" data-anchor-id="how-accurate-were-the-xs">How accurate were the <code>x</code>s?</h3>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> </span>
-<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> slider.x, <span class="at">y =</span> location.x)) <span class="sc">+</span> </span>
-<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span> </span>
-<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">slope =</span> <span class="dv">1</span>, <span class="at">color =</span> <span class="st">"gray"</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span> </span>
-<span id="cb66-5"><a href="#cb66-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>() <span class="sc">+</span> </span>
-<span id="cb66-6"><a href="#cb66-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Task 5 - X (Data space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> </span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> slider.x <span class="sc">-</span> location.x, <span class="at">x =</span> location.y)) <span class="sc">+</span> </span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">color=</span><span class="st">"gray"</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>) <span class="sc">+</span> </span>
+<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Task 5 - Project from Dot to X-Axes - Data"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="analysis_files/figure-html/unnamed-chunk-36-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="analysis_files/figure-html/unnamed-chunk-31-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants) <span class="sc">%&gt;%</span> </span>
-<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.x =</span> <span class="fu">pixel_to_phy_x</span>(<span class="fu">data_to_pixel_x</span>(slider.x), pixelToMM), </span>
-<span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.x =</span> <span class="fu">pixel_to_phy_x</span>(<span class="fu">data_to_pixel_x</span>(location.x), pixelToMM)) <span class="sc">%&gt;%</span></span>
-<span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> phy.x, <span class="at">y =</span> ans.phy.x)) <span class="sc">+</span> </span>
-<span id="cb67-5"><a href="#cb67-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb67-6"><a href="#cb67-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>() <span class="sc">+</span> </span>
-<span id="cb67-7"><a href="#cb67-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Physical distance (mm)"</span>, </span>
-<span id="cb67-8"><a href="#cb67-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Answer distance (mm)"</span>, </span>
-<span id="cb67-9"><a href="#cb67-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Task 5 - X (Physical space)"</span>) <span class="sc">+</span></span>
-<span id="cb67-10"><a href="#cb67-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">slope =</span> <span class="dv">1</span>, <span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.x =</span> <span class="fu">pixel_to_phy_x</span>(<span class="fu">data_to_pixel_x</span>(slider.x), pixelToMM), </span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.x =</span> <span class="fu">pixel_to_phy_x</span>(<span class="fu">data_to_pixel_x</span>(location.x), pixelToMM),</span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(location.y), pixelToMM)) <span class="sc">%&gt;%</span></span>
+<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> ans.phy.y, <span class="at">y =</span> phy.x <span class="sc">-</span> ans.phy.x)) <span class="sc">+</span> </span>
+<span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb60-7"><a href="#cb60-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-stderr">
-<pre><code>Joining with `by = join_by(participantId)`</code></pre>
-</div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="analysis_files/figure-html/unnamed-chunk-36-2.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="analysis_files/figure-html/unnamed-chunk-31-2.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants) <span class="sc">%&gt;%</span> </span>
-<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.x =</span> <span class="fu">pixel_to_phy_x</span>(<span class="fu">data_to_pixel_x</span>(slider.x), pixelToMM), </span>
-<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.x =</span> <span class="fu">pixel_to_phy_x</span>(<span class="fu">data_to_pixel_x</span>(location.x), pixelToMM), </span>
-<span id="cb69-4"><a href="#cb69-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.x =</span> <span class="fu">vis_angle</span>(phy.x, dist_to_screen), </span>
-<span id="cb69-5"><a href="#cb69-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.va.x =</span> <span class="fu">vis_angle</span>(ans.phy.x, dist_to_screen)) <span class="sc">%&gt;%</span></span>
-<span id="cb69-6"><a href="#cb69-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.x, <span class="at">y =</span> ans.va.x)) <span class="sc">+</span> </span>
-<span id="cb69-7"><a href="#cb69-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb69-8"><a href="#cb69-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>() <span class="sc">+</span> </span>
-<span id="cb69-9"><a href="#cb69-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Visual Angle of x coordinate"</span>, </span>
-<span id="cb69-10"><a href="#cb69-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Visual Angle of answer x coordinate"</span>, </span>
-<span id="cb69-11"><a href="#cb69-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Task 5 - X (Visual Angle)"</span>) <span class="sc">+</span></span>
-<span id="cb69-12"><a href="#cb69-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">slope =</span> <span class="dv">1</span>, <span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.x =</span> <span class="fu">pixel_to_phy_x</span>(<span class="fu">data_to_pixel_x</span>(slider.x), pixelToMM), </span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.x =</span> <span class="fu">pixel_to_phy_x</span>(<span class="fu">data_to_pixel_x</span>(location.x), pixelToMM),</span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(location.y), pixelToMM),</span>
+<span id="cb61-5"><a href="#cb61-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.x =</span> <span class="fu">vis_angle</span>(phy.x, dist_to_screen), </span>
+<span id="cb61-6"><a href="#cb61-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.va.x =</span> <span class="fu">vis_angle</span>(ans.phy.x, dist_to_screen), </span>
+<span id="cb61-7"><a href="#cb61-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.va.y =</span> <span class="fu">vis_angle</span>(ans.phy.y, dist_to_screen)) <span class="sc">%&gt;%</span></span>
+<span id="cb61-8"><a href="#cb61-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> ans.va.y, <span class="at">y =</span> va.x <span class="sc">-</span> ans.va.x)) <span class="sc">+</span> </span>
+<span id="cb61-9"><a href="#cb61-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb61-10"><a href="#cb61-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-stderr">
-<pre><code>Joining with `by = join_by(participantId)`</code></pre>
-</div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="analysis_files/figure-html/unnamed-chunk-36-3.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="analysis_files/figure-html/unnamed-chunk-31-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.x =</span> <span class="fu">pixel_to_phy_x</span>(<span class="fu">data_to_pixel_x</span>(slider.x), pixelToMM), </span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.x =</span> <span class="fu">pixel_to_phy_x</span>(<span class="fu">data_to_pixel_x</span>(location.x), pixelToMM),</span>
+<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(location.y), pixelToMM),</span>
+<span id="cb62-5"><a href="#cb62-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.x =</span> <span class="fu">vis_angle</span>(phy.x, dist_to_screen), </span>
+<span id="cb62-6"><a href="#cb62-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.va.x =</span> <span class="fu">vis_angle</span>(ans.phy.x, dist_to_screen), </span>
+<span id="cb62-7"><a href="#cb62-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.va.y =</span> <span class="fu">vis_angle</span>(ans.phy.y, dist_to_screen)) <span class="sc">%&gt;%</span></span>
+<span id="cb62-8"><a href="#cb62-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> ans.va.y, <span class="at">y =</span> va.x <span class="sc">-</span> ans.va.x)) <span class="sc">+</span> </span>
+<span id="cb62-9"><a href="#cb62-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb62-10"><a href="#cb62-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span></span>
+<span id="cb62-11"><a href="#cb62-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>participantId)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="analysis_files/figure-html/unnamed-chunk-31-4.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -1049,69 +963,82 @@ Experimenting with <code>numDeriv</code>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> </span>
-<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> slider.y, <span class="at">y =</span> location.y)) <span class="sc">+</span> </span>
-<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span> </span>
-<span id="cb71-4"><a href="#cb71-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">slope =</span> <span class="dv">1</span>, <span class="at">color =</span> <span class="st">"gray"</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span> </span>
-<span id="cb71-5"><a href="#cb71-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>() <span class="sc">+</span></span>
-<span id="cb71-6"><a href="#cb71-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Task 5 - Y (Data space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> </span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> location.x, <span class="at">y =</span> slider.y <span class="sc">-</span> location.y)) <span class="sc">+</span> </span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha=</span><span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
+<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Task 5 - Project from dot to Y-Axes - Data"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="analysis_files/figure-html/unnamed-chunk-37-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="analysis_files/figure-html/unnamed-chunk-32-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants) <span class="sc">%&gt;%</span> </span>
-<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(slider.y), pixelToMM), </span>
-<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(location.y), pixelToMM)) <span class="sc">%&gt;%</span></span>
-<span id="cb72-4"><a href="#cb72-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> phy.y, <span class="at">y =</span> ans.phy.y)) <span class="sc">+</span> </span>
-<span id="cb72-5"><a href="#cb72-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb72-6"><a href="#cb72-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>() <span class="sc">+</span> </span>
-<span id="cb72-7"><a href="#cb72-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Physical distance (mm)"</span>, </span>
-<span id="cb72-8"><a href="#cb72-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Answer distance (mm)"</span>, </span>
-<span id="cb72-9"><a href="#cb72-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Task 5 - Y (Physical space)"</span>) <span class="sc">+</span></span>
-<span id="cb72-10"><a href="#cb72-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">slope =</span> <span class="dv">1</span>, <span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(slider.y), pixelToMM), </span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(location.y), pixelToMM), </span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.x =</span> <span class="fu">pixel_to_phy_x</span>(<span class="fu">data_to_pixel_x</span>(location.x), pixelToMM)) <span class="sc">%&gt;%</span></span>
+<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> ans.phy.x, <span class="at">y =</span> phy.y <span class="sc">-</span> ans.phy.y)) <span class="sc">+</span> </span>
+<span id="cb64-6"><a href="#cb64-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb64-7"><a href="#cb64-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
+<span id="cb64-8"><a href="#cb64-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Task 5 - Project from dot to Y-Axes - Screen"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-stderr">
-<pre><code>Joining with `by = join_by(participantId)`</code></pre>
-</div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="analysis_files/figure-html/unnamed-chunk-37-2.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="analysis_files/figure-html/unnamed-chunk-32-2.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants) <span class="sc">%&gt;%</span> </span>
-<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(slider.y), pixelToMM), </span>
-<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(location.y), pixelToMM), </span>
-<span id="cb74-4"><a href="#cb74-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.y =</span> <span class="fu">vis_angle</span>(phy.y, dist_to_screen), </span>
-<span id="cb74-5"><a href="#cb74-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.va.y =</span> <span class="fu">vis_angle</span>(ans.phy.y, dist_to_screen)) <span class="sc">%&gt;%</span></span>
-<span id="cb74-6"><a href="#cb74-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.y, <span class="at">y =</span> ans.va.y)) <span class="sc">+</span> </span>
-<span id="cb74-7"><a href="#cb74-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb74-8"><a href="#cb74-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>() <span class="sc">+</span> </span>
-<span id="cb74-9"><a href="#cb74-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Visual Angle of x coordinate"</span>, </span>
-<span id="cb74-10"><a href="#cb74-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Visual Angle of answer x coordinate"</span>, </span>
-<span id="cb74-11"><a href="#cb74-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Task 5 - Y (Visual Angle)"</span>) <span class="sc">+</span></span>
-<span id="cb74-12"><a href="#cb74-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">slope =</span> <span class="dv">1</span>, <span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(slider.y), pixelToMM), </span>
+<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(location.y), pixelToMM), </span>
+<span id="cb65-4"><a href="#cb65-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.y =</span> <span class="fu">vis_angle</span>(phy.y, dist_to_screen), </span>
+<span id="cb65-5"><a href="#cb65-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.va.y =</span> <span class="fu">vis_angle</span>(ans.phy.y, dist_to_screen), </span>
+<span id="cb65-6"><a href="#cb65-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.x =</span> <span class="fu">pixel_to_phy_x</span>(<span class="fu">data_to_pixel_x</span>(location.x), pixelToMM),</span>
+<span id="cb65-7"><a href="#cb65-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.va.x =</span> <span class="fu">vis_angle</span>(ans.phy.x, dist_to_screen)) <span class="sc">%&gt;%</span></span>
+<span id="cb65-8"><a href="#cb65-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> ans.va.x, <span class="at">y =</span> va.y <span class="sc">-</span> ans.va.y)) <span class="sc">+</span> </span>
+<span id="cb65-9"><a href="#cb65-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb65-10"><a href="#cb65-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
+<span id="cb65-11"><a href="#cb65-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Task 5 - Project from dot to Y-Axes - Visual Angle"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-stderr">
-<pre><code>Joining with `by = join_by(participantId)`</code></pre>
-</div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="analysis_files/figure-html/unnamed-chunk-37-3.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="analysis_files/figure-html/unnamed-chunk-32-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(slider.y), pixelToMM), </span>
+<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(location.y), pixelToMM), </span>
+<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.y =</span> <span class="fu">vis_angle</span>(phy.y, dist_to_screen), </span>
+<span id="cb66-5"><a href="#cb66-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.va.y =</span> <span class="fu">vis_angle</span>(ans.phy.y, dist_to_screen), </span>
+<span id="cb66-6"><a href="#cb66-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.x =</span> <span class="fu">pixel_to_phy_x</span>(<span class="fu">data_to_pixel_x</span>(location.x), pixelToMM),</span>
+<span id="cb66-7"><a href="#cb66-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.va.x =</span> <span class="fu">vis_angle</span>(ans.phy.x, dist_to_screen)) <span class="sc">%&gt;%</span></span>
+<span id="cb66-8"><a href="#cb66-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> ans.va.x, <span class="at">y =</span> va.y <span class="sc">-</span> ans.va.y)) <span class="sc">+</span> </span>
+<span id="cb66-9"><a href="#cb66-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb66-10"><a href="#cb66-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
+<span id="cb66-11"><a href="#cb66-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Task 5 - Project from dot to Y-Axes - Visual Angle"</span>) <span class="sc">+</span> </span>
+<span id="cb66-12"><a href="#cb66-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>participantId)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="analysis_files/figure-html/unnamed-chunk-32-4.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
+</section>
 </section>
 </section>
 
@@ -1153,18 +1080,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }
     return false;
   }
-  const clipboard = new window.ClipboardJS('.code-copy-button', {
-    text: function(trigger) {
-      const codeEl = trigger.previousElementSibling.cloneNode(true);
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-    }
-  });
-  clipboard.on('success', function(e) {
+  const onCopySuccess = function(e) {
     // button target
     const button = e.trigger;
     // don't keep focus
@@ -1196,7 +1112,45 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }, 1000);
     // clear code selection
     e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
   });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
   function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
     const config = {
       allowHTML: true,
@@ -1231,7 +1185,11 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       try { href = new URL(href).hash; } catch {}
       const id = href.replace(/^#\/?/, "");
       const note = window.document.getElementById(id);
-      return note.innerHTML;
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
     });
   }
   const xrefs = window.document.querySelectorAll('a.quarto-xref');
@@ -1279,7 +1237,6 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       if (window.Quarto?.typesetMath) {
         window.Quarto.typesetMath(note);
       }
-      // TODO in 1.5, we should make sure this works without a callout special case
       if (note.classList.contains("callout")) {
         return note.outerHTML;
       } else {

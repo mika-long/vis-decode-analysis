@@ -220,6 +220,13 @@ task1_df %>% ggplot(aes(x = param.lambda, y = left_area)) +
   geom_hline(yintercept = 0.5, linetype="dashed", color="gray") + 
   labs(title = "Task 1 (data space)")
 
+task1_df %>% ggplot(aes(x = location.x, y = param.mu)) + 
+  geom_point(alpha = 0.5) + 
+  xlim(-1, 1) + 
+  ylim(0, 1) + 
+  geom_hline(yintercept = 0.5, linetype="dashed", color="gray") + 
+  labs(title = "Task 1 (data space)")
+
 task1_df %>% ggplot(aes(x = param.lambda, y = left_area)) + 
   geom_point(alpha = 0.5) + 
   xlim(-1, 1) + 
@@ -395,120 +402,51 @@ task3_df %>%  head(5)
 
 ```{r}
 #| code-fold: true
+#| layout-ncol: 2
+
+# data space 
 task3_df %>% 
-  ggplot(aes(x = location.x, y = location.y)) + 
+  ggplot(aes(x = location.x, y = location.y - 0.5)) + 
   geom_point() + 
-  geom_hline(yintercept = 0.5, linetype="dashed", color="gray") + 
-  labs(title="Task 3 (Data space)")
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title="Task 3 -- CDF Median")
 
-task3_df %>% 
-  ggplot(aes(x = location.x, y = location.y)) + 
+# physical space
+task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
+  mutate(phy.x = pixel_to_phy_x(pixel.x, pixelToMM), 
+         phy.y = pixel_to_phy_y(pixel.y, pixelToMM), 
+         ans.y = pixel_to_phy_y(data_to_pixel_y(0.5), pixelToMM)) %>% 
+  ggplot(aes(x = phy.x, y = phy.y - ans.y)) + 
   geom_point() + 
-  geom_hline(yintercept = 0.5, linetype="dashed", color="gray") + 
-  labs(title="Task 3 (Data space)") + 
-  facet_wrap(~participantId)
-```
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title="Task 3 -- CDF Median") 
 
-What if we were to look at things from **physical space**? 
-
-```{r}
-d <- task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
-  mutate(phy.x = pixel_to_phy_x(pixel.x, pixelToMM),
-         phy.y = pixel_to_phy_y(pixel.y, pixelToMM)) 
-```
-
-```{r}
-#| code-fold: true 
-
-d %>% 
-  ggplot(aes(x = phy.x, y = phy.y)) + 
+# visual angle
+task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
+  mutate(phy.x = pixel_to_phy_x(pixel.x, pixelToMM), 
+         phy.y = pixel_to_phy_y(pixel.y, pixelToMM), 
+         ans.y = pixel_to_phy_y(data_to_pixel_y(0.5), pixelToMM), 
+         va.ans.y = vis_angle(ans.y, dist_to_screen), 
+         va.phy.y = vis_angle(phy.y, dist_to_screen), 
+         va.phy.x = vis_angle(phy.x, dist_to_screen)) %>% 
+  ggplot(aes(x = va.phy.x, y = va.phy.y - va.ans.y)) + 
   geom_point() + 
-  labs(x = "physical distance (x) in mm", 
-       y = "physical distance (y) in mm", 
-       title = "Task 3 (Physical space)")
-
-d %>% 
-  ggplot(aes(x = phy.x, y = phy.y)) + 
-  geom_point() + 
-  labs(x = "physical distance (x) in mm", 
-       y = "physical distance (y) in mm", 
-       title = "Task 3 (Physical space)") + 
-  facet_wrap(~participantId)
-```
-
-We can see there are different variations, because depending on the `pixelPerMM` parameter, participants are seeing things of different size. 
-
-Next, let's see where things are at in terms of visual angle: 
-
-```{r}
-#| code-fold: true 
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title="Task 3 -- CDF Median") 
 
 task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
-  mutate(phy.x = pixel_to_phy_x(pixel.x, pixelToMM),
+  mutate(phy.x = pixel_to_phy_x(pixel.x, pixelToMM), 
          phy.y = pixel_to_phy_y(pixel.y, pixelToMM), 
-         va.x = vis_angle(phy.x, dist_to_screen),
-         va.y = vis_angle(phy.y, dist_to_screen),) %>% 
-  ggplot(aes(x = va.x, y = va.y)) + 
-  geom_point(alpha = 0.8) + 
-  labs(x = "visual angle (x)", 
-       y = "visual angle (y)", 
-       title = "Task 3") +
-  coord_equal()
-
-task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
-  mutate(phy.x = pixel_to_phy_x(pixel.x, pixelToMM),
-         phy.y = pixel_to_phy_y(pixel.y, pixelToMM), 
-         va.x = vis_angle(phy.x, dist_to_screen),
-         va.y = vis_angle(phy.y, dist_to_screen),) %>% 
-  ggplot(aes(x = va.x, y = va.y)) + 
-  geom_point(alpha = 0.8) + 
-  labs(x = "visual angle (x)", 
-       y = "visual angle (y)", 
-       title = "Task 3") +
+         ans.y = pixel_to_phy_y(data_to_pixel_y(0.5), pixelToMM), 
+         va.ans.y = vis_angle(ans.y, dist_to_screen), 
+         va.phy.y = vis_angle(phy.y, dist_to_screen), 
+         va.phy.x = vis_angle(phy.x, dist_to_screen)) %>% 
+  ggplot(aes(x = va.phy.x, y = va.phy.y - va.ans.y)) + 
+  geom_point() + 
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title="Task 3 -- CDF Median") + 
   facet_wrap(~participantId)
 ```
-
-What about the difference between the visual angle of the selection and the visual angle of the actual answer? 
-
-```{r}
-# task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
-#   mutate(ans.pixel.y = data_to_pixel_y(0.5),
-#          phy.y = pixel_to_phy_y(pixel.y, pixelToMM), 
-#          ans.phy.y = pixel_to_phy_y(ans.pixel.y, pixelToMM), 
-#          va.y = vis_angle(phy.y, dist_to_screen),
-#          ans.va.y = vis_angle(ans.phy.y, dist_to_screen)
-#          ) %>% 
-#   select(va.y, ans.va.y)
-```
-
-```{r}
-#| code-fold: true
-
-task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
-  mutate(ans.pixel.y = data_to_pixel_y(0.5),
-         phy.y = pixel_to_phy_y(pixel.y, pixelToMM), 
-         ans.phy.y = pixel_to_phy_y(ans.pixel.y, pixelToMM), 
-         va.y = vis_angle(phy.y, dist_to_screen),
-         ans.va.y = vis_angle(ans.phy.y, dist_to_screen)
-         ) %>% 
-  ggplot(aes(y = va.y, x = ans.va.y)) + 
-  geom_point(alpha = 0.5) + 
-  geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray")
-
-task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
-  mutate(ans.pixel.y = data_to_pixel_y(0.5),
-         phy.y = pixel_to_phy_y(pixel.y, pixelToMM), 
-         ans.phy.y = pixel_to_phy_y(ans.pixel.y, pixelToMM), 
-         va.y = vis_angle(phy.y, dist_to_screen),
-         ans.va.y = vis_angle(ans.phy.y, dist_to_screen)
-         ) %>% 
-  ggplot(aes(y = va.y, x = ans.va.y)) + 
-  geom_point(alpha = 0.5) + 
-  geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray") + 
-  facet_wrap(~participantId)
-```
-
-- Indeed, Alex's comment about getting more precise outcome is right. 
 
 ## Task 4 --- CDF Mode --- Find slope
 
@@ -527,9 +465,9 @@ task4_df %>% head(5)
 #| code-fold: true 
 
 task4_df %>% 
-  ggplot(aes(x = slope, y = ans)) + 
-  geom_point(alpha = 0.5) + 
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color="gray")
+  ggplot(aes(x = location.x, y = slope - ans)) + 
+  geom_point(alpha = 0.5) # + 
+  # geom_abline(slope = 1, intercept = 0, linetype = "dashed", color="gray")
 
 task4_df %>% 
   ggplot(aes(x = slope, y = ans)) + 
@@ -562,41 +500,47 @@ task5_df <- task_df %>% filter(task == "task5") %>%
 task5_df %>% head(5)
 ```
 
-How accurate where the `x`s? 
+### How accurate were the `x`s? 
 
 ```{r}
 #| code-fold: true
 
 task5_df %>% 
-  ggplot(aes(x = slider.x, y = location.x)) + 
+  ggplot(aes(y = slider.x - location.x, x = location.y)) + 
   geom_point(alpha=0.5) + 
-  geom_abline(intercept = 0, slope = 1, color = "gray", linetype = "dashed") + 
-  coord_equal() + 
-  labs(title="Task 5 - X (Data space)")
+  geom_hline(yintercept = 0, color="gray", linetype="dashed") + 
+  labs(title="Task 5 - Project from Dot to X-Axes - Data")
 
-task5_df %>% left_join(participants) %>% 
+task5_df %>% left_join(participants, by = join_by(participantId)) %>% 
   mutate(phy.x = pixel_to_phy_x(data_to_pixel_x(slider.x), pixelToMM), 
-         ans.phy.x = pixel_to_phy_x(data_to_pixel_x(location.x), pixelToMM)) %>%
-  ggplot(aes(x = phy.x, y = ans.phy.x)) + 
+         ans.phy.x = pixel_to_phy_x(data_to_pixel_x(location.x), pixelToMM),
+         ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM)) %>%
+  ggplot(aes(x = ans.phy.y, y = phy.x - ans.phy.x)) + 
   geom_point(alpha = 0.5) +
-  coord_equal() + 
-  labs(x = "Physical distance (mm)", 
-       y = "Answer distance (mm)", 
-       title = "Task 5 - X (Physical space)") +
-  geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray")
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") 
 
-task5_df %>% left_join(participants) %>% 
+task5_df %>% left_join(participants, by = join_by(participantId)) %>% 
   mutate(phy.x = pixel_to_phy_x(data_to_pixel_x(slider.x), pixelToMM), 
-         ans.phy.x = pixel_to_phy_x(data_to_pixel_x(location.x), pixelToMM), 
+         ans.phy.x = pixel_to_phy_x(data_to_pixel_x(location.x), pixelToMM),
+         ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM),
          va.x = vis_angle(phy.x, dist_to_screen), 
-         ans.va.x = vis_angle(ans.phy.x, dist_to_screen)) %>%
-  ggplot(aes(x = va.x, y = ans.va.x)) + 
+         ans.va.x = vis_angle(ans.phy.x, dist_to_screen), 
+         ans.va.y = vis_angle(ans.phy.y, dist_to_screen)) %>%
+  ggplot(aes(x = ans.va.y, y = va.x - ans.va.x)) + 
   geom_point(alpha = 0.5) +
-  coord_equal() + 
-  labs(x = "Visual Angle of x coordinate", 
-       y = "Visual Angle of answer x coordinate", 
-       title = "Task 5 - X (Visual Angle)") +
-  geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray")
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") 
+
+task5_df %>% left_join(participants, by = join_by(participantId)) %>% 
+  mutate(phy.x = pixel_to_phy_x(data_to_pixel_x(slider.x), pixelToMM), 
+         ans.phy.x = pixel_to_phy_x(data_to_pixel_x(location.x), pixelToMM),
+         ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM),
+         va.x = vis_angle(phy.x, dist_to_screen), 
+         ans.va.x = vis_angle(ans.phy.x, dist_to_screen), 
+         ans.va.y = vis_angle(ans.phy.y, dist_to_screen)) %>%
+  ggplot(aes(x = ans.va.y, y = va.x - ans.va.x)) + 
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") +
+  facet_wrap(~participantId)
 ```
 
 ---
@@ -607,34 +551,43 @@ How about the `y`s?
 #| code-fold: true 
 
 task5_df %>% 
-  ggplot(aes(x = slider.y, y = location.y)) + 
+  ggplot(aes(x = location.x, y = slider.y - location.y)) + 
   geom_point(alpha=0.5) + 
-  geom_abline(intercept = 0, slope = 1, color = "gray", linetype = "dashed") + 
-  coord_equal() +
-  labs(title="Task 5 - Y (Data space)")
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title="Task 5 - Project from dot to Y-Axes - Data")
 
-task5_df %>% left_join(participants) %>% 
+task5_df %>% left_join(participants, by = join_by(participantId)) %>% 
   mutate(phy.y = pixel_to_phy_y(data_to_pixel_y(slider.y), pixelToMM), 
-         ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM)) %>%
-  ggplot(aes(x = phy.y, y = ans.phy.y)) + 
-  geom_point(alpha = 0.5) +
-  coord_equal() + 
-  labs(x = "Physical distance (mm)", 
-       y = "Answer distance (mm)", 
-       title = "Task 5 - Y (Physical space)") +
-  geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray")
+         ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM), 
+         ans.phy.x = pixel_to_phy_x(data_to_pixel_x(location.x), pixelToMM)) %>%
+  ggplot(aes(x = ans.phy.x, y = phy.y - ans.phy.y)) + 
+  geom_point(alpha = 0.5) + 
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title = "Task 5 - Project from dot to Y-Axes - Screen")
 
-task5_df %>% left_join(participants) %>% 
+task5_df %>% left_join(participants, by = join_by(participantId)) %>% 
   mutate(phy.y = pixel_to_phy_y(data_to_pixel_y(slider.y), pixelToMM), 
          ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM), 
          va.y = vis_angle(phy.y, dist_to_screen), 
-         ans.va.y = vis_angle(ans.phy.y, dist_to_screen)) %>%
-  ggplot(aes(x = va.y, y = ans.va.y)) + 
-  geom_point(alpha = 0.5) +
-  coord_equal() + 
-  labs(x = "Visual Angle of x coordinate", 
-       y = "Visual Angle of answer x coordinate", 
-       title = "Task 5 - Y (Visual Angle)") +
-  geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray")
+         ans.va.y = vis_angle(ans.phy.y, dist_to_screen), 
+         ans.phy.x = pixel_to_phy_x(data_to_pixel_x(location.x), pixelToMM),
+         ans.va.x = vis_angle(ans.phy.x, dist_to_screen)) %>%
+  ggplot(aes(x = ans.va.x, y = va.y - ans.va.y)) + 
+  geom_point(alpha = 0.5) + 
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title = "Task 5 - Project from dot to Y-Axes - Visual Angle")
+
+task5_df %>% left_join(participants, by = join_by(participantId)) %>% 
+  mutate(phy.y = pixel_to_phy_y(data_to_pixel_y(slider.y), pixelToMM), 
+         ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM), 
+         va.y = vis_angle(phy.y, dist_to_screen), 
+         ans.va.y = vis_angle(ans.phy.y, dist_to_screen), 
+         ans.phy.x = pixel_to_phy_x(data_to_pixel_x(location.x), pixelToMM),
+         ans.va.x = vis_angle(ans.phy.x, dist_to_screen)) %>%
+  ggplot(aes(x = ans.va.x, y = va.y - ans.va.y)) + 
+  geom_point(alpha = 0.5) + 
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title = "Task 5 - Project from dot to Y-Axes - Visual Angle") + 
+  facet_wrap(~participantId)
 ```
 
