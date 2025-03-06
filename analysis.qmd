@@ -303,12 +303,16 @@ task_df %>% filter(grepl("task3", trialId)) %>%
 Let's do things in the physical distance as well as visual angle sense: 
 
 ```{r}
-#| code-fold: true 
-task_df %>% filter(grepl("task3", trialId)) %>% 
+d <- task_df %>% filter(grepl("task3", trialId)) %>% 
   left_join(pixel_to_mm, by = join_by(participantId)) %>% 
   left_join(vis_distance, by = join_by(participantId)) %>% 
   mutate(phy.x = convert_to_physical_x(pixel.x, pixelToMM),
-         phy.y = convert_to_physical_x(pixel.y, pixelToMM)) %>% 
+         phy.y = convert_to_physical_x(pixel.y, pixelToMM)) 
+```
+
+```{r}
+#| code-fold: true 
+d %>% 
   ggplot(aes(x = phy.x, y = phy.y)) + 
   geom_point() + 
   theme_minimal() + 
