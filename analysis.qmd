@@ -1,8 +1,8 @@
 ---
-title: "analysis"
+title: "Preliminary analysis"
 format:
   html: 
-    code-fold: true
+    code-fold: false
 ---
 
 ```{r}
@@ -15,35 +15,32 @@ library(sgt)
 library(numDeriv)
 ```
 
-Let first read in the file. 
+Let us first read in the file and do some very simple pruning: 
 
 ```{r}
 df <- read.csv("vis-decode-slider_all_tidy.csv") %>% as_tibble(.)
-```
 
-Let us just do some very simple pruning through the data: 
-
-```{r}
 df %>% count(participantId)
 ```
 
-Though where `n < 492` are those that didn't finish the full set of things. Right now we have 10 trials --- 1 done by Maryam, 1 done by Lily, 8 done by me. Those done by Maryam and Lily had some issue with the tangent line (the guideline didn't show up correctly) but they did their best for interpretation. Let's pull out these ids
+For rows where `n < 492` are those that didn't finish the full set of things. Right now we have 10 trials --- 1 done by Maryam, 1 done by Lily, 8 done by me. Those done by Maryam and Lily had some issue with the tangent line (the guideline didn't show up correctly) but they did their best for interpretation. Let's pull out these ids
 
 ```{r}
 df %>% count(participantId) %>% filter(n == 492) %>% pull(participantId) -> ids
+
 ids
 ```
 
 ```{r}
-df %>% filter(participantId %in% ids) %>% 
+# create a separate dataframe for just test related trials 
+
+task_df <- df %>% filter(participantId %in% ids) %>% 
     filter(grepl("task", trialId) & grepl("test", trialId) ) %>% 
     select(participantId, trialId, responseId, answer) %>% 
     mutate(answer = as.numeric(answer)) %>% 
-    pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") -> task_df # %>% 
-    # separate_wider_delim(trialId, delim="_", names = c("TaskType", "type", "id")) %>% 
-    # select(-type, -pixel.x, -pixel.y) -> task_df
+    pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal")
 
-task_df
+task_df %>% head(5)
 ```
 
 # Functions that transform data to pixels
@@ -83,7 +80,8 @@ Here's a diagram that I created:
 ![figures](mappings.png)
 
 ```{r}
-df %>% filter(grepl("pixelsPerMM", responseId) | grepl("prolificId", responseId)) %>% 
+df %>% filter(participantId %in% ids) %>% 
+  filter(grepl("pixelsPerMM", responseId) | grepl("prolificId", responseId)) %>% 
   select(participantId, responseId, answer) %>% 
   pivot_wider(names_from = responseId, values_from = answer) # %>% 
   # select(-participantId) # %>% view(.)
@@ -94,18 +92,14 @@ Ok basically --- if it is `sheng test 1` to `sheng test 4` then all of these are
 If it's tested at the screen at school, then `pixelsPerMM` is about 3.27. If it's tested at home, then it's about 3.73. Lily's is 3.25. Maryam's is 5.13. Let's just create our own custom dataframe: 
 
 ```{r}
-pixel_to_mm <- data.frame(participantId = c(
-  "0c671e0c-0be6-4ae5-a78e-638e59d43ddd", 
-  "1a39e480-57b1-4bb6-ad31-cf90236fb047", 
-  "51da084f-6438-4f40-9569-443698b4437e", 
-  "5f37a06e-50e4-4489-948f-c4f25bd38d17", 
-  "7856a1bc-7bae-436a-a91f-a94e3d3f5683", 	
-  "85349f2b-c75a-46ff-8f80-fafc92da11a7",	
-  "9f6c940d-bb71-406e-872e-2873b533048f", 
-  "c87f9143-d9e8-4f50-afca-03a0839951fb",
-  "dc2d1f07-3b58-4484-a4b1-3f8308154717"
-), 
-  pixelToMM = c(3.74, 3.27, 3.27, 5.03, 3.73, 3.25, 3.73, 3.27, 2.73)
+p <- df %>% filter(participantId %in% ids) %>% 
+  filter(grepl("pixelsPerMM", responseId) | grepl("prolificId", responseId)) %>% 
+  select(participantId, responseId, answer) %>% 
+  pivot_wider(names_from = responseId, values_from = answer) %>% 
+  pull(participantId)
+
+pixel_to_mm <- data.frame(participantId = p, 
+  pixelToMM = c(3.73, 3.27, 3.27, 5.03, 3.73, 3.25, 3.73, 3.27, 3.73, 3.27)
 )
 ```
 
@@ -115,12 +109,58 @@ Let's use Task 2 as an example.
 
 ```{r}
 #| code-fold: false 
+
 task_df %>% filter(grepl("task2", trialId)) %>% 
   select(participantId, pixel.y, pixel.x) %>% 
   left_join(pixel_to_mm, by = join_by(participantId)) %>% 
   mutate(phy.y = (410 - pixel.y) * pixelToMM / 100, 
          phy.x = (pixel.x - 50) * pixelToMM / 100 )
 ```
+
+## From physical distance to visual angle 
+
+```{r}
+df %>% filter(grepl("dist", responseId) & grepl("MM", responseId)) %>% 
+  select(participantId, answer) %>% 
+  left_join(df)
+```
+
+There are scenarios where I didn't fully do the test so the answer is something like ~ 200 mm ... Let's for now change them to something closesr to 400 ... 
+
+```{r}
+vis_distance <- data.frame(participantId = p, 
+                           dist_to_screen = c(426, 502, 500, 495, 485, 987, 635, 500, 479, 563))
+```
+
+We are going to use the following function to calculate visual angle: 
+
+$$\text{visual angle} = 2 \times \text{tan}^{-1}\left( \frac{\text{size} / 2}{ \text{distance}}  \right)$$
+
+```{r}
+vis_angle <- function(size, distance){
+  return(2 * atan(size / (2 * distance)))
+}
+
+convert_to_physical_x <- function(pixel_x, pixelToMM){
+  return( (pixel_x - 50) * pixelToMM )
+}
+convert_to_physical_y <- function(pixel_y, pixelToMM){
+  return((410 - pixel_y) * pixelToMM)
+}
+```
+
+```{r}
+task_df %>% filter(grepl("task2", trialId)) %>% 
+  select(participantId, pixel.y, pixel.x) %>% 
+  left_join(pixel_to_mm, by = join_by(participantId)) %>% 
+  mutate(phy.y = convert_to_physical_y(pixel.y, pixelToMM), 
+         phy.x = convert_to_physical_x(pixel.x, pixelToMM)) %>% 
+  left_join(vis_distance, by = join_by(participantId)) %>% 
+  mutate(va.x = vis_angle(phy.x, dist_to_screen), 
+         va.y = vis_angle(phy.y, dist_to_screen))
+```
+
+---
 
 # Task 1 --- PDF Median --- split area into equal halves 
 
@@ -169,9 +209,9 @@ task_df %>% filter(grepl("task1", trialId)) %>%
 
 Other than `lambda`, we don't see any trends with `p` or `q`. This makes sense, as `lambda` explicitly controls the skewness. 
 
-## Task 2 --- PDF Mode --- Find highest point on the curve 
+TODO --- write a math model for this ... that also takes into account of the visual distance ...? 
 
-TODO --- this is where we use `numDeriv` !!! 
+## Task 2 --- PDF Mode --- Find highest point on the curve 
 
 ```{r}
 task_df %>% filter(grepl("task2", trialId)) %>%
@@ -179,6 +219,17 @@ task_df %>% filter(grepl("task2", trialId)) %>%
          answer.y = dsgt(x=param.mu, mu = param.mu, sigma=param.sigma, 
                          lambda=param.lambda, p=param.p, q=param.q, mean.cent = F)) %>% 
   select(participantId, location.x, location.y, answer.x, answer.y) %>% 
+  left_join(pixel_to_mm, by = join_by(participantId)) %>% 
+  mutate(location.px.x = convert_to_pixel_x(location.x), 
+         location.px.y = convert_to_pixel_y(location.y), 
+         answer.px.x = convert_to_pixel_x(answer.x), 
+         answer.px.y = convert_to_pixel_y(answer.y), 
+         location.phy.x = convert_to_physical_x(answer.px.x, pixelToMM),
+         location.phy.y = convert_to_physical_y(answer.px.y, pixelToMM),
+         ) %>% 
+  left_join(vis_distance, by = join_by(participantId)) %>% 
+  mutate(location.va.x = vis_angle(location.phy.x, dist_to_screen),
+         location.va.y = vis_angle(location.phy.y, dist_to_screen)) %>% 
   head(5)
 ```
 
@@ -246,6 +297,42 @@ task_df %>% filter(grepl("task3", trialId)) %>%
   geom_density() + 
   theme_minimal()
 ```
+
+---
+
+Let's do things in the physical distance as well as visual angle sense: 
+
+```{r}
+#| code-fold: true 
+task_df %>% filter(grepl("task3", trialId)) %>% 
+  left_join(pixel_to_mm, by = join_by(participantId)) %>% 
+  left_join(vis_distance, by = join_by(participantId)) %>% 
+  mutate(phy.x = convert_to_physical_x(pixel.x, pixelToMM),
+         phy.y = convert_to_physical_x(pixel.y, pixelToMM)) %>% 
+  ggplot(aes(x = phy.x, y = phy.y)) + 
+  geom_point() + 
+  theme_minimal() + 
+  labs(x = "physical distance (x) in mm", 
+       y = "physical distance (y) in mm")
+```
+
+```{r}
+#| code-fold: true 
+
+task_df %>% filter(grepl("task3", trialId)) %>% 
+  left_join(pixel_to_mm, by = join_by(participantId)) %>% 
+  left_join(vis_distance, by = join_by(participantId)) %>% 
+  mutate(phy.x = convert_to_physical_x(pixel.x, pixelToMM),
+         phy.y = convert_to_physical_x(pixel.y, pixelToMM), 
+         va.x = vis_angle(phy.x, dist_to_screen),
+         va.y = vis_angle(phy.y, dist_to_screen),) %>% 
+  ggplot(aes(x = va.x, y = va.y)) + 
+  geom_point(alpha = 0.8) + 
+  theme_minimal() + 
+  labs(x = "visual angle (x)", 
+       y = "visual angle (y)")
+```
+
 
 ## Task 4 --- CDF Mode --- Find slope
 
