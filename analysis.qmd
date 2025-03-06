@@ -5,6 +5,8 @@ format:
     code-fold: false
     reference-location: margin
     df-print: paged
+    toc: true
+    code-overflow: wrap
 ---
 
 ```{r}
@@ -142,7 +144,7 @@ $$\text{visual angle} = 2 \times \text{tan}^{-1}\left( \frac{\text{size}}{ 2 \ti
 ```{r}
 # corresponding function
 vis_angle <- function(size, distance){
-  return(2 * atan(size / (2 * distance)))
+  return(2 * atan(size / (2 * distance)) * 180 / pi)
 }
 ```
 
@@ -260,7 +262,7 @@ There does not seem to be any relationship between `p`, `q` and area.
 For area, we could potentially calculate the physical space it occupies using `pixelToMM`. But what is the "visual angle" of area?? 
 :::
 
-## Task 2 --- PDF Mode --- Find highest point on the curve 
+# Task 2 --- PDF Mode --- Find highest point on the curve 
 
 :::{.callout-note collapse="true"}
 ## Experimenting with `numDeriv`
@@ -389,7 +391,7 @@ task2_df %>%
   facet_wrap(~participantId)
 ```
 
-## Task 3 --- CDF Median --- find point where `y == 0.5`
+# Task 3 --- CDF Median --- find point where `y == 0.5`
 
 First create the data frame for task 3:
 
@@ -448,7 +450,7 @@ task3_df %>% left_join(participants, by = join_by(participantId)) %>%
   facet_wrap(~participantId)
 ```
 
-## Task 4 --- CDF Mode --- Find slope
+# Task 4 --- CDF Mode --- Find slope
 
 Recall that mode is just `param.mu` based on our definition. However, it is unclear how slope in the data sense transforms to slope in the physical / visual angle sense. But let's just get the data for task 4 first: 
 
@@ -461,22 +463,40 @@ task4_df <- task_df %>% filter(task == "task4") %>%
 task4_df %>% head(5)
 ```
 
-```{r}
-#| code-fold: true 
+There is some outlier in the data^[Maryam was interpreting slope to mean something else.], so we filter that out. Ther also doesn't seem to be any relations between slope and how far the dot is. 
 
+```{r}
+task4_df <- task4_df %>% filter(participantId != "5f37a06e-50e4-4489-948f-c4f25bd38d17")
+```
+
+
+```{r}
+#| code-fold: true
+#| layout-ncol: 2
+
+# let's see what this looks like 
 task4_df %>% 
   ggplot(aes(x = location.x, y = slope - ans)) + 
-  geom_point(alpha = 0.5) # + 
-  # geom_abline(slope = 1, intercept = 0, linetype = "dashed", color="gray")
+  geom_point(alpha = 0.5) + 
+  labs(title = "Task 4 -- Find Max Slope -- Data")
 
 task4_df %>% 
-  ggplot(aes(x = slope, y = ans)) + 
-  geom_point(alpha = 0.5) + 
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color="gray") + 
+  ggplot(aes(x = slope - ans)) + 
+  ggdist::geom_dots() + 
+  labs(title = "Task 4 -- Find Max Slope -- Data")
+
+task4_df %>% 
+  ggplot(aes(x = slope - ans)) + 
+  ggdist::geom_dots() + 
+  labs(title = "Task 4 -- Find Max Slope -- Data") + 
   facet_wrap(~participantId)
 ```
 
-Things track very well, except for some outliers^[Maryam took slope to mean the smallest value of x where it starts turning. I guess you could call it first kink? Or first x location where things start to ramp up in speed?]
+:::{.callout-caution}
+What does slope translate into, in the physical distance / visual angle sense?
+:::
+
+
 
 If we were to plot the value of the selected `x` and the actual mode of the distribution, we get something that gives more variation: 
 
@@ -489,7 +509,7 @@ task4_df %>%
   coord_equal()
 ```
 
-## Task 5 --- Project from dot to axes
+# Task 5 --- Project from dot to axes
 
 First we get the data frame for task 5: 
 
@@ -517,7 +537,8 @@ task5_df %>% left_join(participants, by = join_by(participantId)) %>%
          ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM)) %>%
   ggplot(aes(x = ans.phy.y, y = phy.x - ans.phy.x)) + 
   geom_point(alpha = 0.5) +
-  geom_hline(yintercept = 0, linetype="dashed", color="gray") 
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title="Task 5 - Project from Dot to X-Axes - Screen")
 
 task5_df %>% left_join(participants, by = join_by(participantId)) %>% 
   mutate(phy.x = pixel_to_phy_x(data_to_pixel_x(slider.x), pixelToMM), 
@@ -528,7 +549,8 @@ task5_df %>% left_join(participants, by = join_by(participantId)) %>%
          ans.va.y = vis_angle(ans.phy.y, dist_to_screen)) %>%
   ggplot(aes(x = ans.va.y, y = va.x - ans.va.x)) + 
   geom_point(alpha = 0.5) +
-  geom_hline(yintercept = 0, linetype="dashed", color="gray") 
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
 
 task5_df %>% left_join(participants, by = join_by(participantId)) %>% 
   mutate(phy.x = pixel_to_phy_x(data_to_pixel_x(slider.x), pixelToMM), 
@@ -540,12 +562,11 @@ task5_df %>% left_join(participants, by = join_by(participantId)) %>%
   ggplot(aes(x = ans.va.y, y = va.x - ans.va.x)) + 
   geom_point(alpha = 0.5) +
   geom_hline(yintercept = 0, linetype="dashed", color="gray") +
-  facet_wrap(~participantId)
+  facet_wrap(~participantId) + 
+  labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
 ```
 
----
-
-How about the `y`s? 
+### How accurate were the `y`s? 
 
 ```{r}
 #| code-fold: true 
