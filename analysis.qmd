@@ -220,6 +220,13 @@ task1_df %>% ggplot(aes(x = param.lambda, y = left_area)) +
   theme_minimal() + xlim(-1, 1) + ylim(0, 1) + 
   geom_hline(yintercept = 0.5, linetype="dashed", color="gray") + 
   labs(title = "Task 1 (data space)")
+
+task1_df %>% ggplot(aes(x = param.lambda, y = left_area)) + 
+  geom_point(alpha = 0.5) + 
+  theme_minimal() + xlim(-1, 1) + ylim(0, 1) + 
+  geom_hline(yintercept = 0.5, linetype="dashed", color="gray") + 
+  facet_wrap(~participantId) + 
+  labs(title = "Task 1 (data space)")
 ```
 
 ```{r}
@@ -301,6 +308,13 @@ task2_df %>%
   ggplot(aes(x = grad.x)) + # gradient at the mode should be 0
   # ggdist::geom_dots() + 
   ggdist::geom_swarm(side = "top")
+
+# looking at participant level
+
+task2_df %>% 
+  ggplot(aes(x = grad.x, y = 0)) + # gradient at the mode should be 0
+  geom_point(alpha = 0.5) + 
+  facet_wrap(~participantId)
 ```
 
 ```{r}
@@ -356,11 +370,20 @@ task2_df %>%
   ggplot(aes(x = diff)) + 
   # ggdist::geom_dots() + 
   # ggdist::geom_weave(side = "top") + 
+  ggdist::geom_swarm(side = "top") 
+
+task2_df %>% 
+  mutate(grad.x = numDeriv::grad(dsgt, location.x, mu = param.mu, sigma = param.sigma, 
+                                 lambda = param.lambda, p = param.p, q = param.q, mean.cent=F), 
+         grad.ans = 0,
+         ) %>%
+  mutate(diff = grad.ans - grad.x) %>% 
+  ggplot(aes(x = diff)) + 
+  # ggdist::geom_dots() + 
+  # ggdist::geom_weave(side = "top") + 
   ggdist::geom_swarm(side = "top") + 
-  theme_minimal()
+  facet_wrap(~participantId)
 ```
-
-
 
 ## Task 3 --- CDF Median --- find point where `y == 0.5`
 
@@ -381,6 +404,14 @@ task3_df %>%
   theme_minimal() + 
   geom_hline(yintercept = 0.5, linetype="dashed", color="gray") + 
   labs(title="Task 3 (Data space)")
+
+task3_df %>% 
+  ggplot(aes(x = location.x, y = location.y)) + 
+  geom_point() + 
+  theme_minimal() + 
+  geom_hline(yintercept = 0.5, linetype="dashed", color="gray") + 
+  labs(title="Task 3 (Data space)") + 
+  facet_wrap(~participantId)
 ```
 
 What if we were to look at things from **physical space**? 
@@ -393,6 +424,7 @@ d <- task3_df %>% left_join(participants, by = join_by(participantId)) %>%
 
 ```{r}
 #| code-fold: true 
+
 d %>% 
   ggplot(aes(x = phy.x, y = phy.y)) + 
   geom_point() + 
@@ -400,6 +432,15 @@ d %>%
   labs(x = "physical distance (x) in mm", 
        y = "physical distance (y) in mm", 
        title = "Task 3 (Physical space)")
+
+d %>% 
+  ggplot(aes(x = phy.x, y = phy.y)) + 
+  geom_point() + 
+  theme_minimal() + 
+  labs(x = "physical distance (x) in mm", 
+       y = "physical distance (y) in mm", 
+       title = "Task 3 (Physical space)") + 
+  facet_wrap(~participantId)
 ```
 
 We can see there are different variations, because depending on the `pixelPerMM` parameter, participants are seeing things of different size. 
@@ -421,6 +462,19 @@ task3_df %>% left_join(participants, by = join_by(participantId)) %>%
        y = "visual angle (y)", 
        title = "Task 3") +
   coord_equal()
+
+task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
+  mutate(phy.x = pixel_to_phy_x(pixel.x, pixelToMM),
+         phy.y = pixel_to_phy_y(pixel.y, pixelToMM), 
+         va.x = vis_angle(phy.x, dist_to_screen),
+         va.y = vis_angle(phy.y, dist_to_screen),) %>% 
+  ggplot(aes(x = va.x, y = va.y)) + 
+  geom_point(alpha = 0.8) + 
+  theme_minimal() + 
+  labs(x = "visual angle (x)", 
+       y = "visual angle (y)", 
+       title = "Task 3") +
+  facet_wrap(~participantId)
 ```
 
 What about the difference between the visual angle of the selection and the visual angle of the actual answer? 
@@ -450,6 +504,19 @@ task3_df %>% left_join(participants, by = join_by(participantId)) %>%
   geom_point(alpha = 0.5) + 
   theme_minimal() + 
   geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray")
+
+task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
+  mutate(ans.pixel.y = data_to_pixel_y(0.5),
+         phy.y = pixel_to_phy_y(pixel.y, pixelToMM), 
+         ans.phy.y = pixel_to_phy_y(ans.pixel.y, pixelToMM), 
+         va.y = vis_angle(phy.y, dist_to_screen),
+         ans.va.y = vis_angle(ans.phy.y, dist_to_screen)
+         ) %>% 
+  ggplot(aes(y = va.y, x = ans.va.y)) + 
+  geom_point(alpha = 0.5) + 
+  theme_minimal() + 
+  geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray") + 
+  facet_wrap(~participantId)
 ```
 
 - Indeed, Alex's comment about getting more precise outcome is right. 
@@ -475,6 +542,13 @@ task4_df %>%
   geom_point(alpha = 0.5) + 
   theme_minimal() + 
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color="gray")
+
+task4_df %>% 
+  ggplot(aes(x = slope, y = ans)) + 
+  geom_point(alpha = 0.5) + 
+  theme_minimal() + 
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color="gray") + 
+  facet_wrap(~participantId)
 ```
 
 Things track very well, except for some outliers^[Maryam took slope to mean the smallest value of x where it starts turning. I guess you could call it first kink? Or first x location where things start to ramp up in speed?]
