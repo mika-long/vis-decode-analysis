@@ -429,7 +429,7 @@ task_df %>% filter(grepl("task3", trialId)) %>%
          ans.va.y = vis_angle(ans.phy.y, dist_to_screen)
          ) %>% 
   select(va.y, ans.va.y) %>% 
-  ggplot(aes(x = va.y, y = ans.va.y)) + 
+  ggplot(aes(y = va.y, x = ans.va.y)) + 
   geom_point(alpha = 0.5) + 
   theme_minimal() + 
   geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray")
