@@ -282,11 +282,11 @@ data.frame(x = x_val, y = y_val) %>%
 ```{r}
 # Trying out numDeriv
 numDeriv::grad(dsgt, 1, mu = 1.7, sigma = 1.4, lambda = -0.5, p = 3.5, q = 7.5, mean.cent=F)
-atan(numDeriv::grad(dsgt, 1, mu = 1.7, sigma = 1.4, lambda = -0.5, p = 3.5, q = 7.5, mean.cent=F))
+atan(numDeriv::grad(dsgt, 1, mu = 1.7, sigma = 1.4, lambda = -0.5, p = 3.5, q = 7.5, mean.cent=F)) * 180 / pi
 numDeriv::grad(dsgt, 0, mu = 1.7, sigma = 1.4, lambda = -0.5, p = 3.5, q = 7.5, mean.cent=F)
-atan(numDeriv::grad(dsgt, 0, mu = 1.7, sigma = 1.4, lambda = -0.5, p = 3.5, q = 7.5, mean.cent=F))
+atan(numDeriv::grad(dsgt, 0, mu = 1.7, sigma = 1.4, lambda = -0.5, p = 3.5, q = 7.5, mean.cent=F)) * 180 / pi
 numDeriv::grad(dsgt, -1, mu = 1.7, sigma = 1.4, lambda = -0.5, p = 3.5, q = 7.5, mean.cent=F)
-atan(numDeriv::grad(dsgt, -1, mu = 1.7, sigma = 1.4, lambda = -0.5, p = 3.5, q = 7.5, mean.cent=F))
+atan(numDeriv::grad(dsgt, -1, mu = 1.7, sigma = 1.4, lambda = -0.5, p = 3.5, q = 7.5, mean.cent=F)) * 180 / pi
 ```
 
 :::
@@ -327,8 +327,8 @@ task2_df %>%
 #| code-fold: true 
 
 task2_df %>% 
-  mutate(atan.grad.x = atan(grad.x), 
-         atan.grad.ans = atan(0)) %>% 
+  mutate(atan.grad.x = atan(grad.x) * 180 / pi, 
+         atan.grad.ans = 0) %>% 
   ggplot(aes(x = atan.grad.x, y = atan.grad.ans)) + 
   geom_point(alpha = 0.5)
 ```
