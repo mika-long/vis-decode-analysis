@@ -186,7 +186,6 @@ y_val <- dsgt(x_val, mu = -0.3, sigma = 0.8, lambda = 0, p = 2.9, q = 46.9, mean
 data.frame(x = x_val, y = y_val) %>%
   ggplot(aes(x=x, y=y)) + 
   geom_line() +
-  theme_minimal() + 
   xlim(-5, 5) +
   ylim(0, 1)
 
@@ -195,7 +194,6 @@ y_val <- psgt(x_val, mu = -0.3, sigma = 0.8, lambda = 0, p = 2.9, q = 46.9, mean
 data.frame(x = x_val, y = y_val) %>%
   ggplot(aes(x=x, y=y)) + 
   geom_line() +
-  theme_minimal() + 
   xlim(-5, 5) +
   ylim(0, 1)
 ```
@@ -217,13 +215,15 @@ There seems to be some relation between `lambda` and `left_area`. Note that we a
 
 task1_df %>% ggplot(aes(x = param.lambda, y = left_area)) + 
   geom_point(alpha = 0.5) + 
-  theme_minimal() + xlim(-1, 1) + ylim(0, 1) + 
+  xlim(-1, 1) + 
+  ylim(0, 1) + 
   geom_hline(yintercept = 0.5, linetype="dashed", color="gray") + 
   labs(title = "Task 1 (data space)")
 
 task1_df %>% ggplot(aes(x = param.lambda, y = left_area)) + 
   geom_point(alpha = 0.5) + 
-  theme_minimal() + xlim(-1, 1) + ylim(0, 1) + 
+  xlim(-1, 1) + 
+  ylim(0, 1) + 
   geom_hline(yintercept = 0.5, linetype="dashed", color="gray") + 
   facet_wrap(~participantId) + 
   labs(title = "Task 1 (data space)")
@@ -234,14 +234,12 @@ task1_df %>% ggplot(aes(x = param.lambda, y = left_area)) +
 
 task1_df %>% ggplot(aes(x = param.p, y = left_area)) + 
   geom_point(alpha = 0.5) + 
-  theme_minimal() +
   ylim(0, 1) + 
   geom_hline(yintercept = 0.5, linetype="dashed", color="gray") + 
   labs(title = "Task 1 (data space)")
 
 task1_df %>% ggplot(aes(x = param.q, y = left_area)) + 
   geom_point(alpha = 0.5) + 
-  theme_minimal() +
   ylim(0, 1) + 
   geom_hline(yintercept = 0.5, linetype="dashed", color="gray") + 
   labs(title = "Task 1 (data space)")
@@ -269,7 +267,6 @@ y_val <- dsgt(x_val, mu = 1.7, sigma = 1.4, lambda = -0.5, p = 3.5, q = 7.5, mea
 data.frame(x = x_val, y = y_val) %>% 
   ggplot(aes(x = x, y = y)) +
   geom_line() +
-  theme_minimal() +
   xlim(-5, 5) + ylim(0, 1)
 ```
 
@@ -401,14 +398,12 @@ task3_df %>%  head(5)
 task3_df %>% 
   ggplot(aes(x = location.x, y = location.y)) + 
   geom_point() + 
-  theme_minimal() + 
   geom_hline(yintercept = 0.5, linetype="dashed", color="gray") + 
   labs(title="Task 3 (Data space)")
 
 task3_df %>% 
   ggplot(aes(x = location.x, y = location.y)) + 
   geom_point() + 
-  theme_minimal() + 
   geom_hline(yintercept = 0.5, linetype="dashed", color="gray") + 
   labs(title="Task 3 (Data space)") + 
   facet_wrap(~participantId)
@@ -428,7 +423,6 @@ d <- task3_df %>% left_join(participants, by = join_by(participantId)) %>%
 d %>% 
   ggplot(aes(x = phy.x, y = phy.y)) + 
   geom_point() + 
-  theme_minimal() + 
   labs(x = "physical distance (x) in mm", 
        y = "physical distance (y) in mm", 
        title = "Task 3 (Physical space)")
@@ -436,7 +430,6 @@ d %>%
 d %>% 
   ggplot(aes(x = phy.x, y = phy.y)) + 
   geom_point() + 
-  theme_minimal() + 
   labs(x = "physical distance (x) in mm", 
        y = "physical distance (y) in mm", 
        title = "Task 3 (Physical space)") + 
@@ -457,7 +450,6 @@ task3_df %>% left_join(participants, by = join_by(participantId)) %>%
          va.y = vis_angle(phy.y, dist_to_screen),) %>% 
   ggplot(aes(x = va.x, y = va.y)) + 
   geom_point(alpha = 0.8) + 
-  theme_minimal() + 
   labs(x = "visual angle (x)", 
        y = "visual angle (y)", 
        title = "Task 3") +
@@ -470,7 +462,6 @@ task3_df %>% left_join(participants, by = join_by(participantId)) %>%
          va.y = vis_angle(phy.y, dist_to_screen),) %>% 
   ggplot(aes(x = va.x, y = va.y)) + 
   geom_point(alpha = 0.8) + 
-  theme_minimal() + 
   labs(x = "visual angle (x)", 
        y = "visual angle (y)", 
        title = "Task 3") +
@@ -502,7 +493,6 @@ task3_df %>% left_join(participants, by = join_by(participantId)) %>%
          ) %>% 
   ggplot(aes(y = va.y, x = ans.va.y)) + 
   geom_point(alpha = 0.5) + 
-  theme_minimal() + 
   geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray")
 
 task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
@@ -514,7 +504,6 @@ task3_df %>% left_join(participants, by = join_by(participantId)) %>%
          ) %>% 
   ggplot(aes(y = va.y, x = ans.va.y)) + 
   geom_point(alpha = 0.5) + 
-  theme_minimal() + 
   geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray") + 
   facet_wrap(~participantId)
 ```
@@ -540,13 +529,11 @@ task4_df %>% head(5)
 task4_df %>% 
   ggplot(aes(x = slope, y = ans)) + 
   geom_point(alpha = 0.5) + 
-  theme_minimal() + 
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color="gray")
 
 task4_df %>% 
   ggplot(aes(x = slope, y = ans)) + 
   geom_point(alpha = 0.5) + 
-  theme_minimal() + 
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color="gray") + 
   facet_wrap(~participantId)
 ```
@@ -559,7 +546,7 @@ If we were to plot the value of the selected `x` and the actual mode of the dist
 #| code-fold: true
 task4_df %>% 
   ggplot(aes(x = location.x, y = param.mu)) + 
-  geom_point(alpha=0.8) + theme_minimal() + 
+  geom_point(alpha=0.8) + 
   geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray") + 
   coord_equal()
 ```
@@ -622,7 +609,6 @@ How about the `y`s?
 task5_df %>% 
   ggplot(aes(x = slider.y, y = location.y)) + 
   geom_point(alpha=0.5) + 
-  theme_minimal() + 
   geom_abline(intercept = 0, slope = 1, color = "gray", linetype = "dashed") + 
   coord_equal() +
   labs(title="Task 5 - Y (Data space)")
@@ -632,7 +618,6 @@ task5_df %>% left_join(participants) %>%
          ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM)) %>%
   ggplot(aes(x = phy.y, y = ans.phy.y)) + 
   geom_point(alpha = 0.5) +
-  theme_minimal() +
   coord_equal() + 
   labs(x = "Physical distance (mm)", 
        y = "Answer distance (mm)", 
