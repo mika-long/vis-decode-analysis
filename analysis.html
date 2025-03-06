@@ -452,14 +452,16 @@ Caution
 <section id="task-2-pdf-mode-find-highest-point-on-the-curve" class="level2 page-columns page-full">
 <h2 class="anchored" data-anchor-id="task-2-pdf-mode-find-highest-point-on-the-curve">Task 2 — PDF Mode — Find highest point on the curve</h2>
 <div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
 Experimenting with <code>numDeriv</code>
 </div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <div class="cell">
 <details class="code-fold">
@@ -503,7 +505,8 @@ Experimenting with <code>numDeriv</code>
 </div>
 </div>
 </div>
-<div class="no-row-height column-margin column-container"><div class="cell-output-display callout-margin-content">
+</div>
+<div class="no-row-height column-margin column-container"><div class="cell-output-display callout-3-contents callout-collapse collapse callout-margin-content">
 <div>
 <figure class="figure">
 <p><img src="analysis_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid figure-img" width="672"></p>
@@ -544,7 +547,7 @@ Experimenting with <code>numDeriv</code>
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
 <span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> grad.x)) <span class="sc">+</span> <span class="co"># gradient at the mode should be 0</span></span>
-<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>  ggdist<span class="sc">::</span><span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -584,8 +587,9 @@ Experimenting with <code>numDeriv</code>
 <span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">answer.y =</span> <span class="fu">dsgt</span>(<span class="at">x=</span>param.mu, <span class="at">mu =</span> param.mu, <span class="at">sigma=</span>param.sigma, </span>
 <span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">lambda=</span>param.lambda, <span class="at">p=</span>param.p, <span class="at">q=</span>param.q, <span class="at">mean.cent =</span> F)) <span class="sc">%&gt;%</span> </span>
 <span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">x_diff =</span> location.x <span class="sc">-</span> answer.x) <span class="sc">%&gt;%</span> </span>
-<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> x_diff)) <span class="sc">+</span> <span class="fu">geom_density</span>() <span class="sc">+</span> </span>
-<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span> <span class="st">"Task 2 (data space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> x_diff)) <span class="sc">+</span> </span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>  ggdist<span class="sc">::</span><span class="fu">geom_dots</span>() <span class="sc">+</span> </span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span> <span class="st">"Task 2 (data space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -601,8 +605,9 @@ Experimenting with <code>numDeriv</code>
 <span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">answer.y =</span> <span class="fu">dsgt</span>(<span class="at">x=</span>param.mu, <span class="at">mu =</span> param.mu, <span class="at">sigma=</span>param.sigma, </span>
 <span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">lambda=</span>param.lambda, <span class="at">p=</span>param.p, <span class="at">q=</span>param.q, <span class="at">mean.cent =</span> F)) <span class="sc">%&gt;%</span> </span>
 <span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">y_diff =</span> location.y <span class="sc">-</span> answer.y) <span class="sc">%&gt;%</span> </span>
-<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> y_diff)) <span class="sc">+</span> <span class="fu">geom_density</span>() <span class="sc">+</span> </span>
-<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span> <span class="st">"Task 2 (data space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> y_diff)) <span class="sc">+</span> </span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>  ggdist<span class="sc">::</span><span class="fu">geom_dots</span>() <span class="sc">+</span> </span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span> <span class="st">"Task 2 (data space)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -623,7 +628,7 @@ Experimenting with <code>numDeriv</code>
 <span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>         ) <span class="sc">%&gt;%</span></span>
 <span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff =</span> grad.ans <span class="sc">-</span> grad.x) <span class="sc">%&gt;%</span> </span>
 <span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> diff)) <span class="sc">+</span> </span>
-<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>() <span class="sc">+</span> </span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>  ggdist<span class="sc">::</span><span class="fu">geom_dots</span>() <span class="sc">+</span> </span>
 <span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">

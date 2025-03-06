@@ -15,6 +15,7 @@ library(tidyverse)
 library(ggplot2)
 library(sgt)
 library(numDeriv)
+library(ggdist)
 # setting the theme 
 theme_set(theme_minimal())
 ```
@@ -249,7 +250,7 @@ For area, we could potentially calculate the physical space it occupies using `p
 
 ## Task 2 --- PDF Mode --- Find highest point on the curve 
 
-:::{.callout-note}
+:::{.callout-note collapse="true"}
 ## Experimenting with `numDeriv`
 
 ```{r}
@@ -298,7 +299,8 @@ task2_df %>%
 
 task2_df %>% 
   ggplot(aes(x = grad.x)) + # gradient at the mode should be 0
-  geom_density()
+  # ggdist::geom_dots() + 
+  ggdist::geom_swarm(side = "top")
 ```
 
 ```{r}
@@ -325,7 +327,9 @@ task2_df %>%
          answer.y = dsgt(x=param.mu, mu = param.mu, sigma=param.sigma, 
                          lambda=param.lambda, p=param.p, q=param.q, mean.cent = F)) %>% 
   mutate(x_diff = location.x - answer.x) %>% 
-  ggplot(aes(x = x_diff)) + geom_density() + 
+  ggplot(aes(x = x_diff)) + 
+  # ggdist::geom_dots() + 
+  ggdist::geom_swarm(side = "top") + 
   labs(title= "Task 2 (data space)")
 
 task2_df %>% 
@@ -333,7 +337,9 @@ task2_df %>%
          answer.y = dsgt(x=param.mu, mu = param.mu, sigma=param.sigma, 
                          lambda=param.lambda, p=param.p, q=param.q, mean.cent = F)) %>% 
   mutate(y_diff = location.y - answer.y) %>% 
-  ggplot(aes(x = y_diff)) + geom_density() + 
+  ggplot(aes(x = y_diff)) + 
+  # ggdist::geom_dots() + 
+  ggdist::geom_swarm(side = "top") + 
   labs(title= "Task 2 (data space)")
 ```
 
@@ -348,7 +354,9 @@ task2_df %>%
          ) %>%
   mutate(diff = grad.ans - grad.x) %>% 
   ggplot(aes(x = diff)) + 
-  geom_density() + 
+  # ggdist::geom_dots() + 
+  # ggdist::geom_weave(side = "top") + 
+  ggdist::geom_swarm(side = "top") + 
   theme_minimal()
 ```
 
