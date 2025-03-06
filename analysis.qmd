@@ -15,6 +15,8 @@ library(tidyverse)
 library(ggplot2)
 library(sgt)
 library(numDeriv)
+# setting the theme 
+theme_set(theme_minimal())
 ```
 
 Let us first read in the file and do some very simple pruning: 
@@ -42,7 +44,9 @@ For now, let's pull out the answers related to test trials into a new dataframe 
 task_df <- df %>% filter(grepl("task", trialId) & grepl("test", trialId) ) %>% 
     select(participantId, trialId, responseId, answer) %>% 
     mutate(answer = as.numeric(answer)) %>% 
-    pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal")
+    pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
+  separate_wider_delim(trialId, delim = "_", names = c("task", "type", "id")) %>% 
+  select(-type)
 
 task_df %>% head(5)
 ```
@@ -59,6 +63,7 @@ And here a diagram to better illustrate:
 ![Diagram for how the transformations are working](mappings.png)
 
 ```{r}
+# define functions
 data_to_pixel_y <- function(data_y) {
   return(-395 * data_y + 410)
 }
@@ -73,6 +78,7 @@ We can verify whether the above functions actually hold by checking the transfor
 ```{r}
 #| code-fold: true 
 #| output: false 
+
 task_df %>% select(location.x, location.y, pixel.x, pixel.y) %>% 
   mutate(calculated.x = sapply(location.x, data_to_pixel_x), 
          calculated.y = sapply(location.y, data_to_pixel_y)) %>% 
@@ -141,26 +147,29 @@ vis_angle <- function(size, distance){
 
 Now that these functions are ready, we are ready to perform data analysis in all possible spaces --- data space, pixel space, visual angle space. 
 
+Following Matt's advice, let us create a single dataframe that keeps track of the all the information related to participants: 
+
+```{r}
+participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participantId))
+
+participants
+```
+
 ---
 
 # Task 1 --- PDF Median --- Split area into equal halves 
 
 ```{r}
-task_df %>% filter(grepl("task1", trialId)) %>% 
+# first we create separate dataframe for task 1
+task1_df <- task_df %>% filter(task == "task1") %>% 
+  select(-slider.x, -slider.y) %>% 
   mutate(left_area = psgt(location.x, param.mu, param.sigma, 
-                          param.lambda, param.p, param.q, mean.cent = F)) %>% 
-  select(-trialId, -slider.x, -slider.y) %>% 
-  head(5)
+                        param.lambda, param.p, param.q, mean.cent = F))
+
+task1_df %>% head(5)
 ```
 
 Let's see if there's any relation between `lambda`, `p`, `q`, and `area` to the left of the selection:  
-
-```{r}
-# first calculate data for plotting 
-d <- task_df %>% filter(grepl("task1", trialId)) %>% 
-  mutate(left_area = psgt(location.x, param.mu, param.sigma, 
-                          param.lambda, param.p, param.q, mean.cent=F))
-```
 
 ::: {.callout-caution collapse="true"}
 ### Weird missing data error 
@@ -168,7 +177,7 @@ d <- task_df %>% filter(grepl("task1", trialId)) %>%
 There is one row that contains `NA` value, which is weird ... 
 
 ```{r}
-d %>% select(-slider.x, -slider.y) %>% filter(if_any(everything(), is.na))
+task1_df %>% filter(if_any(everything(), is.na))
 
 # let's try to plot this 
 x_val <- seq(-5, 5, 0.01)
@@ -200,35 +209,34 @@ It is unclear why the above gives me a `NaN` answer ... Moving on ...
 :::
 
 
-There seems to be some relation between `lambda` and `left_area`: 
+There seems to be some relation between `lambda` and `left_area`. Note that we are sampling $\lambda \sim \mathcal{N}(0, 0.33)$. 
 
 ```{r}
 #| code-fold: true 
-d %>% select(param.lambda, left_area) %>% 
-  ggplot(aes(x = param.lambda, y = left_area)) + 
+
+task1_df %>% ggplot(aes(x = param.lambda, y = left_area)) + 
   geom_point(alpha = 0.5) + 
   theme_minimal() + xlim(-1, 1) + ylim(0, 1) + 
-  geom_hline(yintercept = 0.5, linetype="dashed", color="gray")
+  geom_hline(yintercept = 0.5, linetype="dashed", color="gray") + 
+  labs(title = "Task 1 (data space)")
 ```
-
 
 ```{r}
 #| code-fold: true
-#| layout-ncol: 2
 
-d %>% select(param.p, left_area) %>% 
-  ggplot(aes(x = param.p, y = left_area)) + 
+task1_df %>% ggplot(aes(x = param.p, y = left_area)) + 
   geom_point(alpha = 0.5) + 
   theme_minimal() +
   ylim(0, 1) + 
-  geom_hline(yintercept = 0.5, linetype="dashed", color="gray")
+  geom_hline(yintercept = 0.5, linetype="dashed", color="gray") + 
+  labs(title = "Task 1 (data space)")
 
-d %>% select(param.q, left_area) %>% 
-  ggplot(aes(x = param.q, y = left_area)) + 
+task1_df %>% ggplot(aes(x = param.q, y = left_area)) + 
   geom_point(alpha = 0.5) + 
   theme_minimal() +
   ylim(0, 1) + 
-  geom_hline(yintercept = 0.5, linetype="dashed", color="gray")
+  geom_hline(yintercept = 0.5, linetype="dashed", color="gray") + 
+  labs(title = "Task 1 (data space)")
 ```
 
 There does not seem to be any relationship between `p`, `q` and area. 
@@ -241,11 +249,13 @@ For area, we could potentially calculate the physical space it occupies using `p
 
 ## Task 2 --- PDF Mode --- Find highest point on the curve 
 
-- This is the task that we can do all sorts of calculations ... 
+:::{.callout-note}
+## Experimenting with `numDeriv`
 
 ```{r}
 #| column: margin
 #| code-fold: true
+
 x_val <- seq(-5, 5, 0.01)
 y_val <- dsgt(x_val, mu = 1.7, sigma = 1.4, lambda = -0.5, p = 3.5, q = 7.5, mean.cent=F)
 data.frame(x = x_val, y = y_val) %>% 
@@ -265,69 +275,76 @@ numDeriv::grad(dsgt, -1, mu = 1.7, sigma = 1.4, lambda = -0.5, p = 3.5, q = 7.5,
 atan(numDeriv::grad(dsgt, -1, mu = 1.7, sigma = 1.4, lambda = -0.5, p = 3.5, q = 7.5, mean.cent=F))
 ```
 
-Let's see what the `grad` values are at the selected value of `x` and at the answer: 
+:::
+
+First we'll create a dataframe containing only data related to task2: 
 
 ```{r}
-task_df %>% filter(grepl("task2", trialId)) %>%
+task2_df <- task_df %>% filter(task == "task2") %>% 
+  select(-slider.x, -slider.y) %>% 
   mutate(grad.x = numDeriv::grad(dsgt, location.x, mu = param.mu, sigma = param.sigma, 
-                               lambda = param.lambda, p = param.p, q = param.q, mean.cent=F), 
-         grad.ans = numDeriv::grad(dsgt, param.mu, mu = param.mu, sigma = param.sigma, 
-                               lambda = param.lambda, p = param.p, q = param.q, mean.cent=F),
-         ) %>%
-  select(grad.x, grad.ans) %>% 
-  ggplot(aes(x = grad.x, y = grad.ans)) + 
-  geom_point(alpha = 0.5) +
-  theme_minimal()
+                               lambda = param.lambda, p = param.p, q = param.q, mean.cent=F))
+
+task2_df %>% head(5)
+```
+
+This is the gradient at the selected point: 
+
+```{r}
+#| code-fold: true 
+task2_df %>% 
+  ggplot(aes(x = grad.x, y = 0)) + # gradient at the mode should be 0
+  geom_point(alpha = 0.5)
+
+task2_df %>% 
+  ggplot(aes(x = grad.x)) + # gradient at the mode should be 0
+  geom_density()
 ```
 
 ```{r}
-task_df %>% filter(grepl("task2", trialId)) %>%
-  mutate(grad.x = numDeriv::grad(dsgt, location.x, mu = param.mu, sigma = param.sigma, 
-                               lambda = param.lambda, p = param.p, q = param.q, mean.cent=F), 
-         grad.ans = numDeriv::grad(dsgt, param.mu, mu = param.mu, sigma = param.sigma, 
-                               lambda = param.lambda, p = param.p, q = param.q, mean.cent=F),
-         ) %>%
+#| code-fold: true 
+
+task2_df %>% 
   mutate(atan.grad.x = atan(grad.x), 
-         atan.grad.ans = atan(grad.ans)) %>% 
-  select(atan.grad.x, atan.grad.ans) %>% 
+         atan.grad.ans = atan(0)) %>% 
   ggplot(aes(x = atan.grad.x, y = atan.grad.ans)) + 
-  geom_point(alpha = 0.5) +
-  theme_minimal()
+  geom_point(alpha = 0.5)
 ```
 
 - For really small values (like the ones we get above) it doesn't matter whether we're looking at the gradient or the angle between the slope and the horizontal line (calculated using `atan`)
 
+---
 
 We can also plot the distribution of error, first for `x` and then for `y` (everything in data space): 
 
 ```{r}
 #| code-fold: true
 
-task_df %>% filter(grepl("task2", trialId)) %>%
+task2_df %>% 
   mutate(answer.x = param.mu, 
          answer.y = dsgt(x=param.mu, mu = param.mu, sigma=param.sigma, 
                          lambda=param.lambda, p=param.p, q=param.q, mean.cent = F)) %>% 
-  select(participantId, location.x, location.y, answer.x, answer.y) %>% 
   mutate(x_diff = location.x - answer.x) %>% 
-  ggplot(aes(x = x_diff)) + geom_density() + theme_minimal()
+  ggplot(aes(x = x_diff)) + geom_density() + 
+  labs(title= "Task 2 (data space)")
 
-task_df %>% filter(grepl("task2", trialId)) %>%
+task2_df %>% 
   mutate(answer.x = param.mu, 
          answer.y = dsgt(x=param.mu, mu = param.mu, sigma=param.sigma, 
                          lambda=param.lambda, p=param.p, q=param.q, mean.cent = F)) %>% 
-  select(participantId, location.x, location.y, answer.x, answer.y) %>% 
   mutate(y_diff = location.y - answer.y) %>% 
-  ggplot(aes(x = y_diff)) + geom_density() + theme_minimal()
+  ggplot(aes(x = y_diff)) + geom_density() + 
+  labs(title= "Task 2 (data space)")
 ```
 
-What about error in gradient space?
+What about distribution of error in gradient space?
 
 ```{r}
-task_df %>% filter(grepl("task2", trialId)) %>%
+#| code-fold: true 
+task2_df %>% 
   mutate(grad.x = numDeriv::grad(dsgt, location.x, mu = param.mu, sigma = param.sigma, 
-                               lambda = param.lambda, p = param.p, q = param.q, mean.cent=F), 
-         grad.ans = numDeriv::grad(dsgt, param.mu, mu = param.mu, sigma = param.sigma, 
-                               lambda = param.lambda, p = param.p, q = param.q, mean.cent=F),
+                                 lambda = param.lambda, p = param.p, q = param.q, mean.cent=F), 
+         grad.ans = 0,
          ) %>%
   mutate(diff = grad.ans - grad.x) %>% 
   ggplot(aes(x = diff)) + 
@@ -339,17 +356,18 @@ task_df %>% filter(grepl("task2", trialId)) %>%
 
 ## Task 3 --- CDF Median --- find point where `y == 0.5`
 
-First look at the data and plot things in data space:
+First create the data frame for task 3:
 
 ```{r}
-task_df %>% filter(grepl("task3", trialId)) %>% 
-  select(-trialId) %>% 
-  head(5)
+task3_df <- task_df %>% filter(task == "task3") %>% 
+  select(-slider.x, -slider.y) 
+
+task3_df %>%  head(5)
 ```
 
 ```{r}
 #| code-fold: true
-task_df %>% filter(grepl("task3", trialId)) %>% 
+task3_df %>% 
   ggplot(aes(x = location.x, y = location.y)) + 
   geom_point() + 
   theme_minimal() + 
@@ -360,9 +378,7 @@ task_df %>% filter(grepl("task3", trialId)) %>%
 What if we were to look at things from **physical space**? 
 
 ```{r}
-d <- task_df %>% filter(grepl("task3", trialId)) %>% 
-  left_join(pixel_to_mm, by = join_by(participantId)) %>% 
-  left_join(vis_distance, by = join_by(participantId)) %>% 
+d <- task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
   mutate(phy.x = pixel_to_phy_x(pixel.x, pixelToMM),
          phy.y = pixel_to_phy_y(pixel.y, pixelToMM)) 
 ```
@@ -385,9 +401,7 @@ Next, let's see where things are at in terms of visual angle:
 ```{r}
 #| code-fold: true 
 
-task_df %>% filter(grepl("task3", trialId)) %>% 
-  left_join(pixel_to_mm, by = join_by(participantId)) %>% 
-  left_join(vis_distance, by = join_by(participantId)) %>% 
+task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
   mutate(phy.x = pixel_to_phy_x(pixel.x, pixelToMM),
          phy.y = pixel_to_phy_y(pixel.y, pixelToMM), 
          va.x = vis_angle(phy.x, dist_to_screen),
@@ -404,31 +418,26 @@ task_df %>% filter(grepl("task3", trialId)) %>%
 What about the difference between the visual angle of the selection and the visual angle of the actual answer? 
 
 ```{r}
-task_df %>% filter(grepl("task3", trialId)) %>% 
-  left_join(pixel_to_mm, by = join_by(participantId)) %>% 
-  left_join(vis_distance, by = join_by(participantId)) %>%
-  mutate(ans.pixel.y = data_to_pixel_y(0.5),
-         phy.y = pixel_to_phy_y(pixel.y, pixelToMM), 
-         ans.phy.y = pixel_to_phy_y(ans.pixel.y, pixelToMM), 
-         va.y = vis_angle(phy.y, dist_to_screen),
-         ans.va.y = vis_angle(ans.phy.y, dist_to_screen)
-         ) %>% 
-  select(va.y, ans.va.y)
+# task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
+#   mutate(ans.pixel.y = data_to_pixel_y(0.5),
+#          phy.y = pixel_to_phy_y(pixel.y, pixelToMM), 
+#          ans.phy.y = pixel_to_phy_y(ans.pixel.y, pixelToMM), 
+#          va.y = vis_angle(phy.y, dist_to_screen),
+#          ans.va.y = vis_angle(ans.phy.y, dist_to_screen)
+#          ) %>% 
+#   select(va.y, ans.va.y)
 ```
 
 ```{r}
 #| code-fold: true
 
-task_df %>% filter(grepl("task3", trialId)) %>% 
-  left_join(pixel_to_mm, by = join_by(participantId)) %>% 
-  left_join(vis_distance, by = join_by(participantId)) %>%
+task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
   mutate(ans.pixel.y = data_to_pixel_y(0.5),
          phy.y = pixel_to_phy_y(pixel.y, pixelToMM), 
          ans.phy.y = pixel_to_phy_y(ans.pixel.y, pixelToMM), 
          va.y = vis_angle(phy.y, dist_to_screen),
          ans.va.y = vis_angle(ans.phy.y, dist_to_screen)
          ) %>% 
-  select(va.y, ans.va.y) %>% 
   ggplot(aes(y = va.y, x = ans.va.y)) + 
   geom_point(alpha = 0.5) + 
   theme_minimal() + 
@@ -439,29 +448,34 @@ task_df %>% filter(grepl("task3", trialId)) %>%
 
 ## Task 4 --- CDF Mode --- Find slope
 
-Recall that mode is just `param.mu` based on our definition. However, it is unclear how slope in the data sense transforms to slope in the physical / visual angle sense. 
+Recall that mode is just `param.mu` based on our definition. However, it is unclear how slope in the data sense transforms to slope in the physical / visual angle sense. But let's just get the data for task 4 first: 
 
-Let us first plot the slope at the selected `x` value, as well as the `slope` when `x = mode`: 
+```{r}
+task4_df <- task_df %>% filter(task == "task4") %>% 
+  select(-slider.x, -slider.y) %>% 
+  mutate(slope = dsgt(location.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE), 
+         ans = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE))
+
+task4_df %>% head(5)
+```
 
 ```{r}
 #| code-fold: true 
 
-task_df %>% filter(grepl("task4", trialId)) %>% 
-  mutate(slope = dsgt(location.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=F), 
-         ans = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=F)) %>%
+task4_df %>% 
   ggplot(aes(x = slope, y = ans)) + 
   geom_point(alpha = 0.5) + 
   theme_minimal() + 
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color="gray")
 ```
 
-Things track very well, except for some outliers^[Maryam took slope to mean the smallest value of x where it starts turning. I guess you could call it first kink?]
+Things track very well, except for some outliers^[Maryam took slope to mean the smallest value of x where it starts turning. I guess you could call it first kink? Or first x location where things start to ramp up in speed?]
 
 If we were to plot the value of the selected `x` and the actual mode of the distribution, we get something that gives more variation: 
 
 ```{r}
 #| code-fold: true
-task_df %>% filter(grepl("task4", trialId)) %>% 
+task4_df %>% 
   ggplot(aes(x = location.x, y = param.mu)) + 
   geom_point(alpha=0.8) + theme_minimal() + 
   geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray") + 
@@ -470,17 +484,13 @@ task_df %>% filter(grepl("task4", trialId)) %>%
 
 ## Task 5 --- Project from dot to axes
 
-```{r}
-# first we get the data frame for task 5 
-task_5 <- df %>% filter(grepl("task5", trialId)) %>% 
-  filter(grepl("test", trialId)) %>%
-  select(participantId, trialId, responseId, answer) %>% 
-  mutate(answer = as.numeric(answer)) %>% 
-  pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
-  separate_wider_delim(trialId, delim="_", names = c("TaskType", "type", "id")) %>% 
-  select(-type)
+First we get the data frame for task 5: 
 
-task_5 %>% head(5)
+```{r}
+task5_df <- task_df %>% filter(task == "task5") %>% 
+  select(participantId, task, id, location.x, location.y, slider.x, slider.y)
+
+task5_df %>% head(5)
 ```
 
 How accurate where the `x`s? 
@@ -488,37 +498,31 @@ How accurate where the `x`s?
 ```{r}
 #| code-fold: true
 
-task_5 %>% 
+task5_df %>% 
   ggplot(aes(x = slider.x, y = location.x)) + 
   geom_point(alpha=0.5) + 
-  theme_minimal() + 
   geom_abline(intercept = 0, slope = 1, color = "gray", linetype = "dashed") + 
   coord_equal() + 
   labs(title="Task 5 - X (Data space)")
 
-task_5 %>% left_join(pixel_to_mm, by = join_by(participantId)) %>% 
-  select(slider.x, location.x, pixelToMM) %>%
+task5_df %>% left_join(participants) %>% 
   mutate(phy.x = pixel_to_phy_x(data_to_pixel_x(slider.x), pixelToMM), 
          ans.phy.x = pixel_to_phy_x(data_to_pixel_x(location.x), pixelToMM)) %>%
   ggplot(aes(x = phy.x, y = ans.phy.x)) + 
   geom_point(alpha = 0.5) +
-  theme_minimal() +
   coord_equal() + 
   labs(x = "Physical distance (mm)", 
        y = "Answer distance (mm)", 
        title = "Task 5 - X (Physical space)") +
   geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray")
 
-task_5 %>% left_join(pixel_to_mm, by = join_by(participantId)) %>% 
-  left_join(vis_distance, by = join_by(participantId)) %>%
-  select(slider.x, location.x, pixelToMM, dist_to_screen) %>%
+task5_df %>% left_join(participants) %>% 
   mutate(phy.x = pixel_to_phy_x(data_to_pixel_x(slider.x), pixelToMM), 
          ans.phy.x = pixel_to_phy_x(data_to_pixel_x(location.x), pixelToMM), 
          va.x = vis_angle(phy.x, dist_to_screen), 
          ans.va.x = vis_angle(ans.phy.x, dist_to_screen)) %>%
   ggplot(aes(x = va.x, y = ans.va.x)) + 
   geom_point(alpha = 0.5) +
-  theme_minimal() +
   coord_equal() + 
   labs(x = "Visual Angle of x coordinate", 
        y = "Visual Angle of answer x coordinate", 
@@ -533,7 +537,7 @@ How about the `y`s?
 ```{r}
 #| code-fold: true 
 
-task_5 %>% 
+task5_df %>% 
   ggplot(aes(x = slider.y, y = location.y)) + 
   geom_point(alpha=0.5) + 
   theme_minimal() + 
@@ -541,9 +545,7 @@ task_5 %>%
   coord_equal() +
   labs(title="Task 5 - Y (Data space)")
 
-task_5 %>% left_join(pixel_to_mm, by = join_by(participantId)) %>% 
-  # left_join(vis_distance, by = join_by(participantId)) %>%
-  select(slider.y, location.y, pixelToMM) %>%
+task5_df %>% left_join(participants) %>% 
   mutate(phy.y = pixel_to_phy_y(data_to_pixel_y(slider.y), pixelToMM), 
          ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM)) %>%
   ggplot(aes(x = phy.y, y = ans.phy.y)) + 
@@ -555,16 +557,13 @@ task_5 %>% left_join(pixel_to_mm, by = join_by(participantId)) %>%
        title = "Task 5 - Y (Physical space)") +
   geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray")
 
-task_5 %>% left_join(pixel_to_mm, by = join_by(participantId)) %>% 
-  left_join(vis_distance, by = join_by(participantId)) %>%
-  select(slider.y, location.y, pixelToMM, dist_to_screen) %>%
+task5_df %>% left_join(participants) %>% 
   mutate(phy.y = pixel_to_phy_y(data_to_pixel_y(slider.y), pixelToMM), 
          ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM), 
          va.y = vis_angle(phy.y, dist_to_screen), 
          ans.va.y = vis_angle(ans.phy.y, dist_to_screen)) %>%
   ggplot(aes(x = va.y, y = ans.va.y)) + 
   geom_point(alpha = 0.5) +
-  theme_minimal() +
   coord_equal() + 
   labs(x = "Visual Angle of x coordinate", 
        y = "Visual Angle of answer x coordinate", 
