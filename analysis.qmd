@@ -455,7 +455,7 @@ task_df %>% filter(grepl("task4", trialId)) %>%
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color="gray")
 ```
 
-Things track very well, except for those some outliers^[Maryam took slope to mean the smallest value of x where it starts turning.]
+Things track very well, except for some outliers^[Maryam took slope to mean the smallest value of x where it starts turning. I guess you could call it first kink?]
 
 If we were to plot the value of the selected `x` and the actual mode of the distribution, we get something that gives more variation: 
 
@@ -467,8 +467,6 @@ task_df %>% filter(grepl("task4", trialId)) %>%
   geom_abline(slope = 1, intercept = 0, linetype="dashed", color="gray") + 
   coord_equal()
 ```
-
-- The outliers here were Maryam's answers; she was interpreting slope to mean the first angle 
 
 ## Task 5 --- Project from dot to axes
 
