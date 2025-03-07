@@ -424,6 +424,31 @@ psgt(-0.3, mu = -0.3, sigma = 0.8, lambda = 0, p = 2.9, q = 46.9, mean.cent=F)
 It is unclear why the above gives me a `NaN` answer ... Moving on ... 
 :::
 
+Could the participants be using the highest point as a way to judge area? 
+
+```{r}
+#| code-fold: true
+
+# data space 
+task1_df %>% 
+  ggplot(aes(x = param.lambda, y = location.x - param.mu)) + 
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title = "Task 1 -- Data")
+
+# I don't think calculating the screen space matters here ...
+
+task1_df %>% 
+  ggplot(aes(x = param.lambda, y = location.x - param.mu)) + 
+  geom_point(alpha = 0.5) +
+  labs(title = "Task 1 -- Data") + 
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  facet_wrap(~participantId)
+```
+
+Could it be that the more symmetric a pdf looks, the more likely that its going to be "pulled" towards using mode as a substitute? 
+
+---
 
 There seems to be some relation between `lambda` and `left_area`. Note that we are sampling $\lambda \sim \mathcal{N}(0, 0.33)$. 
 
@@ -550,25 +575,49 @@ Hmm maybe this has something to do with `p` ...?
 #| code-fold: true 
 task2_df %>% 
   ggplot(aes(y = location.x - param.mu, x = param.p)) + 
-  geom_point(alpha = 0.5)
-```
+  geom_point(alpha = 0.5) + 
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title = "Task 2 - Find highest point - Data")
 
-```{r}
+task2_df %>% mutate(ans.x = data_to_pixel_x(param.mu)) %>% 
+  left_join(participants) %>% 
+  ggplot(aes(y = pixel_to_phy_x(pixel.x, pixelToMM) - pixel_to_phy_x(ans.x, pixelToMM), x = param.p)) + 
+  geom_point(alpha = 0.5) + 
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title = "Task 2 - Find highest point - Data")
+
 task2_df %>% 
-  ggplot(aes(y = location.x - param.mu, x = param.q)) + 
-  geom_point(alpha = 0.5)
+  ggplot(aes(y = grad.x * 180 / pi, x = param.p)) + 
+  geom_point(alpha = 0.5) + 
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title = "Task 2 - Find highest point - Angle")
+
 ```
 
-
-This is the gradient at the selected point: 
+What about `q`? 
 
 ```{r}
 #| code-fold: true 
 
-# from here you can see that there are some cases 
-# where the difference in y is not pronounced but the difference in x is 
+task2_df %>% 
+  ggplot(aes(y = location.x - param.mu, x = param.q)) + 
+  geom_point(alpha = 0.5) + 
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title = "Task 2 - Find highest point - Data")
+
+task2_df %>% 
+  ggplot(aes(y = grad.x * 180 / pi, x = param.q)) + 
+  geom_point(alpha = 0.5) + 
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title = "Task 2 - Find highest point - Angle")
+```
 
 
+We can also try to plot the distribution of the gradient at the selected point: 
+
+```{r}
+#| code-fold: true 
+#| layout-ncol: 2
 
 task2_df %>% 
   ggplot(aes(x = grad.x, y = 0)) + # gradient at the mode should be 0
@@ -586,18 +635,6 @@ task2_df %>%
   geom_point(alpha = 0.5) + 
   facet_wrap(~participantId)
 ```
-
-```{r}
-#| code-fold: true 
-
-task2_df %>% 
-  mutate(atan.grad.x = atan(grad.x) * 180 / pi, 
-         atan.grad.ans = 0) %>% 
-  ggplot(aes(x = atan.grad.x, y = atan.grad.ans)) + 
-  geom_point(alpha = 0.5)
-```
-
-- For really small values (like the ones we get above) it doesn't matter whether we're looking at the gradient or the angle between the slope and the horizontal line (calculated using `atan`)
 
 ---
 
@@ -751,7 +788,8 @@ task4_df %>%
 
 task4_df %>% 
   ggplot(aes(x = slope - ans)) + 
-  ggdist::geom_dots() + 
+  # ggdist::geom_dots() + 
+  ggdist::geom_swarm(side = "top", alpha = 0.5) + 
   labs(title = "Task 4 -- Find Max Slope -- Data") + 
   facet_wrap(~participantId)
 ```
