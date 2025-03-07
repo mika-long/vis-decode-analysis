@@ -547,11 +547,17 @@ task2_df %>%
 Hmm maybe this has something to do with `p` ...? 
 
 ```{r}
+#| code-fold: true 
 task2_df %>% 
   ggplot(aes(y = location.x - param.mu, x = param.p)) + 
   geom_point(alpha = 0.5)
 ```
 
+```{r}
+task2_df %>% 
+  ggplot(aes(y = location.x - param.mu, x = param.q)) + 
+  geom_point(alpha = 0.5)
+```
 
 
 This is the gradient at the selected point: 
