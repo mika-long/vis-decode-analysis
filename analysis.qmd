@@ -54,6 +54,221 @@ task_df <- df %>% filter(grepl("task", trialId) & grepl("test", trialId) ) %>%
 task_df %>% head(5)
 ```
 
+# Properties of the 5 distributions parameters 
+
+Let us plot the distribution at different values to get a better sense of how things work. The default parameters are `mu = 0, sigma = 1, lambda = 0, p = 3, q = 10`
+
+## Varying mean $\mu$ 
+
+```{r}
+#| code-fold: true
+
+x_vals <- seq(-5, 5, 0.01)
+mus <- c(-2, -1, 0, 1, 2)
+
+# Create a function that generates PDF values for a specific mean
+generate_pdf_data <- function(mean_val, x_values) {
+  tibble(
+    x = x_values,
+    density = dsgt(x_values, mu = mean_val, sigma = 1, lambda = 0, p = 3, q = 10),
+    mean = as.factor(mean_val)
+  )
+}
+
+# Generate data for all means
+plot_data <- map_dfr(mus, ~generate_pdf_data(.x, x_vals))
+
+# Plot with ggplot2
+ggplot(plot_data, aes(x = x, y = density, color = mean)) +
+  geom_line() +
+  labs(title = "SGT Distributions with Different Means",
+       x = "x", y = "Density") +
+  scale_color_brewer(palette = "RdYlBu") + 
+  ylim(0, 1) + 
+  xlim(-5, 5)
+
+```
+
+## Varying sigma $\sigma$ 
+
+Note that $\sigma \sim \text{Uniform}[0.5, 2.5]$.
+
+```{r}
+#| code-fold: true
+
+x_vals <- seq(-5, 5, 0.01)
+sigmas <- c(0.5, 1, 1.5, 2, 2.5)
+
+# Create a function that generates PDF values for a specific mean
+generate_pdf_data <- function(sig_val, x_values) {
+  tibble(
+    x = x_values,
+    density = dsgt(x_values, mu = 0, sigma = sig_val, lambda = 0, p = 3, q = 10),
+    var = as.factor(sig_val)
+  )
+}
+
+# Generate data for all means
+plot_data <- map_dfr(sigmas, ~generate_pdf_data(.x, x_vals))
+
+# Plot with ggplot2
+ggplot(plot_data, aes(x = x, y = density, color = var)) +
+  geom_line() +
+  labs(title = "SGT Distributions with Different Variance",
+       x = "x", y = "Density") +
+  scale_color_brewer(palette = "RdYlBu") + 
+  ylim(0, 1) + 
+  xlim(-5, 5)
+
+```
+
+## Varying skewness $\lambda$
+
+Note that $\lambda \sim \mathcal{N}(0, 0.33)$. 
+
+```{r}
+#| code-fold: true
+
+x_vals <- seq(-5, 5, 0.01)
+lambdas <- c(-0.66, -0.33, 0, 0.33, 0.66)
+
+# Create a function that generates PDF values for a specific mean
+generate_pdf_data <- function(lambda_vals, x_values) {
+  tibble(
+    x = x_values,
+    density = dsgt(x_values, mu = 0, sigma = 1, lambda = lambda_vals, p = 3, q = 10),
+    lambda = as.factor(lambda_vals)
+  )
+}
+
+# Generate data for all means
+plot_data <- map_dfr(lambdas, ~generate_pdf_data(.x, x_vals))
+
+# Plot with ggplot2
+ggplot(plot_data, aes(x = x, y = density, color = lambda)) +
+  geom_line() +
+  labs(title = "SGT Distributions with Different Skewness",
+       x = "x", y = "Density") +
+  scale_color_brewer(palette = "RdYlBu") + 
+  ylim(0, 1) + 
+  xlim(-5, 5)
+
+```
+
+## Varying $p$
+
+Note that $p \sim \text{Uniform}[2, 4]$. 
+
+```{r}
+#| code-fold: true
+#| layout-ncol: 2
+
+x_vals <- seq(-5, 5, 0.01)
+ps <- c(2, 2.5, 3, 3.5, 4)
+
+# Create a function that generates PDF values for a specific mean
+generate_pdf_data <- function(p_vals, x_values) {
+  tibble(
+    x = x_values,
+    density = dsgt(x_values, mu = 0, sigma = 1, lambda = 0, p = p_vals, q = 10),
+    p = as.factor(p_vals)
+  )
+}
+
+# Generate data for all means
+plot_data <- map_dfr(ps, ~generate_pdf_data(.x, x_vals))
+
+# Plot with ggplot2
+ggplot(plot_data, aes(x = x, y = density, color = p)) +
+  geom_line() +
+  labs(title = "SGT Distributions with Different p (lambda= 0)",
+       x = "x", y = "Density") +
+  scale_color_brewer(palette = "RdYlBu") + 
+  ylim(0, 1) + 
+  xlim(-5, 5) -> p1
+
+# Create a function that generates PDF values for a specific mean
+generate_pdf_data <- function(p_vals, x_values) {
+  tibble(
+    x = x_values,
+    density = dsgt(x_values, mu = 0, sigma = 1, lambda = 0.3, p = p_vals, q = 10),
+    p = as.factor(p_vals)
+  )
+}
+
+# Generate data for all means
+plot_data <- map_dfr(ps, ~generate_pdf_data(.x, x_vals))
+
+# Plot with ggplot2
+ggplot(plot_data, aes(x = x, y = density, color = p)) +
+  geom_line() +
+  labs(title = "SGT Distributions with Different p (lambda = 0.3)",
+       x = "x", y = "Density") +
+  scale_color_brewer(palette = "RdYlBu") + 
+  ylim(0, 1) + 
+  xlim(-5, 5) -> p2
+
+p1 
+p2
+```
+
+## Varying $q$
+
+Note that $q \sim \text{Uniform}[1, 50]$. 
+
+```{r}
+#| code-fold: true
+#| layout-ncol: 2
+
+x_vals <- seq(-5, 5, 0.01)
+qs <- c(1, 2, 10, 30, 50)
+
+# Create a function that generates PDF values for a specific mean
+generate_pdf_data <- function(q_vals, x_values) {
+  tibble(
+    x = x_values,
+    density = dsgt(x_values, mu = 0, sigma = 1, lambda = 0, p = 3, q = q_vals),
+    q = as.factor(q_vals)
+  )
+}
+
+# Generate data for all means
+plot_data <- map_dfr(qs, ~generate_pdf_data(.x, x_vals))
+
+# Plot with ggplot2
+ggplot(plot_data, aes(x = x, y = density, color = q)) +
+  geom_line() +
+  labs(title = "SGT Distributions with Different q (lambda = 0)",
+       x = "x", y = "Density") +
+  scale_color_brewer(palette = "RdYlBu") + 
+  ylim(0, 1) + 
+  xlim(-5, 5) -> p1
+
+# Create a function that generates PDF values for a specific mean
+generate_pdf_data <- function(q_vals, x_values) {
+  tibble(
+    x = x_values,
+    density = dsgt(x_values, mu = 0, sigma = 1, lambda = 0.3, p = 3, q = q_vals),
+    q = as.factor(q_vals)
+  )
+}
+
+# Generate data for all means
+plot_data <- map_dfr(qs, ~generate_pdf_data(.x, x_vals))
+
+# Plot with ggplot2
+ggplot(plot_data, aes(x = x, y = density, color = q)) +
+  geom_line() +
+  labs(title = "SGT Distributions with Different q (lambda = 0.3)",
+       x = "x", y = "Density") +
+  scale_color_brewer(palette = "RdYlBu") + 
+  ylim(0, 1) + 
+  xlim(-5, 5) -> p2
+
+p1 
+p2
+```
+
 # Functions that transform data to pixels to physical distance to visual angles 
 
 We know that the actual svg have these properties: 
@@ -296,16 +511,59 @@ First we'll create a dataframe containing only data related to task2:
 ```{r}
 task2_df <- task_df %>% filter(task == "task2") %>% 
   select(-slider.x, -slider.y) %>% 
-  mutate(grad.x = numDeriv::grad(dsgt, location.x, mu = param.mu, sigma = param.sigma, 
-                               lambda = param.lambda, p = param.p, q = param.q, mean.cent=F))
+  mutate(ans.x = param.mu, 
+         ans.y = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE),
+         grad.x = numDeriv::grad(dsgt, location.x, mu = param.mu, sigma = param.sigma, 
+                               lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE))
 
 task2_df %>% head(5)
 ```
+
+First let's explore a bit: 
+
+```{r}
+#| layout-ncol: 2
+#| code-fold: true 
+
+task2_df %>% 
+  ggplot(aes(x = location.x - ans.x, 
+             y = location.y - ans.y)) + 
+  geom_point(alpha = 0.5) + 
+  labs(title = "Task 2 - Find highest point - Data")
+
+task2_df %>% 
+  ggplot(aes(x = location.x - ans.x, 
+             y = grad.x)) + 
+  geom_point(alpha = 0.5) + 
+  labs(title = "Task 2 - Find highest point - Data")
+
+task2_df %>% 
+  ggplot(aes(x = location.x - ans.x, 
+             y = atan(grad.x) * 180 / pi)) + 
+  geom_point(alpha = 0.5) + 
+  labs(title = "Task 2 - Find highest point - Data")
+```
+
+Hmm maybe this has something to do with `p` ...? 
+
+```{r}
+task2_df %>% 
+  ggplot(aes(y = location.x - param.mu, x = param.p)) + 
+  geom_point(alpha = 0.5)
+```
+
+
 
 This is the gradient at the selected point: 
 
 ```{r}
 #| code-fold: true 
+
+# from here you can see that there are some cases 
+# where the difference in y is not pronounced but the difference in x is 
+
+
+
 task2_df %>% 
   ggplot(aes(x = grad.x, y = 0)) + # gradient at the mode should be 0
   geom_point(alpha = 0.5)
