@@ -551,25 +551,37 @@ First let's explore a bit:
 #| code-fold: true 
 
 task2_df %>% 
-  ggplot(aes(x = location.x - ans.x, 
-             y = location.y - ans.y)) + 
+  ggplot(aes(y = grad.x, # location.x - ans.x, 
+             x = param.p)) + 
   geom_point(alpha = 0.5) + 
   labs(title = "Task 2 - Find highest point - Data")
 
+
 task2_df %>% 
-  ggplot(aes(x = location.x - ans.x, 
-             y = grad.x)) + 
-  geom_point(alpha = 0.5) + 
+  ggplot(aes(x = grad.x,)) + 
+  ggdist::geom_dots(layout="swarm") + 
+  # geom_point(alpha = 0.5) + # 
   labs(title = "Task 2 - Find highest point - Data")
 
 task2_df %>% 
-  ggplot(aes(x = location.x - ans.x, 
-             y = atan(grad.x) * 180 / pi)) + 
+  ggplot(aes(y = grad.x, 
+             x = numDeriv::grad(dsgt, param.mu + 0.01, mu = param.mu, sigma = param.sigma, 
+                                lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE))) + 
   geom_point(alpha = 0.5) + 
   labs(title = "Task 2 - Find highest point - Data")
 ```
 
-Hmm maybe this has something to do with `p` ...? 
+If we do things in the visual angle space then this is what we get: 
+
+```{r}
+task2_df %>% 
+  ggplot(aes(y = atan(grad.x) * 180 / pi, 
+             x = param.p)) + 
+  geom_point(alpha = 0.5) + 
+  labs(title = "Task 2 - Find highest point - Data")
+```
+
+Matt said that this result looks promising to him, because it shows that we can predict from visual angle to x-coordinate? Something of the sort. I need to be more clear on this. 
 
 ```{r}
 #| code-fold: true 
