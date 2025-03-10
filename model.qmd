@@ -319,11 +319,11 @@ task1_df <- task_df %>% filter(task == "task1") %>%
 
 task2_df <- task_df %>% filter(task == "task2") %>% 
   select(-slider.x, -slider.y) %>% 
-  mutate(ans.x = param.mu, 
-         ans.y = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE),
-         grad.x = numDeriv::grad(dsgt, location.x, mu = param.mu, sigma = param.sigma, 
+  mutate(data.ans.x = param.mu, 
+         data.ans.y = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE),
+         data.ans.grad = numDeriv::grad(dsgt, data.selection.x, mu = param.mu, sigma = param.sigma, 
                                lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
-         angle.x = atan(grad.x) * 180 / pi)
+         data.ans.angle = atan(data.ans.grad) * 180 / pi)
 ```
 
 Note taht `grad.x` is calcultaing the angle of the slope^[i.e. gradient] at selection `x`. It is NOT the perceived angle. 

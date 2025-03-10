@@ -502,8 +502,6 @@ task1_df %>% ggplot(aes(x = param.q, y = left_area)) +
 
 There does not seem to be any relationship between `p`, `q` and area. 
 
----
-
 ::: {.callout-caution}
 For area, we could potentially calculate the physical space it occupies using `pixelToMM`. But what is the "visual angle" of area?? 
 :::
@@ -542,12 +540,30 @@ First we'll create a dataframe containing only data related to task2:
 ```{r}
 task2_df <- task_df %>% filter(task == "task2") %>% 
   select(-slider.x, -slider.y) %>% 
-  mutate(ans.x = param.mu, 
-         ans.y = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE),
-         grad.x = numDeriv::grad(dsgt, data.select.x, mu = param.mu, sigma = param.sigma, 
-                               lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE))
+  # compute all the data related answers 
+  mutate(data.ans.x = param.mu, 
+         data.ans.y = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE),
+         data.ans.grad = numDeriv::grad(dsgt, data.select.x, mu = param.mu, sigma = param.sigma, 
+                               lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
+         data.ans.angle = atan(data.ans.grad) * 180 / pi) %>% 
+  # compute all the data related answers in pixel space %>% 
+  left_join(participants, by = join_by(participantId)) %>% 
+  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x), 
+         pixel.ans.y = data_to_pixel_y(data.ans.y), 
+         phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM), 
+         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM)) %>% 
+  mutate(phy.select.x = pixel_to_phy_x(phy.ans.x, pixelToMM), 
+         phy.select.y = pixel_to_phy_y(phy.ans.y, pixelToMM)) # %>% 
+  # compute visual angles 
+  mutate(va.select.x = vis_angle(phy.))
 
 task2_df %>% head(5)
+
+# dude this magnitude is weird ... 
+task2_df %>% ggplot(aes(x = phy.select.x - phy.ans.x, 
+                        y = phy.select.y - phy.ans.y)) + 
+  geom_point()
+
 ```
 
 First let's explore a bit: 
