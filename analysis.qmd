@@ -559,7 +559,8 @@ task2_df <- task_df %>% filter(task == "task2") %>%
 
 task2_df %>% head(5)
 
-# dude this magnitude is weird ... 
+# dude this magnitude is weird ...
+# maybe the pixel to physics thing is wrong ...? Like it requires the difference to be processed before ...? like what is the origin of this calculation? 
 task2_df %>% ggplot(aes(x = phy.select.x - phy.ans.x, 
                         y = phy.select.y - phy.ans.y)) + 
   geom_point()
