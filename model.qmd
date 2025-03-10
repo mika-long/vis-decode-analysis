@@ -232,11 +232,81 @@ Posterior predictive check:
 pp_check(m, ndraws = 100)
 ```
 
-# Task 3 
+# Task 3 -- Find point on curve where `y == 0.5`
 
-First we get the data
+First we get the data:
 
 ```{r}
-
+task3_df <- task_df %>% filter(task == "task3") %>% 
+  select(-slider.x, -slider.y) 
 ```
 
+```{r}
+#| code-fold: true
+
+task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
+  mutate(phy.x = pixel_to_phy_x(pixel.x, pixelToMM), 
+         phy.y = pixel_to_phy_y(pixel.y, pixelToMM), 
+         ans.y = pixel_to_phy_y(data_to_pixel_y(0.5), pixelToMM), 
+         va.ans.y = vis_angle(ans.y, dist_to_screen), 
+         va.phy.y = vis_angle(phy.y, dist_to_screen), 
+         va.phy.x = vis_angle(phy.x, dist_to_screen)) %>% 
+  ggplot(aes(x = va.phy.x, y = va.phy.y - va.ans.y)) + 
+  geom_point(alpha = 0.8) + 
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title="Task 3 -- CDF Median") 
+```
+
+The model we fit is going to be very similar to the ones we fitted for task 5. 
+
+```{r}
+#| code-fold: true
+
+model_df <- task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
+  mutate(phy.x = pixel_to_phy_x(pixel.x, pixelToMM), 
+         phy.y = pixel_to_phy_y(pixel.y, pixelToMM), 
+         ans.y = pixel_to_phy_y(data_to_pixel_y(0.5), pixelToMM), 
+         va.ans.y = vis_angle(ans.y, dist_to_screen), 
+         va.phy.y = vis_angle(phy.y, dist_to_screen), 
+         va.phy.x = vis_angle(phy.x, dist_to_screen)) %>% 
+  mutate(error = va.phy.y - va.ans.y)
+```
+
+```{r}
+#| label: task3-fit-model
+#| output: false 
+
+m <- brm(
+  formula = error ~ 1 + (1|participantId), 
+  data = model_df, 
+  family = gaussian(),
+  prior = c(
+    prior(cauchy(0, 5), class="sd", group="participantId")
+  ),
+  control = list(adapt_delta = 0.95),
+  file="models/m3"
+)
+```
+
+```{r}
+summary(m)
+plot(m)
+```
+
+Posterior predictive check: 
+
+```{r}
+pp_check(m, ndraws = 100)
+```
+
+# Task 1 
+
+TODO ... 
+
+# Task 2 
+
+TODO ... 
+
+# Task 4 
+
+TODO ... 
