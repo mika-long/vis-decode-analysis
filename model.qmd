@@ -58,20 +58,20 @@ task_df <- df %>% filter(grepl("task", trialId) & grepl("test", trialId) ) %>%
 #| label: define-function
 #| code-fold: true
 
+# origin is top left  
 data_to_pixel_y <- function(data_y) {
   return(-395 * data_y + 410)
 }
-
 data_to_pixel_x <- function(data_x) {
   return (53.5 * data_x + 317.5)
 }
 
+# origin is bottom left 
 pixel_to_phy_x <- function(pixel, pxMM){
-  (pixel - 50) * pxMM
+  (pixel - 50) / pxMM
 }
-
 pixel_to_phy_y <- function(pixel, pxMM){
-  (410 - pixel) * pxMM
+  (410 - pixel) / pxMM
 }
 
 vis_angle <- function(size, distance){
@@ -102,8 +102,6 @@ participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participant
 
 # Task 5 -- Project from dot to axes
 
-## Project from dot to X axes
-
 ```{r}
 #| label: get task 5 data ready 
 #| code-fold: true 
@@ -130,6 +128,8 @@ task5_df <- task_df %>% filter(task == "task5") %>%
          va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
+
+## Project from dot to X axes
 
 ```{r}
 #| code-fold: true
