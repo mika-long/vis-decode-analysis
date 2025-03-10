@@ -1,0 +1,174 @@
+---
+title: "Preliminary Model building"
+format:
+  html: 
+    code-fold: false
+    reference-location: margin
+    df-print: paged
+    toc: true
+    code-overflow: wrap
+---
+
+```{r}
+#| echo: false
+#| output: false
+#| label: setup
+
+library(tidyverse)
+library(ggplot2)
+library(sgt)
+library(numDeriv)
+library(ggdist)
+# setting the theme 
+theme_set(theme_minimal())
+# model
+library(brms)
+```
+
+# Read in data and all processing 
+
+```{r}
+#| label: read-in-data
+#| code-fold: true
+
+df <- read.csv("vis-decode-slider_all_tidy.csv") %>% as_tibble(.)
+
+# filter 
+ids <- df %>% count(participantId) %>% filter(n == 492) %>% pull(participantId) 
+df <- df %>% filter(participantId %in% ids)
+
+# create a separate dataframe for just test related trials 
+task_df <- df %>% filter(grepl("task", trialId) & grepl("test", trialId) ) %>% 
+    select(participantId, trialId, responseId, answer) %>% 
+    mutate(answer = as.numeric(answer)) %>% 
+    pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
+  separate_wider_delim(trialId, delim = "_", names = c("task", "type", "id")) %>% 
+  select(-type)
+```
+
+```{r}
+#| label: define-function
+#| code-fold: true
+
+data_to_pixel_y <- function(data_y) {
+  return(-395 * data_y + 410)
+}
+
+data_to_pixel_x <- function(data_x) {
+  return (53.5 * data_x + 317.5)
+}
+
+pixel_to_phy_x <- function(pixel, pxMM){
+  (pixel - 50) * pxMM
+}
+
+pixel_to_phy_y <- function(pixel, pxMM){
+  (410 - pixel) * pxMM
+}
+
+vis_angle <- function(size, distance){
+  return(2 * atan(size / (2 * distance)) * 180 / pi)
+}
+```
+
+```{r}
+#| label: define-special-dfs
+#| code-fold: true
+
+p <- df %>% filter(participantId %in% ids) %>% 
+  filter(grepl("pixelsPerMM", responseId) | grepl("prolificId", responseId)) %>% 
+  select(participantId, responseId, answer) %>% 
+  pivot_wider(names_from = responseId, values_from = answer) %>% 
+  pull(participantId)
+
+# custom dataframe 
+pixel_to_mm <- data.frame(participantId = p, 
+  pixelToMM = c(3.73, 3.27, 3.27, 5.03, 3.73, 3.25, 3.73, 3.27, 3.73, 3.27)
+)
+vis_distance <- data.frame(participantId = p, 
+                           dist_to_screen = c(426, 502, 500, 495, 485, 987, 635, 500, 479, 563))
+
+# combine 
+participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participantId))
+```
+
+# Task 5 
+
+## Project from dot to X axes
+
+```{r}
+task5_df <- task_df %>% filter(task == "task5") %>% 
+  select(participantId, task, id, location.x, location.y, slider.x, slider.y)
+```
+
+```{r}
+#| code-fold: true
+task5_df %>% left_join(participants, by = join_by(participantId)) %>% 
+  mutate(phy.x = pixel_to_phy_x(data_to_pixel_x(slider.x), pixelToMM), 
+         ans.phy.x = pixel_to_phy_x(data_to_pixel_x(location.x), pixelToMM),
+         ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM),
+         va.x = vis_angle(phy.x, dist_to_screen), 
+         ans.va.x = vis_angle(ans.phy.x, dist_to_screen), 
+         ans.va.y = vis_angle(ans.phy.y, dist_to_screen)) %>%
+  ggplot(aes(x = ans.va.y, y = va.x - ans.va.x)) + 
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
+```
+
+What would be a potential model for this? 
+$$
+\begin{aligned}
+\text{error}[i] &\sim \mathcal{N}(0, \sigma[i]) \\ 
+\sigma[i] &\sim \text{Half-Cauchy}(0, 5)
+\end{aligned}
+$$
+
+How would we write this in `brms`? 
+
+```{r}
+#| code-fold: true
+
+model_df <- task5_df %>% left_join(participants, by = join_by(participantId)) %>% 
+  mutate(phy.x = pixel_to_phy_x(data_to_pixel_x(slider.x), pixelToMM), 
+         ans.phy.x = pixel_to_phy_x(data_to_pixel_x(location.x), pixelToMM),
+         ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM),
+         va.x = vis_angle(phy.x, dist_to_screen), 
+         ans.va.x = vis_angle(ans.phy.x, dist_to_screen), 
+         ans.va.y = vis_angle(ans.phy.y, dist_to_screen)) %>% 
+  select(participantId, ans.va.y, ans.va.x, va.x) %>% 
+  mutate(error = va.x - ans.va.x)
+```
+
+```{r}
+#| label: task5-fit-model 
+m <- brm(
+  formula = error ~ 1 + (1|participantId), 
+  data = model_df, 
+  family = gaussian(),
+  prior = c(
+    prior(cauchy(0, 5), class="sd", group="participantId")
+  ),
+  control = list(adapt_delta = 0.95),
+  file="models/m5"
+)
+```
+
+
+What does the fit look like? 
+
+```{r}
+summary(m)
+plot(m)
+```
+
+Posterior predictive check: 
+
+```{r}
+pp_check(m, ndraws = 100)
+```
+
+## Project from dot to Y Axes
+
+
+

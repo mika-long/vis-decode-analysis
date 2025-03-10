@@ -12,6 +12,7 @@ format:
 ```{r}
 #| echo: false
 #| output: false
+#| label: setup
 
 library(tidyverse)
 library(ggplot2)
