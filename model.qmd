@@ -25,6 +25,10 @@ theme_set(theme_minimal())
 library(brms)
 ```
 
+:::{.callout-caution}
+Per Matt's advice: **Think in a generative way**
+:::
+
 # Read in data and all processing 
 
 ```{r}
@@ -43,7 +47,11 @@ task_df <- df %>% filter(grepl("task", trialId) & grepl("test", trialId) ) %>%
     mutate(answer = as.numeric(answer)) %>% 
     pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
   separate_wider_delim(trialId, delim = "_", names = c("task", "type", "id")) %>% 
-  select(-type)
+  select(-type) %>% 
+  rename(data.select.x = location.x, 
+         data.select.y = location.y,
+         pixel.select.x = pixel.x, 
+         pixel.select.y = pixel.y)
 ```
 
 ```{r}
@@ -92,31 +100,48 @@ vis_distance <- data.frame(participantId = p,
 participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participantId))
 ```
 
-# Task 5 
+# Task 5 -- Project from dot to axes
 
 ## Project from dot to X axes
 
 ```{r}
+#| label: get task 5 data ready 
+#| code-fold: true 
+
 task5_df <- task_df %>% filter(task == "task5") %>% 
-  select(participantId, task, id, location.x, location.y, slider.x, slider.y)
+  select(participantId, task, id, data.select.x, data.select.y, slider.x, slider.y) %>% 
+  rename(data.ans.x = data.select.x, 
+         data.ans.y = data.select.y, 
+         data.select.x = slider.x, 
+         data.select.y = slider.y) %>% 
+  left_join(participants, by = join_by(participantId)) %>% 
+  # do all the calculations for user's selected 
+  mutate(pixel.select.x = data_to_pixel_x(data.select.x), 
+         pixel.select.y = data_to_pixel_y(data.select.y), 
+         phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM),
+         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM), 
+         va.select.x = vis_angle(phy.select.x, dist_to_screen),
+         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>% 
+  # do all the calculations for the actual answer
+  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x),
+         pixel.ans.y = data_to_pixel_x(data.ans.y),
+         phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM),
+         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM), 
+         va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
+         va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
 
 ```{r}
 #| code-fold: true
-task5_df %>% left_join(participants, by = join_by(participantId)) %>% 
-  mutate(phy.x = pixel_to_phy_x(data_to_pixel_x(slider.x), pixelToMM), 
-         ans.phy.x = pixel_to_phy_x(data_to_pixel_x(location.x), pixelToMM),
-         ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM),
-         va.x = vis_angle(phy.x, dist_to_screen), 
-         ans.va.x = vis_angle(ans.phy.x, dist_to_screen), 
-         ans.va.y = vis_angle(ans.phy.y, dist_to_screen)) %>%
-  ggplot(aes(x = ans.va.y, y = va.x - ans.va.x)) + 
+
+task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) + 
   geom_point(alpha = 0.5) +
-  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  geom_vline(xintercept = 0, linetype="dashed", color="gray") + 
   labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
 ```
 
-What would be a potential model for this? 
+What would be a potential model for this? TODO: forgot to model the `va.ans.y` part ... 
+
 $$
 \begin{aligned}
 \text{error}[i] &\sim \mathcal{N}(0, \sigma[i]) \\ 
@@ -127,47 +152,31 @@ $$
 How would we write this in `brms`? 
 
 ```{r}
-#| code-fold: true
-
-model_df <- task5_df %>% left_join(participants, by = join_by(participantId)) %>% 
-  mutate(phy.x = pixel_to_phy_x(data_to_pixel_x(slider.x), pixelToMM), 
-         ans.phy.x = pixel_to_phy_x(data_to_pixel_x(location.x), pixelToMM),
-         ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM),
-         va.x = vis_angle(phy.x, dist_to_screen), 
-         ans.va.x = vis_angle(ans.phy.x, dist_to_screen), 
-         ans.va.y = vis_angle(ans.phy.y, dist_to_screen)) %>% 
-  select(participantId, ans.va.y, ans.va.x, va.x) %>% 
-  mutate(error = va.x - ans.va.x)
-```
-
-```{r}
 #| label: task5-fit-model-x 
 #| output: false
 
-m <- brm(
-  formula = error ~ 1 + (1|participantId), 
-  data = model_df, 
-  family = gaussian(),
-  prior = c(
-    prior(cauchy(0, 5), class="sd", group="participantId")
-  ),
-  control = list(adapt_delta = 0.95),
-  file="models/m5.x"
-)
+# m5.x <- task5_df %>% mutate(error = va.x - ans.va.x) %>% 
+#   brm(
+#     formula = error ~ 1 + (1|participantId), 
+#     data = ., 
+#     family = gaussian(),
+#     prior = c(prior(cauchy(0, 5), class="sd", group="participantId")),
+#     control = list(adapt_delta = 0.95),
+#     file="models/m5.x"
+# )
 ```
-
 
 What does the fit look like? 
 
 ```{r}
-summary(m)
-plot(m)
+# summary(m5.x)
+# plot(m5.x)
 ```
 
 Posterior predictive check: 
 
 ```{r}
-pp_check(m, ndraws = 100)
+# pp_check(m5.x, ndraws = 100)
 ```
 
 ## Project from dot to Y Axes
@@ -177,14 +186,7 @@ Let's first plot:
 ```{r}
 #| code-fold: true
 
-task5_df %>% left_join(participants, by = join_by(participantId)) %>% 
-  mutate(phy.y = pixel_to_phy_y(data_to_pixel_y(slider.y), pixelToMM), 
-         ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM), 
-         va.y = vis_angle(phy.y, dist_to_screen), 
-         ans.va.y = vis_angle(ans.phy.y, dist_to_screen), 
-         ans.phy.x = pixel_to_phy_x(data_to_pixel_x(location.x), pixelToMM),
-         ans.va.x = vis_angle(ans.phy.x, dist_to_screen)) %>%
-  ggplot(aes(x = ans.va.x, y = va.y - ans.va.y)) + 
+task5_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) + 
   geom_point(alpha = 0.5) + 
   geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
   labs(title = "Task 5 - Project from dot to Y-Axes - Visual Angle")
@@ -193,43 +195,30 @@ task5_df %>% left_join(participants, by = join_by(participantId)) %>%
 We adopt a similar model and write the following formula: 
 
 ```{r}
-#| code-fold: true 
-
-model_df <- task5_df %>% left_join(participants, by = join_by(participantId)) %>% 
-  mutate(phy.y = pixel_to_phy_y(data_to_pixel_y(slider.y), pixelToMM), 
-         ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM), 
-         va.y = vis_angle(phy.y, dist_to_screen), 
-         ans.va.y = vis_angle(ans.phy.y, dist_to_screen), 
-         ans.phy.x = pixel_to_phy_x(data_to_pixel_x(location.x), pixelToMM),
-         ans.va.x = vis_angle(ans.phy.x, dist_to_screen)) %>% 
-  mutate(error = va.y - ans.va.y)
-```
-
-```{r}
 #| label: task5-fit-model-y 
 #| output: false 
 
-m <- brm(
-  formula = error ~ 1 + (1|participantId), 
-  data = model_df, 
-  family = gaussian(),
-  prior = c(
-    prior(cauchy(0, 5), class="sd", group="participantId")
-  ),
-  control = list(adapt_delta = 0.95),
-  file="models/m5.y"
-)
+# m5.y <- m5.y.df %>% 
+#   mutate(error = va.y - ans.va.y) %>% 
+#   brm(
+#     formula = error ~ 1 + (1|participantId), 
+#     data = ., 
+#     family = gaussian(),
+#     prior = c(prior(cauchy(0, 5), class="sd", group="participantId")),
+#     control = list(adapt_delta = 0.95),
+#     file="models/m5.y"
+# )
 ```
 
 ```{r}
-summary(m)
-plot(m)
+# summary(m5.y)
+# plot(m5.y)
 ```
 
 Posterior predictive check: 
 
 ```{r}
-pp_check(m, ndraws = 100)
+# pp_check(m5.y, ndraws = 100)
 ```
 
 # Task 3 -- Find point on curve where `y == 0.5`
@@ -238,20 +227,36 @@ First we get the data:
 
 ```{r}
 task3_df <- task_df %>% filter(task == "task3") %>% 
-  select(-slider.x, -slider.y) 
+  select(-slider.x, -slider.y) %>% 
+  left_join(participants, by = join_by(participantId)) %>% 
+  # do all the calculations for user's selected 
+  mutate(pixel.select.x = data_to_pixel_x(data.select.x), 
+         pixel.select.y = data_to_pixel_y(data.select.y), 
+         phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM),
+         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM), 
+         va.select.x = vis_angle(phy.select.x, dist_to_screen),
+         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>% 
+  # do all the calculations for the actual answer
+  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x),
+         pixel.ans.y = data_to_pixel_x(data.ans.y),
+         phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM),
+         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM), 
+         va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
+         va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
 
 ```{r}
 #| code-fold: true
 
-task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
+m3.df <- task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
   mutate(phy.x = pixel_to_phy_x(pixel.x, pixelToMM), 
          phy.y = pixel_to_phy_y(pixel.y, pixelToMM), 
          ans.y = pixel_to_phy_y(data_to_pixel_y(0.5), pixelToMM), 
          va.ans.y = vis_angle(ans.y, dist_to_screen), 
          va.phy.y = vis_angle(phy.y, dist_to_screen), 
-         va.phy.x = vis_angle(phy.x, dist_to_screen)) %>% 
-  ggplot(aes(x = va.phy.x, y = va.phy.y - va.ans.y)) + 
+         va.phy.x = vis_angle(phy.x, dist_to_screen)) 
+
+m3.df %>% ggplot(aes(x = va.phy.x, y = va.phy.y - va.ans.y)) + 
   geom_point(alpha = 0.8) + 
   geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
   labs(title="Task 3 -- CDF Median") 
@@ -260,53 +265,119 @@ task3_df %>% left_join(participants, by = join_by(participantId)) %>%
 The model we fit is going to be very similar to the ones we fitted for task 5. 
 
 ```{r}
-#| code-fold: true
-
-model_df <- task3_df %>% left_join(participants, by = join_by(participantId)) %>% 
-  mutate(phy.x = pixel_to_phy_x(pixel.x, pixelToMM), 
-         phy.y = pixel_to_phy_y(pixel.y, pixelToMM), 
-         ans.y = pixel_to_phy_y(data_to_pixel_y(0.5), pixelToMM), 
-         va.ans.y = vis_angle(ans.y, dist_to_screen), 
-         va.phy.y = vis_angle(phy.y, dist_to_screen), 
-         va.phy.x = vis_angle(phy.x, dist_to_screen)) %>% 
-  mutate(error = va.phy.y - va.ans.y)
-```
-
-```{r}
 #| label: task3-fit-model
 #| output: false 
 
-m <- brm(
-  formula = error ~ 1 + (1|participantId), 
-  data = model_df, 
-  family = gaussian(),
-  prior = c(
-    prior(cauchy(0, 5), class="sd", group="participantId")
-  ),
-  control = list(adapt_delta = 0.95),
-  file="models/m3"
+m3 <- m3.df %>% 
+  mutate(error = va.phy.y - va.ans.y) %>% 
+  brm( 
+    formula = error ~ 1 + (1|participantId), 
+    data = ., 
+    family = gaussian(),
+    prior = c(prior(cauchy(0, 5), class="sd", group="participantId")),
+    control = list(adapt_delta = 0.95),
+    file="models/m3"
 )
 ```
 
 ```{r}
-summary(m)
-plot(m)
+summary(m3)
+plot(m3)
 ```
 
 Posterior predictive check: 
 
 ```{r}
-pp_check(m, ndraws = 100)
+pp_check(m3, ndraws = 100)
 ```
 
-# Task 1 
+---
 
-TODO ... 
+What if we were to combine the dataframes and run a model together? Would this reduce the variance? 
 
-# Task 2 
+```{r}
+# TODO 
+```
 
-TODO ... 
+# Task 1 -- Split area into equal halves
 
-# Task 4 
+```{r}
+#| label: get task 1 data 
 
-TODO ... 
+task1_df <- task_df %>% filter(task == "task1") %>% 
+  select(-slider.x, -slider.y) %>% 
+  mutate(left_area = psgt(location.x, param.mu, param.sigma, 
+                        param.lambda, param.p, param.q, mean.cent = F))
+```
+
+
+# Task 2 -- Find highest point on curve 
+
+```{r}
+#| label: get task 2 data
+#| code-fold: true 
+
+task2_df <- task_df %>% filter(task == "task2") %>% 
+  select(-slider.x, -slider.y) %>% 
+  mutate(ans.x = param.mu, 
+         ans.y = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE),
+         grad.x = numDeriv::grad(dsgt, location.x, mu = param.mu, sigma = param.sigma, 
+                               lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
+         angle.x = atan(grad.x) * 180 / pi)
+```
+
+Note taht `grad.x` is calcultaing the angle of the slope^[i.e. gradient] at selection `x`. It is NOT the perceived angle. 
+
+Let's plot the relation between the angle selected and the parameters: 
+
+```{r}
+#| code-fold: true 
+#| layout-ncol: 2
+
+task2_df %>% ggplot(aes(y = angle.x, x = param.p)) +
+  geom_point()
+
+task2_df %>% ggplot(aes(y = angle.x, x = param.q)) +
+  geom_point(alpha = 0.5)
+
+task2_df %>% ggplot(aes(y = angle.x, x = param.lambda)) +
+  geom_point(alpha = 0.5)
+
+task2_df %>% ggplot(aes(y = angle.x, x = param.mu)) +
+  geom_point(alpha = 0.5)
+
+task2_df %>% ggplot(aes(y = angle.x, x = param.sigma)) +
+  geom_point(alpha = 0.5)
+
+task2_df %>% ggplot(aes(y = angle.x, x = param.sigma)) +
+  geom_point(alpha = 0.5)
+
+task2_df %>% left_join(participants, by = join_by(participantId)) %>% 
+  ggplot(aes(y = angle.x, x = dist_to_screen)) +
+  geom_point(alpha = 0.5)
+```
+
+What if we were to translate this into visual angles? Hmm the scale feels a bit off ... 
+
+```{r}
+task_df %>% filter(task == "task2") %>% 
+  select(-slider.x, -slider.y) %>% 
+  left_join(participants, by = join_by(participantId)) %>% 
+  mutate(phy.x = pixel_to_phy_x(pixel.x, dist_to_screen) - pixel_to_phy_x(data_to_pixel_x(param.mu), dist_to_screen), 
+         phy.y = pixel_to_phy_y(pixel.y, dist_to_screen) - pixel_to_phy_y(data_to_pixel_x(dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)), dist_to_screen)) %>%
+  ggplot(aes(x = phy.x, y = phy.y)) + 
+  geom_point()
+```
+
+
+# Task 4 -- Find slope 
+
+```{r}
+#| label: get task 4 data 
+
+task4_df <- task_df %>% filter(task == "task4") %>% 
+  select(-slider.x, -slider.y) %>% 
+  mutate(slope = dsgt(location.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE), 
+         ans = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE))
+```
+
