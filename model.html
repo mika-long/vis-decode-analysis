@@ -111,7 +111,11 @@ window.Quarto = {
    
   <ul>
   <li><a href="#read-in-data-and-all-processing" id="toc-read-in-data-and-all-processing" class="nav-link active" data-scroll-target="#read-in-data-and-all-processing">Read in data and all processing</a></li>
-  <li><a href="#task-5" id="toc-task-5" class="nav-link" data-scroll-target="#task-5">Task 5</a></li>
+  <li><a href="#task-5" id="toc-task-5" class="nav-link" data-scroll-target="#task-5">Task 5</a>
+  <ul class="collapse">
+  <li><a href="#project-from-dot-to-x-axes" id="toc-project-from-dot-to-x-axes" class="nav-link" data-scroll-target="#project-from-dot-to-x-axes">Project from dot to X axes</a></li>
+  <li><a href="#project-from-dot-to-y-axes" id="toc-project-from-dot-to-y-axes" class="nav-link" data-scroll-target="#project-from-dot-to-y-axes">Project from dot to Y Axes</a></li>
+  </ul></li>
   </ul>
 </nav>
 </div>
@@ -217,6 +221,8 @@ window.Quarto = {
 </section>
 <section id="task-5" class="level1">
 <h1>Task 5</h1>
+<section id="project-from-dot-to-x-axes" class="level2">
+<h2 class="anchored" data-anchor-id="project-from-dot-to-x-axes">Project from dot to X axes</h2>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task5"</span>) <span class="sc">%&gt;%</span> </span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(participantId, task, id, location.x, location.y, slider.x, slider.y)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -274,7 +280,7 @@ window.Quarto = {
 <span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">prior</span>(<span class="fu">cauchy</span>(<span class="dv">0</span>, <span class="dv">5</span>), <span class="at">class=</span><span class="st">"sd"</span>, <span class="at">group=</span><span class="st">"participantId"</span>)</span>
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  ),</span>
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.95</span>),</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">file=</span><span class="st">"models/m5"</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">file=</span><span class="st">"models/m5.x"</span></span>
 <span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>What does the fit look like?</p>
@@ -325,6 +331,107 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 </div>
 </div>
 </div>
+</section>
+<section id="project-from-dot-to-y-axes" class="level2">
+<h2 class="anchored" data-anchor-id="project-from-dot-to-y-axes">Project from dot to Y Axes</h2>
+<p>Let’s first plot:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(slider.y), pixelToMM), </span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(location.y), pixelToMM), </span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.y =</span> <span class="fu">vis_angle</span>(phy.y, dist_to_screen), </span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.va.y =</span> <span class="fu">vis_angle</span>(ans.phy.y, dist_to_screen), </span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.x =</span> <span class="fu">pixel_to_phy_x</span>(<span class="fu">data_to_pixel_x</span>(location.x), pixelToMM),</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.va.x =</span> <span class="fu">vis_angle</span>(ans.phy.x, dist_to_screen)) <span class="sc">%&gt;%</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> ans.va.x, <span class="at">y =</span> va.y <span class="sc">-</span> ans.va.y)) <span class="sc">+</span> </span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Task 5 - Project from dot to Y-Axes - Visual Angle"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="model_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We adopt a similar model and write the following formula:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>model_df <span class="ot">&lt;-</span> task5_df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(slider.y), pixelToMM), </span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.y =</span> <span class="fu">pixel_to_phy_y</span>(<span class="fu">data_to_pixel_y</span>(location.y), pixelToMM), </span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.y =</span> <span class="fu">vis_angle</span>(phy.y, dist_to_screen), </span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.va.y =</span> <span class="fu">vis_angle</span>(ans.phy.y, dist_to_screen), </span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.phy.x =</span> <span class="fu">pixel_to_phy_x</span>(<span class="fu">data_to_pixel_x</span>(location.x), pixelToMM),</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans.va.x =</span> <span class="fu">vis_angle</span>(ans.phy.x, dist_to_screen)) <span class="sc">%&gt;%</span> </span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error =</span> va.y <span class="sc">-</span> ans.va.y)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">brm</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> error <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span><span class="sc">|</span>participantId), </span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> model_df, </span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> <span class="fu">gaussian</span>(),</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">prior =</span> <span class="fu">c</span>(</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">prior</span>(<span class="fu">cauchy</span>(<span class="dv">0</span>, <span class="dv">5</span>), <span class="at">class=</span><span class="st">"sd"</span>, <span class="at">group=</span><span class="st">"participantId"</span>)</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.95</span>),</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">file=</span><span class="st">"models/m5.y"</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> Family: gaussian 
+  Links: mu = identity; sigma = identity 
+Formula: error ~ 1 + (1 | participantId) 
+   Data: model_df (Number of observations: 100) 
+  Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
+         total post-warmup draws = 4000
+
+Multilevel Hyperparameters:
+~participantId (Number of levels: 10) 
+              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)     0.21      0.14     0.01     0.55 1.00     1098     1665
+
+Regression Coefficients:
+          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept     0.30      0.12     0.07     0.54 1.00     2477     1775
+
+Further Distributional Parameters:
+      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sigma     0.87      0.06     0.75     1.00 1.00     3743     2920
+
+Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="model_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Posterior predictive check:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(m, <span class="at">ndraws =</span> <span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="model_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
 </section>
 
 </main>

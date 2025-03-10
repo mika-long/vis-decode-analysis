@@ -141,7 +141,9 @@ model_df <- task5_df %>% left_join(participants, by = join_by(participantId)) %>
 ```
 
 ```{r}
-#| label: task5-fit-model 
+#| label: task5-fit-model-x 
+#| output: false
+
 m <- brm(
   formula = error ~ 1 + (1|participantId), 
   data = model_df, 
@@ -150,7 +152,7 @@ m <- brm(
     prior(cauchy(0, 5), class="sd", group="participantId")
   ),
   control = list(adapt_delta = 0.95),
-  file="models/m5"
+  file="models/m5.x"
 )
 ```
 
@@ -170,5 +172,71 @@ pp_check(m, ndraws = 100)
 
 ## Project from dot to Y Axes
 
+Let's first plot: 
 
+```{r}
+#| code-fold: true
+
+task5_df %>% left_join(participants, by = join_by(participantId)) %>% 
+  mutate(phy.y = pixel_to_phy_y(data_to_pixel_y(slider.y), pixelToMM), 
+         ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM), 
+         va.y = vis_angle(phy.y, dist_to_screen), 
+         ans.va.y = vis_angle(ans.phy.y, dist_to_screen), 
+         ans.phy.x = pixel_to_phy_x(data_to_pixel_x(location.x), pixelToMM),
+         ans.va.x = vis_angle(ans.phy.x, dist_to_screen)) %>%
+  ggplot(aes(x = ans.va.x, y = va.y - ans.va.y)) + 
+  geom_point(alpha = 0.5) + 
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title = "Task 5 - Project from dot to Y-Axes - Visual Angle")
+```
+
+We adopt a similar model and write the following formula: 
+
+```{r}
+#| code-fold: true 
+
+model_df <- task5_df %>% left_join(participants, by = join_by(participantId)) %>% 
+  mutate(phy.y = pixel_to_phy_y(data_to_pixel_y(slider.y), pixelToMM), 
+         ans.phy.y = pixel_to_phy_y(data_to_pixel_y(location.y), pixelToMM), 
+         va.y = vis_angle(phy.y, dist_to_screen), 
+         ans.va.y = vis_angle(ans.phy.y, dist_to_screen), 
+         ans.phy.x = pixel_to_phy_x(data_to_pixel_x(location.x), pixelToMM),
+         ans.va.x = vis_angle(ans.phy.x, dist_to_screen)) %>% 
+  mutate(error = va.y - ans.va.y)
+```
+
+```{r}
+#| label: task5-fit-model-y 
+#| output: false 
+
+m <- brm(
+  formula = error ~ 1 + (1|participantId), 
+  data = model_df, 
+  family = gaussian(),
+  prior = c(
+    prior(cauchy(0, 5), class="sd", group="participantId")
+  ),
+  control = list(adapt_delta = 0.95),
+  file="models/m5.y"
+)
+```
+
+```{r}
+summary(m)
+plot(m)
+```
+
+Posterior predictive check: 
+
+```{r}
+pp_check(m, ndraws = 100)
+```
+
+# Task 3 
+
+First we get the data
+
+```{r}
+
+```
 
