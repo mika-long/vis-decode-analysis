@@ -192,6 +192,7 @@ $$
 \sigma[i] &\sim \text{Half-Cauchy}(0, 5)
 \end{aligned}
 $$
+
 :::{.callout-caution}
 Another model would be to model the variance being influenced by the distance the participant is away from the screen. However, that would mean we would need **a theoretical justfication for why distance impacts error variance beyond its effect on visual angle**. 
 :::
@@ -406,7 +407,7 @@ task1_df <- task_df %>% filter(task == "task1") %>%
 
 # Task 2 -- Find highest point on curve 
 
-Remember that for this, we need to filter out 
+First we get the data: 
 
 ```{r}
 #| label: get task 2 data
@@ -432,6 +433,8 @@ task2_df <- task_df %>% filter(task == "task2") %>%
          va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
+
+Then we check to make sure that things are correct: 
 
 ```{r}
 #| output: false 
@@ -471,24 +474,28 @@ Let's plot the relation between the angle selected and the parameters:
 #| code-fold: true 
 #| layout-ncol: 2
 
-task2_df %>% ggplot(aes(y = data.ans.grad, x = param.p)) +
+task2_df %>% ggplot(aes(y = data.select.grad, x = param.p)) +
   geom_point(alpha = 0.5)
 
-task2_df %>% ggplot(aes(y = data.ans.grad, x = param.q)) +
+task2_df %>% ggplot(aes(y = data.select.grad, x = param.q)) +
   geom_point(alpha = 0.5)
 
-task2_df %>% ggplot(aes(y = data.ans.grad, x = param.lambda)) +
+task2_df %>% ggplot(aes(y = data.select.grad, x = param.lambda)) +
   geom_point(alpha = 0.5)
 
-task2_df %>% ggplot(aes(y = data.ans.grad, x = param.mu)) +
+task2_df %>% ggplot(aes(y = data.select.grad, x = param.mu)) +
   geom_point(alpha = 0.5)
 
-task2_df %>% ggplot(aes(y = data.ans.grad, x = param.sigma)) +
+task2_df %>% ggplot(aes(y = data.select.grad, x = param.sigma)) +
   geom_point(alpha = 0.5)
 
-task2_df %>% ggplot(aes(y = data.ans.grad, x = dist_to_screen)) +
+task2_df %>% ggplot(aes(y = data.select.grad, x = dist_to_screen)) +
   geom_point(alpha = 0.5)
 ```
+
+The only thing that is worth noting is the relationship between `data.select.grad` and `dist_to_screen`. 
+
+---
 
 How to calculate the actual angle, based on the selection? First we can check out the distribution of calculated angle (relative to the highest point?)
 
@@ -501,9 +508,30 @@ task2_df %>%
   geom_dots()
 ```
 
-We are seeing these extreme outliers because `diff.x` is very, very small, almost close to 0. The above calculations does not deal well with very, very small denominators. 
+We are seeing these extreme outliers because `diff.x` is very, very small, almost close to 0. The above calculations does not deal well with very, very small denominators. Doing things in the visual angle space gives the same outliers. Let's just round things up to 3: 
 
+```{r}
+task2_df %>% mutate(diff.x = phy.select.x - phy.ans.x, 
+                    diff.y = phy.select.y - phy.ans.y) %>% 
+  mutate(diff.x = round(diff.x, 3), diff.y = round(diff.y, 3)) %>% 
+  mutate(angle = case_when(diff.x == 0 ~ 0, 
+                           diff.x != 0 ~ atan(abs(diff.y) / abs(diff.x)) * 180 / pi )) %>% 
+  ggplot(aes(x = angle)) + 
+  geom_dots()
 
+task2_df %>% mutate(diff.x = phy.select.x - phy.ans.x, 
+                    diff.y = phy.select.y - phy.ans.y) %>% 
+  mutate(diff.x = round(diff.x, 3), diff.y = round(diff.y, 3)) %>% 
+  mutate(angle = case_when(diff.x == 0 ~ 0, 
+                           diff.x != 0 ~ atan(abs(diff.y) / abs(diff.x)) * 180 / pi )) %>% 
+  ggplot(aes(x = angle, y = abs(data.select.angle))) + 
+  geom_point(alpha = 0.5) + 
+  geom_abline(intercept = 0, slope = 1, color = "black", linetype = "dashed")
+```
+
+This just means that if we were to use the highest point and the selected point as ways to calculate the actual angle, then it is smaller than the actual slope at the selected point. 
+
+--- 
 
 # Task 4 -- Find slope 
 
