@@ -137,7 +137,7 @@ task5_df <- task_df %>% filter(task == "task5") %>%
 ```{r}
 #| output: false 
 #| code-fold: true
-#| label: verify that the results are correct in scale
+#| label: task 5 verify 
 
 task5_df %>% ggplot(aes(x = pixel.select.x - pixel.ans.x)) + 
   geom_dots()
@@ -308,6 +308,7 @@ task3_df <- task_df %>% filter(task == "task3") %>%
 ```{r}
 #| output: false 
 #| code-fold: true
+#| label: task 3 verify 
 
 # verify that the results are of correct scale
 task3_df %>% ggplot(aes(x = data.select.x - data.ans.x)) + 
@@ -413,9 +414,51 @@ task2_df <- task_df %>% filter(task == "task2") %>%
   select(-slider.x, -slider.y) %>% 
   mutate(data.ans.x = param.mu, 
          data.ans.y = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE),
-         data.ans.grad = numDeriv::grad(dsgt, data.select.x, mu = param.mu, sigma = param.sigma, 
-                               lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
-         data.ans.angle = atan(data.ans.grad) * 180 / pi)
+         data.ans.grad = numDeriv::grad(dsgt, data.select.x, mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
+         data.ans.angle = atan(data.ans.grad) * 180 / pi) %>% 
+  left_join(participants, by = join_by(participantId)) %>% 
+  # calculate things related to participants' selection 
+  mutate(phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM), 
+         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM),
+         va.select.x = vis_angle(phy.select.x, dist_to_screen), 
+         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>% 
+  # calculate things related to answer 
+  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x), 
+         pixel.ans.y = data_to_pixel_y(data.ans.y), 
+         phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM), 
+         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM),
+         va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
+         va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
+```
+
+```{r}
+#| output: false 
+#| code-fold: true 
+#| label: task 2 verify 
+
+task2_df %>% ggplot(aes(x = data.select.x - data.ans.x)) + 
+  geom_dots()
+
+task2_df %>% ggplot(aes(x = data.select.y - data.ans.y)) + 
+  geom_dots()
+
+task2_df %>% ggplot(aes(x = pixel.select.x - pixel.ans.x)) + 
+  geom_dots()
+
+task2_df %>% ggplot(aes(x = pixel.select.y - pixel.ans.y)) + 
+  geom_dots()
+
+task2_df %>% ggplot(aes(x = phy.select.x - phy.ans.x)) + 
+  geom_dots()  
+
+task2_df %>% ggplot(aes(x = phy.select.y - phy.ans.y)) + 
+  geom_dots() 
+
+task2_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + 
+  geom_dots()  
+
+task2_df %>% ggplot(aes(x = va.select.y - va.ans.y)) + 
+  geom_dots()  
 ```
 
 Note that `grad.x` is calcultaing the angle of the slope^[i.e. gradient] at selection `x`. It is NOT the perceived angle. 
@@ -441,23 +484,9 @@ task2_df %>% ggplot(aes(y = data.ans.grad, x = param.mu)) +
 task2_df %>% ggplot(aes(y = data.ans.grad, x = param.sigma)) +
   geom_point(alpha = 0.5)
 
-task2_df %>% left_join(participants, by = join_by(participantId)) %>% 
-  ggplot(aes(y = data.ans.grad, x = dist_to_screen)) +
+task2_df %>% ggplot(aes(y = data.ans.grad, x = dist_to_screen)) +
   geom_point(alpha = 0.5)
 ```
-
-What if we were to translate this into visual angles? Hmm the scale feels a bit off ... 
-
-```{r}
-task_df %>% filter(task == "task2") %>% 
-  select(-slider.x, -slider.y) %>% 
-  left_join(participants, by = join_by(participantId)) %>% 
-  mutate(phy.x = pixel_to_phy_x(pixel.select.x, dist_to_screen) - pixel_to_phy_x(data_to_pixel_x(param.mu), dist_to_screen), 
-         phy.y = pixel_to_phy_y(pixel.select.y, dist_to_screen) - pixel_to_phy_y(data_to_pixel_x(dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)), dist_to_screen)) %>%
-  ggplot(aes(x = phy.x, y = phy.y)) + 
-  geom_point()
-```
-
 
 # Task 4 -- Find slope 
 
