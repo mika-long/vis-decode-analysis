@@ -426,26 +426,23 @@ Let's plot the relation between the angle selected and the parameters:
 #| code-fold: true 
 #| layout-ncol: 2
 
-task2_df %>% ggplot(aes(y = angle.x, x = param.p)) +
-  geom_point()
-
-task2_df %>% ggplot(aes(y = angle.x, x = param.q)) +
+task2_df %>% ggplot(aes(y = data.ans.grad, x = param.p)) +
   geom_point(alpha = 0.5)
 
-task2_df %>% ggplot(aes(y = angle.x, x = param.lambda)) +
+task2_df %>% ggplot(aes(y = data.ans.grad, x = param.q)) +
   geom_point(alpha = 0.5)
 
-task2_df %>% ggplot(aes(y = angle.x, x = param.mu)) +
+task2_df %>% ggplot(aes(y = data.ans.grad, x = param.lambda)) +
   geom_point(alpha = 0.5)
 
-task2_df %>% ggplot(aes(y = angle.x, x = param.sigma)) +
+task2_df %>% ggplot(aes(y = data.ans.grad, x = param.mu)) +
   geom_point(alpha = 0.5)
 
-task2_df %>% ggplot(aes(y = angle.x, x = param.sigma)) +
+task2_df %>% ggplot(aes(y = data.ans.grad, x = param.sigma)) +
   geom_point(alpha = 0.5)
 
 task2_df %>% left_join(participants, by = join_by(participantId)) %>% 
-  ggplot(aes(y = angle.x, x = dist_to_screen)) +
+  ggplot(aes(y = data.ans.grad, x = dist_to_screen)) +
   geom_point(alpha = 0.5)
 ```
 
@@ -455,8 +452,8 @@ What if we were to translate this into visual angles? Hmm the scale feels a bit 
 task_df %>% filter(task == "task2") %>% 
   select(-slider.x, -slider.y) %>% 
   left_join(participants, by = join_by(participantId)) %>% 
-  mutate(phy.x = pixel_to_phy_x(pixel.x, dist_to_screen) - pixel_to_phy_x(data_to_pixel_x(param.mu), dist_to_screen), 
-         phy.y = pixel_to_phy_y(pixel.y, dist_to_screen) - pixel_to_phy_y(data_to_pixel_x(dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)), dist_to_screen)) %>%
+  mutate(phy.x = pixel_to_phy_x(pixel.select.x, dist_to_screen) - pixel_to_phy_x(data_to_pixel_x(param.mu), dist_to_screen), 
+         phy.y = pixel_to_phy_y(pixel.select.y, dist_to_screen) - pixel_to_phy_y(data_to_pixel_x(dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)), dist_to_screen)) %>%
   ggplot(aes(x = phy.x, y = phy.y)) + 
   geom_point()
 ```
