@@ -496,10 +496,9 @@ task2_df %>% ggplot(aes(y = data.select.grad, x = dist_to_screen)) +
 The only thing that is worth noting is the relationship between `data.select.grad` and `dist_to_screen`. What about the corresponding angle? 
 
 ```{r}
-task2_df %>% ggplot(aes(y = abs(data.select.angle), x = dist_to_screen)) +
+task2_df %>% ggplot(aes(y = data.select.angle, x = dist_to_screen)) +
   geom_point(alpha = 0.5)
 ```
-
 
 ---
 
@@ -509,7 +508,7 @@ How to calculate the actual angle, based on the selection? First we can check ou
 task2_df %>% 
   mutate(diff.x = phy.select.x - phy.ans.x, 
          diff.y = phy.select.y - phy.ans.y, 
-         angle = atan(abs(diff.y) / abs(diff.x)) * 180 / pi) %>% 
+         angle = atan(diff.y / diff.x) * 180 / pi) %>% 
   ggplot(aes(x = angle)) + 
   geom_dots()
 ```
@@ -574,7 +573,43 @@ Hmm doesn't seem to be much different, which is to be expected, as slope is unit
 
 task4_df <- task_df %>% filter(task == "task4") %>% 
   select(-slider.x, -slider.y) %>% 
-  mutate(slope = dsgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE), 
-         ans = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE))
+  mutate(data.select.slope = dsgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE), 
+         data.ans.slope = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE)) %>% 
+  left_join(participants, by = join_by(participantId))
+```
+
+Let's first see the distribution of signed error: 
+
+```{r}
+task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) + 
+  geom_dots()
+```
+
+It seems that the selected slope is consistently smaller than the actual slope of the answer. 
+
+Let's see if there's any obvious relation between signed error and parameters of the distribution: 
+
+```{r}
+# | layout-ncol: 2
+#| code-fold: true 
+
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = dist_to_screen)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.mu)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.sigma)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.lambda)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.p)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.q)) + 
+  geom_point()
 ```
 
