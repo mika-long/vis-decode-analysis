@@ -406,6 +406,8 @@ task1_df <- task_df %>% filter(task == "task1") %>%
 
 # Task 2 -- Find highest point on curve 
 
+Remember that for this, we need to filter out 
+
 ```{r}
 #| label: get task 2 data
 #| code-fold: true 
@@ -414,8 +416,8 @@ task2_df <- task_df %>% filter(task == "task2") %>%
   select(-slider.x, -slider.y) %>% 
   mutate(data.ans.x = param.mu, 
          data.ans.y = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE),
-         data.ans.grad = numDeriv::grad(dsgt, data.select.x, mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
-         data.ans.angle = atan(data.ans.grad) * 180 / pi) %>% 
+         data.select.grad = numDeriv::grad(dsgt, data.select.x, mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
+         data.select.angle = atan(data.select.grad) * 180 / pi) %>% 
   left_join(participants, by = join_by(participantId)) %>% 
   # calculate things related to participants' selection 
   mutate(phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM), 
@@ -487,6 +489,21 @@ task2_df %>% ggplot(aes(y = data.ans.grad, x = param.sigma)) +
 task2_df %>% ggplot(aes(y = data.ans.grad, x = dist_to_screen)) +
   geom_point(alpha = 0.5)
 ```
+
+How to calculate the actual angle, based on the selection? First we can check out the distribution of calculated angle (relative to the highest point?)
+
+```{r}
+task2_df %>% 
+  mutate(diff.x = phy.select.x - phy.ans.x, 
+         diff.y = phy.select.y - phy.ans.y, 
+         angle = atan(abs(diff.y) / abs(diff.x)) * 180 / pi) %>% 
+  ggplot(aes(x = angle)) + 
+  geom_dots()
+```
+
+We are seeing these extreme outliers because `diff.x` is very, very small, almost close to 0. The above calculations does not deal well with very, very small denominators. 
+
+
 
 # Task 4 -- Find slope 
 
