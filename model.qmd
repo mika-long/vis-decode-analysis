@@ -493,7 +493,13 @@ task2_df %>% ggplot(aes(y = data.select.grad, x = dist_to_screen)) +
   geom_point(alpha = 0.5)
 ```
 
-The only thing that is worth noting is the relationship between `data.select.grad` and `dist_to_screen`. 
+The only thing that is worth noting is the relationship between `data.select.grad` and `dist_to_screen`. What about the corresponding angle? 
+
+```{r}
+task2_df %>% ggplot(aes(y = abs(data.select.angle), x = dist_to_screen)) +
+  geom_point(alpha = 0.5)
+```
+
 
 ---
 
@@ -530,6 +536,21 @@ task2_df %>% mutate(diff.x = phy.select.x - phy.ans.x,
 ```
 
 This just means that if we were to use the highest point and the selected point as ways to calculate the actual angle, then it is smaller than the actual slope at the selected point. 
+
+Is this newly calculated `angle` going to be related to `dist_to_screen`? 
+
+```{r}
+task2_df %>% mutate(diff.x = phy.select.x - phy.ans.x, 
+                    diff.y = phy.select.y - phy.ans.y) %>% 
+  mutate(diff.x = round(diff.x, 3), diff.y = round(diff.y, 3)) %>% 
+  mutate(angle = case_when(diff.x == 0 ~ 0, 
+                           diff.x != 0 ~ atan(abs(diff.y) / abs(diff.x)) * 180 / pi )) %>% 
+  ggplot(aes(x = dist_to_screen, y = angle)) + 
+  geom_point(alpha = 0.5)
+```
+
+Compare to the graph before, the difference is that this one has a bigger variance. 
+
 
 --- 
 
