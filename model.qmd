@@ -31,6 +31,9 @@ Per Matt's advice: **Think in a generative way**
 
 # Read in data and all processing 
 
+- All the things selected by the participants will be named `xxx.select.xxx` 
+- All the things related to the actual answer will be named `xxx.ans.xxx`
+
 ```{r}
 #| label: read-in-data
 #| code-fold: true
@@ -74,6 +77,7 @@ pixel_to_phy_y <- function(pixel, pxMM){
   (410 - pixel) / pxMM
 }
 
+# return visual angle in degrees and not radian
 vis_angle <- function(size, distance){
   return(2 * atan(size / (2 * distance)) * 180 / pi)
 }
@@ -129,7 +133,50 @@ task5_df <- task_df %>% filter(task == "task5") %>%
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
 
+
+```{r}
+#| output: false 
+#| code-fold: false 
+#| label: verify that the results are correct in scale
+
+task5_df %>% ggplot(aes(x = pixel.select.x - pixel.ans.x)) + 
+  geom_dots()
+
+task5_df %>% ggplot(aes(x = pixel.select.y - pixel.ans.y)) + 
+  geom_dots()
+
+task5_df %>% ggplot(aes(x = phy.select.x - phy.ans.x)) + 
+  geom_dots()  
+
+# this is looking weird ... 
+# the numbers are too big 
+task5_df %>% ggplot(aes(x = phy.select.y - phy.ans.y)) + 
+  geom_dots() 
+
+task5_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + 
+  geom_dots()  
+
+# and this weirdness perpetuates into the visual angle calculations ... like 5 degrees is a LOT 
+task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) + 
+  geom_dots()  
+
+```
+
+
 ## Project from dot to X axes
+
+Distribution of signed error: 
+
+```{r}
+#| code-fold: true
+
+task5_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + 
+  geom_dots() +
+  geom_vline(xintercept = 0, linetype="dashed", color="gray") + 
+  labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
+```
+
+Relationship between signed error (in visual angle space) and distance to X-axes: 
 
 ```{r}
 #| code-fold: true
@@ -148,6 +195,9 @@ $$
 \sigma[i] &\sim \text{Half-Cauchy}(0, 5)
 \end{aligned}
 $$
+:::{.callout-caution}
+Another model would be to model the variance being influenced by the distance the participant is away from the screen. However, that would mean we would need **a theoretical justfication for why distance impacts error variance beyond its effect on visual angle**. 
+:::
 
 How would we write this in `brms`? 
 
@@ -155,33 +205,44 @@ How would we write this in `brms`?
 #| label: task5-fit-model-x 
 #| output: false
 
-# m5.x <- task5_df %>% mutate(error = va.x - ans.va.x) %>% 
-#   brm(
-#     formula = error ~ 1 + (1|participantId), 
-#     data = ., 
-#     family = gaussian(),
-#     prior = c(prior(cauchy(0, 5), class="sd", group="participantId")),
-#     control = list(adapt_delta = 0.95),
-#     file="models/m5.x"
-# )
+m5.x <- task5_df %>% mutate(error = va.select.x - va.ans.x) %>%
+  brm(
+    formula = error ~ 1 + (1|participantId),
+    data = .,
+    family = gaussian(),
+    prior = c(prior(cauchy(0, 5), class="sd", group="participantId")),
+    control = list(adapt_delta = 0.95),
+    file="models/m5.x"
+)
 ```
 
 What does the fit look like? 
 
 ```{r}
-# summary(m5.x)
-# plot(m5.x)
+summary(m5.x)
+plot(m5.x)
 ```
 
 Posterior predictive check: 
 
 ```{r}
-# pp_check(m5.x, ndraws = 100)
+pp_check(m5.x, ndraws = 100)
 ```
 
 ## Project from dot to Y Axes
 
-Let's first plot: 
+Distribution of signed error: 
+
+```{r}
+#| code-fold: true 
+
+task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) + 
+  geom_dots() + 
+  geom_vline(xintercept = 0, color="gray", linetype="dashed") + 
+  labs(title = "Task 5 - Project from dot to Y-Axes - Visual Angle")
+```
+
+Relationship between signed error and distance to x-axes (in visual angle space): 
 
 ```{r}
 #| code-fold: true
