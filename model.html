@@ -841,7 +841,7 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">diff.y =</span> phy.select.y <span class="sc">-</span> phy.ans.y) <span class="sc">%&gt;%</span> </span>
 <span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff.x =</span> <span class="fu">round</span>(diff.x, <span class="dv">3</span>), <span class="at">diff.y =</span> <span class="fu">round</span>(diff.y, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> </span>
 <span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">angle =</span> <span class="fu">case_when</span>(diff.x <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="dv">0</span>, </span>
-<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>                           diff.x <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">atan</span>(<span class="fu">abs</span>(diff.y) <span class="sc">/</span> <span class="fu">abs</span>(diff.x)) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi )) <span class="sc">%&gt;%</span> </span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>                           diff.x <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">atan</span>(diff.y <span class="sc">/</span> diff.x) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi )) <span class="sc">%&gt;%</span> </span>
 <span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> angle)) <span class="sc">+</span> </span>
 <span id="cb56-7"><a href="#cb56-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
@@ -855,8 +855,8 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">diff.y =</span> phy.select.y <span class="sc">-</span> phy.ans.y) <span class="sc">%&gt;%</span> </span>
 <span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff.x =</span> <span class="fu">round</span>(diff.x, <span class="dv">3</span>), <span class="at">diff.y =</span> <span class="fu">round</span>(diff.y, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> </span>
 <span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">angle =</span> <span class="fu">case_when</span>(diff.x <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="dv">0</span>, </span>
-<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>                           diff.x <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">atan</span>(<span class="fu">abs</span>(diff.y) <span class="sc">/</span> <span class="fu">abs</span>(diff.x)) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi )) <span class="sc">%&gt;%</span> </span>
-<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> angle, <span class="at">y =</span> <span class="fu">abs</span>(data.select.angle))) <span class="sc">+</span> </span>
+<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>                           diff.x <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">atan</span>(diff.y <span class="sc">/</span> diff.x) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi )) <span class="sc">%&gt;%</span> </span>
+<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> angle, <span class="at">y =</span> data.select.angle)) <span class="sc">+</span> </span>
 <span id="cb57-7"><a href="#cb57-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
 <span id="cb57-8"><a href="#cb57-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">slope =</span> <span class="dv">1</span>, <span class="at">color =</span> <span class="st">"black"</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
@@ -867,14 +867,14 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 </div>
 </div>
 </div>
-<p>This just means that if we were to use the highest point and the selected point as ways to calculate the actual angle, then it is smaller than the actual slope at the selected point.</p>
+<p>This just means that if we were to use the highest point and the selected point as ways to calculate the actual angle, then it is <strong>larger</strong> than the actual slope at the selected point.</p>
 <p>Is this newly calculated <code>angle</code> going to be related to <code>dist_to_screen</code>?</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">diff.x =</span> phy.select.x <span class="sc">-</span> phy.ans.x, </span>
 <span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">diff.y =</span> phy.select.y <span class="sc">-</span> phy.ans.y) <span class="sc">%&gt;%</span> </span>
 <span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff.x =</span> <span class="fu">round</span>(diff.x, <span class="dv">3</span>), <span class="at">diff.y =</span> <span class="fu">round</span>(diff.y, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> </span>
 <span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">angle =</span> <span class="fu">case_when</span>(diff.x <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="dv">0</span>, </span>
-<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>                           diff.x <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">atan</span>(<span class="fu">abs</span>(diff.y) <span class="sc">/</span> <span class="fu">abs</span>(diff.x)) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi )) <span class="sc">%&gt;%</span> </span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>                           diff.x <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">atan</span>(diff.y <span class="sc">/</span> diff.x) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi )) <span class="sc">%&gt;%</span> </span>
 <span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> dist_to_screen, <span class="at">y =</span> angle)) <span class="sc">+</span> </span>
 <span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
@@ -886,15 +886,33 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 </div>
 </div>
 <p>Compare to the graph before, the difference is that this one has a bigger variance.</p>
+<p>What if we use the numbers in the visual angle space and not the physical space?</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">diff.x =</span> va.select.x <span class="sc">-</span> va.ans.x, </span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">diff.y =</span> va.select.y <span class="sc">-</span> va.ans.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff.x =</span> <span class="fu">round</span>(diff.x, <span class="dv">3</span>), <span class="at">diff.y =</span> <span class="fu">round</span>(diff.y, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">angle =</span> <span class="fu">case_when</span>(diff.x <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="dv">0</span>, </span>
+<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a>                           diff.x <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">atan</span>(diff.y <span class="sc">/</span> diff.x) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi )) <span class="sc">%&gt;%</span> </span>
+<span id="cb59-6"><a href="#cb59-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> dist_to_screen, <span class="at">y =</span> angle)) <span class="sc">+</span> </span>
+<span id="cb59-7"><a href="#cb59-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="model_files/figure-html/unnamed-chunk-33-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Hmm doesn’t seem to be much different, which is to be expected, as slope is unit-less.</p>
 <hr>
 </section>
 <section id="task-4-find-slope" class="level1">
 <h1>Task 4 – Find slope</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task4"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>slider.x, <span class="sc">-</span>slider.y) <span class="sc">%&gt;%</span> </span>
-<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">slope =</span> <span class="fu">dsgt</span>(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent=</span><span class="cn">FALSE</span>), </span>
-<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans =</span> <span class="fu">dsgt</span>(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent=</span><span class="cn">FALSE</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task4"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>slider.x, <span class="sc">-</span>slider.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">slope =</span> <span class="fu">dsgt</span>(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent=</span><span class="cn">FALSE</span>), </span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">ans =</span> <span class="fu">dsgt</span>(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent=</span><span class="cn">FALSE</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 
