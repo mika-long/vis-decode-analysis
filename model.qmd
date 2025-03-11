@@ -400,8 +400,8 @@ What if we were to combine the dataframes and run a model together? Would this r
 
 task1_df <- task_df %>% filter(task == "task1") %>% 
   select(-slider.x, -slider.y) %>% 
-  mutate(left_area = psgt(data.select.x, param.mu, param.sigma, 
-                        param.lambda, param.p, param.q, mean.cent = FALSE))
+  mutate(left_area = psgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)) %>% 
+  left_join(participants, by = join_by(participantId))
 ```
 
 
@@ -433,6 +433,14 @@ task2_df <- task_df %>% filter(task == "task2") %>%
          va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
+
+```{r}
+task2_df %>% ggplot(aes(y = phy.ans.y - phy.select.y, x = dist_to_screen)) + 
+  geom_point()
+```
+
+
+
 
 Then we check to make sure that things are correct: 
 
@@ -590,7 +598,7 @@ It seems that the selected slope is consistently smaller than the actual slope o
 Let's see if there's any obvious relation between signed error and parameters of the distribution: 
 
 ```{r}
-# | layout-ncol: 2
+#| layout-ncol: 2
 #| code-fold: true 
 
 
@@ -613,3 +621,4 @@ task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.q)) +
   geom_point()
 ```
 
+I don't see any apparent trends ... 
