@@ -25,6 +25,8 @@ theme_set(theme_minimal())
 library(brms)
 ```
 
+
+
 :::{.callout-caution}
 Per Matt's advice: **Think in a generative way**
 :::
@@ -33,6 +35,8 @@ Per Matt's advice: **Think in a generative way**
 
 - All the things selected by the participants will be named `xxx.select.xxx` 
 - All the things related to the actual answer will be named `xxx.ans.xxx`
+
+
 
 ```{r}
 #| label: read-in-data
@@ -104,7 +108,11 @@ vis_distance <- data.frame(participantId = p,
 participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participantId))
 ```
 
+
+
 # Task 5 -- Project from dot to axes
+
+
 
 ```{r}
 #| label: get task 5 data ready 
@@ -133,7 +141,6 @@ task5_df <- task_df %>% filter(task == "task5") %>%
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
 
-
 ```{r}
 #| output: false 
 #| code-fold: true
@@ -160,9 +167,13 @@ task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
 ```
 
 
+
+
 ## Project from dot to X axes
 
 Distribution of signed error: 
+
+
 
 ```{r}
 #| code-fold: true
@@ -173,7 +184,11 @@ task5_df %>% ggplot(aes(x = va.select.x - va.ans.x)) +
   labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
 ```
 
+
+
 Relationship between signed error (in visual angle space) and distance to X-axes: 
+
+
 
 ```{r}
 #| code-fold: true
@@ -183,6 +198,8 @@ task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) +
   geom_vline(xintercept = 0, linetype="dashed", color="gray") + 
   labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
 ```
+
+
 
 What would be a potential model for this? TODO: forgot to model the `va.ans.y` part ... 
 
@@ -197,6 +214,8 @@ Another model would be to model the variance being influenced by the distance th
 :::
 
 How would we write this in `brms`? 
+
+
 
 ```{r}
 #| label: task5-fit-model-x 
@@ -213,22 +232,34 @@ m5.x <- task5_df %>% mutate(error = va.select.x - va.ans.x) %>%
 )
 ```
 
+
+
 What does the fit look like? 
+
+
 
 ```{r}
 summary(m5.x)
 plot(m5.x)
 ```
 
+
+
 Posterior predictive check: 
+
+
 
 ```{r}
 pp_check(m5.x, ndraws = 100)
 ```
 
+
+
 ## Project from dot to Y Axes
 
 Distribution of signed error: 
+
+
 
 ```{r}
 #| code-fold: true 
@@ -239,7 +270,11 @@ task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
   labs(title = "Task 5 - Project from dot to Y-Axes - Visual Angle")
 ```
 
+
+
 Relationship between signed error and distance to x-axes (in visual angle space): 
+
+
 
 ```{r}
 #| code-fold: true
@@ -250,7 +285,11 @@ task5_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
   labs(title = "Task 5 - Project from dot to Y-Axes - Visual Angle")
 ```
 
+
+
 We adopt a similar model and write the following formula: 
+
+
 
 ```{r}
 #| label: task5-fit-model-y 
@@ -273,15 +312,23 @@ summary(m5.y)
 plot(m5.y)
 ```
 
+
+
 Posterior predictive check: 
+
+
 
 ```{r}
 pp_check(m5.y, ndraws = 100)
 ```
 
+
+
 # Task 3 -- Find point on curve where `y == 0.5`
 
 First we get the data:
+
+
 
 ```{r}
 task3_df <- task_df %>% filter(task == "task3") %>% 
@@ -335,7 +382,11 @@ task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
   geom_dots()  
 ```
 
+
+
 Distribution of signed error: 
+
+
 
 ```{r}
 #| code-fold: true
@@ -346,7 +397,11 @@ task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
   labs(title="Task 3 -- CDF Median") 
 ```
 
+
+
 Relationship between distance from the y-axes and the signed distribution: 
+
+
 
 ```{r}
 task3_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) + 
@@ -355,7 +410,11 @@ task3_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
   labs(title="Task 3 -- CDF Median") 
 ```
 
+
+
 The model we fit is going to be very similar to the ones we fitted for task 5. 
+
+
 
 ```{r}
 #| label: task3-fit-model
@@ -378,20 +437,32 @@ summary(m3)
 plot(m3)
 ```
 
+
+
 Posterior predictive check: 
+
+
 
 ```{r}
 pp_check(m3, ndraws = 100)
 ```
 
+
+
 ---
 
 What if we were to combine the dataframes and run a model together? Would this reduce the variance? Suppose we combine the project from dot to axes 
+
+
 ```{r}
 # TODO 
 ```
 
+
+
 # Task 1 -- Split area into equal halves
+
+
 
 ```{r}
 #| label: get task 1 data 
@@ -403,7 +474,11 @@ task1_df <- task_df %>% filter(task == "task1") %>%
 ```
 
 
+
+
 # Task 2 -- Find highest point on curve 
+
+
 
 ```{r}
 #| label: get task 2 data
@@ -418,9 +493,13 @@ task2_df <- task_df %>% filter(task == "task2") %>%
          data.ans.angle = atan(data.ans.grad) * 180 / pi)
 ```
 
+
+
 Note taht `grad.x` is calcultaing the angle of the slope^[i.e. gradient] at selection `x`. It is NOT the perceived angle. 
 
 Let's plot the relation between the angle selected and the parameters: 
+
+
 
 ```{r}
 #| code-fold: true 
@@ -449,7 +528,11 @@ task2_df %>% left_join(participants, by = join_by(participantId)) %>%
   geom_point(alpha = 0.5)
 ```
 
+
+
 What if we were to translate this into visual angles? Hmm the scale feels a bit off ... 
+
+
 
 ```{r}
 task_df %>% filter(task == "task2") %>% 
@@ -462,7 +545,11 @@ task_df %>% filter(task == "task2") %>%
 ```
 
 
+
+
 # Task 4 -- Find slope 
+
+
 
 ```{r}
 #| label: get task 4 data 
