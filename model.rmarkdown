@@ -342,7 +342,7 @@ task3_df <- task_df %>% filter(task == "task3") %>%
          va.select.x = vis_angle(phy.select.x, dist_to_screen),
          va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>% 
   mutate(data.ans.y = 0.5, 
-         data.ans.x = qsgt(0.5, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = F)) %>% 
+         data.ans.x = qsgt(0.5, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)) %>% 
   # do all the calculations for the actual answer
   mutate(pixel.ans.x = data_to_pixel_x(data.ans.x),
          pixel.ans.y = data_to_pixel_y(data.ans.y),
@@ -469,8 +469,8 @@ What if we were to combine the dataframes and run a model together? Would this r
 
 task1_df <- task_df %>% filter(task == "task1") %>% 
   select(-slider.x, -slider.y) %>% 
-  mutate(left_area = psgt(location.x, param.mu, param.sigma, 
-                        param.lambda, param.p, param.q, mean.cent = F))
+  mutate(left_area = psgt(data.select.x, param.mu, param.sigma, 
+                        param.lambda, param.p, param.q, mean.cent = FALSE))
 ```
 
 
@@ -488,14 +488,14 @@ task2_df <- task_df %>% filter(task == "task2") %>%
   select(-slider.x, -slider.y) %>% 
   mutate(data.ans.x = param.mu, 
          data.ans.y = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE),
-         data.ans.grad = numDeriv::grad(dsgt, data.selection.x, mu = param.mu, sigma = param.sigma, 
+         data.ans.grad = numDeriv::grad(dsgt, data.select.x, mu = param.mu, sigma = param.sigma, 
                                lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
          data.ans.angle = atan(data.ans.grad) * 180 / pi)
 ```
 
 
 
-Note taht `grad.x` is calcultaing the angle of the slope^[i.e. gradient] at selection `x`. It is NOT the perceived angle. 
+Note that `grad.x` is calcultaing the angle of the slope^[i.e. gradient] at selection `x`. It is NOT the perceived angle. 
 
 Let's plot the relation between the angle selected and the parameters: 
 
@@ -556,7 +556,7 @@ task_df %>% filter(task == "task2") %>%
 
 task4_df <- task_df %>% filter(task == "task4") %>% 
   select(-slider.x, -slider.y) %>% 
-  mutate(slope = dsgt(location.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE), 
+  mutate(slope = dsgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE), 
          ans = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE))
 ```
 
