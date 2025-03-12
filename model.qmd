@@ -184,48 +184,73 @@ task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) +
   labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
 ```
 
-What would be a potential model for this? TODO: forgot to model the `va.ans.y` part ... 
+What would be a potential model for this? We can have two models, where one models `dist_to_screen` in the variance part (and error is measured in the physical distance part) and the other measures visual angle. 
+
+Model 1: 
 
 $$
 \begin{aligned}
-\text{error}[i] &\sim \mathcal{N}(0, \sigma[i]) \\ 
+\text{error}_{\text{va}}[i] &\sim \mathcal{N}(0, \sigma[i]) \\ 
 \sigma[i] &\sim \text{Half-Cauchy}(0, 5)
 \end{aligned}
 $$
 
-:::{.callout-caution}
-Another model would be to model the variance being influenced by the distance the participant is away from the screen. However, that would mean we would need **a theoretical justfication for why distance impacts error variance beyond its effect on visual angle**. 
-:::
+Model 2: 
 
-How would we write this in `brms`? 
+$$
+\begin{aligned}
+\text{error}_{\text{phy}}[i] &\sim \mathcal{N}(0, \sigma[i]) \\ 
+\sigma[i] &= \text{dist} \times \hat{\sigma}[i] \\ 
+\hat{\sigma}[i] &\sim \text{Half-Cauchy}(0, 5)
+\end{aligned}
+$$
+
+---
+
+Let's fit these models with `brms`: 
+
+Note that we're changing the prior from `cauchy(0, 5)` to `cauchy(0, 2)` for a tigheter fit ... 
 
 ```{r}
 #| label: task5-fit-model-x 
 #| output: false
 
-m5.x <- task5_df %>% mutate(error = va.select.x - va.ans.x) %>%
+m5.1.x <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   brm(
-    formula = error ~ 1 + (1|participantId),
+    formula = bf(error_va ~ 0, 
+                 sigma ~ 0 + (1 | participantId)),
     data = .,
     family = gaussian(),
-    prior = c(prior(cauchy(0, 5), class="sd", group="participantId")),
+    prior = c(prior(cauchy(0, 2), class="sd", group="participantId", dpar="sigma")),
     control = list(adapt_delta = 0.95),
-    file="models/m5.x"
+    chains = 4, 
+    iter = 6000, # more iterations 
+    file="models/m5.1.x"
 )
 ```
 
 What does the fit look like? 
 
 ```{r}
-summary(m5.x)
-plot(m5.x)
+summary(m5.1.x)
+plot(m5.1.x)
 ```
 
 Posterior predictive check: 
 
 ```{r}
-pp_check(m5.x, ndraws = 100)
+pp_check(m5.1.x, ndraws = 100)
 ```
+
+```{r}
+library(tidybayes)
+
+get_variables(m5.1.x)
+
+m5.1.x %>% spread_draws(r_participantId__sigma[participant, term])
+```
+
+
 
 ## Project from dot to Y Axes
 
@@ -400,9 +425,25 @@ What if we were to combine the dataframes and run a model together? Would this r
 
 task1_df <- task_df %>% filter(task == "task1") %>% 
   select(-slider.x, -slider.y) %>% 
-  mutate(left_area = psgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)) %>% 
+  mutate(data.select.left_area = psgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)) %>% 
   left_join(participants, by = join_by(participantId))
 ```
+
+Plotting left area again lambda: 
+
+```{r}
+task1_df %>% ggplot(aes(x = param.lambda, y = data.select.left_area)) + 
+  geom_point(alpha = 0.5) + 
+  ylim(0, 1)
+
+task1_df %>% ggplot(aes(x = param.lambda, y = data.select.x - param.mu)) + 
+  geom_point(alpha = 0.5)
+
+task1_df %>% ggplot(aes(x =  data.select.x - param.mu)) + 
+  geom_dots()
+```
+
+
 
 
 # Task 2 -- Find highest point on curve 
