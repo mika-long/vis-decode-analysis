@@ -357,7 +357,6 @@ m5.2.x <- add_criterion(m5.2.x, "loo")
 loo_compare(m5.1.x, m5.2.x)
 ```
 
-
 ## Project from dot to Y Axes
 
 Distribution of signed error: 
@@ -382,25 +381,36 @@ task5_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
   labs(title = "Task 5 - Project from dot to Y-Axes - Visual Angle")
 ```
 
-We adopt a similar model and write the following formula: 
+We apply the same approach, fit two models, and compare them. 
+
+### Model 1 
 
 ```{r}
-#| label: task5-fit-model-y 
+f <- bf(error_va ~ 0, 
+        sigma ~  0 + offset(log(va.ans.x)) + (1 | participantId))
+p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
+```
+
+Fitting the model: 
+
+```{r}
+#| label: task5-fit-model-1-y 
 #| output: false 
 
 m5.1.y <- task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
   brm(
-    formula = bf(error_va ~ 0, 
-                 sigma ~  0 + offset(log(va.ans.x)) + (1 | participantId)),
+    formula = f,
     data = .,
     family = gaussian(),
-    prior = c(prior(cauchy(0, 2), class="sd", group="participantId", dpar="sigma")),
+    prior = p,
     control = list(adapt_delta = 0.95),
     chains = 4, 
-    iter = 6000, # more iterations 
+    iter = 6000, 
     file="models/m5.1.y"
 )
 ```
+
+Check the output: 
 
 ```{r}
 summary(m5.1.y)
@@ -408,12 +418,73 @@ plot(m5.1.y)
 pp_check(m5.1.y, ndraws = 100)
 ```
 
+How are the $\hat{\sigma}[i]$ distributed? 
+
+```{r}
+m5.1.y %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
+  filter(term == "Intercept") %>% 
+  mutate(hat_sigma = exp(r_participantId__sigma)) %>% 
+  ggplot(aes(y = participantId, x = hat_sigma)) + 
+  # stat_pointinterval() 
+  stat_halfeye()
+```
+
 ### Second model 
 
 ```{r}
-# TODO 
+f <- bf(error_phy ~ 0, 
+        sigma ~ 0 + offset(log(phy.ans.x)) + offset(log(dist_to_screen)) + (1 | participantId))
+p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
 ```
 
+Fitting the model: 
+
+```{r}
+#| output: false 
+#| label: task5-y-model-2-fit
+
+m5.2.y <- task5_df %>% mutate(error_phy = phy.select.y - phy.ans.y) %>%
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p,
+    control = list(adapt_delta = 0.95),
+    chains = 4, 
+    iter = 6000, 
+    file="models/m5.2.y"
+)
+```
+
+Check the result: 
+
+```{r}
+summary(m5.2.y)
+plot(m5.2.y)
+pp_check(m5.2.y, ndraws = 100)
+```
+
+How are the $\hat{\sigma}[i]$ distributed? 
+
+```{r}
+m5.2.y %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
+  filter(term == "Intercept") %>% 
+  mutate(hat_sigma = exp(r_participantId__sigma)) %>% 
+  ggplot(aes(y = participantId, x = hat_sigma)) + 
+  # stat_pointinterval() 
+  stat_halfeye()
+```
+
+Huh things here are much nicer ... 
+
+### Compare the two models 
+
+```{r}
+m5.1.y <- add_criterion(m5.1.y, "loo")
+m5.2.y <- add_criterion(m5.2.y, "loo")
+
+loo_compare(m5.1.y, m5.2.y)
+```
 
 # Task 3 -- Find point on curve where `y == 0.5`
 
