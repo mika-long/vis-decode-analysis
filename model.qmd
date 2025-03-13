@@ -23,6 +23,9 @@ library(ggdist)
 theme_set(theme_minimal())
 # model
 library(brms)
+# plot results 
+library(tidybayes)
+library(bayesplot)
 ```
 
 :::{.callout-caution}
@@ -133,6 +136,7 @@ task5_df <- task_df %>% filter(task == "task5") %>%
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
 
+Verify that the results are in the right scale: 
 
 ```{r}
 #| output: false 
@@ -159,7 +163,6 @@ task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
 
 ```
 
-
 ## Project from dot to X axes
 
 Distribution of signed error: 
@@ -184,48 +187,56 @@ task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) +
   labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
 ```
 
-What would be a potential model for this? We can have two models, where one models `dist_to_screen` in the variance part (and error is measured in the physical distance part) and the other measures visual angle. 
+### Model 1 
 
 Model 1: 
 
 $$
 \begin{aligned}
 \text{error}_{\text{va}}[i] &\sim \mathcal{N}(0, \sigma[i]) \\ 
-\sigma[i] &= a \times \texttt{va.ans.y} \\
-\implies \log(\sigma[i]) &= \log(a) + \log(\texttt{va.ans.y})
+\sigma[i] &= a \times \texttt{va.ans.y} \times \hat{\sigma}[i] \\
+\equiv \log(\sigma[i]) &= \log(a) + \log(\texttt{va.ans.y}) + \log(\hat{\sigma}[i])\\ 
+\log(\hat{\sigma}[i]) &\sim \mathcal{N}(0, 1)
 \end{aligned}
 $$
 
-Model 2: 
+:::{.caution-note}
+We could also model $\sigma[i] = \texttt{va.ans.y} \times \hat{\sigma}[i] \equiv \log(\sigma[i]) = \log(\texttt{va.ans.y}) + \log(\hat{\sigma}[i])$ that would just imply we chagne the formula from `sigma ~ 1 + offset(log(va.ans.y)) + (1 | participantId) ` to `sigma ~ 0 + offset(log(va.ans.y)) + (1 | participantId)`.
+:::
 
-$$
-\begin{aligned}
-\text{error}_{\text{phy}}[i] &\sim \mathcal{N}(0, \sigma[i]) \\ 
-\sigma[i] &= \text{dist}[i] \times \hat{\sigma}[i] \\ 
-\hat{\sigma}[i] &\sim \text{Half-Cauchy}(0, 5)
-\end{aligned}
-$$
-
----
-
-Let's fit these models with `brms`: 
-
-Note that we're changing the prior from `cauchy(0, 5)` to `cauchy(0, 2)` for a tigheter fit ... 
+Let's first get a sense of what the parameters and priors look like: 
 
 ```{r}
-#| label: task5-fit-model-x 
+#| label: task5-x-model1-formula
+
+# specify formula 
+f <- bf(error_va ~ 0, 
+        sigma ~ 0 + offset(log(va.ans.y)) + (1 | participantId))
+
+# get prior 
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+get_prior(formula = f, 
+          data = .)
+```
+
+To match this to our math specificaiton, we need to set the prior to be `prior(constant(1), class = "sd", group = "participantId")`. 
+
+```{r}
+#| label: task5-fit-model-1-x 
 #| output: false
+
+# specify prior 
+p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
 
 m5.1.x <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   brm(
-    formula = bf(error_va ~ 0, 
-                 sigma ~ 0 + offset(log(va.ans.y)) + (1 | participantId)),
+    formula = f,
     data = .,
     family = gaussian(),
-    prior = c(prior(cauchy(0, 2), class="sd", group="participantId", dpar="sigma")),
+    prior = p,
     control = list(adapt_delta = 0.95),
     chains = 4, 
-    iter = 6000, # more iterations 
+    iter = 6000, 
     file="models/m5.1.x"
 )
 ```
@@ -234,64 +245,81 @@ What does the fit look like?
 
 ```{r}
 summary(m5.1.x)
+# mixing check 
 plot(m5.1.x)
-```
-
-Posterior predictive check: 
-
-```{r}
+# posterior predictive check 
 pp_check(m5.1.x, ndraws = 100)
 ```
 
+Other kinds of plotting ... 
+
 ```{r}
-library(tidybayes)
-library(bayesplot)
-
 get_variables(m5.1.x)
-
-m5.1.x %>% mcmc_areas(pars = vars(starts_with("r_")))
-m5.1.x %>% mcmc_areas(pars = vars(starts_with("sd_")))
-
 ```
 
----
+Given that we have specified out prior to have variance 1 (recall that $\hat{\sigma}[i] \sim \text{Log-Normal}(0, 1)$), if we were to plot it it will just be a dot on 1: 
 
-Recall the second model: 
+```{r}
+m5.1.x %>% mcmc_areas(pars = vars(starts_with("sd_")))
+```
+
+What is more interesting is the $\hat{\sigma}[i]$ for each participant, which we can visualize as follows: 
+
+```{r}
+m5.1.x %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
+  filter(term == "Intercept") %>% 
+  mutate(hat_sigma = exp(r_participantId__sigma)) %>% 
+  ggplot(aes(y = participantId, x = hat_sigma)) + 
+  # stat_pointinterval() 
+  stat_halfeye()
+```
+
+:::{.column-margin}
+The outlier here (`5f37...`) is Maryam. 
+:::
+
+### Model 2
 
 $$
 \begin{aligned}
 \text{error}_{\text{phy}}[i] &\sim \mathcal{N}(0, \sigma[i]) \\ 
-\sigma[i] &= \text{dist}[i] \times \hat{\sigma}[i] \\ 
-\hat{\sigma}[i] &\sim \text{Half-Cauchy}(0, 5)
+\sigma[i] &= \text{dist}[i] \times \texttt{phy.ans.y}[i] \times \hat{\sigma}[i] \\ 
+\hat{\sigma}[i] &\sim \mathcal{N}(0, 1)
 \end{aligned}
 $$
 
-Let's run the brms code for it: 
+Write the formula and get a sense of prior: 
 
 ```{r}
+#| label: task5-x-model2-formula
+
+# formula
+f <- bf(error_phy ~ 0, 
+        sigma ~ 0 + offset(log(phy.ans.y)) + offset(log(dist_to_screen)) + (1 | participantId))
+
+# get prior 
 task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
-  rename(error = error_phy, dist = dist_to_screen) %>% 
-  get_prior(bf(error ~ 0,
-               sigma ~ 0 + offset(log(va.ans.y)) + offset(log(dist)) + (1 | participantId)), 
+  get_prior(formula = f, 
             data = .)
 ```
 
-
 ```{r}
-m5.2.x <- task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
-  rename(error = error_phy, dist = dist_to_screen) %>%
-  brm(
-    formula = bf(error ~ 0,
-                 sigma ~ 0 + offset(log(phy.ans.y)) + offset(log(dist)) + (1 | participantId)),
-    data = .,
-    family = gaussian(),
-    prior = c(prior(cauchy(0, 2), class="sd", group="participantId", dpar="sigma")),
-    control = list(adapt_delta = 0.95),
-    chains = 4,
-    iter = 6000, # more iterations
-    warmup=1000,
-    file="models/m5.2.x"
-)
+#| label: task5-fit-model-2-x
+#| output: false 
+
+p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
+
+m5.2.x <- task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>% 
+  brm(formula = f,
+      data = .,
+      family = gaussian(),
+      prior = p,
+      control = list(adapt_delta = 0.95),
+      chains = 4,
+      iter = 6000, 
+      warmup=1000,
+      file="models/m5.2.x"
+  )
 ```
 
 ```{r}
