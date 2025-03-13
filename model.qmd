@@ -191,7 +191,8 @@ Model 1:
 $$
 \begin{aligned}
 \text{error}_{\text{va}}[i] &\sim \mathcal{N}(0, \sigma[i]) \\ 
-\sigma[i] &\sim \text{Half-Cauchy}(0, 5)
+\sigma[i] &= a \times \texttt{va.ans.y} \\
+\implies \log(\sigma[i]) &= \log(a) + \log(\texttt{va.ans.y})
 \end{aligned}
 $$
 
@@ -218,7 +219,7 @@ Note that we're changing the prior from `cauchy(0, 5)` to `cauchy(0, 2)` for a t
 m5.1.x <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   brm(
     formula = bf(error_va ~ 0, 
-                 sigma ~ 0 + (1 | participantId)),
+                 sigma ~ 0 + offset(log(va.ans.y)) + (1 | participantId)),
     data = .,
     family = gaussian(),
     prior = c(prior(cauchy(0, 2), class="sd", group="participantId", dpar="sigma")),
@@ -268,41 +269,42 @@ $$
 Let's run the brms code for it: 
 
 ```{r}
-get_prior(bf(error ~ 0, 
-                 sigma ~ sqrt(dist) * exp(base),
-                 base ~ (1|participantId),
-                 nl=TRUE #,
-                 # dist ~ 1
-                 ))
+task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
+  rename(error = error_phy, dist = dist_to_screen) %>% 
+  get_prior(bf(error ~ 0,
+               sigma ~ 0 + offset(log(va.ans.y)) + offset(log(dist)) + (1 | participantId)), 
+            data = .)
 ```
 
 
 ```{r}
 m5.2.x <- task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
-  rename(error = error_phy, dist = dist_to_screen) %>% names() %>%
+  rename(error = error_phy, dist = dist_to_screen) %>%
   brm(
-    formula = bf(error ~ 0, 
-                 sigma ~ sqrt(dist) * exp(base),
-                 base ~ (1|participantId),
-                 nl=TRUE,
-                 dist ~ 1
-                 ),
+    formula = bf(error ~ 0,
+                 sigma ~ 0 + offset(log(phy.ans.y)) + offset(log(dist)) + (1 | participantId)),
     data = .,
     family = gaussian(),
-    prior = c(prior(
-      prior="half_normal(0, 5)",
-      class="sd",
-      nlpar="v",
-      group="participantId"
-    )),
+    prior = c(prior(cauchy(0, 2), class="sd", group="participantId", dpar="sigma")),
     control = list(adapt_delta = 0.95),
-    chains = 4, 
-    iter = 6000, # more iterations 
+    chains = 4,
+    iter = 6000, # more iterations
     warmup=1000,
     file="models/m5.2.x"
 )
 ```
 
+```{r}
+summary(m5.2.x)
+plot(m5.2.x)
+pp_check(m5.2.x, ndraws = 100)
+```
+
+Let's compare the two: 
+
+```{r}
+loo_compare(m5.1.x, m5.2.x, criterion="waic")
+```
 
 
 ## Project from dot to Y Axes
@@ -362,7 +364,9 @@ pp_check(m5.1.y, ndraws = 100)
 
 ### Second model 
 
-
+```{r}
+# TODO 
+```
 
 
 # Task 3 -- Find point on curve where `y == 0.5`
@@ -474,6 +478,12 @@ Posterior predictive check:
 pp_check(m3.1, ndraws = 100)
 ```
 
+```{r}
+mcmc_areas(m3.1, pars=vars(!starts_with("l")))
+```
+
+
+
 ---
 
 Model 2
@@ -512,9 +522,15 @@ task1_df %>% ggplot(aes(x = param.lambda, y = data.select.x - param.mu)) +
 
 task1_df %>% ggplot(aes(x =  data.select.x - param.mu)) + 
   geom_dots()
+
+task1_df %>% ggplot(aes(y =  data.select.x - param.mu, x = dist_to_screen)) + 
+  geom_point()
+
+task1_df %>% ggplot(aes(y =  data.select.left_area - 0.5, x = dist_to_screen)) + 
+  geom_point()
 ```
 
-
+Doesn't seem to be any trend connected to `dist_to_screen` ... 
 
 
 # Task 2 -- Find highest point on curve 
@@ -547,11 +563,61 @@ task2_df <- task_df %>% filter(task == "task2") %>%
 ```
 
 ```{r}
+#| layout-ncol: 2
+
+
 task2_df %>% ggplot(aes(y = phy.ans.y - phy.select.y, x = dist_to_screen)) + 
+  geom_point()
+
+task2_df %>% ggplot(aes(y = va.ans.y - va.select.y, x = dist_to_screen)) + 
   geom_point()
 ```
 
+A potential model: 
 
+$$
+\begin{aligned}
+\text{error}_{\text{phy}}[i] \sim \text{Half-Normal}(\sigma[i]) \\ 
+\sigma[i] \sim \text{Log-Normal}(0, 1)
+\end{aligned}
+$$
+
+Turns that that brms does not have a default implementation of `half-normal` ... will need to figure out how to model this ... For now let's just try to fit this with what we've been previously doing ... 
+
+
+```{r}
+#| output: false
+#| label: task2-fit-model
+
+m2 <- task2_df %>% mutate(error_phy = phy.ans.y - phy.select.y) %>% 
+  brm(formula = bf(
+    error_phy ~ 0, 
+    sigma ~ 0 + (1 | participantId)),
+    data = ., 
+      family = gaussian(),
+      prior = c(
+        prior(normal(0, 1), class="sd", group="participantId", dpar="sigma")
+      ),
+      control = list(adapt_delta = 0.95),
+      chains = 4, 
+      iter = 6000, # more iterations
+      file="models/m2"
+      )
+```
+
+Let's see some fitted results: 
+
+```{r}
+summary(m2)
+plot(m2)
+# posterior predictive check 
+pp_check(m2, ndraws = 100)
+```
+
+Hmm so something is quite wrong with this specification ... 
+
+
+---
 
 
 Then we check to make sure that things are correct: 
