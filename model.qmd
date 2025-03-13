@@ -200,7 +200,7 @@ Model 2:
 $$
 \begin{aligned}
 \text{error}_{\text{phy}}[i] &\sim \mathcal{N}(0, \sigma[i]) \\ 
-\sigma[i] &= \text{dist} \times \hat{\sigma}[i] \\ 
+\sigma[i] &= \text{dist}[i] \times \hat{\sigma}[i] \\ 
 \hat{\sigma}[i] &\sim \text{Half-Cauchy}(0, 5)
 \end{aligned}
 $$
@@ -244,10 +244,63 @@ pp_check(m5.1.x, ndraws = 100)
 
 ```{r}
 library(tidybayes)
+library(bayesplot)
 
 get_variables(m5.1.x)
 
-m5.1.x %>% spread_draws(r_participantId__sigma[participant, term])
+m5.1.x %>% mcmc_areas(pars = vars(starts_with("r_")))
+m5.1.x %>% mcmc_areas(pars = vars(starts_with("sd_")))
+
+```
+
+---
+
+Recall the second model: 
+
+$$
+\begin{aligned}
+\text{error}_{\text{phy}}[i] &\sim \mathcal{N}(0, \sigma[i]) \\ 
+\sigma[i] &= \text{dist}[i] \times \hat{\sigma}[i] \\ 
+\hat{\sigma}[i] &\sim \text{Half-Cauchy}(0, 5)
+\end{aligned}
+$$
+
+Let's run the brms code for it: 
+
+```{r}
+get_prior(bf(error ~ 0, 
+                 sigma ~ sqrt(dist) * exp(base),
+                 base ~ (1|participantId),
+                 nl=TRUE #,
+                 # dist ~ 1
+                 ))
+```
+
+
+```{r}
+m5.2.x <- task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
+  rename(error = error_phy, dist = dist_to_screen) %>% names() %>%
+  brm(
+    formula = bf(error ~ 0, 
+                 sigma ~ sqrt(dist) * exp(base),
+                 base ~ (1|participantId),
+                 nl=TRUE,
+                 dist ~ 1
+                 ),
+    data = .,
+    family = gaussian(),
+    prior = c(prior(
+      prior="half_normal(0, 5)",
+      class="sd",
+      nlpar="v",
+      group="participantId"
+    )),
+    control = list(adapt_delta = 0.95),
+    chains = 4, 
+    iter = 6000, # more iterations 
+    warmup=1000,
+    file="models/m5.2.x"
+)
 ```
 
 
@@ -282,28 +335,35 @@ We adopt a similar model and write the following formula:
 #| label: task5-fit-model-y 
 #| output: false 
 
-m5.y <- task5_df %>%
-  mutate(error = va.select.y - va.ans.y) %>%
+m5.1.y <- task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
   brm(
-    formula = error ~ 1 + (1|participantId),
+    formula = bf(error_va ~ 0, 
+                 sigma ~ 0 + (1 | participantId)),
     data = .,
     family = gaussian(),
-    prior = c(prior(cauchy(0, 5), class="sd", group="participantId")),
+    prior = c(prior(cauchy(0, 2), class="sd", group="participantId", dpar="sigma")),
     control = list(adapt_delta = 0.95),
-    file="models/m5.y"
+    chains = 4, 
+    iter = 6000, # more iterations 
+    file="models/m5.1.y"
 )
 ```
 
 ```{r}
-summary(m5.y)
-plot(m5.y)
+summary(m5.1.y)
+plot(m5.1.y)
 ```
 
 Posterior predictive check: 
 
 ```{r}
-pp_check(m5.y, ndraws = 100)
+pp_check(m5.1.y, ndraws = 100)
 ```
+
+### Second model 
+
+
+
 
 # Task 3 -- Find point on curve where `y == 0.5`
 
@@ -388,35 +448,46 @@ The model we fit is going to be very similar to the ones we fitted for task 5.
 #| label: task3-fit-model
 #| output: false 
 
-m3 <- task3_df %>% 
-  mutate(error = va.select.y - va.ans.y) %>% 
+m3.1 <- task3_df %>% 
+  mutate(error_va = va.select.y - va.ans.y) %>% 
   brm( 
-    formula = error ~ 1 + (1|participantId), 
+    formula = bf(error_va ~ 0, 
+                 sigma ~ 0 + (1 | participantId)), 
     data = ., 
     family = gaussian(),
-    prior = c(prior(cauchy(0, 5), class="sd", group="participantId")),
+    prior = c(prior(cauchy(0, 5), class="sd", group="participantId", dpar="sigma")),
     control = list(adapt_delta = 0.95),
-    file="models/m3"
+    chains = 4, 
+    iter = 6000, # more iterations
+    file="models/m3.1"
 )
 ```
 
 ```{r}
-summary(m3)
-plot(m3)
+summary(m3.1)
+plot(m3.1)
 ```
 
 Posterior predictive check: 
 
 ```{r}
-pp_check(m3, ndraws = 100)
+pp_check(m3.1, ndraws = 100)
 ```
 
 ---
 
-What if we were to combine the dataframes and run a model together? Would this reduce the variance? Suppose we combine the project from dot to axes 
+Model 2
+
 ```{r}
 # TODO 
 ```
+
+
+
+<!-- What if we were to combine the dataframes and run a model together? Would this reduce the variance? Suppose we combine the project from dot to axes  -->
+<!-- ```{r} -->
+<!-- # TODO  -->
+<!-- ``` -->
 
 # Task 1 -- Split area into equal halves
 
