@@ -206,7 +206,7 @@ We could also model $\sigma[i] = \texttt{va.ans.y} \times \hat{\sigma}[i] \equiv
 
 Let's first get a sense of what the parameters and priors look like: 
 
-```{r}
+```{r} 
 #| label: task5-x-model1-formula
 
 # specify formula 
@@ -512,6 +512,8 @@ task3_df <- task_df %>% filter(task == "task3") %>%
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
 
+Verify that the scales are correct: 
+
 ```{r}
 #| output: false 
 #| code-fold: true
@@ -565,6 +567,24 @@ task3_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
 
 The model we fit is going to be very similar to the ones we fitted for task 5. 
 
+$$
+\begin{aligned}
+\text{error}_{\text{va}} &\sim \mathcal{N}(0, \sigma[i]) \\ 
+\sigma[i] &= \texttt{va.ans.x}[i] \times \hat{\sigma}[i] \\ 
+\hat{\sigma}[i] & \sim \mathcal{N}(0, 1)
+\end{aligned}
+$$
+
+## Model 1 
+
+```{r}
+f <- bf(error_va ~ 0, 
+        sigma ~ 0 + offset(log(va.ans.x)) + (1 | participantId))
+p <- prior(constant(1), class="sd", group="participantId", dpar="sigma")
+```
+
+Fit the model: 
+
 ```{r}
 #| label: task3-fit-model
 #| output: false 
@@ -572,14 +592,13 @@ The model we fit is going to be very similar to the ones we fitted for task 5.
 m3.1 <- task3_df %>% 
   mutate(error_va = va.select.y - va.ans.y) %>% 
   brm( 
-    formula = bf(error_va ~ 0, 
-                 sigma ~ 0 + offset(log(va.ans.x)) + (1 | participantId)), 
+    formula = f, 
     data = ., 
     family = gaussian(),
-    prior = c(prior(cauchy(0, 5), class="sd", group="participantId", dpar="sigma")),
+    prior = p,
     control = list(adapt_delta = 0.95),
     chains = 4, 
-    iter = 6000, # more iterations
+    iter = 6000, 
     file="models/m3.1"
 )
 ```
@@ -587,28 +606,39 @@ m3.1 <- task3_df %>%
 ```{r}
 summary(m3.1)
 plot(m3.1)
-```
-
-Posterior predictive check: 
-
-```{r}
 pp_check(m3.1, ndraws = 100)
 ```
 
+Get a sense of the $\hat{\sigma}[i]$: 
+
 ```{r}
-mcmc_areas(m3.1, pars=vars(!starts_with("l")))
+m3.1 %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
+  filter(term == "Intercept") %>% 
+  mutate(hat_sigma = exp(r_participantId__sigma)) %>% 
+  ggplot(aes(y = participantId, x = hat_sigma)) + 
+  # stat_pointinterval() 
+  stat_halfeye()
 ```
 
+Huh this variance is much bigger than the one before ...? 
 
-
----
-
-Model 2
+## Model 2
 
 ```{r}
 # TODO 
 ```
 
+Fit the model: 
+
+```{r}
+# TODO 
+```
+
+Plot the results: 
+
+```{r}
+# TODO 
+```
 
 
 <!-- What if we were to combine the dataframes and run a model together? Would this reduce the variance? Suppose we combine the project from dot to axes  -->
