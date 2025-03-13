@@ -340,7 +340,7 @@ We adopt a similar model and write the following formula:
 m5.1.y <- task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
   brm(
     formula = bf(error_va ~ 0, 
-                 sigma ~ 0 + (1 | participantId)),
+                 sigma ~  0 + offset(log(va.ans.x)) + (1 | participantId)),
     data = .,
     family = gaussian(),
     prior = c(prior(cauchy(0, 2), class="sd", group="participantId", dpar="sigma")),
@@ -354,11 +354,6 @@ m5.1.y <- task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
 ```{r}
 summary(m5.1.y)
 plot(m5.1.y)
-```
-
-Posterior predictive check: 
-
-```{r}
 pp_check(m5.1.y, ndraws = 100)
 ```
 
@@ -456,7 +451,7 @@ m3.1 <- task3_df %>%
   mutate(error_va = va.select.y - va.ans.y) %>% 
   brm( 
     formula = bf(error_va ~ 0, 
-                 sigma ~ 0 + (1 | participantId)), 
+                 sigma ~ 0 + offset(log(va.ans.x)) + (1 | participantId)), 
     data = ., 
     family = gaussian(),
     prior = c(prior(cauchy(0, 5), class="sd", group="participantId", dpar="sigma")),
