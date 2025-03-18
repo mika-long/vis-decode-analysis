@@ -189,7 +189,7 @@ task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) +
   labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
 ```
 
-### Model 1 
+### Model 1 -- Vis Angle 
 
 Model 1: 
 
@@ -282,7 +282,7 @@ m5.1.x %>% spread_draws(r_participantId__sigma[participantId, term]) %>%
 The outlier here (`5f37...`) is Maryam. 
 :::
 
-### Model 2
+### Model 2 -- Physical
 
 There could also be two versions of this ... one is additive and the other is duplicative ... 
 
@@ -426,7 +426,7 @@ task5_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
 
 We apply the same approach, fit two models, and compare them. 
 
-### Model 1 
+### Model 1 -- Vis Angle
 
 ```{r}
 f <- bf(error_va ~ 0, 
@@ -721,10 +721,13 @@ Again, the visual angle model seems better.
 
 # Task 1 -- Split area into equal halves
 
-Hmm is this an area judgment or a ratio judgment ...? 
+<!-- Hmm is this an area judgment or a ratio judgment ...?  -->
+
+Load data: 
 
 ```{r}
 #| label: get task 1 data 
+#| code-fold: true 
 
 task1_df <- task_df %>% filter(task == "task1") %>% 
   select(-slider.x, -slider.y) %>% 
@@ -733,7 +736,7 @@ task1_df <- task_df %>% filter(task == "task1") %>%
   left_join(participants, by = join_by(participantId))
 ```
 
-Plotting left area against lambda: 
+Plotting selection, answer, and `x` coordinate for highest point against lambda: 
 
 ```{r}
 task1_df %>% ggplot(aes(y = data.ans.x - data.select.x, x = param.lambda)) + 
@@ -741,7 +744,9 @@ task1_df %>% ggplot(aes(y = data.ans.x - data.select.x, x = param.lambda)) +
   geom_point(aes(y = data.ans.x - param.mu, x = param.lambda), color = "red", alpha = 0.5)
 ```
 
-As can be seen here, there is a clear difference in trend ... As skewness $\lambda$ changes, the difference between the median `data.ans.x` and the mode `param.mu` increases. Therefore, if we are using the mode as a "proxy", the adjustment is not quite there yet ... 
+As can be seen here, there is a clear difference in trend ... As skewness $\lambda$ changes, the difference between the median `data.ans.x` and the mode `param.mu` increases. This provides some evidence that we're not purely using the highest point as a proxy. 
+
+Plotting left area, answer, as well as `answer^0.7`: 
 
 ```{r}
 task1_df %>% ggplot(aes(x = param.lambda, y = data.select.left_area)) + 
@@ -750,6 +755,8 @@ task1_df %>% ggplot(aes(x = param.lambda, y = data.select.left_area)) +
   geom_hline(yintercept = 0.5^0.7, linetype = "dashed", color = "darkgray") + 
   ylim(0, 1)
 ```
+
+Plotting other relations: 
 
 ```{r}
 #| layout-ncol: 2
@@ -778,7 +785,10 @@ task1_df %>% ggplot(aes(y = data.select.left_area^(1/0.7), x = param.lambda)) +
 ```
 
 - There does not appear to be any trend with `dist_to_screen` ... the spread remains about the same size, regardless of how far / near we are from the screen ... 
-- According to Steven's law, we have that $S = I^{0.7}$, or, perceived sensation = stimuli intensity `^ 0.7`. How do we go from this to that though? 
+- According to Steven's law, we have that $S = I^{0.7}$, or, perceived sensation = stimuli intensity `^ 0.7`. It can be seen from this example however that the shape clearly impacts area perception. 
+  - [ ] we could try to only sample from $|\lambda| \in [0.4, 0.8]$ and see what the result looks like 
+  - [ ] instead of trying to sample $\lambda$ from a Gaussian we could try to sample it from something more evenly distributed ... 
+  - [ ] we could also make this task about finding the split where left area = 0.4 or left_area = 0.6 or something like that ... 
 - Is this where we use the cyclical power model to fit it ...?
 
 
@@ -897,7 +907,7 @@ plot(m2.1)
 pp_check(m2.1, ndraws = 100)
 ```
 
-## Model 2 
+## Model 2 -- Physical
 
 Math model: 
 
