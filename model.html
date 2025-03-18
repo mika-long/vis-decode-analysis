@@ -1192,8 +1192,9 @@ m3.2 -240.5       3.5 </code></pre>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb86"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a>task1_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task1"</span>) <span class="sc">%&gt;%</span> </span>
 <span id="cb86-2"><a href="#cb86-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>slider.x, <span class="sc">-</span>slider.y) <span class="sc">%&gt;%</span> </span>
-<span id="cb86-3"><a href="#cb86-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">data.select.left_area =</span> <span class="fu">psgt</span>(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb86-4"><a href="#cb86-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb86-3"><a href="#cb86-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">data.select.left_area =</span> <span class="fu">psgt</span>(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>), </span>
+<span id="cb86-4"><a href="#cb86-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.ans.x =</span> <span class="fu">qsgt</span>(<span class="fl">0.5</span>, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb86-5"><a href="#cb86-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Plotting left area against lambda:</p>
 <div class="cell">
@@ -1251,8 +1252,51 @@ m3.2 -240.5       3.5 </code></pre>
 </figure>
 </div>
 </div>
+<div class="sourceCode cell-code" id="cb94"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.ans.x <span class="sc">-</span> data.select.x)) <span class="sc">+</span> </span>
+<span id="cb94-2"><a href="#cb94-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="model_files/figure-html/unnamed-chunk-44-6.png" class="img-fluid figure-img" width="672"></p>
+</figure>
 </div>
-<p>There appears to be some weak trend for <code>dist_to_screen</code> but doesn’t seem to be very strong …</p>
+</div>
+<div class="sourceCode cell-code" id="cb95"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb95-1"><a href="#cb95-1" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.ans.x <span class="sc">-</span> data.select.x, <span class="at">x =</span> param.lambda)) <span class="sc">+</span> </span>
+<span id="cb95-2"><a href="#cb95-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="model_files/figure-html/unnamed-chunk-44-7.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb96"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.ans.x <span class="sc">-</span> data.select.x, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span> </span>
+<span id="cb96-2"><a href="#cb96-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="model_files/figure-html/unnamed-chunk-44-8.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb97"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb97-1"><a href="#cb97-1" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.left_area<span class="sc">^</span>(<span class="dv">1</span><span class="sc">/</span><span class="fl">0.7</span>), <span class="at">x =</span> param.lambda)) <span class="sc">+</span> </span>
+<span id="cb97-2"><a href="#cb97-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 1 row containing missing values or values outside the scale range
+(`geom_point()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="model_files/figure-html/unnamed-chunk-44-9.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li>There does not appear to be any trend with <code>dist_to_screen</code> … the spread remains about the same size, regardless of how far / near we are from the screen …</li>
+<li>According to Steven’s law, we have that <span class="math inline">\(S = I^{0.7}\)</span>, or, perceived sensation = stimuli intensity <code>^ 0.7</code>.</li>
+</ul>
 </section>
 <section id="task-2-find-highest-point-on-curve" class="level1 page-columns page-full">
 <h1>Task 2 – Find highest point on curve</h1>
@@ -1260,34 +1304,34 @@ m3.2 -240.5       3.5 </code></pre>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb94"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task2"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb94-2"><a href="#cb94-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>slider.x, <span class="sc">-</span>slider.y) <span class="sc">%&gt;%</span> </span>
-<span id="cb94-3"><a href="#cb94-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">data.ans.x =</span> param.mu, </span>
-<span id="cb94-4"><a href="#cb94-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.ans.y =</span> <span class="fu">dsgt</span>(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>),</span>
-<span id="cb94-5"><a href="#cb94-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.select.grad =</span> numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, data.select.x, <span class="at">mu =</span> param.mu, <span class="at">sigma =</span> param.sigma, <span class="at">lambda =</span> param.lambda, <span class="at">p =</span> param.p, <span class="at">q =</span> param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>), </span>
-<span id="cb94-6"><a href="#cb94-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.select.angle =</span> <span class="fu">atan</span>(data.select.grad) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi) <span class="sc">%&gt;%</span> </span>
-<span id="cb94-7"><a href="#cb94-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
-<span id="cb94-8"><a href="#cb94-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># calculate things related to participants' selection </span></span>
-<span id="cb94-9"><a href="#cb94-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.select.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.select.x, pixelToMM), </span>
-<span id="cb94-10"><a href="#cb94-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.select.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.select.y, pixelToMM),</span>
-<span id="cb94-11"><a href="#cb94-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.select.x =</span> <span class="fu">vis_angle</span>(phy.select.x, dist_to_screen), </span>
-<span id="cb94-12"><a href="#cb94-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.select.y =</span> <span class="fu">vis_angle</span>(phy.select.y, dist_to_screen)) <span class="sc">%&gt;%</span> </span>
-<span id="cb94-13"><a href="#cb94-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># calculate things related to answer </span></span>
-<span id="cb94-14"><a href="#cb94-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pixel.ans.x =</span> <span class="fu">data_to_pixel_x</span>(data.ans.x), </span>
-<span id="cb94-15"><a href="#cb94-15" aria-hidden="true" tabindex="-1"></a>         <span class="at">pixel.ans.y =</span> <span class="fu">data_to_pixel_y</span>(data.ans.y), </span>
-<span id="cb94-16"><a href="#cb94-16" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.ans.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.ans.x, pixelToMM), </span>
-<span id="cb94-17"><a href="#cb94-17" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.ans.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.ans.y, pixelToMM),</span>
-<span id="cb94-18"><a href="#cb94-18" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.ans.x =</span> <span class="fu">vis_angle</span>(phy.ans.x, dist_to_screen),</span>
-<span id="cb94-19"><a href="#cb94-19" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.ans.y =</span> <span class="fu">vis_angle</span>(phy.ans.y, dist_to_screen))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb99"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb99-1"><a href="#cb99-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task2"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb99-2"><a href="#cb99-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>slider.x, <span class="sc">-</span>slider.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb99-3"><a href="#cb99-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">data.ans.x =</span> param.mu, </span>
+<span id="cb99-4"><a href="#cb99-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.ans.y =</span> <span class="fu">dsgt</span>(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>),</span>
+<span id="cb99-5"><a href="#cb99-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.select.grad =</span> numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, data.select.x, <span class="at">mu =</span> param.mu, <span class="at">sigma =</span> param.sigma, <span class="at">lambda =</span> param.lambda, <span class="at">p =</span> param.p, <span class="at">q =</span> param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>), </span>
+<span id="cb99-6"><a href="#cb99-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.select.angle =</span> <span class="fu">atan</span>(data.select.grad) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi) <span class="sc">%&gt;%</span> </span>
+<span id="cb99-7"><a href="#cb99-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb99-8"><a href="#cb99-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># calculate things related to participants' selection </span></span>
+<span id="cb99-9"><a href="#cb99-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.select.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.select.x, pixelToMM), </span>
+<span id="cb99-10"><a href="#cb99-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.select.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.select.y, pixelToMM),</span>
+<span id="cb99-11"><a href="#cb99-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.select.x =</span> <span class="fu">vis_angle</span>(phy.select.x, dist_to_screen), </span>
+<span id="cb99-12"><a href="#cb99-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.select.y =</span> <span class="fu">vis_angle</span>(phy.select.y, dist_to_screen)) <span class="sc">%&gt;%</span> </span>
+<span id="cb99-13"><a href="#cb99-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># calculate things related to answer </span></span>
+<span id="cb99-14"><a href="#cb99-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pixel.ans.x =</span> <span class="fu">data_to_pixel_x</span>(data.ans.x), </span>
+<span id="cb99-15"><a href="#cb99-15" aria-hidden="true" tabindex="-1"></a>         <span class="at">pixel.ans.y =</span> <span class="fu">data_to_pixel_y</span>(data.ans.y), </span>
+<span id="cb99-16"><a href="#cb99-16" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.ans.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.ans.x, pixelToMM), </span>
+<span id="cb99-17"><a href="#cb99-17" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.ans.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.ans.y, pixelToMM),</span>
+<span id="cb99-18"><a href="#cb99-18" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.ans.x =</span> <span class="fu">vis_angle</span>(phy.ans.x, dist_to_screen),</span>
+<span id="cb99-19"><a href="#cb99-19" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.ans.y =</span> <span class="fu">vis_angle</span>(phy.ans.y, dist_to_screen))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>Some preliminary checks of relations:</p>
-<div class="sourceCode cell-code" id="cb95"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb95-1"><a href="#cb95-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> phy.ans.y <span class="sc">-</span> phy.select.y, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span> </span>
-<span id="cb95-2"><a href="#cb95-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
-<span id="cb95-3"><a href="#cb95-3" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> va.ans.y <span class="sc">-</span> va.select.y, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span> </span>
-<span id="cb95-4"><a href="#cb95-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
-<span id="cb95-5"><a href="#cb95-5" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.ans.y <span class="sc">-</span> va.select.y)) <span class="sc">+</span> <span class="fu">geom_dots</span>()</span>
-<span id="cb95-6"><a href="#cb95-6" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> phy.ans.y <span class="sc">-</span> phy.select.y)) <span class="sc">+</span> <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb100"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb100-1"><a href="#cb100-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> phy.ans.y <span class="sc">-</span> phy.select.y, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span> </span>
+<span id="cb100-2"><a href="#cb100-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
+<span id="cb100-3"><a href="#cb100-3" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> va.ans.y <span class="sc">-</span> va.select.y, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span> </span>
+<span id="cb100-4"><a href="#cb100-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
+<span id="cb100-5"><a href="#cb100-5" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.ans.y <span class="sc">-</span> va.select.y)) <span class="sc">+</span> <span class="fu">geom_dots</span>()</span>
+<span id="cb100-6"><a href="#cb100-6" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> phy.ans.y <span class="sc">-</span> phy.select.y)) <span class="sc">+</span> <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell quarto-layout-panel" data-layout-ncol="2">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
@@ -1317,14 +1361,14 @@ m3.2 -240.5       3.5 </code></pre>
 \]</span></p>
 <p>Specify formula:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb96"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="fu">bf</span>(error_va <span class="sc">|</span> <span class="fu">trunc</span>(<span class="at">lb =</span> <span class="dv">0</span>) <span class="sc">~</span> <span class="dv">0</span>, </span>
-<span id="cb96-2"><a href="#cb96-2" aria-hidden="true" tabindex="-1"></a>        sigma <span class="sc">~</span> <span class="dv">0</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> participantId), </span>
-<span id="cb96-3"><a href="#cb96-3" aria-hidden="true" tabindex="-1"></a>        <span class="at">family =</span> <span class="fu">gaussian</span>())</span>
-<span id="cb96-4"><a href="#cb96-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb96-5"><a href="#cb96-5" aria-hidden="true" tabindex="-1"></a><span class="co"># get prior </span></span>
-<span id="cb96-6"><a href="#cb96-6" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">error_va =</span> va.select.x <span class="sc">-</span> va.ans.x) <span class="sc">%&gt;%</span></span>
-<span id="cb96-7"><a href="#cb96-7" aria-hidden="true" tabindex="-1"></a><span class="fu">get_prior</span>(<span class="at">formula =</span> f, </span>
-<span id="cb96-8"><a href="#cb96-8" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> .)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb101"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb101-1"><a href="#cb101-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="fu">bf</span>(error_va <span class="sc">|</span> <span class="fu">trunc</span>(<span class="at">lb =</span> <span class="dv">0</span>) <span class="sc">~</span> <span class="dv">0</span>, </span>
+<span id="cb101-2"><a href="#cb101-2" aria-hidden="true" tabindex="-1"></a>        sigma <span class="sc">~</span> <span class="dv">0</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> participantId), </span>
+<span id="cb101-3"><a href="#cb101-3" aria-hidden="true" tabindex="-1"></a>        <span class="at">family =</span> <span class="fu">gaussian</span>())</span>
+<span id="cb101-4"><a href="#cb101-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb101-5"><a href="#cb101-5" aria-hidden="true" tabindex="-1"></a><span class="co"># get prior </span></span>
+<span id="cb101-6"><a href="#cb101-6" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">error_va =</span> va.select.x <span class="sc">-</span> va.ans.x) <span class="sc">%&gt;%</span></span>
+<span id="cb101-7"><a href="#cb101-7" aria-hidden="true" tabindex="-1"></a><span class="fu">get_prior</span>(<span class="at">formula =</span> f, </span>
+<span id="cb101-8"><a href="#cb101-8" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> .)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
@@ -1332,15 +1376,15 @@ m3.2 -240.5       3.5 </code></pre>
   </script>
 </div>
 </div>
-<div class="sourceCode cell-code" id="cb97"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb97-1"><a href="#cb97-1" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">prior</span>(<span class="fu">lognormal</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">class =</span> <span class="st">"sd"</span>, <span class="at">dpar=</span><span class="st">"sigma"</span>, <span class="at">group=</span><span class="st">"participantId"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb102"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb102-1"><a href="#cb102-1" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">prior</span>(<span class="fu">lognormal</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">class =</span> <span class="st">"sd"</span>, <span class="at">dpar=</span><span class="st">"sigma"</span>, <span class="at">group=</span><span class="st">"participantId"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="caution">
 <p>While doing the fitting I found some issues … For task 2, <code>error_va = va.ans.y - va.select.y</code> should always be non-negative, but I got some negative values that are very, very small. I am setting a tolerance of <code>1e-12</code> — any value smaller than this range will be regarded as 0. See the following for the negative values</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb98"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb98-1"><a href="#cb98-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">error_va =</span> va.ans.y <span class="sc">-</span> va.select.y) <span class="sc">%&gt;%</span> <span class="fu">filter</span>(error_va <span class="sc">&lt;</span> <span class="dv">0</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb98-2"><a href="#cb98-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(data.select.y, data.ans.y) <span class="sc">%&gt;%</span> </span>
-<span id="cb98-3"><a href="#cb98-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff =</span> data.select.y <span class="sc">-</span> data.ans.y) <span class="sc">%&gt;%</span> </span>
-<span id="cb98-4"><a href="#cb98-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(diff)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb103"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb103-1"><a href="#cb103-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">error_va =</span> va.ans.y <span class="sc">-</span> va.select.y) <span class="sc">%&gt;%</span> <span class="fu">filter</span>(error_va <span class="sc">&lt;</span> <span class="dv">0</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb103-2"><a href="#cb103-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(data.select.y, data.ans.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb103-3"><a href="#cb103-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff =</span> data.select.y <span class="sc">-</span> data.ans.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb103-4"><a href="#cb103-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(diff)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 1.371125e-14 9.048318e-15 1.915135e-15 1.160183e-14 5.329071e-15
 [6] 3.108624e-15 1.876277e-14</code></pre>
@@ -1349,24 +1393,24 @@ m3.2 -240.5       3.5 </code></pre>
 </div>
 <p>Fit the model:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb100"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb100-1"><a href="#cb100-1" aria-hidden="true" tabindex="-1"></a>tolerance <span class="ot">&lt;-</span> <span class="fl">1e-12</span></span>
-<span id="cb100-2"><a href="#cb100-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb100-3"><a href="#cb100-3" aria-hidden="true" tabindex="-1"></a>m2<span class="fl">.1</span> <span class="ot">&lt;-</span> task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">error_va =</span> va.ans.y <span class="sc">-</span> va.select.y) <span class="sc">%&gt;%</span> </span>
-<span id="cb100-4"><a href="#cb100-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error_va =</span> <span class="fu">ifelse</span>(<span class="fu">abs</span>(error_va) <span class="sc">&lt;</span> tolerance, <span class="dv">0</span>, error_va)) <span class="sc">%&gt;%</span> </span>
-<span id="cb100-5"><a href="#cb100-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">brm</span>(<span class="at">formula =</span> f,</span>
-<span id="cb100-6"><a href="#cb100-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">data =</span> ., </span>
-<span id="cb100-7"><a href="#cb100-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">prior =</span> p,</span>
-<span id="cb100-8"><a href="#cb100-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.99</span>), <span class="co"># note this is higher than 0.95</span></span>
-<span id="cb100-9"><a href="#cb100-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">chains =</span> <span class="dv">4</span>, </span>
-<span id="cb100-10"><a href="#cb100-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">iter =</span> <span class="dv">8000</span>, <span class="co"># more iterations</span></span>
-<span id="cb100-11"><a href="#cb100-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="co"># higher than usual </span></span>
-<span id="cb100-12"><a href="#cb100-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">file=</span><span class="st">"models/m2.1"</span>, </span>
-<span id="cb100-13"><a href="#cb100-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">save_pars =</span> <span class="fu">save_pars</span>(<span class="at">all=</span><span class="cn">TRUE</span>)</span>
-<span id="cb100-14"><a href="#cb100-14" aria-hidden="true" tabindex="-1"></a>      )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb105"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb105-1"><a href="#cb105-1" aria-hidden="true" tabindex="-1"></a>tolerance <span class="ot">&lt;-</span> <span class="fl">1e-12</span></span>
+<span id="cb105-2"><a href="#cb105-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb105-3"><a href="#cb105-3" aria-hidden="true" tabindex="-1"></a>m2<span class="fl">.1</span> <span class="ot">&lt;-</span> task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">error_va =</span> va.ans.y <span class="sc">-</span> va.select.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb105-4"><a href="#cb105-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error_va =</span> <span class="fu">ifelse</span>(<span class="fu">abs</span>(error_va) <span class="sc">&lt;</span> tolerance, <span class="dv">0</span>, error_va)) <span class="sc">%&gt;%</span> </span>
+<span id="cb105-5"><a href="#cb105-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">brm</span>(<span class="at">formula =</span> f,</span>
+<span id="cb105-6"><a href="#cb105-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">data =</span> ., </span>
+<span id="cb105-7"><a href="#cb105-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">prior =</span> p,</span>
+<span id="cb105-8"><a href="#cb105-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.99</span>), <span class="co"># note this is higher than 0.95</span></span>
+<span id="cb105-9"><a href="#cb105-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">chains =</span> <span class="dv">4</span>, </span>
+<span id="cb105-10"><a href="#cb105-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">iter =</span> <span class="dv">8000</span>, <span class="co"># more iterations</span></span>
+<span id="cb105-11"><a href="#cb105-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="co"># higher than usual </span></span>
+<span id="cb105-12"><a href="#cb105-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">file=</span><span class="st">"models/m2.1"</span>, </span>
+<span id="cb105-13"><a href="#cb105-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">save_pars =</span> <span class="fu">save_pars</span>(<span class="at">all=</span><span class="cn">TRUE</span>)</span>
+<span id="cb105-14"><a href="#cb105-14" aria-hidden="true" tabindex="-1"></a>      )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Let’s see some fitted results:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb101"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb101-1"><a href="#cb101-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m2<span class="fl">.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb106"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb106-1"><a href="#cb106-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m2<span class="fl">.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> Family: gaussian 
   Links: mu = identity; sigma = log 
@@ -1385,7 +1429,7 @@ Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
 and Tail_ESS are effective sample size measures, and Rhat is the potential
 scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb103"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb103-1"><a href="#cb103-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m2<span class="fl">.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb108"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb108-1"><a href="#cb108-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m2<span class="fl">.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1393,8 +1437,8 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 </figure>
 </div>
 </div>
-<div class="sourceCode cell-code" id="cb104"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb104-1"><a href="#cb104-1" aria-hidden="true" tabindex="-1"></a><span class="co"># posterior predictive check </span></span>
-<span id="cb104-2"><a href="#cb104-2" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(m2<span class="fl">.1</span>, <span class="at">ndraws =</span> <span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb109"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb109-1"><a href="#cb109-1" aria-hidden="true" tabindex="-1"></a><span class="co"># posterior predictive check </span></span>
+<span id="cb109-2"><a href="#cb109-2" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(m2<span class="fl">.1</span>, <span class="at">ndraws =</span> <span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1416,32 +1460,32 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 \]</span></p>
 <p>Formula:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb105"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb105-1"><a href="#cb105-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="fu">bf</span>(error_phy <span class="sc">|</span> <span class="fu">trunc</span>(<span class="at">lb =</span> <span class="dv">0</span>) <span class="sc">~</span> <span class="dv">0</span>, </span>
-<span id="cb105-2"><a href="#cb105-2" aria-hidden="true" tabindex="-1"></a>        sigma <span class="sc">~</span> <span class="dv">0</span> <span class="sc">+</span> <span class="fu">offset</span>(<span class="fu">log</span>(dist_to_screen)) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> participantId), </span>
-<span id="cb105-3"><a href="#cb105-3" aria-hidden="true" tabindex="-1"></a>        <span class="at">family =</span> <span class="fu">gaussian</span>())</span>
-<span id="cb105-4"><a href="#cb105-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb105-5"><a href="#cb105-5" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">prior</span>(<span class="fu">lognormal</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">class =</span> <span class="st">"sd"</span>, <span class="at">dpar=</span><span class="st">"sigma"</span>, <span class="at">group=</span><span class="st">"participantId"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb110"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb110-1"><a href="#cb110-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="fu">bf</span>(error_phy <span class="sc">|</span> <span class="fu">trunc</span>(<span class="at">lb =</span> <span class="dv">0</span>) <span class="sc">~</span> <span class="dv">0</span>, </span>
+<span id="cb110-2"><a href="#cb110-2" aria-hidden="true" tabindex="-1"></a>        sigma <span class="sc">~</span> <span class="dv">0</span> <span class="sc">+</span> <span class="fu">offset</span>(<span class="fu">log</span>(dist_to_screen)) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> participantId), </span>
+<span id="cb110-3"><a href="#cb110-3" aria-hidden="true" tabindex="-1"></a>        <span class="at">family =</span> <span class="fu">gaussian</span>())</span>
+<span id="cb110-4"><a href="#cb110-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb110-5"><a href="#cb110-5" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">prior</span>(<span class="fu">lognormal</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">class =</span> <span class="st">"sd"</span>, <span class="at">dpar=</span><span class="st">"sigma"</span>, <span class="at">group=</span><span class="st">"participantId"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Fit model:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb106"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb106-1"><a href="#cb106-1" aria-hidden="true" tabindex="-1"></a>m2<span class="fl">.2</span> <span class="ot">&lt;-</span> task2_df <span class="sc">%&gt;%</span> </span>
-<span id="cb106-2"><a href="#cb106-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error_phy =</span> phy.ans.y <span class="sc">-</span> phy.select.y) <span class="sc">%&gt;%</span> </span>
-<span id="cb106-3"><a href="#cb106-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># note that the usual tolerance of 1e-12 is not good enough </span></span>
-<span id="cb106-4"><a href="#cb106-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error_phy =</span> <span class="fu">ifelse</span>(<span class="fu">abs</span>(error_phy) <span class="sc">&lt;</span> <span class="fl">1e-11</span>, <span class="dv">0</span>, error_phy)) <span class="sc">%&gt;%</span> </span>
-<span id="cb106-5"><a href="#cb106-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">brm</span>(<span class="at">formula =</span> f,</span>
-<span id="cb106-6"><a href="#cb106-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">data =</span> ., </span>
-<span id="cb106-7"><a href="#cb106-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">prior =</span> p,</span>
-<span id="cb106-8"><a href="#cb106-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.99</span>), <span class="co"># note this is higher than 0.95</span></span>
-<span id="cb106-9"><a href="#cb106-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">chains =</span> <span class="dv">4</span>, </span>
-<span id="cb106-10"><a href="#cb106-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">iter =</span> <span class="dv">8000</span>, <span class="co"># more iterations</span></span>
-<span id="cb106-11"><a href="#cb106-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="co"># higher than usual </span></span>
-<span id="cb106-12"><a href="#cb106-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">file=</span><span class="st">"models/m2.2"</span>, </span>
-<span id="cb106-13"><a href="#cb106-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">save_pars =</span> <span class="fu">save_pars</span>(<span class="at">all=</span><span class="cn">TRUE</span>)</span>
-<span id="cb106-14"><a href="#cb106-14" aria-hidden="true" tabindex="-1"></a>      )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb111"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb111-1"><a href="#cb111-1" aria-hidden="true" tabindex="-1"></a>m2<span class="fl">.2</span> <span class="ot">&lt;-</span> task2_df <span class="sc">%&gt;%</span> </span>
+<span id="cb111-2"><a href="#cb111-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error_phy =</span> phy.ans.y <span class="sc">-</span> phy.select.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb111-3"><a href="#cb111-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># note that the usual tolerance of 1e-12 is not good enough </span></span>
+<span id="cb111-4"><a href="#cb111-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error_phy =</span> <span class="fu">ifelse</span>(<span class="fu">abs</span>(error_phy) <span class="sc">&lt;</span> <span class="fl">1e-11</span>, <span class="dv">0</span>, error_phy)) <span class="sc">%&gt;%</span> </span>
+<span id="cb111-5"><a href="#cb111-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">brm</span>(<span class="at">formula =</span> f,</span>
+<span id="cb111-6"><a href="#cb111-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">data =</span> ., </span>
+<span id="cb111-7"><a href="#cb111-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">prior =</span> p,</span>
+<span id="cb111-8"><a href="#cb111-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.99</span>), <span class="co"># note this is higher than 0.95</span></span>
+<span id="cb111-9"><a href="#cb111-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">chains =</span> <span class="dv">4</span>, </span>
+<span id="cb111-10"><a href="#cb111-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">iter =</span> <span class="dv">8000</span>, <span class="co"># more iterations</span></span>
+<span id="cb111-11"><a href="#cb111-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="co"># higher than usual </span></span>
+<span id="cb111-12"><a href="#cb111-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">file=</span><span class="st">"models/m2.2"</span>, </span>
+<span id="cb111-13"><a href="#cb111-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">save_pars =</span> <span class="fu">save_pars</span>(<span class="at">all=</span><span class="cn">TRUE</span>)</span>
+<span id="cb111-14"><a href="#cb111-14" aria-hidden="true" tabindex="-1"></a>      )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Check fit:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb107"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb107-1"><a href="#cb107-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m2<span class="fl">.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb112"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb112-1"><a href="#cb112-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m2<span class="fl">.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> Family: gaussian 
   Links: mu = identity; sigma = log 
@@ -1460,7 +1504,7 @@ Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
 and Tail_ESS are effective sample size measures, and Rhat is the potential
 scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb109"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb109-1"><a href="#cb109-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m2<span class="fl">.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb114"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb114-1"><a href="#cb114-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m2<span class="fl">.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1468,7 +1512,7 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 </figure>
 </div>
 </div>
-<div class="sourceCode cell-code" id="cb110"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb110-1"><a href="#cb110-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(m2<span class="fl">.2</span>, <span class="at">ndraws =</span> <span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb115"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb115-1"><a href="#cb115-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(m2<span class="fl">.2</span>, <span class="at">ndraws =</span> <span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1481,10 +1525,10 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <section id="compare-model-1-and-model-2" class="level2 page-columns page-full">
 <h2 class="anchored" data-anchor-id="compare-model-1-and-model-2">Compare model 1 and model 2</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb111"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb111-1"><a href="#cb111-1" aria-hidden="true" tabindex="-1"></a>m2<span class="fl">.1</span> <span class="ot">&lt;-</span> <span class="fu">add_criterion</span>(m2<span class="fl">.1</span>, <span class="st">"loo"</span>, <span class="at">moment_match=</span><span class="cn">TRUE</span>, <span class="at">recompile=</span><span class="cn">TRUE</span>)</span>
-<span id="cb111-2"><a href="#cb111-2" aria-hidden="true" tabindex="-1"></a>m2<span class="fl">.2</span> <span class="ot">&lt;-</span> <span class="fu">add_criterion</span>(m2<span class="fl">.2</span>, <span class="st">"loo"</span>, <span class="at">moment_match =</span> <span class="cn">TRUE</span>, <span class="at">recompile=</span><span class="cn">TRUE</span>)</span>
-<span id="cb111-3"><a href="#cb111-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb111-4"><a href="#cb111-4" aria-hidden="true" tabindex="-1"></a><span class="fu">loo_compare</span>(m2<span class="fl">.1</span>, m2<span class="fl">.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb116"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb116-1"><a href="#cb116-1" aria-hidden="true" tabindex="-1"></a>m2<span class="fl">.1</span> <span class="ot">&lt;-</span> <span class="fu">add_criterion</span>(m2<span class="fl">.1</span>, <span class="st">"loo"</span>, <span class="at">moment_match=</span><span class="cn">TRUE</span>, <span class="at">recompile=</span><span class="cn">TRUE</span>)</span>
+<span id="cb116-2"><a href="#cb116-2" aria-hidden="true" tabindex="-1"></a>m2<span class="fl">.2</span> <span class="ot">&lt;-</span> <span class="fu">add_criterion</span>(m2<span class="fl">.2</span>, <span class="st">"loo"</span>, <span class="at">moment_match =</span> <span class="cn">TRUE</span>, <span class="at">recompile=</span><span class="cn">TRUE</span>)</span>
+<span id="cb116-3"><a href="#cb116-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb116-4"><a href="#cb116-4" aria-hidden="true" tabindex="-1"></a><span class="fu">loo_compare</span>(m2<span class="fl">.1</span>, m2<span class="fl">.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: Not all models have the same y variable. ('yhash' attributes do not
 match)</code></pre>
@@ -1501,61 +1545,61 @@ m2.2 -224.3       2.3 </code></pre>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb114"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb114-1"><a href="#cb114-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.select.x <span class="sc">-</span> data.ans.x)) <span class="sc">+</span> </span>
-<span id="cb114-2"><a href="#cb114-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb119"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb119-1"><a href="#cb119-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.select.x <span class="sc">-</span> data.ans.x)) <span class="sc">+</span> </span>
+<span id="cb119-2"><a href="#cb119-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb115"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb115-1"><a href="#cb115-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.select.y <span class="sc">-</span> data.ans.y)) <span class="sc">+</span> </span>
-<span id="cb115-2"><a href="#cb115-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb120"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb120-1"><a href="#cb120-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.select.y <span class="sc">-</span> data.ans.y)) <span class="sc">+</span> </span>
+<span id="cb120-2"><a href="#cb120-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb116"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb116-1"><a href="#cb116-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> pixel.select.x <span class="sc">-</span> pixel.ans.x)) <span class="sc">+</span> </span>
-<span id="cb116-2"><a href="#cb116-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb121"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb121-1"><a href="#cb121-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> pixel.select.x <span class="sc">-</span> pixel.ans.x)) <span class="sc">+</span> </span>
+<span id="cb121-2"><a href="#cb121-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb117"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb117-1"><a href="#cb117-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> pixel.select.y <span class="sc">-</span> pixel.ans.y)) <span class="sc">+</span> </span>
-<span id="cb117-2"><a href="#cb117-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb122"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb122-1"><a href="#cb122-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> pixel.select.y <span class="sc">-</span> pixel.ans.y)) <span class="sc">+</span> </span>
+<span id="cb122-2"><a href="#cb122-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb118"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb118-1"><a href="#cb118-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> phy.select.x <span class="sc">-</span> phy.ans.x)) <span class="sc">+</span> </span>
-<span id="cb118-2"><a href="#cb118-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb123"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb123-1"><a href="#cb123-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> phy.select.x <span class="sc">-</span> phy.ans.x)) <span class="sc">+</span> </span>
+<span id="cb123-2"><a href="#cb123-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb119"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb119-1"><a href="#cb119-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> phy.select.y <span class="sc">-</span> phy.ans.y)) <span class="sc">+</span> </span>
-<span id="cb119-2"><a href="#cb119-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>() </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb124"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> phy.select.y <span class="sc">-</span> phy.ans.y)) <span class="sc">+</span> </span>
+<span id="cb124-2"><a href="#cb124-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>() </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb120"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb120-1"><a href="#cb120-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.select.x <span class="sc">-</span> va.ans.x)) <span class="sc">+</span> </span>
-<span id="cb120-2"><a href="#cb120-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb125"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb125-1"><a href="#cb125-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.select.x <span class="sc">-</span> va.ans.x)) <span class="sc">+</span> </span>
+<span id="cb125-2"><a href="#cb125-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb121"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb121-1"><a href="#cb121-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.select.y <span class="sc">-</span> va.ans.y)) <span class="sc">+</span> </span>
-<span id="cb121-2"><a href="#cb121-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb126"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb126-1"><a href="#cb126-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.select.y <span class="sc">-</span> va.ans.y)) <span class="sc">+</span> </span>
+<span id="cb126-2"><a href="#cb126-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>Note that <code>grad.x</code> is calcultaing the angle of the slope<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> at selection <code>x</code>. It is NOT the perceived angle.</p>
 <div class="no-row-height column-margin column-container"><div id="fn2"><p><sup>2</sup>&nbsp;i.e.&nbsp;gradient</p></div></div><p>Let’s plot the relation between the angle selected and the parameters:</p>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb122"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb122-1"><a href="#cb122-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.grad, <span class="at">x =</span> param.p)) <span class="sc">+</span></span>
-<span id="cb122-2"><a href="#cb122-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
-<span id="cb122-3"><a href="#cb122-3" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.grad, <span class="at">x =</span> param.q)) <span class="sc">+</span></span>
-<span id="cb122-4"><a href="#cb122-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
-<span id="cb122-5"><a href="#cb122-5" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.grad, <span class="at">x =</span> param.lambda)) <span class="sc">+</span></span>
-<span id="cb122-6"><a href="#cb122-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
-<span id="cb122-7"><a href="#cb122-7" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.grad, <span class="at">x =</span> param.mu)) <span class="sc">+</span></span>
-<span id="cb122-8"><a href="#cb122-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
-<span id="cb122-9"><a href="#cb122-9" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.grad, <span class="at">x =</span> param.sigma)) <span class="sc">+</span></span>
-<span id="cb122-10"><a href="#cb122-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
-<span id="cb122-11"><a href="#cb122-11" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.grad, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span></span>
-<span id="cb122-12"><a href="#cb122-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb127"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb127-1"><a href="#cb127-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.grad, <span class="at">x =</span> param.p)) <span class="sc">+</span></span>
+<span id="cb127-2"><a href="#cb127-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
+<span id="cb127-3"><a href="#cb127-3" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.grad, <span class="at">x =</span> param.q)) <span class="sc">+</span></span>
+<span id="cb127-4"><a href="#cb127-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
+<span id="cb127-5"><a href="#cb127-5" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.grad, <span class="at">x =</span> param.lambda)) <span class="sc">+</span></span>
+<span id="cb127-6"><a href="#cb127-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
+<span id="cb127-7"><a href="#cb127-7" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.grad, <span class="at">x =</span> param.mu)) <span class="sc">+</span></span>
+<span id="cb127-8"><a href="#cb127-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
+<span id="cb127-9"><a href="#cb127-9" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.grad, <span class="at">x =</span> param.sigma)) <span class="sc">+</span></span>
+<span id="cb127-10"><a href="#cb127-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
+<span id="cb127-11"><a href="#cb127-11" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.grad, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span></span>
+<span id="cb127-12"><a href="#cb127-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell quarto-layout-panel" data-layout-ncol="2">
 <div class="quarto-layout-row">
@@ -1585,8 +1629,8 @@ m2.2 -224.3       2.3 </code></pre>
 </div>
 <p>The only thing that is worth noting is the relationship between <code>data.select.grad</code> and <code>dist_to_screen</code>. What about the corresponding angle?</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb123"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb123-1"><a href="#cb123-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.angle, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span></span>
-<span id="cb123-2"><a href="#cb123-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb128"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb128-1"><a href="#cb128-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.angle, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span></span>
+<span id="cb128-2"><a href="#cb128-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1598,12 +1642,12 @@ m2.2 -224.3       2.3 </code></pre>
 <hr>
 <p>How to calculate the actual angle, based on the selection? First we can check out the distribution of calculated angle (relative to the highest point?)</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb124"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
-<span id="cb124-2"><a href="#cb124-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff.x =</span> phy.select.x <span class="sc">-</span> phy.ans.x, </span>
-<span id="cb124-3"><a href="#cb124-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">diff.y =</span> phy.select.y <span class="sc">-</span> phy.ans.y, </span>
-<span id="cb124-4"><a href="#cb124-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">angle =</span> <span class="fu">atan</span>(diff.y <span class="sc">/</span> diff.x) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi) <span class="sc">%&gt;%</span> </span>
-<span id="cb124-5"><a href="#cb124-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> angle)) <span class="sc">+</span> </span>
-<span id="cb124-6"><a href="#cb124-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb129"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb129-1"><a href="#cb129-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> </span>
+<span id="cb129-2"><a href="#cb129-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff.x =</span> phy.select.x <span class="sc">-</span> phy.ans.x, </span>
+<span id="cb129-3"><a href="#cb129-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">diff.y =</span> phy.select.y <span class="sc">-</span> phy.ans.y, </span>
+<span id="cb129-4"><a href="#cb129-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">angle =</span> <span class="fu">atan</span>(diff.y <span class="sc">/</span> diff.x) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi) <span class="sc">%&gt;%</span> </span>
+<span id="cb129-5"><a href="#cb129-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> angle)) <span class="sc">+</span> </span>
+<span id="cb129-6"><a href="#cb129-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1614,13 +1658,13 @@ m2.2 -224.3       2.3 </code></pre>
 </div>
 <p>We are seeing these extreme outliers because <code>diff.x</code> is very, very small, almost close to 0. The above calculations does not deal well with very, very small denominators. Doing things in the visual angle space gives the same outliers. Let’s just round things up to 3:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb125"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb125-1"><a href="#cb125-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">diff.x =</span> phy.select.x <span class="sc">-</span> phy.ans.x, </span>
-<span id="cb125-2"><a href="#cb125-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">diff.y =</span> phy.select.y <span class="sc">-</span> phy.ans.y) <span class="sc">%&gt;%</span> </span>
-<span id="cb125-3"><a href="#cb125-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff.x =</span> <span class="fu">round</span>(diff.x, <span class="dv">3</span>), <span class="at">diff.y =</span> <span class="fu">round</span>(diff.y, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb125-4"><a href="#cb125-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">angle =</span> <span class="fu">case_when</span>(diff.x <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="dv">0</span>, </span>
-<span id="cb125-5"><a href="#cb125-5" aria-hidden="true" tabindex="-1"></a>                           diff.x <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">atan</span>(diff.y <span class="sc">/</span> diff.x) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi )) <span class="sc">%&gt;%</span> </span>
-<span id="cb125-6"><a href="#cb125-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> angle)) <span class="sc">+</span> </span>
-<span id="cb125-7"><a href="#cb125-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb130"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb130-1"><a href="#cb130-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">diff.x =</span> phy.select.x <span class="sc">-</span> phy.ans.x, </span>
+<span id="cb130-2"><a href="#cb130-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">diff.y =</span> phy.select.y <span class="sc">-</span> phy.ans.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb130-3"><a href="#cb130-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff.x =</span> <span class="fu">round</span>(diff.x, <span class="dv">3</span>), <span class="at">diff.y =</span> <span class="fu">round</span>(diff.y, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb130-4"><a href="#cb130-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">angle =</span> <span class="fu">case_when</span>(diff.x <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="dv">0</span>, </span>
+<span id="cb130-5"><a href="#cb130-5" aria-hidden="true" tabindex="-1"></a>                           diff.x <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">atan</span>(diff.y <span class="sc">/</span> diff.x) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi )) <span class="sc">%&gt;%</span> </span>
+<span id="cb130-6"><a href="#cb130-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> angle)) <span class="sc">+</span> </span>
+<span id="cb130-7"><a href="#cb130-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1628,14 +1672,14 @@ m2.2 -224.3       2.3 </code></pre>
 </figure>
 </div>
 </div>
-<div class="sourceCode cell-code" id="cb126"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb126-1"><a href="#cb126-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">diff.x =</span> phy.select.x <span class="sc">-</span> phy.ans.x, </span>
-<span id="cb126-2"><a href="#cb126-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">diff.y =</span> phy.select.y <span class="sc">-</span> phy.ans.y) <span class="sc">%&gt;%</span> </span>
-<span id="cb126-3"><a href="#cb126-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff.x =</span> <span class="fu">round</span>(diff.x, <span class="dv">3</span>), <span class="at">diff.y =</span> <span class="fu">round</span>(diff.y, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb126-4"><a href="#cb126-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">angle =</span> <span class="fu">case_when</span>(diff.x <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="dv">0</span>, </span>
-<span id="cb126-5"><a href="#cb126-5" aria-hidden="true" tabindex="-1"></a>                           diff.x <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">atan</span>(diff.y <span class="sc">/</span> diff.x) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi )) <span class="sc">%&gt;%</span> </span>
-<span id="cb126-6"><a href="#cb126-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> angle, <span class="at">y =</span> data.select.angle)) <span class="sc">+</span> </span>
-<span id="cb126-7"><a href="#cb126-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
-<span id="cb126-8"><a href="#cb126-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">slope =</span> <span class="dv">1</span>, <span class="at">color =</span> <span class="st">"black"</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb131"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb131-1"><a href="#cb131-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">diff.x =</span> phy.select.x <span class="sc">-</span> phy.ans.x, </span>
+<span id="cb131-2"><a href="#cb131-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">diff.y =</span> phy.select.y <span class="sc">-</span> phy.ans.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb131-3"><a href="#cb131-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff.x =</span> <span class="fu">round</span>(diff.x, <span class="dv">3</span>), <span class="at">diff.y =</span> <span class="fu">round</span>(diff.y, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb131-4"><a href="#cb131-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">angle =</span> <span class="fu">case_when</span>(diff.x <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="dv">0</span>, </span>
+<span id="cb131-5"><a href="#cb131-5" aria-hidden="true" tabindex="-1"></a>                           diff.x <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">atan</span>(diff.y <span class="sc">/</span> diff.x) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi )) <span class="sc">%&gt;%</span> </span>
+<span id="cb131-6"><a href="#cb131-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> angle, <span class="at">y =</span> data.select.angle)) <span class="sc">+</span> </span>
+<span id="cb131-7"><a href="#cb131-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb131-8"><a href="#cb131-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">slope =</span> <span class="dv">1</span>, <span class="at">color =</span> <span class="st">"black"</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1647,13 +1691,13 @@ m2.2 -224.3       2.3 </code></pre>
 <p>This just means that if we were to use the highest point and the selected point as ways to calculate the actual angle, then it is <strong>larger</strong> than the actual slope at the selected point.</p>
 <p>Is this newly calculated <code>angle</code> going to be related to <code>dist_to_screen</code>?</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb127"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb127-1"><a href="#cb127-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">diff.x =</span> phy.select.x <span class="sc">-</span> phy.ans.x, </span>
-<span id="cb127-2"><a href="#cb127-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">diff.y =</span> phy.select.y <span class="sc">-</span> phy.ans.y) <span class="sc">%&gt;%</span> </span>
-<span id="cb127-3"><a href="#cb127-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff.x =</span> <span class="fu">round</span>(diff.x, <span class="dv">3</span>), <span class="at">diff.y =</span> <span class="fu">round</span>(diff.y, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb127-4"><a href="#cb127-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">angle =</span> <span class="fu">case_when</span>(diff.x <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="dv">0</span>, </span>
-<span id="cb127-5"><a href="#cb127-5" aria-hidden="true" tabindex="-1"></a>                           diff.x <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">atan</span>(diff.y <span class="sc">/</span> diff.x) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi )) <span class="sc">%&gt;%</span> </span>
-<span id="cb127-6"><a href="#cb127-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> dist_to_screen, <span class="at">y =</span> angle)) <span class="sc">+</span> </span>
-<span id="cb127-7"><a href="#cb127-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb132"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb132-1"><a href="#cb132-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">diff.x =</span> phy.select.x <span class="sc">-</span> phy.ans.x, </span>
+<span id="cb132-2"><a href="#cb132-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">diff.y =</span> phy.select.y <span class="sc">-</span> phy.ans.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb132-3"><a href="#cb132-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff.x =</span> <span class="fu">round</span>(diff.x, <span class="dv">3</span>), <span class="at">diff.y =</span> <span class="fu">round</span>(diff.y, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb132-4"><a href="#cb132-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">angle =</span> <span class="fu">case_when</span>(diff.x <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="dv">0</span>, </span>
+<span id="cb132-5"><a href="#cb132-5" aria-hidden="true" tabindex="-1"></a>                           diff.x <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">atan</span>(diff.y <span class="sc">/</span> diff.x) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi )) <span class="sc">%&gt;%</span> </span>
+<span id="cb132-6"><a href="#cb132-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> dist_to_screen, <span class="at">y =</span> angle)) <span class="sc">+</span> </span>
+<span id="cb132-7"><a href="#cb132-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1665,13 +1709,13 @@ m2.2 -224.3       2.3 </code></pre>
 <p>Compare to the graph before, the difference is that this one has a bigger variance.</p>
 <p>What if we use the numbers in the visual angle space and not the physical space?</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb128"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb128-1"><a href="#cb128-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">diff.x =</span> va.select.x <span class="sc">-</span> va.ans.x, </span>
-<span id="cb128-2"><a href="#cb128-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">diff.y =</span> va.select.y <span class="sc">-</span> va.ans.y) <span class="sc">%&gt;%</span> </span>
-<span id="cb128-3"><a href="#cb128-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff.x =</span> <span class="fu">round</span>(diff.x, <span class="dv">3</span>), <span class="at">diff.y =</span> <span class="fu">round</span>(diff.y, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb128-4"><a href="#cb128-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">angle =</span> <span class="fu">case_when</span>(diff.x <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="dv">0</span>, </span>
-<span id="cb128-5"><a href="#cb128-5" aria-hidden="true" tabindex="-1"></a>                           diff.x <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">atan</span>(diff.y <span class="sc">/</span> diff.x) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi )) <span class="sc">%&gt;%</span> </span>
-<span id="cb128-6"><a href="#cb128-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> dist_to_screen, <span class="at">y =</span> angle)) <span class="sc">+</span> </span>
-<span id="cb128-7"><a href="#cb128-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb133"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb133-1"><a href="#cb133-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">diff.x =</span> va.select.x <span class="sc">-</span> va.ans.x, </span>
+<span id="cb133-2"><a href="#cb133-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">diff.y =</span> va.select.y <span class="sc">-</span> va.ans.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb133-3"><a href="#cb133-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff.x =</span> <span class="fu">round</span>(diff.x, <span class="dv">3</span>), <span class="at">diff.y =</span> <span class="fu">round</span>(diff.y, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb133-4"><a href="#cb133-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">angle =</span> <span class="fu">case_when</span>(diff.x <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="dv">0</span>, </span>
+<span id="cb133-5"><a href="#cb133-5" aria-hidden="true" tabindex="-1"></a>                           diff.x <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">~</span> <span class="fu">atan</span>(diff.y <span class="sc">/</span> diff.x) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi )) <span class="sc">%&gt;%</span> </span>
+<span id="cb133-6"><a href="#cb133-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> dist_to_screen, <span class="at">y =</span> angle)) <span class="sc">+</span> </span>
+<span id="cb133-7"><a href="#cb133-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1687,20 +1731,29 @@ m2.2 -224.3       2.3 </code></pre>
 <section id="task-4-find-slope" class="level1">
 <h1>Task 4 – Find slope</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb129"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb129-1"><a href="#cb129-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task4"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb129-2"><a href="#cb129-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>slider.x, <span class="sc">-</span>slider.y) <span class="sc">%&gt;%</span> </span>
-<span id="cb129-3"><a href="#cb129-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">data.select.slope =</span> <span class="fu">dsgt</span>(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent=</span><span class="cn">FALSE</span>), </span>
-<span id="cb129-4"><a href="#cb129-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.ans.slope =</span> <span class="fu">dsgt</span>(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent=</span><span class="cn">FALSE</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb129-5"><a href="#cb129-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb134"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb134-1"><a href="#cb134-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task4"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb134-2"><a href="#cb134-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>slider.x, <span class="sc">-</span>slider.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb134-3"><a href="#cb134-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">data.select.slope =</span> <span class="fu">dsgt</span>(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent=</span><span class="cn">FALSE</span>), </span>
+<span id="cb134-4"><a href="#cb134-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.ans.slope =</span> <span class="fu">dsgt</span>(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent=</span><span class="cn">FALSE</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb134-5"><a href="#cb134-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Let’s first see the distribution of signed error:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb130"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb130-1"><a href="#cb130-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.select.slope <span class="sc">-</span> data.ans.slope)) <span class="sc">+</span> </span>
-<span id="cb130-2"><a href="#cb130-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb135"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb135-1"><a href="#cb135-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.select.slope <span class="sc">-</span> data.ans.slope)) <span class="sc">+</span> </span>
+<span id="cb135-2"><a href="#cb135-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
 <p><img src="model_files/figure-html/unnamed-chunk-63-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb136"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb136-1"><a href="#cb136-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span> </span>
+<span id="cb136-2"><a href="#cb136-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="model_files/figure-html/unnamed-chunk-63-2.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -1709,18 +1762,18 @@ m2.2 -224.3       2.3 </code></pre>
 <p>Let’s see if there’s any obvious relation between signed error and parameters of the distribution:</p>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb131"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb131-1"><a href="#cb131-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span> </span>
-<span id="cb131-2"><a href="#cb131-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
-<span id="cb131-3"><a href="#cb131-3" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> param.mu)) <span class="sc">+</span> </span>
-<span id="cb131-4"><a href="#cb131-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
-<span id="cb131-5"><a href="#cb131-5" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> param.sigma)) <span class="sc">+</span> </span>
-<span id="cb131-6"><a href="#cb131-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
-<span id="cb131-7"><a href="#cb131-7" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> param.lambda)) <span class="sc">+</span> </span>
-<span id="cb131-8"><a href="#cb131-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
-<span id="cb131-9"><a href="#cb131-9" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> param.p)) <span class="sc">+</span> </span>
-<span id="cb131-10"><a href="#cb131-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
-<span id="cb131-11"><a href="#cb131-11" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> param.q)) <span class="sc">+</span> </span>
-<span id="cb131-12"><a href="#cb131-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb137"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb137-1"><a href="#cb137-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span> </span>
+<span id="cb137-2"><a href="#cb137-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
+<span id="cb137-3"><a href="#cb137-3" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> param.mu)) <span class="sc">+</span> </span>
+<span id="cb137-4"><a href="#cb137-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
+<span id="cb137-5"><a href="#cb137-5" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> param.sigma)) <span class="sc">+</span> </span>
+<span id="cb137-6"><a href="#cb137-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
+<span id="cb137-7"><a href="#cb137-7" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> param.lambda)) <span class="sc">+</span> </span>
+<span id="cb137-8"><a href="#cb137-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
+<span id="cb137-9"><a href="#cb137-9" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> param.p)) <span class="sc">+</span> </span>
+<span id="cb137-10"><a href="#cb137-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
+<span id="cb137-11"><a href="#cb137-11" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> param.q)) <span class="sc">+</span> </span>
+<span id="cb137-12"><a href="#cb137-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell quarto-layout-panel" data-layout-ncol="2">
 <div class="quarto-layout-row">
