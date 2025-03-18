@@ -721,6 +721,8 @@ Again, the visual angle model seems better.
 
 # Task 1 -- Split area into equal halves
 
+Hmm is this an area judgment or a ratio judgment ...? 
+
 ```{r}
 #| label: get task 1 data 
 
@@ -732,6 +734,14 @@ task1_df <- task_df %>% filter(task == "task1") %>%
 ```
 
 Plotting left area against lambda: 
+
+```{r}
+task1_df %>% ggplot(aes(y = data.ans.x - data.select.x, x = param.lambda)) + 
+  geom_point(alpha = 0.5) + 
+  geom_point(aes(y = data.ans.x - param.mu, x = param.lambda), color = "red", alpha = 0.5)
+```
+
+As can be seen here, there is a clear difference in trend ... As skewness $\lambda$ changes, the difference between the median `data.ans.x` and the mode `param.mu` increases. Therefore, if we are using the mode as a "proxy", the adjustment is not quite there yet ... 
 
 ```{r}
 task1_df %>% ggplot(aes(x = param.lambda, y = data.select.left_area)) + 
@@ -753,19 +763,25 @@ task1_df %>% ggplot(aes(y =  data.select.left_area - 0.5, x = dist_to_screen)) +
 task1_df %>% ggplot(aes(x = data.ans.x - data.select.x)) + 
   geom_dots()
 
-task1_df %>% ggplot(aes(y = data.ans.x - data.select.x, x = param.lambda)) + 
-  geom_point()
+
 
 task1_df %>% ggplot(aes(y = data.ans.x - data.select.x, x = dist_to_screen)) + 
   geom_point()
 
 task1_df %>% ggplot(aes(y = data.select.left_area^(1/0.7), x = param.lambda)) + 
   geom_point()
+
+task1_df %>% ggplot(aes(y = (data.select.left_area / (1 - data.select.left_area))^1, x = param.lambda)) + 
+  geom_point(alpha = 0.5) + 
+  geom_point(aes(y = (data.select.left_area / (1 - data.select.left_area))^0.7, x = param.lambda), color = "red", alpha = 0.5) + 
+  geom_hline(yintercept = 1, linetype="dashed")
+
   
 ```
 
 - There does not appear to be any trend with `dist_to_screen` ... the spread remains about the same size, regardless of how far / near we are from the screen ... 
 - According to Steven's law, we have that $S = I^{0.7}$, or, perceived sensation = stimuli intensity `^ 0.7`. How do we go from this to that though? 
+- Is this where we use the cyclical power model to fit it ...?
 
 
 # Task 2 -- Find highest point on curve 
