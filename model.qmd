@@ -201,7 +201,7 @@ $$
 $$
 
 :::{.caution-note}
-We could also model $\sigma[i] = \texttt{va.ans.y} \times \hat{\sigma}[i] \equiv \log(\sigma[i]) = \log(\texttt{va.ans.y}) + \log(\hat{\sigma}[i])$ that would just imply we chagne the formula from `sigma ~ 1 + offset(log(va.ans.y)) + (1 | participantId) ` to `sigma ~ 0 + offset(log(va.ans.y)) + (1 | participantId)`.
+We could also model $\sigma[i] = \texttt{va.ans.y} \times \hat{\sigma}[i] \equiv \log(\sigma[i]) = \log(\texttt{va.ans.y}) + \log(\hat{\sigma}[i])$ that would just imply we change the formula from `sigma ~ 1 + offset(log(va.ans.y)) + (1 | participantId) ` to `sigma ~ 0 + offset(log(va.ans.y)) + (1 | participantId)`.
 :::
 
 Let's first get a sense of what the parameters and priors look like: 
@@ -280,10 +280,13 @@ The outlier here (`5f37...`) is Maryam.
 
 ### Model 2
 
+There could also be two versions of this ... one is additive and the other is duplicaative ... 
+
 $$
 \begin{aligned}
 \text{error}_{\text{phy}}[i] &\sim \mathcal{N}(0, \sigma[i]) \\ 
 \sigma[i] &= \text{dist}[i] \times \texttt{phy.ans.y}[i] \times \hat{\sigma}[i] \\ 
+\text{or} \;\;\; \sigma[i] &= (\text{dist}[i] + \texttt{phy.ans.y[i]}) \times \hat{\sigma}[i]\\ 
 \hat{\sigma}[i] &\sim \mathcal{N}(0, 1)
 \end{aligned}
 $$
@@ -294,12 +297,19 @@ Write the formula and get a sense of prior:
 #| label: task5-x-model2-formula
 
 # formula
-f <- bf(error_phy ~ 0, 
+f1 <- bf(error_phy ~ 0, 
         sigma ~ 0 + offset(log(phy.ans.y)) + offset(log(dist_to_screen)) + (1 | participantId))
+
+f2 <- bf(error_phy ~ 0, 
+        sigma ~ 0 + offset(log(phy.ans.y + dist_to_screen))  + (1 | participantId))
 
 # get prior 
 task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
-  get_prior(formula = f, 
+  get_prior(formula = f1, 
+            data = .)
+
+task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
+  get_prior(formula = f2, 
             data = .)
 ```
 
@@ -309,8 +319,8 @@ task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
 
 p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
 
-m5.2.x <- task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>% 
-  brm(formula = f,
+m5.2.1.x <- task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>% 
+  brm(formula = f1,
       data = .,
       family = gaussian(),
       prior = p,
@@ -318,23 +328,46 @@ m5.2.x <- task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
       chains = 4,
       iter = 6000, 
       warmup=1000,
-      file="models/m5.2.x"
+      file="models/m5.2.1.x"
+  )
+
+m5.2.2.x <- task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>% 
+  brm(formula = f2,
+      data = .,
+      family = gaussian(),
+      prior = p,
+      control = list(adapt_delta = 0.95),
+      chains = 4,
+      iter = 6000, 
+      warmup=1000,
+      file="models/m5.2.2.x"
   )
 ```
 
 Let's check the fit: 
 
 ```{r}
-summary(m5.2.x)
-plot(m5.2.x)
+summary(m5.2.1.x)
+summary(m5.2.2.x)
+plot(m5.2.1.x)
+plot(m5.2.2.x)
 # posterior check 
-pp_check(m5.2.x, ndraws = 100)
+pp_check(m5.2.1.x, ndraws = 100)
+pp_check(m5.2.2.x, ndraws = 100)
 ```
 
 Let's visualize things in this sphere: 
 
 ```{r}
-m5.2.x %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
+#| layout-ncol: 2
+
+m5.2.1.x %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
+  filter(term == "Intercept") %>% 
+  mutate(hat_sigma = exp(r_participantId__sigma)) %>% 
+  ggplot(aes(y = participantId, x = hat_sigma)) + 
+  stat_halfeye()
+
+m5.2.2.x %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
   filter(term == "Intercept") %>% 
   mutate(hat_sigma = exp(r_participantId__sigma)) %>% 
   ggplot(aes(y = participantId, x = hat_sigma)) + 
@@ -343,6 +376,7 @@ m5.2.x %>% spread_draws(r_participantId__sigma[participantId, term]) %>%
 ```
 
 This looks very similar to the trend we had before. 
+<!-- One thing however that I'm not getting --- when I'm using `stat_pointinterval` the y-axis range is cropped to 0.006, but when it's using `stat_halfeye` it crops to 0.02 ... why is this the case??  -->
 
 ### Comparing model 1 and 2
 
@@ -352,10 +386,14 @@ Let's compare the two:
 # first we add the loo criterion to existing models 
 
 m5.1.x <- add_criterion(m5.1.x, "loo")
-m5.2.x <- add_criterion(m5.2.x, "loo")
+m5.2.1.x <- add_criterion(m5.2.1.x, "loo", moment_match = TRUE)
+m5.2.2.x <- add_criterion(m5.2.2.x, "loo")
 
-loo_compare(m5.1.x, m5.2.x)
+loo_compare(m5.2.1.x, m5.2.2.x)
+loo_compare(m5.1.x, m5.2.1.x, m5.2.2.x)
 ```
+
+Based on the result of the LOO comparison, the visual angle model `m5.1.x` is preferred. Based on the model comparison results, `sigma ~ 0 + offset(log(phy.ans.y + dist_to_screen))  + (1 | participantId)` is better than `sigma ~ 0 + offset(log(phy.ans.y)) + offset(log(dist_to_screen))  + (1 | participantId)`.  
 
 ## Project from dot to Y Axes
 
@@ -433,7 +471,7 @@ m5.1.y %>% spread_draws(r_participantId__sigma[participantId, term]) %>%
 
 ```{r}
 f <- bf(error_phy ~ 0, 
-        sigma ~ 0 + offset(log(phy.ans.x)) + offset(log(dist_to_screen)) + (1 | participantId))
+        sigma ~ 0 + offset(log(phy.ans.x + dist_to_screen))+ (1 | participantId))
 p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
 ```
 
@@ -475,16 +513,16 @@ m5.2.y %>% spread_draws(r_participantId__sigma[participantId, term]) %>%
   stat_halfeye()
 ```
 
-Huh things here are much nicer ... 
-
 ### Compare the two models 
 
 ```{r}
 m5.1.y <- add_criterion(m5.1.y, "loo")
-m5.2.y <- add_criterion(m5.2.y, "loo")
+m5.2.y <- add_criterion(m5.2.y, "loo", moment_match = TRUE)
 
 loo_compare(m5.1.y, m5.2.y)
 ```
+
+Similarly, we see that the visual angle model is much better. 
 
 # Task 3 -- Find point on curve where `y == 0.5`
 
@@ -620,31 +658,52 @@ m3.1 %>% spread_draws(r_participantId__sigma[participantId, term]) %>%
   stat_halfeye()
 ```
 
-Huh this variance is much bigger than the one before ...? 
-
 ## Model 2
 
 ```{r}
-# TODO 
+f <- bf(error_phy ~ 0, 
+        sigma ~ 0 + offset(log(phy.ans.x + dist_to_screen))+ (1 | participantId))
+p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
 ```
 
 Fit the model: 
 
 ```{r}
-# TODO 
+#| label: task3-fit-model-2
+#| output: false 
+
+m3.2 <- task3_df %>% 
+  mutate(error_phy = phy.select.y - phy.ans.y) %>% 
+  brm( 
+    formula = f, 
+    data = ., 
+    family = gaussian(),
+    prior = p,
+    control = list(adapt_delta = 0.95),
+    chains = 4, 
+    iter = 6000, 
+    file="models/m3.2"
+)
 ```
 
 Plot the results: 
 
 ```{r}
-# TODO 
+summary(m3.2)
+plot(m3.2)
+pp_check(m3.2, ndraws = 100)
 ```
 
+### Compare the two models 
 
-<!-- What if we were to combine the dataframes and run a model together? Would this reduce the variance? Suppose we combine the project from dot to axes  -->
-<!-- ```{r} -->
-<!-- # TODO  -->
-<!-- ``` -->
+```{r}
+m3.1 <- add_criterion(m3.1, "loo")
+m3.2 <- add_criterion(m3.2, "loo", moment_match = TRUE)
+
+loo_compare(m3.1, m3.2)
+```
+
+Again, the visual angle model seems better. 
 
 # Task 1 -- Split area into equal halves
 
@@ -657,7 +716,7 @@ task1_df <- task_df %>% filter(task == "task1") %>%
   left_join(participants, by = join_by(participantId))
 ```
 
-Plotting left area again lambda: 
+Plotting left area against lambda: 
 
 ```{r}
 task1_df %>% ggplot(aes(x = param.lambda, y = data.select.left_area)) + 
