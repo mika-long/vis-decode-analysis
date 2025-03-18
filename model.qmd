@@ -199,40 +199,16 @@ Model 1:
 
 $$
 \begin{aligned}
-\text{error_va}_{i} &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i]}) \\ 
-\mu_j &\sim \mathcal{N}(0, 1), j \in [13]\\ 
-\sigma_j &= k \cdot \texttt{va.ans.y} \cdot \hat{\sigma}_j \\ 
-\sigma_j &\sim \text{Log-Normal}(\hat{\mu}, \hat{\sigma})
+\text{error_va}_{i} &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i], i}) \\ 
+\mu_j &\sim \mathcal{N}(\mu_0, \sigma_0), & j \in [13] \\ 
+\log(\sigma_{j, i}) &= \beta \cdot \log(\texttt{va.ans.y}_i) + \gamma_j, & j \in [13] \\ 
+\gamma_j &\sim \mathcal{N}(\mu_\gamma, \sigma_\gamma), & j \in [13]
 \end{aligned}
 $$
 
-$$
-\begin{align}
-\text{error_va}_{i} &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_i) \\ 
-\mu_j &\sim \mathcal{N}(\mu_0, \tau_\mu), j \in [13]\\ 
-\sigma_i &= k \cdot \texttt{va.ans.y}_i \cdot \hat{\sigma}_{\text{PID}[i]} \\ 
-\log(\hat{\sigma}_j) &\sim \mathcal{N}(\hat{\mu}, \hat{\tau})
-\end{align}
-$$
-
-$$
-\begin{align}
-\text{error_va}_i &\sim N(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i]}) \\ 
-\mu_j &\sim N(\mu_0, \tau_0) \\ 
-\log(\sigma_{\text{PID}[i]}) &= \beta \cdot \log(\texttt{va.ans.y}_i) + \gamma_j
-\end{align}
-$$
-
-
-$$
-\begin{align}
-\text{error_va}_{i} &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i],i}) \\ 
-\mu_j &\sim \mathcal{N}(\mu_0, \tau_\mu), j \in [13]\\
-\log(\sigma_{j,i}) &= \beta \cdot \log(\texttt{va.ans.y}_i) + \gamma_j \\
-\gamma_j &\sim \mathcal{N}(\gamma_0, \tau_\gamma)
-$$
-
-
+:::{.margin}
+Here's some notes on whether to use `offset()` in this case. 
+:::
 
 Let's first get a sense of what the parameters and priors look like: 
 
@@ -241,7 +217,6 @@ Let's first get a sense of what the parameters and priors look like:
 
 # specify formula 
 f <- bf(error_va ~ 1 + (1 | participantId), 
-        # sigma ~ 0 + offset(log(va.ans.y)) + (1 | participantId)
         sigma ~ log(va.ans.y) + (1 | participantId)
         )
 
@@ -251,10 +226,22 @@ get_prior(formula = f,
           data = .)
 
 # specify prior 
-# p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
+p <- c(
+  # global intercept (mu_0)
+  prior(normal(0, 5), class = "Intercept"), 
+  # sd of participant mean (sigma_0)
+  prior(cauchy(0, 2), class = "sd", group = "participantId"), 
+  # mu_gamma 
+  prior(normal(0, 1), class = "Intercept", dpar = "sigma"), 
+  # beta 
+  prior(normal(1, 0.5), class = "b", coef="logva.ans.y", dpar = "sigma"), 
+  # gamma 
+  prior(cauchy(0, 1), class = "sd", group = "participantId", dpar = "sigma")
+)
+  
 ```
 
-To match this to our math specificaiton, we need to set the prior to be `prior(constant(1), class = "sd", group = "participantId")`. 
+Fit the model: 
 
 ```{r}
 #| label: task5-fit-model-1-x 
@@ -268,9 +255,10 @@ m5.1.x <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     formula = f,
     data = .,
     family = gaussian(),
-    # prior = p,
-    control = list(adapt_delta = 0.95),
+    prior = p,
+    control = list(adapt_delta = 0.99),
     chains = 4, 
+    cores = 4,
     iter = 6000, 
     # file="models/m5.1.x", 
     save_pars = save_pars(all = TRUE)
