@@ -86,7 +86,7 @@ vis_angle <- function(size, distance){
 }
 
 # tolerance for numerical precision 
-tolerance <- 1e-12
+tolerance <- 1e-10
 ```
 
 ```{r}
@@ -101,10 +101,11 @@ p <- df %>% filter(participantId %in% ids) %>%
 
 # custom dataframe 
 pixel_to_mm <- data.frame(participantId = p, 
-  pixelToMM = c(3.73, 3.27, 3.27, 5.03, 3.73, 3.25, 3.73, 3.27, 3.73, 3.27)
+  pixelToMM = c(3.73, 3.27, 3.27, 5.03, 3.73, 3.25, 3.73, 3.27, 3.73, 3.27, 5.14, 3.30, 3.29)
 )
+
 vis_distance <- data.frame(participantId = p, 
-                           dist_to_screen = c(426, 502, 500, 495, 485, 987, 635, 500, 479, 563))
+                           dist_to_screen = c(426, 502, 500, 495, 485, 987, 635, 500, 479, 563, 449, 685, 462))
 
 # combine 
 participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participantId))
@@ -236,6 +237,7 @@ p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
 m5.1.x <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   # account for numerical precision 
   mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  filter(va.ans.y != 0) %>% # account for weird bugs 
   brm(
     formula = f,
     data = .,
@@ -244,7 +246,8 @@ m5.1.x <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     control = list(adapt_delta = 0.95),
     chains = 4, 
     iter = 6000, 
-    file="models/m5.1.x"
+    file="models/m5.1.x", 
+    save_pars = save_pars(all = TRUE)
 )
 ```
 
@@ -267,6 +270,8 @@ get_variables(m5.1.x)
 Given that we have specified out prior to have variance 1 (recall that $\hat{\sigma}[i] \sim \text{Log-Normal}(0, 1)$), if we were to plot it it will just be a dot on 1: 
 
 ```{r}
+#| column: margin
+
 m5.1.x %>% mcmc_areas(pars = vars(starts_with("sd_")))
 ```
 
@@ -325,6 +330,7 @@ p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
 m5.2.1.x <- task5_df %>% 
   mutate(error_phy = phy.select.x - phy.ans.x) %>% 
   mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% 
+  filter(va.ans.y != 0) %>% # account for weird bugs
   brm(formula = f1,
       data = .,
       family = gaussian(),
@@ -340,6 +346,7 @@ m5.2.1.x <- task5_df %>%
 m5.2.2.x <- task5_df %>% 
   mutate(error_phy = phy.select.x - phy.ans.x) %>% 
   mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% 
+  filter(va.ans.y != 0) %>% # account for weird bugs
   brm(formula = f2,
       data = .,
       family = gaussian(),
@@ -445,7 +452,8 @@ Fitting the model:
 
 m5.1.y <- task5_df %>% 
   mutate(error_va = va.select.y - va.ans.y) %>%
-  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>%
+  filter(va.ans.y != 0) %>% # account for weird bugs
   brm(
     formula = f,
     data = .,
@@ -454,7 +462,8 @@ m5.1.y <- task5_df %>%
     control = list(adapt_delta = 0.95),
     chains = 4, 
     iter = 6000, 
-    file="models/m5.1.y"
+    file="models/m5.1.y", 
+    save_pars = save_pars(all=TRUE)
 )
 ```
 
@@ -494,6 +503,7 @@ Fitting the model:
 m5.2.y <- task5_df %>% 
   mutate(error_phy = phy.select.y - phy.ans.y) %>%
   mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% 
+  filter(va.ans.y != 0) %>% # account for weird bugs
   brm(
     formula = f,
     data = .,
@@ -529,8 +539,8 @@ m5.2.y %>% spread_draws(r_participantId__sigma[participantId, term]) %>%
 ### Compare the two models 
 
 ```{r}
-m5.1.y <- add_criterion(m5.1.y, "loo")
-m5.2.y <- add_criterion(m5.2.y, "loo", moment_match = TRUE)
+m5.1.y <- add_criterion(m5.1.y, "loo", moment_match=TRUE, recompile=TRUE)
+m5.2.y <- add_criterion(m5.2.y, "loo", moment_match = TRUE, recompile=TRUE)
 
 loo_compare(m5.1.y, m5.2.y)
 ```
@@ -885,10 +895,8 @@ Fit the model:
 #| output: false
 #| label: task2-fit-model
 
-tolerance <- 1e-12
-
 m2.1 <- task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>% 
-  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  mutate(error_va = ifelse(abs(error_va) < 1e-8, 0, error_va)) %>% 
   brm(formula = f,
       data = ., 
       prior = p,
@@ -935,10 +943,14 @@ p <- prior(lognormal(0, 1), class = "sd", dpar="sigma", group="participantId")
 Fit model: 
 
 ```{r}
+#| output: false 
+
 m2.2 <- task2_df %>% 
   mutate(error_phy = phy.ans.y - phy.select.y) %>% 
   # note that the usual tolerance of 1e-12 is not good enough 
-  mutate(error_phy = ifelse(abs(error_phy) < 1e-11, 0, error_phy)) %>% 
+  # mutate(error_phy = ifelse(abs(error_phy) < 1e-8, 0, error_phy)) %>% 
+  # let's just make everything negative to be 0 
+  mutate(error_phy = ifelse(error_phy < 0, 0, error_phy)) %>% 
   brm(formula = f,
       data = ., 
       prior = p,
