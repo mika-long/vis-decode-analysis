@@ -315,17 +315,20 @@ f1 <- bf(error_phy ~ 0,
 f2 <- bf(error_phy ~ 0, 
         sigma ~ 0 + offset(log(phy.ans.y + dist_to_screen))  + (1 | participantId))
 
+f3 <- bf(error_phy ~ 1 + (1 | participantId), 
+         sigma ~ 1 + offset(log(phy.ans.y) - log(dist_to_screen)) + (1 | participantId))
+
 # get prior 
 task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
   get_prior(formula = f1, 
             data = .)
+
+# p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
 ```
 
 ```{r}
 #| label: task5-fit-model-2-x
 #| output: false 
-
-p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
 
 m5.2.1.x <- task5_df %>% 
   mutate(error_phy = phy.select.x - phy.ans.x) %>% 
@@ -358,6 +361,23 @@ m5.2.2.x <- task5_df %>%
       file="models/m5.2.2.x",
       save_pars = save_pars(all = TRUE)
   )
+
+m5.2.3.x <- task5_df %>% 
+  mutate(error_phy = phy.select.x - phy.ans.x) %>% 
+  mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% 
+  filter(va.ans.y != 0) %>% # account for weird bugs
+  brm(formula = f3,
+      data = .,
+      family = gaussian(),
+      # prior = p,
+      control = list(adapt_delta = 0.95),
+      chains = 4,
+      cores = 4, 
+      iter = 6000, 
+      warmup = 1000,
+      # file="models/m5.2.3.x",
+      save_pars = save_pars(all = TRUE)
+  )
 ```
 
 Let's check the fit: 
@@ -370,6 +390,7 @@ plot(m5.2.2.x)
 # posterior check 
 pp_check(m5.2.1.x, ndraws = 100)
 pp_check(m5.2.2.x, ndraws = 100)
+pp_check(m5.2.3.x, ndraws = 100)
 ```
 
 Let's visualize things in this sphere: 
