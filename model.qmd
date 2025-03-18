@@ -110,7 +110,7 @@ participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participant
 # Task 5 -- Project from dot to axes
 
 ```{r}
-#| label: get task 5 data ready 
+#| label: task 5 load data
 #| code-fold: true 
 
 task5_df <- task_df %>% filter(task == "task5") %>% 
@@ -207,7 +207,7 @@ We could also model $\sigma[i] = \texttt{va.ans.y} \times \hat{\sigma}[i] \equiv
 Let's first get a sense of what the parameters and priors look like: 
 
 ```{r} 
-#| label: task5-x-model1-formula
+#| label: task 5 x formula
 
 # specify formula 
 f <- bf(error_va ~ 0, 
@@ -280,7 +280,7 @@ The outlier here (`5f37...`) is Maryam.
 
 ### Model 2
 
-There could also be two versions of this ... one is additive and the other is duplicaative ... 
+There could also be two versions of this ... one is additive and the other is duplicative ... 
 
 $$
 \begin{aligned}
@@ -306,10 +306,6 @@ f2 <- bf(error_phy ~ 0,
 # get prior 
 task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
   get_prior(formula = f1, 
-            data = .)
-
-task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
-  get_prior(formula = f2, 
             data = .)
 ```
 
@@ -384,7 +380,6 @@ Let's compare the two:
 
 ```{r}
 # first we add the loo criterion to existing models 
-
 m5.1.x <- add_criterion(m5.1.x, "loo")
 m5.2.1.x <- add_criterion(m5.2.1.x, "loo", moment_match = TRUE)
 m5.2.2.x <- add_criterion(m5.2.2.x, "loo")
@@ -393,7 +388,7 @@ loo_compare(m5.2.1.x, m5.2.2.x)
 loo_compare(m5.1.x, m5.2.1.x, m5.2.2.x)
 ```
 
-Based on the result of the LOO comparison, the visual angle model `m5.1.x` is preferred. Based on the model comparison results, `sigma ~ 0 + offset(log(phy.ans.y + dist_to_screen))  + (1 | participantId)` is better than `sigma ~ 0 + offset(log(phy.ans.y)) + offset(log(dist_to_screen))  + (1 | participantId)`.  
+Based on the result of the LOO comparison, the visual angle model `m5.1.x` is preferred^[though it is unclear whether using `loo` between models in different space still makes sense ... ]. Based on the model comparison results for those in the physical space, additive `dist_to_screen + dist_to_axes` is better than multiplicative. 
 
 ## Project from dot to Y Axes
 
@@ -736,7 +731,7 @@ task1_df %>% ggplot(aes(y =  data.select.left_area - 0.5, x = dist_to_screen)) +
   geom_point()
 ```
 
-Doesn't seem to be any trend connected to `dist_to_screen` ... 
+There appears to be some weak trend for `dist_to_screen` but doesn't seem to be very strong ... 
 
 
 # Task 2 -- Find highest point on curve 
@@ -771,39 +766,69 @@ task2_df <- task_df %>% filter(task == "task2") %>%
 ```{r}
 #| layout-ncol: 2
 
-
 task2_df %>% ggplot(aes(y = phy.ans.y - phy.select.y, x = dist_to_screen)) + 
   geom_point()
 
 task2_df %>% ggplot(aes(y = va.ans.y - va.select.y, x = dist_to_screen)) + 
   geom_point()
+
+task2_df %>% ggplot(aes(x = va.ans.y - va.select.y)) + geom_dots()
+task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
 ```
 
-A potential model: 
+## Model 1 -- Vis Angle space
+
+Based on our prior assumptions so far, the vis angle space model should not include dist_to_screen but the physical model should. Therefore, a potential model looks as follows: 
 
 $$
 \begin{aligned}
-\text{error}_{\text{phy}}[i] \sim \text{Half-Normal}(\sigma[i]) \\ 
+\text{error}_{\text{va}}[i] \sim \text{Half-Normal}(\sigma[i]) \\ 
 \sigma[i] \sim \text{Log-Normal}(0, 1)
 \end{aligned}
 $$
 
-Turns that that brms does not have a default implementation of `half-normal` ... will need to figure out how to model this ... For now let's just try to fit this with what we've been previously doing ... 
+Specify formula: 
 
+```{r}
+#| label: task 2 formula
+
+f <- bf(error_va | trunc(lb = 0) ~ 0, 
+        sigma ~ 0 + (1 | participantId), 
+        family = gaussian())
+
+# get prior 
+task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+get_prior(formula = f, 
+          data = .)
+
+p <- prior(lognormal(0, 1), class = "sd", dpar="sigma", group="participantId")
+```
+
+:::{.caution}
+While doing the fitting I found some issues ... For task 2, `error_va = va.ans.y - va.select.y` should always be non-negative, but I got some negative values that are very, very small. I am setting a tolerance of `1e-12` --- any value smaller than this range will be regarded as 0. See the following for the negative values 
+
+```{r}
+task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>% filter(error_va < 0) %>% 
+  select(data.select.y, data.ans.y) %>% 
+  mutate(diff = data.select.y - data.ans.y) %>% 
+  pull(diff)
+```
+
+:::
+
+Fit the model: 
 
 ```{r}
 #| output: false
 #| label: task2-fit-model
 
-m2 <- task2_df %>% mutate(error_phy = phy.ans.y - phy.select.y) %>% 
-  brm(formula = bf(
-    error_phy ~ 0, 
-    sigma ~ 0 + (1 | participantId)),
-    data = ., 
-      family = gaussian(),
-      prior = c(
-        prior(normal(0, 1), class="sd", group="participantId", dpar="sigma")
-      ),
+tolerance <- 1e-12
+
+m2 <- task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>% 
+  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  brm(formula = f,
+      data = ., 
+      prior = p,
       control = list(adapt_delta = 0.95),
       chains = 4, 
       iter = 6000, # more iterations
@@ -820,7 +845,8 @@ plot(m2)
 pp_check(m2, ndraws = 100)
 ```
 
-Hmm so something is quite wrong with this specification ... 
+## Model 2 
+
 
 
 ---
