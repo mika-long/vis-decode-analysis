@@ -28,6 +28,8 @@ library(tidybayes)
 library(bayesplot)
 ```
 
+
+
 :::{.callout-caution}
 Per Matt's advice: **Think in a generative way**
 :::
@@ -36,6 +38,8 @@ Per Matt's advice: **Think in a generative way**
 
 - All the things selected by the participants will be named `xxx.select.xxx` 
 - All the things related to the actual answer will be named `xxx.ans.xxx`
+
+
 
 ```{r}
 #| label: read-in-data
@@ -107,9 +111,13 @@ vis_distance <- data.frame(participantId = p,
 participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participantId))
 ```
 
+
+
 # Task 5 -- Project from dot to axes
 
 Get data: 
+
+
 
 ```{r}
 #| label: task 5 load data
@@ -138,7 +146,11 @@ task5_df <- task_df %>% filter(task == "task5") %>%
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
 
+
+
 Verify that the results are in the right scale: 
+
+
 
 ```{r}
 #| output: false 
@@ -165,9 +177,13 @@ task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
 
 ```
 
+
+
 ## Project from dot to X axes
 
 Distribution of signed error: 
+
+
 
 ```{r}
 #| code-fold: true
@@ -178,7 +194,11 @@ task5_df %>% ggplot(aes(x = va.select.x - va.ans.x)) +
   labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
 ```
 
+
+
 Relationship between signed error (in visual angle space) and distance to X-axes: 
+
+
 
 ```{r}
 #| code-fold: true
@@ -188,6 +208,8 @@ task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) +
   geom_vline(xintercept = 0, linetype="dashed", color="gray") + 
   labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
 ```
+
+
 
 ### Model 1 
 
@@ -208,6 +230,8 @@ We could also model $\sigma[i] = \texttt{va.ans.y} \times \hat{\sigma}[i] \equiv
 
 Let's first get a sense of what the parameters and priors look like: 
 
+
+
 ```{r} 
 #| label: task 5 x formula
 
@@ -221,7 +245,11 @@ get_prior(formula = f,
           data = .)
 ```
 
+
+
 To match this to our math specificaiton, we need to set the prior to be `prior(constant(1), class = "sd", group = "participantId")`. 
+
+
 
 ```{r}
 #| label: task5-fit-model-1-x 
@@ -245,7 +273,11 @@ m5.1.x <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
 )
 ```
 
+
+
 What does the fit look like? 
+
+
 
 ```{r}
 summary(m5.1.x)
@@ -255,19 +287,31 @@ plot(m5.1.x)
 pp_check(m5.1.x, ndraws = 100)
 ```
 
+
+
 Other kinds of plotting ... 
+
+
 
 ```{r}
 get_variables(m5.1.x)
 ```
 
+
+
 Given that we have specified out prior to have variance 1 (recall that $\hat{\sigma}[i] \sim \text{Log-Normal}(0, 1)$), if we were to plot it it will just be a dot on 1: 
+
+
 
 ```{r}
 m5.1.x %>% mcmc_areas(pars = vars(starts_with("sd_")))
 ```
 
+
+
 What is more interesting is the $\hat{\sigma}[i]$ for each participant, which we can visualize as follows: 
+
+
 
 ```{r}
 m5.1.x %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
@@ -277,6 +321,8 @@ m5.1.x %>% spread_draws(r_participantId__sigma[participantId, term]) %>%
   # stat_pointinterval() 
   stat_halfeye()
 ```
+
+
 
 :::{.column-margin}
 The outlier here (`5f37...`) is Maryam. 
@@ -296,6 +342,8 @@ $$
 $$
 
 Write the formula and get a sense of prior: 
+
+
 
 ```{r}
 #| label: task5-x-model2-formula
@@ -350,7 +398,11 @@ m5.2.2.x <- task5_df %>%
   )
 ```
 
+
+
 Let's check the fit: 
+
+
 
 ```{r}
 summary(m5.2.1.x)
@@ -362,7 +414,11 @@ pp_check(m5.2.1.x, ndraws = 100)
 pp_check(m5.2.2.x, ndraws = 100)
 ```
 
+
+
 Let's visualize things in this sphere: 
+
+
 
 ```{r}
 #| layout-ncol: 2
@@ -381,12 +437,16 @@ m5.2.2.x %>% spread_draws(r_participantId__sigma[participantId, term]) %>%
   stat_halfeye()
 ```
 
+
+
 This looks very similar to the trend we had before. 
 <!-- One thing however that I'm not getting --- when I'm using `stat_pointinterval` the y-axis range is cropped to 0.006, but when it's using `stat_halfeye` it crops to 0.02 ... why is this the case??  -->
 
 ### Comparing model 1 and 2
 
 Let's compare the two: 
+
+
 
 ```{r}
 # first we add the loo criterion to existing models 
@@ -398,11 +458,15 @@ loo_compare(m5.2.1.x, m5.2.2.x)
 loo_compare(m5.1.x, m5.2.1.x, m5.2.2.x)
 ```
 
+
+
 Based on the result of the LOO comparison, the visual angle model `m5.1.x` is preferred^[though it is unclear whether using `loo` between models in different space still makes sense ... ]. Based on the model comparison results for those in the physical space, additive `dist_to_screen + dist_to_axes` is better than multiplicative. 
 
 ## Project from dot to Y Axes
 
 Distribution of signed error: 
+
+
 
 ```{r}
 #| code-fold: true 
@@ -413,7 +477,11 @@ task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
   labs(title = "Task 5 - Project from dot to Y-Axes - Visual Angle")
 ```
 
+
+
 Relationship between signed error and distance to x-axes (in visual angle space): 
+
+
 
 ```{r}
 #| code-fold: true
@@ -424,9 +492,13 @@ task5_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
   labs(title = "Task 5 - Project from dot to Y-Axes - Visual Angle")
 ```
 
+
+
 We apply the same approach, fit two models, and compare them. 
 
 ### Model 1 
+
+
 
 ```{r}
 f <- bf(error_va ~ 0, 
@@ -434,7 +506,11 @@ f <- bf(error_va ~ 0,
 p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
 ```
 
+
+
 Fitting the model: 
+
+
 
 ```{r}
 #| label: task5-fit-model-1-y 
@@ -455,7 +531,11 @@ m5.1.y <- task5_df %>%
 )
 ```
 
+
+
 Check the output: 
+
+
 
 ```{r}
 summary(m5.1.y)
@@ -463,7 +543,11 @@ plot(m5.1.y)
 pp_check(m5.1.y, ndraws = 100)
 ```
 
+
+
 How are the $\hat{\sigma}[i]$ distributed? 
+
+
 
 ```{r}
 m5.1.y %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
@@ -474,7 +558,11 @@ m5.1.y %>% spread_draws(r_participantId__sigma[participantId, term]) %>%
   stat_halfeye()
 ```
 
+
+
 ### Second model 
+
+
 
 ```{r}
 f <- bf(error_phy ~ 0, 
@@ -482,7 +570,11 @@ f <- bf(error_phy ~ 0,
 p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
 ```
 
+
+
 Fitting the model: 
+
+
 
 ```{r}
 #| output: false 
@@ -504,7 +596,11 @@ m5.2.y <- task5_df %>%
 )
 ```
 
+
+
 Check the result: 
+
+
 
 ```{r}
 summary(m5.2.y)
@@ -512,7 +608,11 @@ plot(m5.2.y)
 pp_check(m5.2.y, ndraws = 100)
 ```
 
+
+
 How are the $\hat{\sigma}[i]$ distributed? 
+
+
 
 ```{r}
 m5.2.y %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
@@ -523,7 +623,11 @@ m5.2.y %>% spread_draws(r_participantId__sigma[participantId, term]) %>%
   stat_halfeye()
 ```
 
+
+
 ### Compare the two models 
+
+
 
 ```{r}
 m5.1.y <- add_criterion(m5.1.y, "loo")
@@ -532,11 +636,15 @@ m5.2.y <- add_criterion(m5.2.y, "loo", moment_match = TRUE)
 loo_compare(m5.1.y, m5.2.y)
 ```
 
+
+
 Similarly, we see that the visual angle model is much better. 
 
 # Task 3 -- Find point on curve where `y == 0.5`
 
 First we get the data:
+
+
 
 ```{r}
 task3_df <- task_df %>% filter(task == "task3") %>% 
@@ -560,7 +668,11 @@ task3_df <- task_df %>% filter(task == "task3") %>%
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
 
+
+
 Verify that the scales are correct: 
+
+
 
 ```{r}
 #| output: false 
@@ -593,7 +705,11 @@ task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
   geom_dots()  
 ```
 
+
+
 Distribution of signed error: 
+
+
 
 ```{r}
 #| code-fold: true
@@ -604,7 +720,11 @@ task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
   labs(title="Task 3 -- CDF Median") 
 ```
 
+
+
 Relationship between distance from the y-axes and the signed distribution: 
+
+
 
 ```{r}
 task3_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) + 
@@ -612,6 +732,8 @@ task3_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
   geom_hline(yintercept = 0, linetype="dashed", color="black") + 
   labs(title="Task 3 -- CDF Median") 
 ```
+
+
 
 The model we fit is going to be very similar to the ones we fitted for task 5. 
 
@@ -625,13 +747,19 @@ $$
 
 ## Model 1 --- Visual Angle
 
+
+
 ```{r}
 f <- bf(error_va ~ 0, 
         sigma ~ 0 + offset(log(va.ans.x)) + (1 | participantId))
 p <- prior(constant(1), class="sd", group="participantId", dpar="sigma")
 ```
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| label: task3-fit-model
@@ -659,7 +787,11 @@ plot(m3.1)
 pp_check(m3.1, ndraws = 100)
 ```
 
+
+
 Get a sense of the $\hat{\sigma}[i]$: 
+
+
 
 ```{r}
 m3.1 %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
@@ -670,7 +802,11 @@ m3.1 %>% spread_draws(r_participantId__sigma[participantId, term]) %>%
   stat_halfeye()
 ```
 
+
+
 ## Model 2 --- Physical space
+
+
 
 ```{r}
 f <- bf(error_phy ~ 0, 
@@ -678,7 +814,11 @@ f <- bf(error_phy ~ 0,
 p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
 ```
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| label: task3-fit-model-2
@@ -700,7 +840,11 @@ m3.2 <- task3_df %>%
 )
 ```
 
+
+
 Plot the results: 
+
+
 
 ```{r}
 summary(m3.2)
@@ -708,7 +852,11 @@ plot(m3.2)
 pp_check(m3.2, ndraws = 100)
 ```
 
+
+
 ### Compare the two models 
+
+
 
 ```{r}
 m3.1 <- add_criterion(m3.1, "loo", recompile=TRUE)
@@ -717,11 +865,15 @@ m3.2 <- add_criterion(m3.2, "loo", moment_match = TRUE, recompile=TRUE)
 loo_compare(m3.1, m3.2)
 ```
 
+
+
 Again, the visual angle model seems better. 
 
 # Task 1 -- Split area into equal halves
 
 Hmm is this an area judgment or a ratio judgment ...? 
+
+
 
 ```{r}
 #| label: get task 1 data 
@@ -733,7 +885,11 @@ task1_df <- task_df %>% filter(task == "task1") %>%
   left_join(participants, by = join_by(participantId))
 ```
 
+
+
 Plotting left area against lambda: 
+
+
 
 ```{r}
 task1_df %>% ggplot(aes(y = data.ans.x - data.select.x, x = param.lambda)) + 
@@ -741,7 +897,11 @@ task1_df %>% ggplot(aes(y = data.ans.x - data.select.x, x = param.lambda)) +
   geom_point(aes(y = data.ans.x - param.mu, x = param.lambda), color = "red", alpha = 0.5)
 ```
 
+
+
 As can be seen here, there is a clear difference in trend ... As skewness $\lambda$ changes, the difference between the median `data.ans.x` and the mode `param.mu` increases. Therefore, if we are using the mode as a "proxy", the adjustment is not quite there yet ... 
+
+
 
 ```{r}
 task1_df %>% ggplot(aes(x = param.lambda, y = data.select.left_area)) + 
@@ -777,6 +937,8 @@ task1_df %>% ggplot(aes(y = data.select.left_area^(1/0.7), x = param.lambda)) +
   geom_point()
 ```
 
+
+
 - There does not appear to be any trend with `dist_to_screen` ... the spread remains about the same size, regardless of how far / near we are from the screen ... 
 - According to Steven's law, we have that $S = I^{0.7}$, or, perceived sensation = stimuli intensity `^ 0.7`. How do we go from this to that though? 
 - Is this where we use the cyclical power model to fit it ...?
@@ -785,6 +947,8 @@ task1_df %>% ggplot(aes(y = data.select.left_area^(1/0.7), x = param.lambda)) +
 # Task 2 -- Find highest point on curve 
 
 First we get the data: 
+
+
 
 ```{r}
 #| label: get task 2 data
@@ -811,7 +975,11 @@ task2_df <- task_df %>% filter(task == "task2") %>%
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
 
+
+
 Some preliminary checks of relations: 
+
+
 
 ```{r}
 #| layout-ncol: 2
@@ -826,6 +994,8 @@ task2_df %>% ggplot(aes(x = va.ans.y - va.select.y)) + geom_dots()
 task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
 ```
 
+
+
 ## Model 1 -- Vis Angle space
 
 Based on our prior assumptions so far, the vis angle space model should not include dist_to_screen but the physical model should. Therefore, a potential model looks as follows: 
@@ -838,6 +1008,8 @@ $$
 $$
 
 Specify formula: 
+
+
 
 ```{r}
 #| label: task 2 formula
@@ -854,8 +1026,12 @@ get_prior(formula = f,
 p <- prior(lognormal(0, 1), class = "sd", dpar="sigma", group="participantId")
 ```
 
+
+
 :::{.caution}
 While doing the fitting I found some issues ... For task 2, `error_va = va.ans.y - va.select.y` should always be non-negative, but I got some negative values that are very, very small. I am setting a tolerance of `1e-12` --- any value smaller than this range will be regarded as 0. See the following for the negative values 
+
+
 
 ```{r}
 task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>% filter(error_va < 0) %>% 
@@ -864,9 +1040,13 @@ task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>% filter(error_va < 0) 
   pull(diff)
 ```
 
+
+
 :::
 
 Fit the model: 
+
+
 
 ```{r}
 #| output: false
@@ -888,7 +1068,11 @@ m2.1 <- task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>%
       )
 ```
 
+
+
 Let's see some fitted results: 
+
+
 
 ```{r}
 summary(m2.1)
@@ -896,6 +1080,8 @@ plot(m2.1)
 # posterior predictive check 
 pp_check(m2.1, ndraws = 100)
 ```
+
+
 
 ## Model 2 
 
@@ -911,6 +1097,8 @@ $$
 
 Formula: 
 
+
+
 ```{r}
 f <- bf(error_phy | trunc(lb = 0) ~ 0, 
         sigma ~ 0 + offset(log(dist_to_screen)) + (1 | participantId), 
@@ -919,7 +1107,11 @@ f <- bf(error_phy | trunc(lb = 0) ~ 0,
 p <- prior(lognormal(0, 1), class = "sd", dpar="sigma", group="participantId")
 ```
 
+
+
 Fit model: 
+
+
 
 ```{r}
 m2.2 <- task2_df %>% 
@@ -938,7 +1130,11 @@ m2.2 <- task2_df %>%
       )
 ```
 
+
+
 Check fit: 
+
+
 
 ```{r}
 summary(m2.2)
@@ -946,7 +1142,11 @@ plot(m2.2)
 pp_check(m2.2, ndraws = 100)
 ```
 
+
+
 ## Compare model 1 and model 2 
+
+
 
 ```{r}
 m2.1 <- add_criterion(m2.1, "loo", moment_match=TRUE, recompile=TRUE)
@@ -955,11 +1155,15 @@ m2.2 <- add_criterion(m2.2, "loo", moment_match = TRUE, recompile=TRUE)
 loo_compare(m2.1, m2.2)
 ```
 
+
+
 The visual angle version is also better. 
 
 ---
 
 Then we check to make sure that things are correct: 
+
+
 
 ```{r}
 #| output: false 
@@ -991,9 +1195,13 @@ task2_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
   geom_dots()  
 ```
 
+
+
 Note that `grad.x` is calcultaing the angle of the slope^[i.e. gradient] at selection `x`. It is NOT the perceived angle. 
 
 Let's plot the relation between the angle selected and the parameters: 
+
+
 
 ```{r}
 #| code-fold: true 
@@ -1018,16 +1226,24 @@ task2_df %>% ggplot(aes(y = data.select.grad, x = dist_to_screen)) +
   geom_point(alpha = 0.5)
 ```
 
+
+
 The only thing that is worth noting is the relationship between `data.select.grad` and `dist_to_screen`. What about the corresponding angle? 
+
+
 
 ```{r}
 task2_df %>% ggplot(aes(y = data.select.angle, x = dist_to_screen)) +
   geom_point(alpha = 0.5)
 ```
 
+
+
 ---
 
 How to calculate the actual angle, based on the selection? First we can check out the distribution of calculated angle (relative to the highest point?)
+
+
 
 ```{r}
 task2_df %>% 
@@ -1038,7 +1254,11 @@ task2_df %>%
   geom_dots()
 ```
 
+
+
 We are seeing these extreme outliers because `diff.x` is very, very small, almost close to 0. The above calculations does not deal well with very, very small denominators. Doing things in the visual angle space gives the same outliers. Let's just round things up to 3: 
+
+
 
 ```{r}
 task2_df %>% mutate(diff.x = phy.select.x - phy.ans.x, 
@@ -1059,9 +1279,13 @@ task2_df %>% mutate(diff.x = phy.select.x - phy.ans.x,
   geom_abline(intercept = 0, slope = 1, color = "black", linetype = "dashed")
 ```
 
+
+
 This just means that if we were to use the highest point and the selected point as ways to calculate the actual angle, then it is **larger** than the actual slope at the selected point. 
 
 Is this newly calculated `angle` going to be related to `dist_to_screen`? 
+
+
 
 ```{r}
 task2_df %>% mutate(diff.x = phy.select.x - phy.ans.x, 
@@ -1073,9 +1297,13 @@ task2_df %>% mutate(diff.x = phy.select.x - phy.ans.x,
   geom_point(alpha = 0.5)
 ```
 
+
+
 Compare to the graph before, the difference is that this one has a bigger variance. 
 
 What if we use the numbers in the visual angle space and not the physical space? 
+
+
 
 ```{r}
 task2_df %>% mutate(diff.x = va.select.x - va.ans.x, 
@@ -1087,11 +1315,15 @@ task2_df %>% mutate(diff.x = va.select.x - va.ans.x,
   geom_point(alpha = 0.5)
 ```
 
+
+
 Hmm doesn't seem to be much different, which is to be expected, as slope is unit-less. 
 
 --- 
 
 # Task 4 -- Find slope 
+
+
 
 ```{r}
 #| label: get task 4 data 
@@ -1103,7 +1335,11 @@ task4_df <- task_df %>% filter(task == "task4") %>%
   left_join(participants, by = join_by(participantId))
 ```
 
+
+
 Let's first see the distribution of signed error: 
+
+
 
 ```{r}
 task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) + 
@@ -1113,9 +1349,13 @@ task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = dist_to_scre
   geom_point()
 ```
 
+
+
 It seems that the selected slope is consistently smaller than the actual slope of the answer. 
 
 Let's see if there's any obvious relation between signed error and parameters of the distribution: 
+
+
 
 ```{r}
 #| layout-ncol: 2
@@ -1140,5 +1380,7 @@ task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.p)) +
 task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.q)) + 
   geom_point()
 ```
+
+
 
 I don't see any apparent trends ... 
