@@ -84,6 +84,9 @@ pixel_to_phy_y <- function(pixel, pxMM){
 vis_angle <- function(size, distance){
   return(2 * atan(size / (2 * distance)) * 180 / pi)
 }
+
+# tolerance for numerical precision 
+tolerance <- 1e-12
 ```
 
 ```{r}
