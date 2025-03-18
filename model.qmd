@@ -199,16 +199,40 @@ Model 1:
 
 $$
 \begin{aligned}
-\text{error}_{\text{va}}[i] &\sim \mathcal{N}(0, \sigma[i]) \\ 
-\sigma[i] &= a \times \texttt{va.ans.y} \times \hat{\sigma}[i] \\
-\equiv \log(\sigma[i]) &= \log(a) + \log(\texttt{va.ans.y}) + \log(\hat{\sigma}[i])\\ 
-\log(\hat{\sigma}[i]) &\sim \mathcal{N}(0, 1)
+\text{error_va}_{i} &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i]}) \\ 
+\mu_j &\sim \mathcal{N}(0, 1), j \in [13]\\ 
+\sigma_j &= k \cdot \texttt{va.ans.y} \cdot \hat{\sigma}_j \\ 
+\sigma_j &\sim \text{Log-Normal}(\hat{\mu}, \hat{\sigma})
 \end{aligned}
 $$
 
-:::{.caution-note}
-We could also model $\sigma[i] = \texttt{va.ans.y} \times \hat{\sigma}[i] \equiv \log(\sigma[i]) = \log(\texttt{va.ans.y}) + \log(\hat{\sigma}[i])$ that would just imply we change the formula from `sigma ~ 1 + offset(log(va.ans.y)) + (1 | participantId) ` to `sigma ~ 0 + offset(log(va.ans.y)) + (1 | participantId)`.
-:::
+$$
+\begin{align}
+\text{error_va}_{i} &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_i) \\ 
+\mu_j &\sim \mathcal{N}(\mu_0, \tau_\mu), j \in [13]\\ 
+\sigma_i &= k \cdot \texttt{va.ans.y}_i \cdot \hat{\sigma}_{\text{PID}[i]} \\ 
+\log(\hat{\sigma}_j) &\sim \mathcal{N}(\hat{\mu}, \hat{\tau})
+\end{align}
+$$
+
+$$
+\begin{align}
+\text{error_va}_i &\sim N(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i]}) \\ 
+\mu_j &\sim N(\mu_0, \tau_0) \\ 
+\log(\sigma_{\text{PID}[i]}) &= \beta \cdot \log(\texttt{va.ans.y}_i) + \gamma_j
+\end{align}
+$$
+
+
+$$
+\begin{align}
+\text{error_va}_{i} &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i],i}) \\ 
+\mu_j &\sim \mathcal{N}(\mu_0, \tau_\mu), j \in [13]\\
+\log(\sigma_{j,i}) &= \beta \cdot \log(\texttt{va.ans.y}_i) + \gamma_j \\
+\gamma_j &\sim \mathcal{N}(\gamma_0, \tau_\gamma)
+$$
+
+
 
 Let's first get a sense of what the parameters and priors look like: 
 
@@ -216,13 +240,18 @@ Let's first get a sense of what the parameters and priors look like:
 #| label: task 5 x formula
 
 # specify formula 
-f <- bf(error_va ~ 0, 
-        sigma ~ 0 + offset(log(va.ans.y)) + (1 | participantId))
+f <- bf(error_va ~ 1 + (1 | participantId), 
+        # sigma ~ 0 + offset(log(va.ans.y)) + (1 | participantId)
+        sigma ~ log(va.ans.y) + (1 | participantId)
+        )
 
 # get prior 
 task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
 get_prior(formula = f, 
           data = .)
+
+# specify prior 
+# p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
 ```
 
 To match this to our math specificaiton, we need to set the prior to be `prior(constant(1), class = "sd", group = "participantId")`. 
@@ -230,9 +259,6 @@ To match this to our math specificaiton, we need to set the prior to be `prior(c
 ```{r}
 #| label: task5-fit-model-1-x 
 #| output: false
-
-# specify prior 
-p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
 
 m5.1.x <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   # account for numerical precision 
@@ -242,11 +268,11 @@ m5.1.x <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     formula = f,
     data = .,
     family = gaussian(),
-    prior = p,
+    # prior = p,
     control = list(adapt_delta = 0.95),
     chains = 4, 
     iter = 6000, 
-    file="models/m5.1.x", 
+    # file="models/m5.1.x", 
     save_pars = save_pars(all = TRUE)
 )
 ```
@@ -285,10 +311,6 @@ m5.1.x %>% spread_draws(r_participantId__sigma[participantId, term]) %>%
   # stat_pointinterval() 
   stat_halfeye()
 ```
-
-:::{.column-margin}
-The outlier here (`5f37...`) is Maryam. 
-:::
 
 ### Model 2 -- Physical
 
