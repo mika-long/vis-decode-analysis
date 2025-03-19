@@ -382,7 +382,7 @@ m5.2.2.x <- task5_df %>%
       chains = 4,
       cores = 4, 
       iter = 6000, 
-      warmup=1000,
+      warmup = 1000,
       file="models/m5.2.2.x",
       save_pars = save_pars(all = TRUE)
   )
@@ -447,16 +447,17 @@ Let's compare the two:
 
 ```{r}
 # first we add the loo criterion to existing models 
-m5.1.x <- add_criterion(m5.1.x, "loo", moment_match=TRUE, recompile=TRUE)
+# m5.1.x <- add_criterion(m5.1.x, "loo", moment_match=TRUE, recompile=TRUE)
 m5.2.1.x <- add_criterion(m5.2.1.x, "loo", moment_match = TRUE, recompile=TRUE)
 m5.2.2.x <- add_criterion(m5.2.2.x, "loo", moment_match=TRUE, recompile=TRUE)
-m5.2.3.x <- add_criterion(m5.2.3.x, "loo", moment_match=TRUE, recompile=TRUE)
+m5.2.3.x <- add_criterion(m5.2.3.x, "loo", moment_match=TRUE, recompile=TRUE, reloo = TRUE)
 
 loo_compare(m5.2.1.x, m5.2.2.x, m5.2.3.x)
-loo_compare(m5.1.x, m5.2.1.x, m5.2.2.x)
+# loo_compare(m5.1.x, m5.2.1.x, m5.2.2.x)
 ```
 
-Based on the result of the LOO comparison, the visual angle model `m5.1.x` is preferred^[though it is unclear whether using `loo` between models in different space still makes sense ... ]. Based on the model comparison results for those in the physical space, additive `dist_to_screen + dist_to_axes` is better than multiplicative. 
+- Got a weird warning that says `Some Pareto k diagnostic values are slightly high` 
+- From the above results, model `m5.2.2.x` is the best one^[... which recall, this is its formula `f2 <- bf(error_phy ~ 1 + (1 | participantId), sigma ~ 1 + offset(log(phy.ans.y + dist_to_screen))  + (1 | participantId))`], which we will use to compare to `m5.1.x` by looking at how well they predict things  
 
 ## Project from dot to Y Axes
 
