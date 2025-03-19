@@ -260,7 +260,7 @@ m5.1.x <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     chains = 4, 
     cores = 4,
     iter = 6000, 
-    # file="models/m5.1.x", 
+    file="models/m5.1.x", 
     save_pars = save_pars(all = TRUE)
 )
 ```
@@ -281,23 +281,15 @@ Other kinds of plotting ...
 get_variables(m5.1.x)
 ```
 
-Given that we have specified out prior to have variance 1 (recall that $\hat{\sigma}[i] \sim \text{Log-Normal}(0, 1)$), if we were to plot it it will just be a dot on 1: 
-
-```{r}
-#| column: margin
-
-m5.1.x %>% mcmc_areas(pars = vars(starts_with("sd_")))
-```
-
 What is more interesting is the $\hat{\sigma}[i]$ for each participant, which we can visualize as follows: 
 
 ```{r}
-m5.1.x %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
-  filter(term == "Intercept") %>% 
-  mutate(hat_sigma = exp(r_participantId__sigma)) %>% 
-  ggplot(aes(y = participantId, x = hat_sigma)) + 
-  # stat_pointinterval() 
-  stat_halfeye()
+# m5.1.x %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
+#   filter(term == "Intercept") %>% 
+#   mutate(hat_sigma = exp(r_participantId__sigma)) %>% 
+#   ggplot(aes(y = participantId, x = hat_sigma)) + 
+#   # stat_pointinterval() 
+#   stat_halfeye()
 ```
 
 ### Model 2 -- Physical
@@ -306,10 +298,20 @@ There could also be two versions of this ... one is additive and the other is du
 
 $$
 \begin{aligned}
-\text{error}_{\text{phy}}[i] &\sim \mathcal{N}(0, \sigma[i]) \\ 
-\sigma[i] &= \text{dist}[i] \times \texttt{phy.ans.y}[i] \times \hat{\sigma}[i] \\ 
-\text{or} \;\;\; \sigma[i] &= (\text{dist}[i] + \texttt{phy.ans.y[i]}) \times \hat{\sigma}[i]\\ 
-\hat{\sigma}[i] &\sim \mathcal{N}(0, 1)
+\text{error_phy}_i &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i], i}) \\ 
+\mu_j &\sim \mathcal{N}(\mu_0, \sigma_0), & j \in [13] \\ 
+\sigma_{j, i} &= \beta \cdot (\texttt{dist_to_screen}_j + \texttt{phy.ans.y}_i) \cdot \hat{\sigma}_j, & j \in [13] \\ 
+\hat{\sigma}_j &\sim \mathcal{N}(\hat{\mu}, \hat{\sigma}) & j \in [13]
+\end{aligned}
+$$
+
+We could also fold the distance to screen in the `error_phy` part, which would make the the notation look like this: 
+
+$$
+\begin{aligned}
+\frac{\text{error_phy}_i}{\texttt{dist_to_screen}_{\text{PID}[i]}} &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i],i}) \\ 
+\mu_{j} &\sim \mathcal{N}(\mu_0, \sigma_0), & j \in [13] \\ 
+\sigma_{j, i} &= \beta \cdot \texttt{phy.ans.y}_i \cdot \hat{\sigma}_j, & j \in [13] \\ 
 \end{aligned}
 $$
 
@@ -319,20 +321,31 @@ Write the formula and get a sense of prior:
 #| label: task5-x-model2-formula
 
 # formula
-f1 <- bf(error_phy ~ 0, 
-        sigma ~ 0 + offset(log(phy.ans.y)) + offset(log(dist_to_screen)) + (1 | participantId))
+f1 <- bf(error_phy ~ 1 + (1 | participantId),
+         sigma ~ 1 + offset(log(phy.ans.y) + log(dist_to_screen)) + (1 | participantId))
 
-f2 <- bf(error_phy ~ 0, 
-        sigma ~ 0 + offset(log(phy.ans.y + dist_to_screen))  + (1 | participantId))
+f2 <- bf(error_phy ~ 1 + (1 | participantId), 
+         sigma ~ 1 + offset(log(phy.ans.y + dist_to_screen))  + (1 | participantId))
 
-f3 <- bf(error_phy ~ 1 + (1 | participantId), 
-         sigma ~ 1 + offset(log(phy.ans.y) - log(dist_to_screen)) + (1 | participantId))
+f3 <- bf(error_phy ~ dist_to_screen * eta, 
+         eta ~ 1 + (1 | participantId), 
+         sigma ~ 1 + offset(log(phy.ans.y)) + (1 | participantId), 
+         nl = TRUE)
 
-# get prior 
+# get default prior 
 task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
   get_prior(formula = f1, 
             data = .)
 
+task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
+  get_prior(formula = f2, 
+            data = .)
+
+task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
+  get_prior(formula = f3, 
+            data = .)
+
+# set prior 
 # p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
 ```
 
@@ -347,9 +360,10 @@ m5.2.1.x <- task5_df %>%
   brm(formula = f1,
       data = .,
       family = gaussian(),
-      prior = p,
+      # prior = p,
       control = list(adapt_delta = 0.95),
       chains = 4,
+      cores = 4, 
       iter = 6000, 
       warmup=1000,
       file="models/m5.2.1.x", 
@@ -363,9 +377,10 @@ m5.2.2.x <- task5_df %>%
   brm(formula = f2,
       data = .,
       family = gaussian(),
-      prior = p,
+      # prior = p,
       control = list(adapt_delta = 0.95),
       chains = 4,
+      cores = 4, 
       iter = 6000, 
       warmup=1000,
       file="models/m5.2.2.x",
