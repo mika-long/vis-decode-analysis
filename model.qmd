@@ -198,17 +198,14 @@ task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) +
 Model 1: 
 
 $$
-\begin{aligned}
+\begin{align}
 \text{error_va}_{i} &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i], i}) \\ 
 \mu_j &\sim \mathcal{N}(\mu_0, \sigma_0), & j \in [13] \\ 
-\log(\sigma_{j, i}) &= \beta \cdot \log(\texttt{va.ans.y}_i) + \gamma_j, & j \in [13] \\ 
-\gamma_j &\sim \mathcal{N}(\mu_\gamma, \sigma_\gamma), & j \in [13]
-\end{aligned}
+\sigma_{j, i} &= \alpha_j \cdot \texttt{va.ans.y}_i, & j \in [13] \\ 
+\implies \log(\sigma_{j, i}) &= \log(\alpha_j) + \log(\texttt{va.ans.y}_i) + \gamma_j, & j \in [13] \\ 
+\gamma_j &\sim \mathcal{N}(0, \sigma_\gamma), & j \in [13]
+\end{align}
 $$
-
-:::{.margin}
-Here's some notes on whether to use `offset()` in this case. 
-:::
 
 Let's first get a sense of what the parameters and priors look like: 
 
@@ -216,13 +213,21 @@ Let's first get a sense of what the parameters and priors look like:
 #| label: task 5 x formula
 
 # specify formula 
-f <- bf(error_va ~ 1 + (1 | participantId), 
-        sigma ~ log(va.ans.y) + (1 | participantId)
+f1 <- bf(error_va ~ 1 + (1 | participantId), 
+        sigma ~ 1 + log(va.ans.y) + (1 | participantId)
+        )
+
+f2 <- bf(error_va ~ 1 + (1 | participantId), 
+        sigma ~ 1 + offset(log(va.ans.y)) + (1 | participantId)
         )
 
 # get prior 
 task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-get_prior(formula = f, 
+get_prior(formula = f1, 
+          data = .)
+
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+get_prior(formula = f2, 
           data = .)
 
 # specify prior 
@@ -354,7 +359,7 @@ p1 <- c(
 # for f3 
 p2 <- c(
   # population-level
-  prior(normal(0, 0.5), nlpar = "eta", class = "intercept"), 
+  prior(normal(0, 0.25), nlpar = "eta", class = "Intercept"), 
   # for dist_to_screen * eta term 
   prior(normal(0, 0.2), class = "b"), 
   # for sigma 
@@ -388,12 +393,13 @@ m5.2.1.x <- task5_df %>%
 m5.2.2.x <- task5_df %>% 
   mutate(error_phy = phy.select.x - phy.ans.x) %>% 
   mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% 
-  filter(va.ans.y != 0) %>% # account for weird bugs
+  # account for task 5 bugs 
+  filter(va.ans.y != 0) %>% 
   brm(formula = f2,
       data = .,
       family = gaussian(),
-      # prior = p,
-      control = list(adapt_delta = 0.99),
+      prior = p1,
+      control = list(adapt_delta = 0.99, max_treedepth = 15),
       chains = 4,
       # cores = 4, 
       iter = 6000, 
@@ -405,12 +411,12 @@ m5.2.2.x <- task5_df %>%
 m5.2.3.x <- task5_df %>% 
   mutate(error_phy = phy.select.x - phy.ans.x) %>% 
   mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% 
-  filter(va.ans.y != 0) %>% # account for weird bugs
+  filter(va.ans.y != 0) %>% 
   brm(formula = f3,
       data = .,
       family = gaussian(),
-      # prior = p,
-      control = list(adapt_delta = 0.99, max_treedepth = 15),
+      prior = p2,
+      control = list(adapt_delta = 0.99, max_treedepth = 15), # hmm still divergent transitions ... 
       chains = 4,
       # cores = 4, 
       iter = 6000, 
