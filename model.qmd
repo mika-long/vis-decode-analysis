@@ -381,7 +381,7 @@ m5.2.1.x <- task5_df %>%
       # cores = 4, 
       iter = 6000, 
       warmup = 1000,
-      # file="models/m5.2.1.x", 
+      file = "models/m5.2.1.x", 
       save_pars = save_pars(all = TRUE)
   )
 
@@ -395,10 +395,10 @@ m5.2.2.x <- task5_df %>%
       # prior = p,
       control = list(adapt_delta = 0.99),
       chains = 4,
-      cores = 4, 
+      # cores = 4, 
       iter = 6000, 
       warmup = 1000,
-      file="models/m5.2.2.x",
+      file = "models/m5.2.2.x",
       save_pars = save_pars(all = TRUE)
   )
 
@@ -410,12 +410,12 @@ m5.2.3.x <- task5_df %>%
       data = .,
       family = gaussian(),
       # prior = p,
-      control = list(adapt_delta = 0.99),
+      control = list(adapt_delta = 0.99, max_treedepth = 15),
       chains = 4,
-      cores = 4, 
+      # cores = 4, 
       iter = 6000, 
       warmup = 1000,
-      file="models/m5.2.3.x",
+      file = "models/m5.2.3.x",
       save_pars = save_pars(all = TRUE)
   )
 ```
