@@ -221,6 +221,15 @@ f2 <- bf(error_va ~ 1 + (1 | participantId),
         sigma ~ 1 + offset(log(va.ans.y)) + (1 | participantId)
         )
 
+f3 <- bf(error_va ~ 1 + (1 | participantId), 
+        sigma ~ 1 + log(va.ans.y) + (1 + log(va.ans.y) | participantId)
+        )
+```
+
+Prior related: 
+
+```{r}
+#| label: task 5 x prior
 # get prior 
 task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
 get_prior(formula = f1, 
@@ -244,6 +253,7 @@ p <- c(
   prior(cauchy(0, 1), class = "sd", group = "participantId", dpar = "sigma")
 )
 ```
+
 
 Fit the model: 
 
@@ -286,10 +296,29 @@ t2 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     save_pars = save_pars(all = TRUE)
 )
 
+t3 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  # account for numerical precision 
+  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  # account for bugs in task 5 
+  filter(va.ans.y != 0) %>% 
+  brm(
+    formula = f3,
+    data = .,
+    family = gaussian(),
+    # prior = p,
+    control = list(adapt_delta = 0.99),
+    chains = 4, 
+    # cores = 4,
+    iter = 6000, 
+    file="models/t3", 
+    save_pars = save_pars(all = TRUE)
+)
+
 # compare the two models 
-t1 <- add_criterion(t1, criterion = "loo", moment_match = TRUE)
+t1 <- add_criterion(t1, criterion = "loo", moment_match = TRUE, reloo=TRUE)
 t2 <- add_criterion(t2, criterion = "loo", moment_match = TRUE, reloo=TRUE)
-loo_compare(t1, t2)
+t3 <- add_criterion(t3, criterion = "loo", moment_match = TRUE)
+loo_compare(t1, t2, t3)
 ```
 
 Looking at the above results, `t1` is clearly better. Let's see what does the result say: 
@@ -349,7 +378,30 @@ t3 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
 )
 
 t3 <- add_criterion(t3, criterion = "loo",  moment_match = TRUE)
-loo_compare(t1, t2, t3)
+loo_compare(m1, m2, t3)
+```
+Fascinating, so with a prior set to be close to 1 we get results much closer to `m1`. Let's plot the posterior: 
+
+```{r}
+sigma_coefs <- t3 %>%
+  spread_draws(b_sigma_logva.ans.y)
+
+# Plot the posterior distribution 
+ggplot(sigma_coefs, aes(x = b_sigma_logva.ans.y)) +
+  geom_density(fill = "skyblue", alpha = 0.5) +
+  geom_vline(xintercept = 1, color = "red", linetype = "dashed") +
+  labs(
+    title = "Posterior Distribution of log(va.ans.y) Coefficient",
+    subtitle = "Red dashed line indicates theoretical value of 1",
+    x = "Coefficient Value",
+    y = "Density"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+pp_check(t3, ndraws = 100)
+pp_check(m2, ndraws = 100)
 ```
 
 
@@ -435,11 +487,69 @@ f1 <- bf(error_phy ~ 1 + (1 | participantId),
 f2 <- bf(error_phy ~ 1 + (1 | participantId), 
          sigma ~ 1 + offset(log(phy.ans.y + dist_to_screen))  + (1 | participantId))
 
-f3 <- bf(error_phy ~ dist_to_screen * eta, 
-         eta ~ 1 + (1 | participantId), 
-         sigma ~ 1 + offset(log(phy.ans.y)) + (1 | participantId), 
-         nl = TRUE)
+# the feedback is to do the computation upfront instead of doing it 
+# in a nl format 
+# f3 <- bf(error_phy ~ dist_to_screen * eta, 
+#          eta ~ 1 + (1 | participantId), 
+#          sigma ~ 1 + offset(log(phy.ans.y)) + (1 | participantId), 
+#          nl = TRUE)
+f3 <- bf(error_phy.adj ~ 1 + (1 | participantId), 
+         sigma ~ 1 + offset(log(phy.ans.y)) + (1 | participantId)
+         )
 
+f4 <- bf(error_phy.adj ~ 1 + (1 | participantId), 
+         sigma ~ 1 + log(phy.ans.y) + (1 | participantId)
+         )
+```
+
+Let's test and see which among f3 and f4 is better using default priors first: 
+
+```{r}
+t1 <- task5_df %>% 
+  mutate(error_phy = phy.select.x - phy.ans.x) %>% 
+  mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% 
+  filter(va.ans.y != 0) %>% # account for weird bugs
+  mutate(error_phy.adj = error_phy / dist_to_screen) %>% 
+  brm(formula = f3,
+      data = .,
+      family = gaussian(),
+      # prior = p1,
+      control = list(adapt_delta = 0.99, max_treedepth = 15),
+      chains = 4,
+      # cores = 4, 
+      iter = 6000, 
+      warmup = 1000,
+      # file = "models/m5.2.1.x", 
+      save_pars = save_pars(all = TRUE)
+  )
+
+t2 <- task5_df %>% 
+  mutate(error_phy = phy.select.x - phy.ans.x) %>% 
+  mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% 
+  filter(va.ans.y != 0) %>% # account for weird bugs
+  mutate(error_phy.adj = error_phy / dist_to_screen) %>% 
+  brm(formula = f4,
+      data = .,
+      family = gaussian(),
+      # prior = p1,
+      control = list(adapt_delta = 0.99, max_treedepth = 15),
+      chains = 4,
+      # cores = 4, 
+      iter = 6000, 
+      warmup = 1000,
+      # file = "models/m5.2.1.x", 
+      save_pars = save_pars(all = TRUE)
+  )
+
+t1 <- add_criterion(t1, criterion = "loo")
+t2 <- add_criterion(t2, criterion = "loo")
+loo_compare(t1, t2)
+```
+
+
+Prior related code: 
+
+```{r}
 # get default prior 
 task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
   get_prior(formula = f1, 
@@ -474,6 +584,7 @@ p2 <- c(
   prior(cauchy(0, 0.5), class = "sd", nlpar = "eta") 
 )
 ```
+
 
 ```{r}
 #| label: task5-fit-model-2-x
