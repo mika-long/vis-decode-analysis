@@ -322,6 +322,8 @@ t3 <- add_criterion(t3, criterion = "loo", moment_match = TRUE)
 loo_compare(t1, t2, t3)
 ```
 
+--- MIGHT REVISIT --- 
+
 Looking at the above results, we have `t3` > `t1` > `t2`. Let's plot the total coefficient value for each participant: 
 
 ```{r}
@@ -346,95 +348,14 @@ ranef_plus_fixef <- t3 %>%
 
 # Plot the total effects
 ggplot(ranef_plus_fixef, aes(y = reorder(participantId, median_effect), x = total_effect)) +
-  stat_halfeye() + 
+  # stat_halfeye() + 
+  stat_pointinterval() + 
   geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") + 
   scale_y_discrete(labels = function(x) str_c(str_sub(x, 1, 5), "...")) + 
   labs(y = "beta_j", x = "")
 ```
 
-
-
-```{r}
-# Extract the posterior samples for the sigma coefficients
-sigma_coefs <- m1 %>%
-  spread_draws(b_sigma_logva.ans.y)
-
-# Summary statistics for the coefficient
-sigma_summary <- sigma_coefs %>%
-  summarise(
-    mean = mean(b_sigma_logva.ans.y),
-    median = median(b_sigma_logva.ans.y),
-    lower_95 = quantile(b_sigma_logva.ans.y, 0.025),
-    upper_95 = quantile(b_sigma_logva.ans.y, 0.975)
-  )
-
-sigma_summary
-```
-
-Plot the posterior distribution: 
-
-```{r}
-# Plot the posterior distribution 
-ggplot(sigma_coefs, aes(x = b_sigma_logva.ans.y)) +
-  geom_density(fill = "skyblue", alpha = 0.5) +
-  geom_vline(xintercept = 1, color = "red", linetype = "dashed") +
-  labs(
-    title = "Posterior Distribution of log(va.ans.y) Coefficient",
-    subtitle = "Red dashed line indicates theoretical value of 1",
-    x = "Coefficient Value",
-    y = "Density"
-  ) +
-  theme_minimal()
-```
-
-The previous results were obtained using the default priors, which are weakly informative. What if we use a moderately informative prior that centers beta around 1? 
-
-```{r}
-t3 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-  # account for numerical precision 
-  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
-  # account for bugs in task 5 
-  filter(va.ans.y != 0) %>% 
-  brm(
-    formula = f1,
-    data = .,
-    family = gaussian(),
-    prior = prior(normal(1, 0.5), class = "b", coef = "logva.ans.y", dpar = "sigma"),
-    control = list(adapt_delta = 0.99),
-    chains = 4, 
-    # cores = 4,
-    iter = 6000, 
-    file = "models/t3", 
-    save_pars = save_pars(all = TRUE)
-)
-
-t3 <- add_criterion(t3, criterion = "loo",  moment_match = TRUE)
-loo_compare(m1, m2, t3)
-```
-Fascinating, so with a prior set to be close to 1 we get results much closer to `m1`. Let's plot the posterior: 
-
-```{r}
-sigma_coefs <- t3 %>%
-  spread_draws(b_sigma_logva.ans.y)
-
-# Plot the posterior distribution 
-ggplot(sigma_coefs, aes(x = b_sigma_logva.ans.y)) +
-  geom_density(fill = "skyblue", alpha = 0.5) +
-  geom_vline(xintercept = 1, color = "red", linetype = "dashed") +
-  labs(
-    title = "Posterior Distribution of log(va.ans.y) Coefficient",
-    subtitle = "Red dashed line indicates theoretical value of 1",
-    x = "Coefficient Value",
-    y = "Density"
-  ) +
-  theme_minimal()
-```
-
-```{r}
-pp_check(t3, ndraws = 100)
-pp_check(m2, ndraws = 100)
-```
-
+---
 
 ```{r}
 #| label: task5-fit-model-1-x 
@@ -508,73 +429,116 @@ $$
 
 Write the formula and get a sense of prior: 
 
+:::{.column-margin}
+The feedback is to do the computation upfront instead of doing it 
+ in a nl format, but here's the non-linear format: 
+```
+bf(error_phy ~ dist_to_screen * eta, 
+   eta ~ 1 + (1 | participantId), 
+   sigma ~ 1 + offset(log(phy.ans.y)) + (1 | participantId), 
+   nl = TRUE)
+```
+:::
+
 ```{r}
 #| label: task5-x-model2-formula
 
-# formula
-f1 <- bf(error_phy ~ 1 + (1 | participantId),
-         sigma ~ 1 + offset(log(phy.ans.y) + log(dist_to_screen)) + (1 | participantId))
+# we will skip the ones with offsets first 
+# f1 <- bf(error_phy ~ 1 + (1 | participantId),
+#          sigma ~ 1 + offset(log(phy.ans.y) + log(dist_to_screen)) + (1 | participantId))
+# 
+# f2 <- bf(error_phy ~ 1 + (1 | participantId), 
+#          sigma ~ 1 + offset(log(phy.ans.y + dist_to_screen))  + (1 | participantId))
 
-f2 <- bf(error_phy ~ 1 + (1 | participantId), 
-         sigma ~ 1 + offset(log(phy.ans.y + dist_to_screen))  + (1 | participantId))
+# f3 <- bf(error_phy.adj ~ 1 + (1 | participantId), 
+#          sigma ~ 1 + offset(log(phy.ans.y)) + (1 | participantId)
+#          )
 
-# the feedback is to do the computation upfront instead of doing it 
-# in a nl format 
-# f3 <- bf(error_phy ~ dist_to_screen * eta, 
-#          eta ~ 1 + (1 | participantId), 
-#          sigma ~ 1 + offset(log(phy.ans.y)) + (1 | participantId), 
-#          nl = TRUE)
-f3 <- bf(error_phy.adj ~ 1 + (1 | participantId), 
-         sigma ~ 1 + offset(log(phy.ans.y)) + (1 | participantId)
-         )
+f1 <- bf(error_phy ~ 1 + (1 | participantId), 
+         sigma ~ 1 + log(sum_dist) + (1 + log(sum_dist) | participantId))
 
-f4 <- bf(error_phy.adj ~ 1 + (1 | participantId), 
-         sigma ~ 1 + log(phy.ans.y) + (1 | participantId)
+f2 <- bf(error_phy.adj ~ 1 + (1 | participantId), 
+         sigma ~ 1 + log(phy.ans.y) + (1 + log(phy.ans.y)| participantId)
          )
 ```
 
-Let's test and see which among f3 and f4 is better using default priors first: 
+```{r}
+t4 <- task5_df %>% 
+  mutate(error_phy = phy.select.x - phy.ans.x) %>% 
+  mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy), 
+         sum_dist = phy.ans.y + dist_to_screen) %>% 
+  # account for bugs in task 5 
+  filter(va.ans.y != 0) %>% 
+  brm(formula = f1,
+      data = .,
+      family = gaussian(),
+      # prior = p1,
+      control = list(adapt_delta = 0.99, max_treedepth = 15),
+      chains = 4,
+      # cores = 4, 
+      iter = 6000, 
+      warmup = 1000,
+      file = "models/t4", 
+      save_pars = save_pars(all = TRUE)
+  )
+
+t5 <- task5_df %>% 
+  mutate(error_phy = phy.select.x - phy.ans.x) %>% 
+  mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% 
+  filter(va.ans.y != 0) %>% # account for weird bugs
+  mutate(error_phy.adj = error_phy / dist_to_screen) %>% 
+  brm(formula = f2,
+      data = .,
+      family = gaussian(),
+      # prior = p1,
+      control = list(adapt_delta = 0.99, max_treedepth = 15),
+      chains = 4,
+      # cores = 4, 
+      iter = 6000, 
+      warmup = 1000,
+      file = "models/t5", 
+      save_pars = save_pars(all = TRUE)
+  )
+
+t4 <- add_criterion(t4, criterion = "loo", moment_match = TRUE)
+t5 <- add_criterion(t5, criterion = "loo", moment_match = TRUE)
+loo_compare(t4, t5)
+```
+```{r}
+pp_check(t4, ndraws = 100)
+pp_check(t5, ndraws = 100)
+```
+
+Plot posteriors: 
 
 ```{r}
-t1 <- task5_df %>% 
-  mutate(error_phy = phy.select.x - phy.ans.x) %>% 
-  mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% 
-  filter(va.ans.y != 0) %>% # account for weird bugs
-  mutate(error_phy.adj = error_phy / dist_to_screen) %>% 
-  brm(formula = f3,
-      data = .,
-      family = gaussian(),
-      # prior = p1,
-      control = list(adapt_delta = 0.99, max_treedepth = 15),
-      chains = 4,
-      # cores = 4, 
-      iter = 6000, 
-      warmup = 1000,
-      # file = "models/m5.2.1.x", 
-      save_pars = save_pars(all = TRUE)
-  )
+# get_variables(t4)
 
-t2 <- task5_df %>% 
-  mutate(error_phy = phy.select.x - phy.ans.x) %>% 
-  mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% 
-  filter(va.ans.y != 0) %>% # account for weird bugs
-  mutate(error_phy.adj = error_phy / dist_to_screen) %>% 
-  brm(formula = f4,
-      data = .,
-      family = gaussian(),
-      # prior = p1,
-      control = list(adapt_delta = 0.99, max_treedepth = 15),
-      chains = 4,
-      # cores = 4, 
-      iter = 6000, 
-      warmup = 1000,
-      # file = "models/m5.2.1.x", 
-      save_pars = save_pars(all = TRUE)
-  )
+t4 %>% spread_draws(b_sigma_logsum_dist, r_participantId__sigma[participantId, term]) %>% 
+  filter(term == "logsum_dist") %>% 
+  mutate(total_effect = b_sigma_logsum_dist + r_participantId__sigma) %>%
+  group_by(participantId) %>% 
+  mutate(median_effect = median(total_effect)) %>% 
+  ggplot(aes(y = participantId, x = total_effect)) + 
+  # stat_halfeye() + 
+  stat_pointinterval() + 
+  geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") + 
+  scale_y_discrete(labels = function(x) str_c(str_sub(x, 1, 5), "..."))
 
-t1 <- add_criterion(t1, criterion = "loo")
-t2 <- add_criterion(t2, criterion = "loo")
-loo_compare(t1, t2)
+# get_variables(t5)
+
+t5 %>% spread_draws(b_sigma_logphy.ans.y, 
+                    r_participantId__sigma[participantId, term]) %>% 
+  filter(term != "Intercept") %>% 
+  mutate(total_effect = b_sigma_logphy.ans.y + r_participantId__sigma) %>% 
+  group_by(participantId) %>% 
+  mutate(median_effect = median(total_effect)) %>%
+  ungroup() %>% 
+  ggplot(aes(x = total_effect, y = reorder(participantId, median_effect))) + 
+  # stat_halfeye() + 
+  stat_pointinterval() + 
+  geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") + 
+  scale_y_discrete(labels = function(x) str_c(str_sub(x, 1, 5), "...")) 
 ```
 
 
@@ -1098,9 +1062,12 @@ task1_df <- task_df %>% filter(task == "task1") %>%
 Plotting selection, answer, and `x` coordinate for highest point against lambda: 
 
 ```{r}
-task1_df %>% ggplot(aes(y = data.ans.x - data.select.x, x = param.lambda)) + 
-  geom_point(alpha = 0.5) + 
+task1_df %>% ggplot(aes(y = data.select.x - data.ans.x, x = param.lambda)) + 
+  geom_point(alpha = 0.5) # + 
   geom_point(aes(y = data.ans.x - param.mu, x = param.lambda), color = "red", alpha = 0.5)
+  
+task1_df %>% ggplot(aes(y = data.select.left_area - 0.5, x = param.lambda)) + 
+geom_point(alpha = 0.5)
 ```
 
 As can be seen here, there is a clear difference in trend ... As skewness $\lambda$ changes, the difference between the median `data.ans.x` and the mode `param.mu` increases. This provides some evidence that we're not purely using the highest point as a proxy. 
