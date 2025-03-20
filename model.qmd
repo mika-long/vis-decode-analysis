@@ -248,6 +248,50 @@ p <- c(
 Fit the model: 
 
 ```{r}
+# trying out the different formulae 
+
+m1 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  # account for numerical precision 
+  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  # account for bugs in task 5 
+  filter(va.ans.y != 0) %>% 
+  brm(
+    formula = f1,
+    data = .,
+    family = gaussian(),
+    # prior = p,
+    control = list(adapt_delta = 0.99),
+    chains = 4, 
+    # cores = 4,
+    iter = 6000, 
+    # file="models/m5.1.x", 
+    # save_pars = save_pars(all = TRUE)
+)
+
+m2 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  # account for numerical precision 
+  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  # account for bugs in task 5 
+  filter(va.ans.y != 0) %>% 
+  brm(
+    formula = f2,
+    data = .,
+    family = gaussian(),
+    # prior = p,
+    control = list(adapt_delta = 0.99),
+    chains = 4, 
+    # cores = 4,
+    iter = 6000, 
+    # file="models/m5.1.x", 
+    # save_pars = save_pars(all = TRUE)
+)
+
+# compare the two models 
+```
+
+
+
+```{r}
 #| label: task5-fit-model-1-x 
 #| output: false
 
