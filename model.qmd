@@ -258,8 +258,9 @@ p <- c(
 Fit the model: 
 
 ```{r}
-# trying out the different formulae 
+#| output: false 
 
+# trying out the different formulae 
 t1 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   # account for numerical precision 
   mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
@@ -321,7 +322,37 @@ t3 <- add_criterion(t3, criterion = "loo", moment_match = TRUE)
 loo_compare(t1, t2, t3)
 ```
 
-Looking at the above results, `t1` is clearly better. Let's see what does the result say: 
+Looking at the above results, we have `t3` > `t1` > `t2`. Let's plot the total coefficient value for each participant: 
+
+```{r}
+# Method 2: Get population-level + random effects to show absolute values
+# This adds the fixed effect to each random effect to get the total coefficient per participant
+ranef_plus_fixef <- t3 %>%
+  spread_draws(b_sigma_logva.ans.y, 
+               r_participantId__sigma[participantId,term]) %>%
+  filter(term == "logva.ans.y") %>%
+  mutate(total_effect = b_sigma_logva.ans.y + r_participantId__sigma) %>%
+  group_by(participantId) %>% 
+  mutate(median_effect = median(total_effect)) %>%
+  ungroup()
+
+  # group_by(participantId) # %>%
+  # summarize(
+  #   median = median(total_effect),
+  #   lower = quantile(total_effect, 0.025),
+  #   upper = quantile(total_effect, 0.975)
+  # ) %>%
+  # arrange(median)
+
+# Plot the total effects
+ggplot(ranef_plus_fixef, aes(y = reorder(participantId, median_effect), x = total_effect)) +
+  stat_halfeye() + 
+  geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") + 
+  scale_y_discrete(labels = function(x) str_c(str_sub(x, 1, 5), "...")) + 
+  labs(y = "beta_j", x = "")
+```
+
+
 
 ```{r}
 # Extract the posterior samples for the sigma coefficients
