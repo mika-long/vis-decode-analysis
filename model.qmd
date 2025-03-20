@@ -250,7 +250,7 @@ Fit the model:
 ```{r}
 # trying out the different formulae 
 
-m1 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+t1 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   # account for numerical precision 
   mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
   # account for bugs in task 5 
@@ -264,11 +264,11 @@ m1 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     chains = 4, 
     # cores = 4,
     iter = 6000, 
-    # file="models/m5.1.x", 
-    # save_pars = save_pars(all = TRUE)
+    file = "models/t1", 
+    save_pars = save_pars(all = TRUE)
 )
 
-m2 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+t2 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   # account for numerical precision 
   mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
   # account for bugs in task 5 
@@ -282,13 +282,75 @@ m2 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     chains = 4, 
     # cores = 4,
     iter = 6000, 
-    # file="models/m5.1.x", 
-    # save_pars = save_pars(all = TRUE)
+    file="models/t2", 
+    save_pars = save_pars(all = TRUE)
 )
 
 # compare the two models 
+t1 <- add_criterion(t1, criterion = "loo", moment_match = TRUE)
+t2 <- add_criterion(t2, criterion = "loo", moment_match = TRUE, reloo=TRUE)
+loo_compare(t1, t2)
 ```
 
+Looking at the above results, `t1` is clearly better. Let's see what does the result say: 
+
+```{r}
+# Extract the posterior samples for the sigma coefficients
+sigma_coefs <- m1 %>%
+  spread_draws(b_sigma_logva.ans.y)
+
+# Summary statistics for the coefficient
+sigma_summary <- sigma_coefs %>%
+  summarise(
+    mean = mean(b_sigma_logva.ans.y),
+    median = median(b_sigma_logva.ans.y),
+    lower_95 = quantile(b_sigma_logva.ans.y, 0.025),
+    upper_95 = quantile(b_sigma_logva.ans.y, 0.975)
+  )
+
+sigma_summary
+```
+
+Plot the posterior distribution: 
+
+```{r}
+# Plot the posterior distribution 
+ggplot(sigma_coefs, aes(x = b_sigma_logva.ans.y)) +
+  geom_density(fill = "skyblue", alpha = 0.5) +
+  geom_vline(xintercept = 1, color = "red", linetype = "dashed") +
+  labs(
+    title = "Posterior Distribution of log(va.ans.y) Coefficient",
+    subtitle = "Red dashed line indicates theoretical value of 1",
+    x = "Coefficient Value",
+    y = "Density"
+  ) +
+  theme_minimal()
+```
+
+The previous results were obtained using the default priors, which are weakly informative. What if we use a moderately informative prior that centers beta around 1? 
+
+```{r}
+t3 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  # account for numerical precision 
+  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  # account for bugs in task 5 
+  filter(va.ans.y != 0) %>% 
+  brm(
+    formula = f1,
+    data = .,
+    family = gaussian(),
+    prior = prior(normal(1, 0.5), class = "b", coef = "logva.ans.y", dpar = "sigma"),
+    control = list(adapt_delta = 0.99),
+    chains = 4, 
+    # cores = 4,
+    iter = 6000, 
+    file = "models/t3", 
+    save_pars = save_pars(all = TRUE)
+)
+
+t3 <- add_criterion(t3, criterion = "loo",  moment_match = TRUE)
+loo_compare(t1, t2, t3)
+```
 
 
 ```{r}
