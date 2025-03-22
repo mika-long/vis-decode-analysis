@@ -322,7 +322,7 @@ t3 <- add_criterion(t3, criterion = "loo", moment_match = TRUE)
 loo_compare(t1, t2, t3)
 ```
 
---- MIGHT REVISIT --- 
+--- MIGHT REVISIT --- (variance is too big)
 
 Looking at the above results, we have `t3` > `t1` > `t2`. Let's plot the total coefficient value for each participant: 
 
