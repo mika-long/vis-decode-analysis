@@ -1,0 +1,30 @@
+---
+title: "mixture-tutorial"
+format:
+  html: 
+    code-fold: false
+    reference-location: margin
+    df-print: paged
+    toc: true
+    code-overflow: wrap
+---
+
+# Overview 
+
+This is following [this tutorial](https://rpubs.com/jensroes/mixture-models-tutorial) on fitting log-Gaussian mixed-effects mixture models to get familiar with the syntax in stan and `brms`. 
+
+```{r}
+#| output: false 
+library(rstan)
+library(tidyverse)
+library(brms)
+```
+
+# Prepare data 
+
+```{r}
+# Load data
+data <- read_csv("https://osf.io/tjms9/download")
+head(data)
+```
+
