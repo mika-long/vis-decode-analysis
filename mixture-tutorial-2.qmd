@@ -1,5 +1,5 @@
 ---
-title: "mixture-tutorial-2"
+title: "Simple Mixture Models with brms and stan"
 format:
   html: 
     reference-location: margin
@@ -15,29 +15,35 @@ library(rstan)
 library(tidyverse)
 library(ggplot2)
 library(tidybayes)
+library(brms)
 theme_set(theme_minimal())
 ```
 
 
 # Overview 
 
-Here's [a blogpost](https://jeremy9959.net/Blog/StanMixture/) on the eruptions of old faithful. Here's what the dataset looks like: 
+Here's a [blogpost](https://jeremy9959.net/Blog/StanMixture/) on fitting a mixturem model using the eruption data of old faithful. Here's what the dataset looks like: 
 
 ```{r}
-#| layout-ncol: 3
-
+#| code-fold: true 
 faithful %>% 
   ggplot(aes(x = eruptions, y = waiting)) + 
   geom_point()
+```
 
+Similar to the original blog post, let's only look at `eruptions` for now: 
+
+```{r}
+#| code-fold: true 
 faithful %>% ggplot(aes(x = eruptions)) + 
   geom_dots()
 
-faithful %>% ggplot(aes(x = scale(eruptions))) + 
-  geom_dots()
+# standardized version 
+# faithful %>% ggplot(aes(x = scale(eruptions))) + 
+#   geom_dots()
 ```
 
-The data looks bimodal. We can have a following math definition: 
+The data looks bimodal. We can come up with a simple mixture model: 
 
 $$
 \begin{align}
@@ -48,10 +54,9 @@ y_i &\sim \theta \cdot \mathcal{N}(\mu_1, \sigma_1) + (1 - \theta) \cdot \mathca
 \end{align}
 $$
 
-Hmm it appears that it is possible to use `brms` mixture syntax^[see [here](https://paulbuerkner.com/brms/reference/mixture.html) and [here](https://paulbuerkner.com/brms/reference/brmsformula.html)] ...? 
-
-
 # Fit using `rstan`
+
+The following stan code was directly copied from the original blog post. 
 
 ```{r}
 stan_code <- "
@@ -81,6 +86,9 @@ model {
 Now let's fit the model using `rstan`: 
 
 ```{r}
+#| output: false 
+#| eval: false 
+
 data <- scale(faithful$eruptions)
 
 # create a list with the data for stan 
@@ -96,12 +104,17 @@ stan_model <- stan_model(model_code = stan_code)
 Fit the model: 
 
 ```{r}
-fit <- sampling(stan_model, 
-                data = stan_data,
-                chains = 4, 
-                iter = 10000, 
-                warmup = 5000, 
-                cores = 4)
+# fit <- sampling(stan_model, 
+#                 data = stan_data,
+#                 chains = 4, 
+#                 iter = 10000, 
+#                 warmup = 5000, 
+#                 cores = 4)
+
+# save 
+# saveRDS(fit, file = "models/stan_faithful.rds")
+
+fit <- readRDS("models/stan_faithful.rds")
 ```
 
 Check the fit: 
@@ -113,33 +126,85 @@ print(fit)
 Let's plot the estimated on top of existing data: 
 
 ```{r}
+dnorm1 <- function(x) dnorm(x, mean = -1.28, sd = 0.21)
+dnorm2 <- function(x) dnorm(x, mean = 0.69, sd = 0.38)
+mixture <- function(x) 0.36 * dnorm(x, mean = -1.28, sd = 0.21) + (1-0.36) * dnorm(x, mean = 0.69, sd = 0.38)
 
+data.frame(x = seq(-2, 2, 0.01)) %>% 
+  ggplot(aes(x)) + 
+  geom_dots(data = faithful, aes(x = scale(eruptions))) + 
+  stat_function(fun = mixture, color = "maroon", linewidth = 1.2) 
 ```
-
-
 
 # Fit using `brms` 
 
+Following instructions [here](https://paulbuerkner.com/brms/reference/mixture.html). 
+
 ```{r}
-mixture_model <- brm(
-  bf(eruption ~ 1, 
-     mixture = 2),
-  data = faithful, 
-  family = mixture(gaussian, gaussian), 
-  prior = c(
-    # priors for means 
-    prior(normal(0, 2), class = "Intercept", dpar = "mu1"), 
-    prior(normal(0, 2), class = "Intercept", dpar = "mu2"), 
-    # priors for sigmas 
-    prior(normal(0, 2), class = "sigma", dpar = "sigma1"),
-    prior(normal(0, 2), class = "sigma", dpar = "sigma2"),
-    # prior for mixture weight 
-    prior(beta(5, 5), class = "theta")
-  ), 
-  chains = 4, 
-  cores = 4, 
-  iter = 10000, 
-  warmup = 5000
+mix <- brms::mixture(gaussian, gaussian)
+formula <- bf(eruptions ~ 1)
+# get prior 
+get_prior(formula = formula, data = faithful, family = mix)
+# set prior 
+prior <- c(
+  prior(normal(0, 2), class = Intercept, dpar = mu1), 
+  prior(normal(0, 2), class = Intercept, dpar = mu2), 
+  # prior(beta(5, 5), class = theta), # dirichlet is the only valid prior for simplex parameters UGH 
+  prior(normal(0, 2), class = sigma1, lb = 0), # truncated normal dist
+  prior(normal(0, 2), class = sigma2, lb = 0) # truncate normal dist 
 )
 ```
 
+Fit the model: 
+
+```{r}
+#| output: false 
+
+mixture_model <- brm(
+  formula = formula,
+  data = faithful, 
+  family = mix, 
+  prior = prior, 
+  chains = 4, 
+  cores = 4, 
+  iter = 10000, 
+  warmup = 5000, 
+  file = "models/brms_mixture"
+)
+```
+
+
+Let's see the fitted model: 
+
+```{r}
+summary(mixture_model)
+pp_check(mixture_model, ndraws = 100)
+```
+
+The fit seems good. 
+
+Let us draw the posterior draws: 
+
+```{r}
+dnorm1 <- function(x) dnorm(x, mean = 2.02, sd = 0.24)
+dnorm2 <- function(x) dnorm(x, mean = 4.27, sd = 0.44)
+mixture <- function(x) 0.35 * dnorm(x, mean = 2.02, sd = 0.24) + (1-0.35) * dnorm(x, mean = 4.27, sd = 0.44)
+
+data.frame(x = seq(1, 6, 0.01)) %>% 
+  ggplot(aes(x)) + 
+  geom_dots(data = faithful, aes(x = eruptions)) + 
+  stat_function(fun = mixture, color = "maroon", linewidth = 1.2) 
+```
+
+:::{.callout-note collapse="true}
+
+### What is the corresponding stan code? 
+
+```{r}
+make_stancode(formula = formula, 
+              data = faithful,
+              family = mix, 
+              prior = prior)
+```
+
+:::
