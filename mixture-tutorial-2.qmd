@@ -1,0 +1,145 @@
+---
+title: "mixture-tutorial-2"
+format:
+  html: 
+    reference-location: margin
+    toc: true 
+---
+
+```{r}
+#| output: false 
+#| echo: false 
+
+library(datasets)
+library(rstan)
+library(tidyverse)
+library(ggplot2)
+library(tidybayes)
+theme_set(theme_minimal())
+```
+
+
+# Overview 
+
+Here's [a blogpost](https://jeremy9959.net/Blog/StanMixture/) on the eruptions of old faithful. Here's what the dataset looks like: 
+
+```{r}
+#| layout-ncol: 3
+
+faithful %>% 
+  ggplot(aes(x = eruptions, y = waiting)) + 
+  geom_point()
+
+faithful %>% ggplot(aes(x = eruptions)) + 
+  geom_dots()
+
+faithful %>% ggplot(aes(x = scale(eruptions))) + 
+  geom_dots()
+```
+
+The data looks bimodal. We can have a following math definition: 
+
+$$
+\begin{align}
+y_i &\sim \theta \cdot \mathcal{N}(\mu_1, \sigma_1) + (1 - \theta) \cdot \mathcal{N}(\mu_2, \sigma_2) \\ 
+\mu_1, \mu_2 &\sim \mathcal{N}(0, 2), \mu_1 < \mu_2 \\ 
+\sigma_1, \sigma_2 &\sim \mathcal{N}^+(0, 2) \\ 
+\theta &\sim \text{Beta}(5, 5) 
+\end{align}
+$$
+
+Hmm it appears that it is possible to use `brms` mixture syntax^[see [here](https://paulbuerkner.com/brms/reference/mixture.html) and [here](https://paulbuerkner.com/brms/reference/brmsformula.html)] ...? 
+
+
+# Fit using `rstan`
+
+```{r}
+stan_code <- "
+data {
+ int<lower = 0> N;
+ vector[N] y;
+}
+
+parameters {
+  ordered[2] mu;
+  real<lower=0> sigma[2];
+  real<lower=0, upper=1> theta;
+}
+
+model {
+ sigma ~ normal(0, 2);
+ mu ~ normal(0, 2);
+ theta ~ beta(5, 5);
+ for (n in 1:N)
+   target += log_mix(theta,
+                     normal_lpdf(y[n] | mu[1], sigma[1]),
+                     normal_lpdf(y[n] | mu[2], sigma[2]));
+}
+"
+```
+
+Now let's fit the model using `rstan`: 
+
+```{r}
+data <- scale(faithful$eruptions)
+
+# create a list with the data for stan 
+stan_data <- list(
+  N = length(data), 
+  y = as.numeric(data)
+)
+
+# compile the model 
+stan_model <- stan_model(model_code = stan_code)
+```
+
+Fit the model: 
+
+```{r}
+fit <- sampling(stan_model, 
+                data = stan_data,
+                chains = 4, 
+                iter = 10000, 
+                warmup = 5000, 
+                cores = 4)
+```
+
+Check the fit: 
+
+```{r}
+print(fit)
+```
+
+Let's plot the estimated on top of existing data: 
+
+```{r}
+
+```
+
+
+
+# Fit using `brms` 
+
+```{r}
+mixture_model <- brm(
+  bf(eruption ~ 1, 
+     mixture = 2),
+  data = faithful, 
+  family = mixture(gaussian, gaussian), 
+  prior = c(
+    # priors for means 
+    prior(normal(0, 2), class = "Intercept", dpar = "mu1"), 
+    prior(normal(0, 2), class = "Intercept", dpar = "mu2"), 
+    # priors for sigmas 
+    prior(normal(0, 2), class = "sigma", dpar = "sigma1"),
+    prior(normal(0, 2), class = "sigma", dpar = "sigma2"),
+    # prior for mixture weight 
+    prior(beta(5, 5), class = "theta")
+  ), 
+  chains = 4, 
+  cores = 4, 
+  iter = 10000, 
+  warmup = 5000
+)
+```
+
