@@ -112,9 +112,20 @@ Load data:
 
 task1_df <- task_df %>% filter(task == "task1") %>% 
   select(-slider.x, -slider.y) %>% 
+  left_join(participants, by = join_by(participantId)) %>% 
   mutate(data.select.left_area = psgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE), 
          data.ans.x = qsgt(0.5, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)) %>% 
-  left_join(participants, by = join_by(participantId))
+  # pixel related 
+  mutate(pixel.med.x = data_to_pixel_x(data.ans.x), 
+         pixel.mod.x = data_to_pixel_x(param.mu)) %>% 
+  # phy related 
+  mutate(phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM), 
+         phy.med.x = pixel_to_phy_x(pixel.med.x, pixelToMM), 
+         phy.mod.x = pixel_to_phy_x(pixel.mod.x, pixelToMM)) %>% 
+  # visual angle related 
+  mutate(va.select.x = vis_angle(phy.select.x, dist_to_screen), 
+         va.med.x = vis_angle(phy.med.x, dist_to_screen), 
+         va.mod.x = vis_angle(phy.mod.x, dist_to_screen))
 ```
 
 Ok here's the math model^[Note that the notation for a standard mixture model focuses on specifying the probability **density**, which is different than McElreath's approach of specifying things in a more generative fashion ...]: 
@@ -281,7 +292,7 @@ summary %>% filter(str_detect(variable, "lambda")) %>%
   # filter(!str_detect(variable, "alpha")) %>% 
   # filter(!str_detect(variable, "beta")) %>% 
   ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) + 
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
   geom_point(aes(x = median))
 ```
 
