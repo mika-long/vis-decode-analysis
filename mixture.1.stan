@@ -9,7 +9,7 @@ data {
   array[N] int<lower=1> PID; // participant ID for each observation 
 }
 parameters {
-  real<lower=0, upper=1> lambda; // mixing weight
+  real<lower=0, upper=1>[N] lambda; // mixing weight, one for each row 
   
   // participant-specific standard deviations
   // implementing them as ordered sigmas 
@@ -44,7 +44,7 @@ model {
     int p = PID[n]; // participant ID for this observation 
     
     // Two-component mixture model
-    target += log_mix(lambda, 
+    target += log_mix(lambda[n], 
                       normal_lpdf(y[n] | y_med[n], sigma_med[p]), 
                       normal_lpdf(y[n] | y_mod[n], sigma_mod[p]));
   }
@@ -55,7 +55,7 @@ generated quantities {
   for (n in 1:N) {
     int p = PID[n]; 
     
-    log_lik[n] = log_mix(lambda, 
+    log_lik[n] = log_mix(lambda[n], 
                          normal_lpdf(y[n] | y_med[n], sigma_med[p]), 
                          normal_lpdf(y[n] | y_mod[n], sigma_mod[p]));
   }
