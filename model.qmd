@@ -1164,9 +1164,16 @@ task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
 
 task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>% 
   mutate(error_va = ifelse(abs(error_va) < 1e-8, 0, error_va)) %>%  
-  filter(error_va != 0) %>% 
-  ggplot(aes(x = data.ans.y - data.select.y)) + 
+  # filter(error_va != 0) %>% 
+  ggplot(aes(x = va.ans.x - va.select.x)) + 
   geom_dots()
+
+task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>% 
+  mutate(error_va = ifelse(abs(error_va) < 1e-8, 0, error_va)) %>%  
+  # filter(error_va != 0) %>% 
+  ggplot(aes(x = data.ans.x - data.select.x)) + 
+  geom_dots()
+# this looks like a laplace distribution 
 ```
 
 ## Model 1 -- Vis Angle space
