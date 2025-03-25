@@ -285,6 +285,8 @@ summary %>% filter(str_detect(variable, "lambda")) %>%
   geom_point(aes(x = median))
 ```
 
+The lambda values are centered around 0.95 ... which is a bloody shame because this implies that 95% of the time the participant is trying to use the median operator? 
+
 It appears that the results are flipped ...? Which is kind of weird ... Also `lambda` is HUGE which shouldn't really be the case ... Anyways let's save the `cmdstanr` model for now ... 
 
 ```{r}
