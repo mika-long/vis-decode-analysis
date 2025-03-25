@@ -18,7 +18,7 @@ theme_set(theme_minimal())
 library(brms)
 # plot results 
 library(tidybayes)
-library(rstan)
+library(cmdstanr)
 library(sgt)
 ```
 
@@ -215,48 +215,74 @@ Looking at the above sections^[termed `transformed parameters`, see [here](https
 
 --- 
 
-Let's say we try to add participant-level or row-level varying theta, then the stan code is going to look as follows: 
+## Stan code -- same lambda 
+
+single lambda for all participants 
 
 ```{r}
-stan_code <- "
-functions {
-}
-data {
-  int<lower=1> N; // total number of observations
-  vector[N] Y; // observed values 
-  vector[N] Y_med; // known median values 
-  vector[N] Y_mod; // known mode values 
-  
-  // participant data 
-  int<lower=1> N_p; // number of participants 
-  array[N] int<lower=1> PID; // participant ID for each observation 
-  
-  // prior parameters 
-  real<lower=0> alpha; // beta prior parameter for lambda 
-  real<lower=0> beta; // beta prior parameter for lambda 
-}
-parameters {
-  real<lower=0, upper=1> lambda; // mixing weight
-  
-  // participant-specific standard deviations 
-  vector<lower=0>[N_p] sigma_med; 
-  vector<lower=0>[N_p] sigma_mod; 
-}
-model {
-  // priors
-  lambda ~ beta(alpha, beta); 
-  sigma_med ~ student_t(3, 0, 2.5); // TODO --- change this 
-  sigma_mod ~ student_t(3, 0, 2.5); // TODO --- change this 
-  
-  // likelihood
-  for (n in 1:N) {
-    real mean_n = lambda * y_med[n] + (1 - lambda) * y_mod[n]; 
-    real sd_n = sqrt(lambda^2 * square(sigma_med[PID[n]]) + (1 - lambda)^2 * square(sigma_mod[PID[n]]));
-    
-    y[n] ~ normal(mean_n, sd_n); 
-  }
-}
-"
-
-
+model <- cmdstan_model("mixture.1.stan")
+model$print()
 ```
+
+Note that we are using the `log_mix` function instead of the `log_sum_exp` function, but they are equivalent for the case of two components. In the [documentation](https://mc-stan.org/docs/functions-reference/real-valued_basic_functions.html) we have 
+
+$$
+\begin{align}
+\text{log_mix}(\theta, \lambda_1, \lambda_2) &= \log (\theta \exp(\lambda_1) + (1 - \theta) \exp(\lambda_2)) \\ 
+&= \text{log_sum_exp}(\log (\theta) + \lambda_1, \log (1 - \theta) + \lambda_2)
+\end{align}
+$$
+
+Prepare data for stan: 
+
+```{r}
+N <- task1_df %>% nrow(.)
+y <- task1_df %>% pull(data.select.x)
+y_med <- task1_df %>% pull(data.ans.x)
+y_mod <- task1_df %>% pull(param.mu)
+N_p <- task1_df %>% count(participantId) %>% nrow(.)
+PID <- as.numeric(factor(task1_df$participantId))
+
+stan_data <- list(
+  N = N, 
+  y = y, 
+  y_med = y_med, 
+  y_mod = y_mod, 
+  N_p = N_p, 
+  PID = PID
+)
+```
+
+Fit the stan model^[there are several options here, one can use `rstan`, `brms`, and `cmdstanr`. I am going with `cmdstanr` here, as it always run wit the latest version of stan.]: 
+
+```{r}
+#| output: false 
+
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  parallel_chains = 4, 
+  iter_warmup = 5000, 
+  iter_sampling = 10000,
+  adapt_delta = 0.95
+)
+```
+
+It fits! But with a LOT of divergent transitions (49%). Let's check the fitted result: 
+
+```{r}
+summary <- fit$summary()
+# plot posterior summaries 
+summary %>% filter(!str_detect(variable, "^l") ) %>% 
+  # filter(!str_detect(variable, ))
+  ggplot(aes(y = variable)) + 
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) + 
+  geom_point(aes(x = median))
+```
+
+It appears that the results are flipped ...? Which is kind of weird ... Also `lambda` is HUGE which shouldn't really be the case ... Anyways let's save the `cmdstanr` model for now ... 
+
+```{r}
+fit$save_object(file = "mix_models/m1.rds")
+```
+
