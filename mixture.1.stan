@@ -19,7 +19,7 @@ model {
   // priors
   lambda ~ beta(2, 2); 
   sigma_med ~ student_t(3, 0, 0.5); // TODO --- change this 
-  sigma_mod ~ student_t(3, 0, 0.5); // TODO --- change this 
+  sigma_mod ~ lognormal(-7, 0.5); // TODO --- change this 
   
   // likelihood
   for (n in 1:N) {

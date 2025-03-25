@@ -25,7 +25,6 @@ theme_set(theme_minimal())
 library(brms)
 # plot results 
 library(tidybayes)
-library(bayesplot)
 ```
 
 :::{.callout-caution}
@@ -1160,6 +1159,14 @@ task2_df %>% ggplot(aes(y = va.ans.y - va.select.y, x = dist_to_screen)) +
 
 task2_df %>% ggplot(aes(x = va.ans.y - va.select.y)) + geom_dots()
 task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
+
+# for the sake of determining the variance, let's only look at `data` space for now ... 
+
+task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>% 
+  mutate(error_va = ifelse(abs(error_va) < 1e-8, 0, error_va)) %>%  
+  filter(error_va != 0) %>% 
+  ggplot(aes(x = data.ans.y - data.select.y)) + 
+  geom_dots()
 ```
 
 ## Model 1 -- Vis Angle space
@@ -1167,16 +1174,16 @@ task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
 Based on our prior assumptions so far, the vis angle space model should not include dist_to_screen but the physical model should. Therefore, a potential model looks as follows: 
 
 $$
-\begin{aligned}
-\text{error}_{\text{va}}[i] \sim \text{Half-Normal}(\sigma[i]) \\ 
-\sigma[i] \sim \text{Log-Normal}(0, 1)
-\end{aligned}
+\begin{align}
+\text{error}_{\text{va}}[i] \sim \text{Half-Normal}(\sigma_{\text{PID}[i]}) \\ 
+\sigma_j \sim \text{Log-Normal}(0, 1)
+\end{align}
 $$
 
 Specify formula: 
 
 ```{r}
-#| label: task 2 formula
+#| label: task 2 formula 1 
 
 f <- bf(error_va | trunc(lb = 0) ~ 0, 
         sigma ~ 0 + (1 | participantId), 
@@ -1189,6 +1196,60 @@ get_prior(formula = f,
 
 p <- prior(lognormal(0, 1), class = "sd", dpar="sigma", group="participantId")
 ```
+
+Hmm the half-normal model doesn't look quite right, perhaps this follows closer to an exponential distribution? Also we need to take care of teh number of times thigns were zero, so this should be a **zero-inflated exponential model**. Something like the following: 
+
+$$
+\begin{align}
+\text{error}_{\text{va}}[i] &\sim \text{Exponential}(\lambda_{\text{PID}[i]}) \\ 
+\lambda &= \exp(\alpha + u_j) \\ 
+\alpha &\sim \mathcal{N}(0, 1) \\ 
+u_j &\sim \mathcal{N}(0, \sigma_u^2) \\ 
+\sigma_u &\sim \text{Half-Cauchy}(0, 5) 
+\end{align}
+$$
+
+The corresponding `brms` formula would be as follows: 
+
+```{r}
+#| label: task 2 formula 2
+
+f2 <- bf(error_va ~ 1 + (1 | participantId), 
+        family = exponential())
+
+# get prior 
+task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+get_prior(formula = f2, 
+          data = .)
+
+p <- c(
+  prior(normal(0, 1), class = Intercept), 
+  prior(cauchy(0, 5), class = "sd", group = "participantId")
+)
+```
+
+Let's fit the model: 
+
+```{r}
+#| output: false
+#| label: task2-fit-model-3
+
+m2.3 <- task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>% 
+  mutate(error_va = ifelse(abs(error_va) < 1e-8, 0, error_va)) %>% 
+  mutate(error_va = ifelse(error_va < 0, 0, error_va)) %>% 
+  brm(formula = f2,
+      data = ., 
+      prior = p,
+      control = list(adapt_delta = 0.99), # note this is higher than 0.95
+      chains = 4, 
+      iter = 8000, # more iterations
+      warmup = 2000, # higher than usual 
+      file="models/m2.3", 
+      save_pars = save_pars(all=TRUE)
+      )
+```
+
+
 
 :::{.caution}
 While doing the fitting I found some issues ... For task 2, `error_va = va.ans.y - va.select.y` should always be non-negative, but I got some negative values that are very, very small. I am setting a tolerance of `1e-12` --- any value smaller than this range will be regarded as 0. See the following for the negative values 

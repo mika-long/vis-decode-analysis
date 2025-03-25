@@ -217,7 +217,7 @@ Looking at the above sections^[termed `transformed parameters`, see [here](https
 
 ## Stan code -- same lambda 
 
-single lambda for all participants 
+- single lambda for all participants, that is drawn from $\text{Beta}(2, 2$: 
 
 ```{r}
 model <- cmdstan_model("mixture.1.stan")
@@ -272,6 +272,7 @@ It fits! But with a LOT of divergent transitions (49%). Let's check the fitted r
 
 ```{r}
 summary <- fit$summary()
+
 # plot posterior summaries 
 summary %>% filter(!str_detect(variable, "^l") ) %>% 
   # filter(!str_detect(variable, ))
@@ -283,6 +284,7 @@ summary %>% filter(!str_detect(variable, "^l") ) %>%
 It appears that the results are flipped ...? Which is kind of weird ... Also `lambda` is HUGE which shouldn't really be the case ... Anyways let's save the `cmdstanr` model for now ... 
 
 ```{r}
-fit$save_object(file = "mix_models/m1.rds")
+fit$save_object(file = "mix_models/m2.rds")
 ```
+
 
