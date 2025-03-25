@@ -167,9 +167,24 @@ mixture_model <- brm(
   cores = 4, 
   iter = 10000, 
   warmup = 5000, 
-  file = "models/task1"
+  file = "models/task1", 
+   control = list(adapt_delta = 0.95),
 )
 ```
 
+```{r}
+pairs(mixture_model)
+```
 
+```{r}
+summary(mixture_model)
+```
+
+Let's look at the stan code of this: 
+
+```{r}
+make_stancode(formula = formula, 
+              data = task1_df,
+              family = mix)
+```
 
