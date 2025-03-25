@@ -1,6 +1,8 @@
 ---
 title: "mixture-model"
-format: html
+format: 
+  html: 
+    reference-location: margin
 ---
 
 ```{r}
@@ -28,6 +30,7 @@ library(sgt)
 ```{r}
 #| label: read-in-data
 #| code-fold: true
+#| output: false 
 
 df <- read.csv("vis-decode-slider_all_tidy.csv") %>% as_tibble(.)
 
@@ -114,22 +117,35 @@ task1_df <- task_df %>% filter(task == "task1") %>%
   left_join(participants, by = join_by(participantId))
 ```
 
-Ok here's the math model: 
+Ok here's the math model^[Note that the notation for a standard mixture model focuses on specifying the probability **density**, which is different than McElreath's approach of specifying things in a more generative fashion ...]: 
 
 $$
 \begin{align}
-y_i & =  \lambda \cdot \hat{y}^{\text{med}}_i + (1 - \lambda) \cdot \hat{y}^{\text{mod}}_i \\
+\Pr(y_i) & =  \lambda \cdot \Pr(\hat{y}^{\text{med}}_i) + (1 - \lambda) \cdot \Pr(\hat{y}^{\text{mod}}_i) \\
 \hat{y}^{\text{med}}_i &\sim \mathcal{N}(y^\text{med}, (\sigma^\text{med}_{\text{PID}[i]})^2) \\ 
 \hat{y}^{\text{mod}}_i &\sim \mathcal{N}(y^\text{mod}, (\sigma^{\text{mod}}_{\text{PID}[i]})^2) \\ 
 (*) \,\, \lambda &\sim \text{Beta}(5, 5) 
 \end{align}
 $$
 
-Let's try to write a simple brms model for this, note that right now $\lambda$ is just assumed to be drawn from Beta (or Dirichlet(1))
+:::{.column-margin}
+Perhaps a different way to write this in a generative fashion is: 
+$$
+\begin{align}
+z_i &\sim \text{Categorical}(\pi_1, \pi_2) \\ 
+y_i &\sim \mathcal{N}(\mu_{z_i}, \sigma_{z_i})
+\end{align}
+$$
+where $z_i$ is the component indicator variable for observation $i$. 
+:::
+
+
+
+Let's try to write a simple brms model for this, note that right now $\lambda$ is just assumed to be drawn from Beta (or Dirichlet(1, 1)^[... which is going to be Uniform[0, 1] for the case of $K =2$])
 
 ```{r}
 mix <- brms::mixture(gaussian, gaussian, order = "none")
-formula <- bf(data.select.x ~ 0 + data.select.x:mu1 + param.mu:mu2,
+formula <- bf(data.select.x ~ 0 + data.ans.x:mu1 + param.mu:mu2,
               mu1 ~ 0, 
               mu2 ~ 0, 
               sigma1 ~ 0 + (1 | participantId), 
@@ -139,6 +155,8 @@ formula <- bf(data.select.x ~ 0 + data.select.x:mu1 + param.mu:mu2,
 get_prior(formula = formula, data = task1_df, family = mix)
 
 ```
+
+If we don't specify anything for `theta`, then theta is treated as drawn from a Dirichlet distribution, and theta values are assumed to be the same for all trials across all participants. 
 
 
 ```{r}
@@ -168,16 +186,15 @@ mixture_model <- brm(
   iter = 10000, 
   warmup = 5000, 
   file = "models/task1", 
-   control = list(adapt_delta = 0.95),
+  control = list(adapt_delta = 0.95),
 )
 ```
 
-```{r}
-pairs(mixture_model)
-```
+Check the fitted model: 
 
 ```{r}
 summary(mixture_model)
+pairs(mixture_model)
 ```
 
 Let's look at the stan code of this: 
@@ -188,3 +205,58 @@ make_stancode(formula = formula,
               family = mix)
 ```
 
+Looking at the above sections^[termed `transformed parameters`, see [here](https://mc-stan.org/docs/reference-manual/blocks.html#program-block-transformed-parameters) for more details], we have the following: 
+
+- `functions`: the place to define custom functions to be used in the model fitting process 
+- `data`: declares all data that will be provided to th model from `R`. This includes observed variables, group identifiers, and any fixed values needed for the model. 
+- `transformed data`: define deterministic transformations of data that only need to be computed once, before sampling begins. Useful for efficiency.
+- `parameters`: the place to declare parameters that Stan will estimate. These are the unknowns in the model. 
+- `model`: the core of the stan program, where we define the likelihood of the data given the parameters and specify the prior distributions. The `target` variable represents the **log posterior density** that Stan is trying to sample from. 
+
+--- 
+
+Let's say we try to add participant-level or row-level varying theta, then the stan code is going to look as follows: 
+
+```{r}
+stan_code <- "
+functions {
+}
+data {
+  int<lower=1> N; // total number of observations
+  vector[N] Y; // observed values 
+  vector[N] Y_med; // known median values 
+  vector[N] Y_mod; // known mode values 
+  
+  // participant data 
+  int<lower=1> N_p; // number of participants 
+  array[N] int<lower=1> PID; // participant ID for each observation 
+  
+  // prior parameters 
+  real<lower=0> alpha; // beta prior parameter for lambda 
+  real<lower=0> beta; // beta prior parameter for lambda 
+}
+parameters {
+  real<lower=0, upper=1> lambda; // mixing weight
+  
+  // participant-specific standard deviations 
+  vector<lower=0>[N_p] sigma_med; 
+  vector<lower=0>[N_p] sigma_mod; 
+}
+model {
+  // priors
+  lambda ~ beta(alpha, beta); 
+  sigma_med ~ student_t(3, 0, 2.5); // TODO --- change this 
+  sigma_mod ~ student_t(3, 0, 2.5); // TODO --- change this 
+  
+  // likelihood
+  for (n in 1:N) {
+    real mean_n = lambda * y_med[n] + (1 - lambda) * y_mod[n]; 
+    real sd_n = sqrt(lambda^2 * square(sigma_med[PID[n]]) + (1 - lambda)^2 * square(sigma_mod[PID[n]]));
+    
+    y[n] ~ normal(mean_n, sd_n); 
+  }
+}
+"
+
+
+```
