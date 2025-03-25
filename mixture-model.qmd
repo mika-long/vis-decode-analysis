@@ -264,7 +264,7 @@ fit <- model$sample(
   parallel_chains = 4, 
   iter_warmup = 5000, 
   iter_sampling = 10000,
-  adapt_delta = 0.95, 
+  adapt_delta = 0.99, 
   max_treedepth = 12
 )
 ```
@@ -275,7 +275,7 @@ It fits! But with a LOT of divergent transitions (49%). Let's check the fitted r
 summary <- fit$summary()
 
 # plot posterior summaries 
-summary %>% filter(str_detect(variable, "lambda")) %>% 
+summary %>% filter(str_detect(variable, "sigma_m")) %>% 
   # filter(str_detect(variable, "sigma_med")) %>% 
   # filter(!str_detect(variable, "^l") ) %>% 
   # filter(!str_detect(variable, "alpha")) %>% 
