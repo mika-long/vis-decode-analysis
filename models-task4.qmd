@@ -1,12 +1,6 @@
 ---
-title: "Preliminary Model building"
-format:
-  html: 
-    code-fold: false
-    reference-location: margin
-    df-print: paged
-    toc: true
-    code-overflow: wrap
+title: "Models Task 4"
+format: html
 ---
 
 ```{r}
@@ -27,14 +21,9 @@ library(brms)
 library(tidybayes)
 ```
 
-:::{.callout-caution}
-Per Matt's advice: **Think in a generative way**
-:::
+# Set up 
 
-# Read in data and all processing 
-
-- All the things selected by the participants will be named `xxx.select.xxx` 
-- All the things related to the actual answer will be named `xxx.ans.xxx`
+read in data and write functions for processing: 
 
 ```{r}
 #| label: read-in-data
@@ -109,3 +98,56 @@ vis_distance <- data.frame(participantId = p,
 # combine 
 participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participantId))
 ```
+
+
+# Task 4 -- Find slope 
+
+```{r}
+#| label: get task 4 data 
+
+task4_df <- task_df %>% filter(task == "task4") %>% 
+  select(-slider.x, -slider.y) %>% 
+  mutate(data.select.slope = dsgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE), 
+         data.ans.slope = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE)) %>% 
+  left_join(participants, by = join_by(participantId))
+```
+
+Let's first see the distribution of signed error: 
+
+```{r}
+task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) + 
+  geom_dots()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = dist_to_screen)) + 
+  geom_point()
+```
+
+It seems that the selected slope is consistently smaller than the actual slope of the answer. 
+
+Let's see if there's any obvious relation between signed error and parameters of the distribution: 
+
+```{r}
+#| layout-ncol: 2
+#| code-fold: true 
+
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = dist_to_screen)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.mu)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.sigma)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.lambda)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.p)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.q)) + 
+  geom_point()
+```
+
+I don't see any apparent trends ... 

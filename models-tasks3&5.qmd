@@ -1,0 +1,1037 @@
+---
+title: "Tasks 5 and 3 models"
+format:
+  html: 
+    code-fold: false
+    reference-location: margin
+    df-print: paged
+    toc: true
+    code-overflow: wrap
+---
+
+```{r}
+#| echo: false
+#| output: false
+#| label: setup
+
+library(tidyverse)
+library(ggplot2)
+library(sgt)
+library(numDeriv)
+library(ggdist)
+# setting the theme 
+theme_set(theme_minimal())
+# model
+library(brms)
+# plot results 
+library(tidybayes)
+```
+
+# Set up 
+
+read in data and write functions for processing: 
+
+```{r}
+#| label: read-in-data
+#| code-fold: true
+
+df <- read.csv("vis-decode-slider_all_tidy.csv") %>% as_tibble(.)
+
+# filter 
+ids <- df %>% count(participantId) %>% filter(n == 492) %>% pull(participantId) 
+df <- df %>% filter(participantId %in% ids)
+
+# create a separate dataframe for just test related trials 
+task_df <- df %>% filter(grepl("task", trialId) & grepl("test", trialId) ) %>% 
+    select(participantId, trialId, responseId, answer) %>% 
+    mutate(answer = as.numeric(answer)) %>% 
+    pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
+  separate_wider_delim(trialId, delim = "_", names = c("task", "type", "id")) %>% 
+  select(-type) %>% 
+  rename(data.select.x = location.x, 
+         data.select.y = location.y,
+         pixel.select.x = pixel.x, 
+         pixel.select.y = pixel.y)
+```
+
+```{r}
+#| label: define-function
+#| code-fold: true
+
+# origin is top left  
+data_to_pixel_y <- function(data_y) {
+  return(-395 * data_y + 410)
+}
+data_to_pixel_x <- function(data_x) {
+  return (53.5 * data_x + 317.5)
+}
+
+# origin is bottom left 
+pixel_to_phy_x <- function(pixel, pxMM){
+  (pixel - 50) / pxMM
+}
+pixel_to_phy_y <- function(pixel, pxMM){
+  (410 - pixel) / pxMM
+}
+
+# return visual angle in degrees and not radian
+vis_angle <- function(size, distance){
+  return(2 * atan(size / (2 * distance)) * 180 / pi)
+}
+
+# tolerance for numerical precision 
+tolerance <- 1e-10
+```
+
+```{r}
+#| label: define-special-dfs
+#| code-fold: true
+
+p <- df %>% filter(participantId %in% ids) %>% 
+  filter(grepl("pixelsPerMM", responseId) | grepl("prolificId", responseId)) %>% 
+  select(participantId, responseId, answer) %>% 
+  pivot_wider(names_from = responseId, values_from = answer) %>% 
+  pull(participantId)
+
+# custom dataframe 
+pixel_to_mm <- data.frame(participantId = p, 
+  pixelToMM = c(3.73, 3.27, 3.27, 5.03, 3.73, 3.25, 3.73, 3.27, 3.73, 3.27, 5.14, 3.30, 3.29)
+)
+
+vis_distance <- data.frame(participantId = p, 
+                           dist_to_screen = c(426, 502, 500, 495, 485, 987, 635, 500, 479, 563, 449, 685, 462))
+
+# combine 
+participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participantId))
+```
+
+# Task 5 --- Project from dot to axes 
+
+Get data: 
+
+```{r}
+#| label: task 5 load data
+#| code-fold: true 
+
+task5_df <- task_df %>% filter(task == "task5") %>% 
+  select(participantId, task, id, data.select.x, data.select.y, slider.x, slider.y) %>% 
+  rename(data.ans.x = data.select.x, 
+         data.ans.y = data.select.y, 
+         data.select.x = slider.x, 
+         data.select.y = slider.y) %>% 
+  left_join(participants, by = join_by(participantId)) %>% 
+  # do all the calculations for user's selected 
+  mutate(pixel.select.x = data_to_pixel_x(data.select.x), 
+         pixel.select.y = data_to_pixel_y(data.select.y), 
+         phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM),
+         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM), 
+         va.select.x = vis_angle(phy.select.x, dist_to_screen),
+         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>% 
+  # do all the calculations for the actual answer
+  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x),
+         pixel.ans.y = data_to_pixel_y(data.ans.y),
+         phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM),
+         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM), 
+         va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
+         va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
+```
+
+Verify that the results are in the right scale: 
+
+```{r}
+#| output: false 
+#| code-fold: true
+#| label: task 5 verify 
+
+task5_df %>% ggplot(aes(x = pixel.select.x - pixel.ans.x)) + 
+  geom_dots()
+
+task5_df %>% ggplot(aes(x = pixel.select.y - pixel.ans.y)) + 
+  geom_dots()
+
+task5_df %>% ggplot(aes(x = phy.select.x - phy.ans.x)) + 
+  geom_dots()  
+
+task5_df %>% ggplot(aes(x = phy.select.y - phy.ans.y)) + 
+  geom_dots() 
+
+task5_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + 
+  geom_dots()  
+
+task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) + 
+  geom_dots()  
+
+```
+
+## Project from dot to X axes
+
+Distribution of signed error: 
+
+```{r}
+#| code-fold: true
+
+task5_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + 
+  geom_dots() +
+  geom_vline(xintercept = 0, linetype="dashed", color="black") + 
+  labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
+```
+
+Relationship between signed error (in visual angle space) and distance to X-axes: 
+
+```{r}
+#| code-fold: true
+
+task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) + 
+  geom_point(alpha = 0.5) +
+  geom_vline(xintercept = 0, linetype="dashed", color="gray") + 
+  labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
+```
+
+### Model 1 -- Vis Angle 
+
+Model 1: 
+
+$$
+\begin{align}
+\text{error_va}_{i} &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i], i}) \\ 
+\mu_j &\sim \mathcal{N}(\mu_0, \sigma_0), & j \in [13] \\ 
+\sigma_{j, i} &= \alpha_j \cdot \texttt{va.ans.y}_i, & j \in [13] \\ 
+\implies \log(\sigma_{j, i}) &= \log(\alpha_j) + \log(\texttt{va.ans.y}_i) + \gamma_j, & j \in [13] \\ 
+\gamma_j &\sim \mathcal{N}(0, \sigma_\gamma), & j \in [13]
+\end{align}
+$$
+
+Let's first get a sense of what the parameters and priors look like: 
+
+```{r} 
+#| label: task 5 x formula
+
+# specify formula 
+f1 <- bf(error_va ~ 1 + (1 | participantId), 
+        sigma ~ 1 + log(va.ans.y) + (1 | participantId)
+        )
+
+f2 <- bf(error_va ~ 1 + (1 | participantId), 
+        sigma ~ 1 + offset(log(va.ans.y)) + (1 | participantId)
+        )
+
+f3 <- bf(error_va ~ 1 + (1 | participantId), 
+        sigma ~ 1 + log(va.ans.y) + (1 + log(va.ans.y) | participantId)
+        )
+```
+
+Prior related: 
+
+```{r}
+#| label: task 5 x prior
+# get prior 
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+get_prior(formula = f1, 
+          data = .)
+
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+get_prior(formula = f2, 
+          data = .)
+
+# specify prior 
+p <- c(
+  # global intercept (mu_0)
+  prior(normal(0, 1), class = "Intercept"), 
+  # sd of participant mean (sigma_0)
+  prior(cauchy(0, 1), class = "sd", group = "participantId"), 
+  # mu_gamma 
+  prior(normal(0, 1), class = "Intercept", dpar = "sigma"), 
+  # beta 
+  prior(normal(1, 0.5), class = "b", coef="logva.ans.y", dpar = "sigma"), 
+  # gamma 
+  prior(cauchy(0, 1), class = "sd", group = "participantId", dpar = "sigma")
+)
+```
+
+
+Fit the model: 
+
+```{r}
+#| output: false 
+
+# trying out the different formulae 
+t1 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  # account for numerical precision 
+  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  # account for bugs in task 5 
+  filter(va.ans.y != 0) %>% 
+  brm(
+    formula = f1,
+    data = .,
+    family = gaussian(),
+    # prior = p,
+    control = list(adapt_delta = 0.99),
+    chains = 4, 
+    # cores = 4,
+    iter = 6000, 
+    file = "models/t1", 
+    save_pars = save_pars(all = TRUE)
+)
+
+t2 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  # account for numerical precision 
+  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  # account for bugs in task 5 
+  filter(va.ans.y != 0) %>% 
+  brm(
+    formula = f2,
+    data = .,
+    family = gaussian(),
+    # prior = p,
+    control = list(adapt_delta = 0.99),
+    chains = 4, 
+    # cores = 4,
+    iter = 6000, 
+    file="models/t2", 
+    save_pars = save_pars(all = TRUE)
+)
+
+t3 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  # account for numerical precision 
+  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  # account for bugs in task 5 
+  filter(va.ans.y != 0) %>% 
+  brm(
+    formula = f3,
+    data = .,
+    family = gaussian(),
+    # prior = p,
+    control = list(adapt_delta = 0.99),
+    chains = 4, 
+    # cores = 4,
+    iter = 6000, 
+    file="models/t3", 
+    save_pars = save_pars(all = TRUE)
+)
+
+# compare the two models 
+t1 <- add_criterion(t1, criterion = "loo", moment_match = TRUE, reloo=TRUE)
+t2 <- add_criterion(t2, criterion = "loo", moment_match = TRUE, reloo=TRUE)
+t3 <- add_criterion(t3, criterion = "loo", moment_match = TRUE)
+loo_compare(t1, t2, t3)
+```
+
+--- MIGHT REVISIT --- (variance is too big)
+
+Looking at the above results, we have `t3` > `t1` > `t2`. Let's plot the total coefficient value for each participant: 
+
+```{r}
+# Method 2: Get population-level + random effects to show absolute values
+# This adds the fixed effect to each random effect to get the total coefficient per participant
+ranef_plus_fixef <- t3 %>%
+  spread_draws(b_sigma_logva.ans.y, 
+               r_participantId__sigma[participantId,term]) %>%
+  filter(term == "logva.ans.y") %>%
+  mutate(total_effect = b_sigma_logva.ans.y + r_participantId__sigma) %>%
+  group_by(participantId) %>% 
+  mutate(median_effect = median(total_effect)) %>%
+  ungroup()
+
+  # group_by(participantId) # %>%
+  # summarize(
+  #   median = median(total_effect),
+  #   lower = quantile(total_effect, 0.025),
+  #   upper = quantile(total_effect, 0.975)
+  # ) %>%
+  # arrange(median)
+
+# Plot the total effects
+ggplot(ranef_plus_fixef, aes(y = reorder(participantId, median_effect), x = total_effect)) +
+  # stat_halfeye() + 
+  stat_pointinterval() + 
+  geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") + 
+  scale_y_discrete(labels = function(x) str_c(str_sub(x, 1, 5), "...")) + 
+  labs(y = "beta_j", x = "")
+```
+
+---
+
+```{r}
+#| label: task5-fit-model-1-x 
+#| output: false
+
+m5.1.x <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  # account for numerical precision 
+  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  # account for bugs in task 5 
+  filter(va.ans.y != 0) %>% 
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p,
+    control = list(adapt_delta = 0.99),
+    chains = 4, 
+    # cores = 4,
+    iter = 6000, 
+    file="models/m5.1.x", 
+    save_pars = save_pars(all = TRUE)
+)
+```
+
+What does the fit look like? 
+
+```{r}
+summary(m5.1.x)
+# mixing check 
+plot(m5.1.x)
+pairs(m5.1.x)
+# posterior predictive check 
+pp_check(m5.1.x, ndraws = 100)
+```
+
+Potential plotting related code: 
+
+```{r}
+# get_variables(m5.1.x)
+
+# m5.1.x %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
+#   filter(term == "Intercept") %>% 
+#   mutate(hat_sigma = exp(r_participantId__sigma)) %>% 
+#   ggplot(aes(y = participantId, x = hat_sigma)) + 
+#   # stat_pointinterval() 
+#   stat_halfeye()
+```
+
+### Model 2 -- Physical
+
+There could also be two versions of this ... one is additive and the other is duplicative ... 
+
+$$
+\begin{aligned}
+\text{error_phy}_i &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i], i}) \\ 
+\mu_j &\sim \mathcal{N}(\mu_0, \sigma_0), & j \in [13] \\ 
+\sigma_{j, i} &= \beta \cdot (\texttt{dist_to_screen}_j + \texttt{phy.ans.y}_i) \cdot \hat{\sigma}_j, & j \in [13] \\ 
+\hat{\sigma}_j &\sim \mathcal{N}(\hat{\mu}, \hat{\sigma}) & j \in [13]
+\end{aligned}
+$$
+
+We could also fold the distance to screen in the `error_phy` part, which would make the the notation look like this: 
+
+$$
+\begin{aligned}
+\frac{\text{error_phy}_i}{\texttt{dist_to_screen}_{\text{PID}[i]}} &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i],i}) \\ 
+\mu_{j} &\sim \mathcal{N}(\mu_0, \sigma_0), & j \in [13] \\ 
+\sigma_{j, i} &= \beta \cdot \texttt{phy.ans.y}_i \cdot \hat{\sigma}_j, & j \in [13] \\ 
+\end{aligned}
+$$
+
+Write the formula and get a sense of prior: 
+
+:::{.column-margin}
+The feedback is to do the computation upfront instead of doing it 
+ in a nl format, but here's the non-linear format: 
+```
+bf(error_phy ~ dist_to_screen * eta, 
+   eta ~ 1 + (1 | participantId), 
+   sigma ~ 1 + offset(log(phy.ans.y)) + (1 | participantId), 
+   nl = TRUE)
+```
+:::
+
+```{r}
+#| label: task5-x-model2-formula
+
+# we will skip the ones with offsets first 
+# f1 <- bf(error_phy ~ 1 + (1 | participantId),
+#          sigma ~ 1 + offset(log(phy.ans.y) + log(dist_to_screen)) + (1 | participantId))
+# 
+# f2 <- bf(error_phy ~ 1 + (1 | participantId), 
+#          sigma ~ 1 + offset(log(phy.ans.y + dist_to_screen))  + (1 | participantId))
+
+# f3 <- bf(error_phy.adj ~ 1 + (1 | participantId), 
+#          sigma ~ 1 + offset(log(phy.ans.y)) + (1 | participantId)
+#          )
+
+f1 <- bf(error_phy ~ 1 + (1 | participantId), 
+         sigma ~ 1 + log(sum_dist) + (1 + log(sum_dist) | participantId))
+
+f2 <- bf(error_phy.adj ~ 1 + (1 | participantId), 
+         sigma ~ 1 + log(phy.ans.y) + (1 + log(phy.ans.y)| participantId)
+         )
+```
+
+```{r}
+t4 <- task5_df %>% 
+  mutate(error_phy = phy.select.x - phy.ans.x) %>% 
+  mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy), 
+         sum_dist = phy.ans.y + dist_to_screen) %>% 
+  # account for bugs in task 5 
+  filter(va.ans.y != 0) %>% 
+  brm(formula = f1,
+      data = .,
+      family = gaussian(),
+      # prior = p1,
+      control = list(adapt_delta = 0.99, max_treedepth = 15),
+      chains = 4,
+      # cores = 4, 
+      iter = 6000, 
+      warmup = 1000,
+      file = "models/t4", 
+      save_pars = save_pars(all = TRUE)
+  )
+
+t5 <- task5_df %>% 
+  mutate(error_phy = phy.select.x - phy.ans.x) %>% 
+  mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% 
+  filter(va.ans.y != 0) %>% # account for weird bugs
+  mutate(error_phy.adj = error_phy / dist_to_screen) %>% 
+  brm(formula = f2,
+      data = .,
+      family = gaussian(),
+      # prior = p1,
+      control = list(adapt_delta = 0.99, max_treedepth = 15),
+      chains = 4,
+      # cores = 4, 
+      iter = 6000, 
+      warmup = 1000,
+      file = "models/t5", 
+      save_pars = save_pars(all = TRUE)
+  )
+
+t4 <- add_criterion(t4, criterion = "loo", moment_match = TRUE)
+t5 <- add_criterion(t5, criterion = "loo", moment_match = TRUE)
+loo_compare(t4, t5)
+```
+```{r}
+pp_check(t4, ndraws = 100)
+pp_check(t5, ndraws = 100)
+```
+
+Plot posteriors: 
+
+```{r}
+# get_variables(t4)
+
+t4 %>% spread_draws(b_sigma_logsum_dist, r_participantId__sigma[participantId, term]) %>% 
+  filter(term == "logsum_dist") %>% 
+  mutate(total_effect = b_sigma_logsum_dist + r_participantId__sigma) %>%
+  group_by(participantId) %>% 
+  mutate(median_effect = median(total_effect)) %>% 
+  ggplot(aes(y = participantId, x = total_effect)) + 
+  # stat_halfeye() + 
+  stat_pointinterval() + 
+  geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") + 
+  scale_y_discrete(labels = function(x) str_c(str_sub(x, 1, 5), "..."))
+
+# get_variables(t5)
+
+t5 %>% spread_draws(b_sigma_logphy.ans.y, 
+                    r_participantId__sigma[participantId, term]) %>% 
+  filter(term != "Intercept") %>% 
+  mutate(total_effect = b_sigma_logphy.ans.y + r_participantId__sigma) %>% 
+  group_by(participantId) %>% 
+  mutate(median_effect = median(total_effect)) %>%
+  ungroup() %>% 
+  ggplot(aes(x = total_effect, y = reorder(participantId, median_effect))) + 
+  # stat_halfeye() + 
+  stat_pointinterval() + 
+  geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") + 
+  scale_y_discrete(labels = function(x) str_c(str_sub(x, 1, 5), "...")) 
+```
+
+
+Prior related code: 
+
+```{r}
+# get default prior 
+task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
+  get_prior(formula = f1, 
+            data = .)
+task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
+  get_prior(formula = f2, 
+            data = .)
+task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
+  get_prior(formula = f3, 
+            data = .)
+
+# set prior 
+# for f1 and f2 
+p1 <- c(
+  # global intercept (mu_0)
+  prior(normal(0, 1), class = "Intercept"), 
+  # mu_gamma 
+  prior(normal(0, 1), class = "Intercept", dpar = "sigma"), 
+  # sd of participant mean (sigma_0)
+  prior(cauchy(0, 1), class = "sd", group = "participantId")
+)
+
+# for f3 
+p2 <- c(
+  # population-level
+  prior(normal(0, 0.25), nlpar = "eta", class = "Intercept"), 
+  # for dist_to_screen * eta term 
+  prior(normal(0, 0.2), class = "b"), 
+  # for sigma 
+  prior(normal(0, 1), class = "Intercept", dpar = "sigma"),
+  # random effects 
+  prior(cauchy(0, 0.5), class = "sd", nlpar = "eta") 
+)
+```
+
+
+```{r}
+#| label: task5-fit-model-2-x
+#| output: false 
+
+m5.2.1.x <- task5_df %>% 
+  mutate(error_phy = phy.select.x - phy.ans.x) %>% 
+  mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% 
+  filter(va.ans.y != 0) %>% # account for weird bugs
+  brm(formula = f1,
+      data = .,
+      family = gaussian(),
+      prior = p1,
+      control = list(adapt_delta = 0.99, max_treedepth = 15),
+      chains = 4,
+      # cores = 4, 
+      iter = 6000, 
+      warmup = 1000,
+      file = "models/m5.2.1.x", 
+      save_pars = save_pars(all = TRUE)
+  )
+
+m5.2.2.x <- task5_df %>% 
+  mutate(error_phy = phy.select.x - phy.ans.x) %>% 
+  mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% 
+  # account for task 5 bugs 
+  filter(va.ans.y != 0) %>% 
+  brm(formula = f2,
+      data = .,
+      family = gaussian(),
+      prior = p1,
+      control = list(adapt_delta = 0.99, max_treedepth = 15),
+      chains = 4,
+      # cores = 4, 
+      iter = 6000, 
+      warmup = 1000,
+      file = "models/m5.2.2.x",
+      save_pars = save_pars(all = TRUE)
+  )
+
+m5.2.3.x <- task5_df %>% 
+  mutate(error_phy = phy.select.x - phy.ans.x) %>% 
+  mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% 
+  filter(va.ans.y != 0) %>% 
+  brm(formula = f3,
+      data = .,
+      family = gaussian(),
+      prior = p2,
+      control = list(adapt_delta = 0.99, max_treedepth = 15), # hmm still divergent transitions ... 
+      chains = 4,
+      # cores = 4, 
+      iter = 6000, 
+      warmup = 1000,
+      file = "models/m5.2.3.x",
+      save_pars = save_pars(all = TRUE)
+  )
+```
+
+Let's check the fit: 
+
+```{r}
+summary(m5.2.1.x)
+summary(m5.2.2.x)
+summary(m5.2.3.x)
+plot(m5.2.1.x)
+plot(m5.2.2.x)
+plot(m5.2.3.x)
+# posterior check 
+pp_check(m5.2.1.x, ndraws = 100)
+pp_check(m5.2.2.x, ndraws = 100)
+pp_check(m5.2.3.x, ndraws = 100)
+```
+
+Let's visualize things in this sphere: 
+
+```{r}
+#| layout-ncol: 2
+
+# m5.2.1.x %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
+#   filter(term == "Intercept") %>% 
+#   mutate(hat_sigma = exp(r_participantId__sigma)) %>% 
+#   ggplot(aes(y = participantId, x = hat_sigma)) + 
+#   stat_halfeye()
+# 
+# m5.2.2.x %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
+#   filter(term == "Intercept") %>% 
+#   mutate(hat_sigma = exp(r_participantId__sigma)) %>% 
+#   ggplot(aes(y = participantId, x = hat_sigma)) + 
+#   # stat_pointinterval() 
+#   stat_halfeye()
+```
+
+This looks very similar to the trend we had before. 
+
+### Comparing model 1 and 2
+
+Let's compare the two: 
+
+```{r}
+# first we add the loo criterion to existing models 
+# m5.1.x <- add_criterion(m5.1.x, "loo", moment_match=TRUE, recompile=TRUE)
+m5.2.1.x <- add_criterion(m5.2.1.x, "loo", moment_match = TRUE, recompile=TRUE)
+m5.2.2.x <- add_criterion(m5.2.2.x, "loo", moment_match=TRUE, recompile=TRUE)
+m5.2.3.x <- add_criterion(m5.2.3.x, "loo", moment_match=TRUE, recompile=TRUE, reloo = TRUE)
+
+loo_compare(m5.2.1.x, m5.2.2.x, m5.2.3.x)
+# loo_compare(m5.1.x, m5.2.1.x, m5.2.2.x)
+```
+
+- Got a weird warning that says `Some Pareto k diagnostic values are slightly high` 
+- From the above results, model `m5.2.2.x` is the best one^[... which recall, this is its formula `f2 <- bf(error_phy ~ 1 + (1 | participantId), sigma ~ 1 + offset(log(phy.ans.y + dist_to_screen))  + (1 | participantId))`], which we will use to compare to `m5.1.x` by looking at how well they predict things  
+
+`#TODO` 
+
+## Project from dot to Y Axes
+
+Distribution of signed error: 
+
+```{r}
+#| code-fold: true 
+
+task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) + 
+  geom_dots() + 
+  geom_vline(xintercept = 0, color="black", linetype="dashed") + 
+  labs(title = "Task 5 - Project from dot to Y-Axes - Visual Angle")
+```
+
+Relationship between signed error and distance to x-axes (in visual angle space): 
+
+```{r}
+#| code-fold: true
+
+task5_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) + 
+  geom_point(alpha = 0.5) + 
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title = "Task 5 - Project from dot to Y-Axes - Visual Angle")
+```
+
+We apply the same approach, fit two models, and compare them. 
+
+### Model 1 -- Vis Angle
+
+```{r}
+#| label: task 5 y formula 
+
+f <- bf(error_va ~ 1 + (1 | participantId), 
+        sigma ~ log(va.ans.x) + (1 | participantId))
+
+# get prior 
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+get_prior(formula = f, 
+          data = .)
+
+# specify prior 
+p <- c(
+  # global intercept (mu_0)
+  prior(normal(0, 5), class = "Intercept"), 
+  # sd of participant mean (sigma_0)
+  prior(cauchy(0, 2), class = "sd", group = "participantId"), 
+  # mu_gamma 
+  prior(normal(0, 1), class = "Intercept", dpar = "sigma"), 
+  # beta 
+  prior(normal(1, 0.5), class = "b", coef="logva.ans.x", dpar = "sigma"), 
+  # gamma 
+  prior(cauchy(0, 1), class = "sd", group = "participantId", dpar = "sigma")
+)
+```
+
+Fitting the model: 
+
+```{r}
+#| label: task5-fit-model-1-y 
+#| output: false 
+
+m5.1.y <- task5_df %>% 
+  mutate(error_va = va.select.y - va.ans.y) %>%
+  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>%
+  filter(va.ans.y != 0) %>% # account for weird bugs
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p,
+    control = list(adapt_delta = 0.95),
+    chains = 4, 
+    cores = 4, 
+    iter = 6000, 
+    file="models/m5.1.y", 
+    save_pars = save_pars(all=TRUE)
+)
+```
+
+Check the output: 
+
+```{r}
+summary(m5.1.y)
+plot(m5.1.y)
+pp_check(m5.1.y, ndraws = 100)
+```
+
+How are the $\hat{\sigma}[i]$ distributed? 
+
+```{r}
+get_variables(m5.1.y)
+
+# m5.1.y %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
+#   filter(term == "Intercept") %>% 
+#   mutate(hat_sigma = exp(r_participantId__sigma)) %>% 
+#   ggplot(aes(y = participantId, x = hat_sigma)) + 
+#   # stat_pointinterval() 
+#   stat_halfeye()
+```
+
+### Model 2 --- Physical space
+
+```{r}
+#| label: task 5 y model 2 formula 
+
+f <- bf(error_phy ~ 0, 
+        sigma ~ 0 + offset(log(phy.ans.x + dist_to_screen))+ (1 | participantId))
+
+# set prior 
+```
+
+Fitting the model: 
+
+```{r}
+#| output: false 
+#| label: task5-y-model-2-fit
+
+m5.2.y <- task5_df %>% 
+  mutate(error_phy = phy.select.y - phy.ans.y) %>%
+  mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% 
+  filter(va.ans.y != 0) %>% # account for weird bugs
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p,
+    control = list(adapt_delta = 0.95),
+    chains = 4, 
+    iter = 6000, 
+    file="models/m5.2.y",
+    save_pars = save_pars(all=TRUE)
+)
+```
+
+Check the result: 
+
+```{r}
+summary(m5.2.y)
+plot(m5.2.y)
+pp_check(m5.2.y, ndraws = 100)
+```
+
+How are the $\hat{\sigma}[i]$ distributed? 
+
+```{r}
+m5.2.y %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
+  filter(term == "Intercept") %>% 
+  mutate(hat_sigma = exp(r_participantId__sigma)) %>% 
+  ggplot(aes(y = participantId, x = hat_sigma)) + 
+  # stat_pointinterval() 
+  stat_halfeye()
+```
+
+### Compare the two models 
+
+```{r}
+m5.1.y <- add_criterion(m5.1.y, "loo", moment_match=TRUE, recompile=TRUE)
+m5.2.y <- add_criterion(m5.2.y, "loo", moment_match = TRUE, recompile=TRUE)
+
+loo_compare(m5.1.y, m5.2.y)
+```
+
+Similarly, we see that the visual angle model is much better. 
+
+# Task 3 -- Find point on curve where `y == 0.5`
+
+First we get the data:
+
+```{r}
+task3_df <- task_df %>% filter(task == "task3") %>% 
+  select(-slider.x, -slider.y) %>% 
+  left_join(participants, by = join_by(participantId)) %>% 
+  # do all the calculations for user's selected 
+  mutate(pixel.select.x = data_to_pixel_x(data.select.x), 
+         pixel.select.y = data_to_pixel_y(data.select.y), 
+         phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM),
+         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM), 
+         va.select.x = vis_angle(phy.select.x, dist_to_screen),
+         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>% 
+  mutate(data.ans.y = 0.5, 
+         data.ans.x = qsgt(0.5, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)) %>% 
+  # do all the calculations for the actual answer
+  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x),
+         pixel.ans.y = data_to_pixel_y(data.ans.y),
+         phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM),
+         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM), 
+         va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
+         va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
+```
+
+Verify that the scales are correct: 
+
+```{r}
+#| output: false 
+#| code-fold: true
+#| label: task 3 verify 
+
+# verify that the results are of correct scale
+task3_df %>% ggplot(aes(x = data.select.x - data.ans.x)) + 
+  geom_dots()
+
+task3_df %>% ggplot(aes(x = data.select.y - data.ans.y)) + 
+  geom_dots()
+
+task3_df %>% ggplot(aes(x = pixel.select.x - pixel.ans.x)) + 
+  geom_dots()
+
+task3_df %>% ggplot(aes(x = pixel.select.y - pixel.ans.y)) + 
+  geom_dots()
+
+task3_df %>% ggplot(aes(x = phy.select.x - phy.ans.x)) + 
+  geom_dots()  
+
+task3_df %>% ggplot(aes(x = phy.select.y - phy.ans.y)) + 
+  geom_dots() 
+
+task3_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + 
+  geom_dots()  
+
+task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) + 
+  geom_dots()  
+```
+
+Distribution of signed error: 
+
+```{r}
+#| code-fold: true
+
+task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) + 
+  geom_dots() + 
+  geom_vline(xintercept = 0, linetype="dashed", color="black") + 
+  labs(title="Task 3 -- CDF Median") 
+```
+
+Relationship between distance from the y-axes and the signed distribution: 
+
+```{r}
+task3_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) + 
+  geom_point(alpha = 0.5) + 
+  geom_hline(yintercept = 0, linetype="dashed", color="black") + 
+  labs(title="Task 3 -- CDF Median") 
+```
+
+The model we fit is going to be very similar to the ones we fitted for task 5. 
+
+$$
+\begin{aligned}
+\text{error}_{\text{va}} &\sim \mathcal{N}(0, \sigma[i]) \\ 
+\sigma[i] &= \texttt{va.ans.x}[i] \times \hat{\sigma}[i] \\ 
+\hat{\sigma}[i] & \sim \mathcal{N}(0, 1)
+\end{aligned}
+$$
+
+## Model 1 --- Visual Angle
+
+```{r}
+f <- bf(error_va ~ 0, 
+        sigma ~ 0 + offset(log(va.ans.x)) + (1 | participantId))
+p <- prior(constant(1), class="sd", group="participantId", dpar="sigma")
+```
+
+Fit the model: 
+
+```{r}
+#| label: task3-fit-model
+#| output: false 
+
+m3.1 <- task3_df %>% 
+  mutate(error_va = va.select.y - va.ans.y) %>% 
+  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  brm( 
+    formula = f, 
+    data = ., 
+    family = gaussian(),
+    prior = p,
+    control = list(adapt_delta = 0.95),
+    chains = 4, 
+    iter = 6000, 
+    file="models/m3.1",
+    save_pars = save_pars(all=TRUE)
+)
+```
+
+```{r}
+summary(m3.1)
+plot(m3.1)
+pp_check(m3.1, ndraws = 100)
+```
+
+Get a sense of the $\hat{\sigma}[i]$: 
+
+```{r}
+m3.1 %>% spread_draws(r_participantId__sigma[participantId, term]) %>% 
+  filter(term == "Intercept") %>% 
+  mutate(hat_sigma = exp(r_participantId__sigma)) %>% 
+  ggplot(aes(y = participantId, x = hat_sigma)) + 
+  # stat_pointinterval() 
+  stat_halfeye()
+```
+
+## Model 2 --- Physical space
+
+```{r}
+f <- bf(error_phy ~ 0, 
+        sigma ~ 0 + offset(log(phy.ans.x + dist_to_screen))+ (1 | participantId))
+p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma")
+```
+
+Fit the model: 
+
+```{r}
+#| label: task3-fit-model-2
+#| output: false 
+
+m3.2 <- task3_df %>% 
+  mutate(error_phy = phy.select.y - phy.ans.y) %>% 
+  mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>%
+  brm( 
+    formula = f, 
+    data = ., 
+    family = gaussian(),
+    prior = p,
+    control = list(adapt_delta = 0.95),
+    chains = 4, 
+    iter = 6000, 
+    file="models/m3.2",
+    save_pars = save_pars(all = TRUE)
+)
+```
+
+Plot the results: 
+
+```{r}
+summary(m3.2)
+plot(m3.2)
+pp_check(m3.2, ndraws = 100)
+```
+
+### Compare the two models 
+
+```{r}
+m3.1 <- add_criterion(m3.1, "loo", recompile=TRUE)
+m3.2 <- add_criterion(m3.2, "loo", moment_match = TRUE, recompile=TRUE)
+
+loo_compare(m3.1, m3.2)
+```
+
+Again, the visual angle model seems better. 
