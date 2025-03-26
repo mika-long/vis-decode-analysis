@@ -382,7 +382,7 @@ f(x) = \theta \cdot f_{\text{Laplace}}(x) + (1 - \theta) \cdot f_{\text{Gaussian
 Read in stan code: 
 
 ```{r}
-model <- cmdstan_model("mix_models/mixture.laplace.stan")
+model <- cmdstan_model("mix_models/mix.laplace.stan")
 ```
 
 Prepare data for stan: 
