@@ -132,10 +132,10 @@ Ok here's the math model^[Note that the notation for a standard mixture model fo
 
 $$
 \begin{align}
-\Pr(y_i) & =  \lambda \cdot \Pr(\hat{y}^{\text{med}}_i) + (1 - \lambda) \cdot \Pr(\hat{y}^{\text{mod}}_i) \\
+p_Y(y_i) & =  \lambda \cdot \Pr(\hat{y}^{\text{med}}_i) + (1 - \lambda) \cdot \Pr(\hat{y}^{\text{mod}}_i) \\
 \hat{y}^{\text{med}}_i &\sim \mathcal{N}(y^\text{med}, (\sigma^\text{med}_{\text{PID}[i]})^2) \\ 
 \hat{y}^{\text{mod}}_i &\sim \mathcal{N}(y^\text{mod}, (\sigma^{\text{mod}}_{\text{PID}[i]})^2) \\ 
-(*) \,\, \lambda &\sim \text{Beta}(5, 5) 
+(1) \,\, \lambda &\sim \text{Beta}(5, 5) 
 \end{align}
 $$
 
@@ -224,17 +224,28 @@ Looking at the above sections^[termed `transformed parameters`, see [here](https
 - `parameters`: the place to declare parameters that Stan will estimate. These are the unknowns in the model. 
 - `model`: the core of the stan program, where we define the likelihood of the data given the parameters and specify the prior distributions. The `target` variable represents the **log posterior density** that Stan is trying to sample from. 
 
---- 
 
-## Stan code -- same lambda 
+# Stan code 
 
-- single lambda for all participants, that is drawn from $\text{Beta}(2, 2$: 
+## Same lambda for all participants
+
+Everything is in **visual angle** space. 
+
+$$
+\begin{align}
+p_Y(y_i) & =  \lambda \cdot \Pr(\hat{y}^{\text{med}}_i) + (1 - \lambda) \cdot \Pr(\hat{y}^{\text{mod}}_i) \\
+\hat{y}^{\text{med}}_i &\sim \mathcal{N}(y^\text{med}, (\sigma^\text{med}_{\text{PID}[i]})^2) \\ 
+\hat{y}^{\text{mod}}_i &\sim \mathcal{N}(y^\text{mod}, (\sigma^{\text{mod}}_{\text{PID}[i]})^2) \\ 
+\lambda &\sim \text{Beta}(2, 2) 
+\end{align}
+$$
 
 ```{r}
-model <- cmdstan_model("mixture.1.stan")
+model <- cmdstan_model("mix_models/m1.stan")
 model$print()
 ```
 
+:::{.caution-note}
 Note that we are using the `log_mix` function instead of the `log_sum_exp` function, but they are equivalent for the case of two components. In the [documentation](https://mc-stan.org/docs/functions-reference/real-valued_basic_functions.html) we have 
 
 $$
@@ -243,14 +254,22 @@ $$
 &= \text{log_sum_exp}(\log (\theta) + \lambda_1, \log (1 - \theta) + \lambda_2)
 \end{align}
 $$
+:::
+
+
+```{r}
+task1_df %>% ggplot(aes(x = va.med.x - va.select.x)) + 
+  geom_dots()
+```
+
 
 Prepare data for stan: 
 
 ```{r}
 N <- task1_df %>% nrow(.)
-y <- task1_df %>% pull(data.select.x)
-y_med <- task1_df %>% pull(data.ans.x)
-y_mod <- task1_df %>% pull(param.mu)
+y <- task1_df %>% pull(va.select.x)
+y_med <- task1_df %>% pull(va.med.x)
+y_mod <- task1_df %>% pull(va.mod.x)
 N_p <- task1_df %>% count(participantId) %>% nrow(.)
 PID <- as.numeric(factor(task1_df$participantId))
 
@@ -278,30 +297,88 @@ fit <- model$sample(
   adapt_delta = 0.99, 
   max_treedepth = 12
 )
+
+# save model 
+fit$save_object(file = "mix_models/m1.rds")
 ```
 
-It fits! But with a LOT of divergent transitions (49%). Let's check the fitted result: 
+The above gives 47% of divergent transitions, possibly because the prior is bad ...? 
+
+Let's check the fitted result: 
 
 ```{r}
 summary <- fit$summary()
 
 # plot posterior summaries 
 summary %>% filter(str_detect(variable, "lambda")) %>% 
-  # filter(str_detect(variable, "sigma_med")) %>% 
-  # filter(!str_detect(variable, "^l") ) %>% 
-  # filter(!str_detect(variable, "alpha")) %>% 
-  # filter(!str_detect(variable, "beta")) %>% 
   ggplot(aes(y = variable)) + 
   geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median))
+  geom_point(aes(x = median)) + xlim(0.5, 1)
 ```
-
-The lambda values are centered around 0.95 ... which is a bloody shame because this implies that 95% of the time the participant is trying to use the median operator? 
-
-It appears that the results are flipped ...? Which is kind of weird ... Also `lambda` is HUGE which shouldn't really be the case ... Anyways let's save the `cmdstanr` model for now ... 
 
 ```{r}
-fit$save_object(file = "mix_models/m3.rds")
+# plot posterior summaries 
+summary %>% filter(str_detect(variable, "sigma_m")) %>% 
+  ggplot(aes(y = variable)) + 
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
+  geom_point(aes(x = median)) + xlim(0, 1)
 ```
 
+## Same lambda for same participant, different for different participants 
 
+Math model: 
+
+$$
+\begin{align}
+p_Y(y_i) & =  \lambda_{\text{PID}[i]} \cdot \Pr(\hat{y}^{\text{med}}_i) + (1 - \lambda_{\text{PID}[i]}) \cdot \Pr(\hat{y}^{\text{mod}}_i) \\
+\hat{y}^{\text{med}}_i &\sim \mathcal{N}(y^\text{med}, (\sigma^\text{med}_{\text{PID}[i]})^2) \\ 
+\hat{y}^{\text{mod}}_i &\sim \mathcal{N}(y^\text{mod}, (\sigma^{\text{mod}}_{\text{PID}[i]})^2) \\ 
+\lambda_{\text{PID}[i]} &\sim \text{Beta}(2, 2) 
+\end{align}
+$$
+
+Read in the stan model: 
+
+```{r}
+model <- cmdstan_model("mix_models/m2.stan")
+```
+
+Fit the model: 
+
+```{r}
+#| output: false 
+
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  parallel_chains = 4, 
+  iter_warmup = 5000, 
+  iter_sampling = 10000,
+  adapt_delta = 0.99, 
+  max_treedepth = 12
+)
+
+# save model 
+fit$save_object(file = "mix_models/m2.rds")
+```
+
+42% transitions ended with a divergence ... 
+
+```{r}
+summary <- fit$summary()
+
+# plot posterior summaries 
+summary %>% filter(str_detect(variable, "lambda")) %>% 
+  ggplot(aes(y = variable)) + 
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
+  geom_point(aes(x = median)) + 
+  xlim(0, 1)
+```
+
+```{r}
+# plot posterior summaries 
+summary %>% filter(str_detect(variable, "sigma_m")) %>% 
+  ggplot(aes(y = variable)) + 
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
+  geom_point(aes(x = median)) + xlim(0, 1)
+```
