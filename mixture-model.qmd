@@ -512,4 +512,38 @@ This just tell us on average participants overwhelmingly select the median opera
 
 # Stan code --- Laplace distribution + lambda varies with |med - mod| 
 
+Read in stan code: 
+
+```{r}
+model <- cmdstan_model("mix_models/mix.laplace.3.stan")
+```
+
+Fit the model: 
+
+```{r}
+#| output: false 
+
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  parallel_chains = 4, 
+  iter_warmup = 3000, 
+  iter_sampling = 3000,
+  adapt_delta = 0.99, 
+  max_treedepth = 15
+)
+
+# save model 
+fit$save_object(file = "mix_models/m6.rds")
+```
+
+58 of 120000 has divergent transitions. 
+
+Let's look at the fitted results: 
+
+```{r}
+
+```
+
+
 
