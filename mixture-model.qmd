@@ -461,3 +461,55 @@ component_indicators <- posterior_samples %>%
   as.matrix()
 ```
 
+# Stan code --- Laplace distribution + participant-level theta 
+
+Read in stan code: 
+
+```{r}
+model <- cmdstan_model("mix_models/mix.laplace.2.stan")
+```
+
+Fit the model: 
+
+```{r}
+#| output: false 
+
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  parallel_chains = 4, 
+  iter_warmup = 3000, 
+  iter_sampling = 3000,
+  adapt_delta = 0.99, 
+  max_treedepth = 15
+)
+
+# save model 
+fit$save_object(file = "mix_models/m5.rds")
+```
+
+This has 1% divergent transitions. Let's check the fitted models: 
+
+```{r}
+summary <- fit$summary()
+
+# summary %>% filter(rhat > 1.001)
+
+# plot posterior summaries 
+summary %>% filter(variable %in% c("intercept_mu_mod", "var_mu_mod", 
+                                   "intercept_mu_med", "var_mu_med")) %>% 
+  ggplot(aes(y = variable)) + 
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
+  geom_point(aes(x = median)) 
+
+summary %>% filter(str_detect(variable, "^theta")) %>% 
+  ggplot(aes(y = variable)) + 
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
+  geom_point(aes(x = median))
+```
+
+This just tell us on average participants overwhelmingly select the median operator, instead of the mode operator ... 
+
+# Stan code --- Laplace distribution + lambda varies with |med - mod| 
+
+
