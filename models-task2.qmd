@@ -148,12 +148,6 @@ task2_df %>% ggplot(aes(y = va.ans.y - va.select.y, x = dist_to_screen)) +
 
 task2_df %>% ggplot(aes(x = va.ans.y - va.select.y)) + geom_dots()
 task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
-
-task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>% 
-  mutate(error_va = ifelse(abs(error_va) < 1e-8, 0, error_va)) %>%  
-  # filter(error_va != 0) %>% 
-  ggplot(aes(x = va.ans.x - va.select.x)) + 
-  geom_dots()
 ```
 
 Now let's look at things focusing on the **x** axes: 
@@ -163,6 +157,9 @@ Now let's look at things focusing on the **x** axes:
 
 
 task2_df %>% ggplot(aes(x = data.ans.x - data.select.x)) + 
+  geom_dots()
+
+task2_df %>% ggplot(aes(x = va.ans.x - va.select.x)) + 
   geom_dots()
 
 task2_df %>% ggplot(aes(x = va.ans.x - va.select.x)) + 
@@ -183,16 +180,20 @@ Let us first try to fit `va.ans.x - va.select.x` with two different models --- n
 ### Model 1.1 --- Laplace distribution 
 
 $$
-\begin{align}
+\begin{align*}
 \text{error_va}_{i} &\sim \text{Laplace}(\mu_{\text{PID}[i]}, b_{\text{PID}[i]}) \\
-\mu_j &\sim \mathcal{N}(0, 0.25), j \in [13] \\ 
-b_j &\sim \mathcal{N}(0, 1), j \in [13] 
-\end{align}
+\mu_j &= \alpha_\mu + \mathcal{N}(0, \sigma_\mu^2), j \in [13] \\ 
+b_j &= \alpha_b + \mathcal{N}(0, \sigma_b^2), j \in [13] \\ 
+
+\end{align*}
 $$
+
+
+
 
 Specify formula. There is no native implementation of the Laplace distribution^[except for the [`asym_laplace` function](https://paulbuerkner.com/brms/reference/AsymLaplace.html), which doesn't seem to help. Maybe we'll need to implement a custom function using `stan` ... ]:
 
-:::{.callout-note}
+:::{.callout-note collapsed="true"}
 There is a [wiki](https://en.wikipedia.org/wiki/Laplace_distribution) about Laplace distribution, which defines the pdf of a Laplace distribution to be $f(x | \mu, b) = \frac{1}{2b} \exp(-\frac{|x - \mu|}{b})$, where $\mu$ is a location parameter, and $b > 0$ is a scale parameter. And this is what the [stan manual](https://en.wikipedia.org/wiki/Laplace_distribution) defines the pdf of the **double exponential** distribution  --- $f(y|\mu, \sigma) = \frac{1}{2\sigma} \exp(- \frac{|y - \mu|}{\sigma})$, basically everything is the same except they're using different notations for the scale parameter ...  
 :::
 
@@ -214,6 +215,7 @@ c_family = custom_family(
 )
 
 f <- bf(error_va ~ 1 + (1 | participantId),
+        sigma ~ 1 + (1 | participantId), 
         family = c_family)
 
 # get prior
@@ -223,19 +225,21 @@ get_prior(formula = f,
 
 # define prior 
 p <- c(
-  prior(normal(0, 0.5), class = "Intercept"), 
-  prior(normal(0, 0.25), class = "sd", group = "participantId"), 
-  prior(normal(0, 1), class = "sigma")
+  prior(normal(0, 0.5), class = "Intercept", dpar="mu"), 
+  prior(normal(-1, 1), class = "Intercept", dpar="sigma"), 
+  prior(cauchy(0, 0.25), class = "sd", group = "participantId", dpar="mu", lb = 0),
+  prior(cauchy(0, 0.5), class = "sd", group = "participantId", dpar="sigma", lb = 0)
 )
 ```
 
+:::{.callout-note collapsed="true"}
 What if we use the `make_stancode` function to see what the corresponding stan code looks like?
 
 ```{r}
 task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>% 
   make_stancode(f, data = ., family = c_family, stanvars = stanvar(scode = laplace_lpdf, block = "functions"))
 ```
-
+:::
 
 Fit the model:
 
@@ -260,10 +264,32 @@ Check the fitted model:
 
 ```{r}
 summary(m1.1)
+posterior_summary(m1.1)
 plot(m1.1)
 ```
 
-We also need to define our own custom function for posterior predictive checks --- NOTE that the following does not run ... 
+Let's compare this to, e.g., the model where we're assuming that everythign is fixed: 
+
+```{r}
+# get_variables(m1.1)
+
+# extract posterior sampels 
+posterior <- m1.1 %>% spread_draws(b_Intercept, sd_participantId__Intercept, r_participantId[PID, term], 
+                      b_sigma_Intercept, sd_participantId__sigma_Intercept, r_participantId__sigma[PID, term]) %>% 
+  filter(term == "Intercept") %>% 
+  mutate(sigma_global = exp(b_sigma_Intercept), 
+         participant_mean = b_Intercept + r_participantId, 
+         sigma_participant = exp(b_sigma_Intercept + r_participantId__sigma)) 
+
+
+posterior %>% ggplot(aes(y = PID)) + 
+  stat_halfeye(aes(x = participant_mean), .width = c(0.5, 0.95))
+
+posterior %>% ggplot(aes(y = PID)) + 
+  stat_halfeye(aes(x = sigma_participant))
+```
+
+Define custom functions for posterior predictive check: 
 
 ```{r}
 # Define a random number generator for Laplace distribution
@@ -279,16 +305,56 @@ posterior_predict_laplace <- function(i, prep, ...) {
   sigma <- brms::get_dpar(prep, "sigma", i = i)
   laplace_rng(mu, sigma)
 }
-
-# Make this function available globally
-assign("posterior_predict_laplace", posterior_predict_laplace, envir = .GlobalEnv)
 ```
 
 ```{r}
 pp_check(m1.1, ndraws = 100)
 ```
 
-Compare to the later fit, this fit is much better ... 
+- This posterior predictive check is reminding me that it could also be drawn from a Cauchy ... 
+
+### Model 2.3 --- Cauchy 
+
+Note that a cauchy distribution is a student t distribution with degrees of freedom, `nu`, fixed to be 1. 
+
+```{r}
+f <- bf(error_va ~ 1 + (1 | participantId),
+        sigma ~ 1 + (1 | participantId), 
+        family = student())
+
+# get prior
+task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+get_prior(formula = f,
+          data = .)
+
+p <- c(
+  # constant prior for nu to make it cauchy 
+  prior(constant(1), class = "nu")
+)
+```
+
+Fit the model: 
+
+```{r}
+m1.3 <- task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>%
+  brm(
+    formula = f, 
+    prior = p, 
+    data = ., 
+    chains = 4, 
+    # cores = 4, 
+    # control = list(adapt_delta = 0.95), 
+    file = "models/task2-m1.3"
+  )
+```
+
+Check the fitted results: 
+
+```{r}
+summary(m1.3)
+plot(m1.3)
+pp_check(m1.3, ndraws = 100)
+```
 
 
 ### Model 2.2 --- Normal 
@@ -373,15 +439,12 @@ log_lik_laplace <- function(i, prep) {
   y <- prep$data$Y[i]
   laplace_lpdf(y, mu, sigma)
 }
-
-# Make this function available globally
-assign("log_lik_laplace", log_lik_laplace, envir = .GlobalEnv)
 ```
 
 Alright let's do the actual comparison: 
 
 ```{r}
-loo(m1.1, m1.2)
+loo(m1.1, m1.2, m1.3)
 ```
 
 From the `pp_check`s and the loo comparison it is clear that the Laplace distribution (aka Double Exponential) distribution fits the model better. 
