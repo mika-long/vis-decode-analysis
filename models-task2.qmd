@@ -240,26 +240,55 @@ task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>%
 Fit the model:
 
 ```{r}
+#| output: false 
+
 m1.1 <- task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>%
   brm(
-  formula = f, 
-  family = c_family, 
-  stanvars = stanvar(scode = laplace_lpdf, block = "functions"), 
-  prior = p, 
-  data = ., 
-  chains = 4, 
-  # cores = 4, 
-  # control = list(adapt_delta = 0.95), 
-  file = "models/task2-m1.1"
-)
+    formula = f, 
+    family = c_family, 
+    stanvars = stanvar(scode = laplace_lpdf, block = "functions"), 
+    prior = p, 
+    data = ., 
+    chains = 4, 
+    # cores = 4, 
+    # control = list(adapt_delta = 0.95), 
+    file = "models/task2-m1.1"
+  )
 ```
 
 Check the fitted model:
 
 ```{r}
 summary(m1.1)
+plot(m1.1)
 ```
 
+We also need to define our own custom function for posterior predictive checks --- NOTE that the following does not run ... 
+
+```{r}
+# Define a random number generator for Laplace distribution
+laplace_rng <- function(mu, sigma) {
+  # Generate from Laplace distribution using uniform transformation
+  u <- runif(length(mu)) - 0.5
+  mu + sigma * sign(u) * (-log(1 - 2 * abs(u)))
+}
+
+# Define the posterior predict function for our custom family
+posterior_predict_laplace <- function(i, prep, ...) {
+  mu <- brms::get_dpar(prep, "mu", i = i)
+  sigma <- brms::get_dpar(prep, "sigma", i = i)
+  laplace_rng(mu, sigma)
+}
+
+# Make this function available globally
+assign("posterior_predict_laplace", posterior_predict_laplace, envir = .GlobalEnv)
+```
+
+```{r}
+pp_check(m1.1, ndraws = 100)
+```
+
+Compare to the later fit, this fit is much better ... 
 
 
 ### Model 2.2 --- Normal 
@@ -274,6 +303,90 @@ $$
 \end{align}
 $$
 
+The corresponding `brms` formula would be as follows:
+
+```{r}
+#| label: task 2 formula 2
+
+f2 <- bf(error_va ~ 1 + (1 | participantId),
+        family = gaussian())
+
+# get prior
+task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+get_prior(formula = f2,
+          data = .)
+
+p <- c(
+  prior(normal(0, 0.5), class = "Intercept"), 
+  prior(normal(0, 0.25), class = "sd", group = "participantId"), 
+  prior(normal(0, 1), class = "sigma")
+)
+```
+
+Let's fit the model:
+
+```{r}
+#| output: false
+#| label: task2-fit-model-3
+
+m1.2 <- task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>%
+  brm(
+    formula = f2,
+    data = .,
+    prior = p,
+    control = list(adapt_delta = 0.95), # note this is higher than 0.95
+    chains = 4,
+    iter = 8000, # more iterations
+    warmup = 2000, # higher than usual
+    file="models/task2-m1.2",
+    save_pars = save_pars(all=TRUE)
+  )
+```
+
+Let's see some fitted results:
+
+```{r}
+summary(m1.2)
+plot(m1.2)
+# posterior predictive check
+pp_check(m1.2, ndraws = 100)
+```
+
+The fit doesn't look that good lol. 
+
+### LOO comparisons 
+
+We can also perform loo comparison between `m1.1` and `m1.2`: 
+
+```{r}
+expose_functions(m1.1, vectorize = TRUE)
+
+# Define log-likelihood function for Laplace distribution
+laplace_lpdf <- function(y, mu, sigma) {
+  -log(2 * sigma) - abs(y - mu) / sigma
+}
+
+# Define log-likelihood function for brms
+log_lik_laplace <- function(i, prep) {
+  mu <- brms::get_dpar(prep, "mu", i = i)
+  sigma <- brms::get_dpar(prep, "sigma", i = i)
+  y <- prep$data$Y[i]
+  laplace_lpdf(y, mu, sigma)
+}
+
+# Make this function available globally
+assign("log_lik_laplace", log_lik_laplace, envir = .GlobalEnv)
+```
+
+Alright let's do the actual comparison: 
+
+```{r}
+loo(m1.1, m1.2)
+```
+
+From the `pp_check`s and the loo comparison it is clear that the Laplace distribution (aka Double Exponential) distribution fits the model better. 
+
+
 <!-- Hmm the half-normal model doesn't look quite right, perhaps this follows closer to an exponential distribution? Also we need to take care of teh number of times thigns were zero, so this should be a **zero-inflated exponential model**. Something like the following:  -->
 
 <!-- $$ -->
@@ -286,45 +399,9 @@ $$
 <!-- \end{align} -->
 <!-- $$ -->
 
-<!-- The corresponding `brms` formula would be as follows:  -->
 
-<!-- ```{r} -->
-<!-- #| label: task 2 formula 2 -->
 
-<!-- f2 <- bf(error_va ~ 1 + (1 | participantId),  -->
-<!--         family = exponential()) -->
 
-<!-- # get prior  -->
-<!-- task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>% -->
-<!-- get_prior(formula = f2,  -->
-<!--           data = .) -->
-
-<!-- p <- c( -->
-<!--   prior(normal(0, 1), class = Intercept),  -->
-<!--   prior(cauchy(0, 5), class = "sd", group = "participantId") -->
-<!-- ) -->
-<!-- ``` -->
-
-<!-- Let's fit the model:  -->
-
-<!-- ```{r} -->
-<!-- #| output: false -->
-<!-- #| label: task2-fit-model-3 -->
-
-<!-- m2.3 <- task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>%  -->
-<!--   mutate(error_va = ifelse(abs(error_va) < 1e-8, 0, error_va)) %>%  -->
-<!--   mutate(error_va = ifelse(error_va < 0, 0, error_va)) %>%  -->
-<!--   brm(formula = f2, -->
-<!--       data = .,  -->
-<!--       prior = p, -->
-<!--       control = list(adapt_delta = 0.99), # note this is higher than 0.95 -->
-<!--       chains = 4,  -->
-<!--       iter = 8000, # more iterations -->
-<!--       warmup = 2000, # higher than usual  -->
-<!--       file="models/m2.3",  -->
-<!--       save_pars = save_pars(all=TRUE) -->
-<!--       ) -->
-<!-- ``` -->
 
 
 
@@ -360,14 +437,7 @@ $$
 <!--       ) -->
 <!-- ``` -->
 
-<!-- Let's see some fitted results:  -->
 
-<!-- ```{r} -->
-<!-- summary(m2.1) -->
-<!-- plot(m2.1) -->
-<!-- # posterior predictive check  -->
-<!-- pp_check(m2.1, ndraws = 100) -->
-<!-- ``` -->
 
 <!-- ## Model 2 -- Physical -->
 

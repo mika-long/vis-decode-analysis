@@ -118,6 +118,7 @@ window.Quarto = {
   <li><a href="#model-1-vis-angle-space" id="toc-model-1-vis-angle-space" class="nav-link" data-scroll-target="#model-1-vis-angle-space">Model 1 – Vis Angle space</a>
   <ul class="collapse">
   <li><a href="#model-1.1-laplace-distribution" id="toc-model-1.1-laplace-distribution" class="nav-link" data-scroll-target="#model-1.1-laplace-distribution">Model 1.1 — Laplace distribution</a></li>
+  <li><a href="#model-2.2-normal" id="toc-model-2.2-normal" class="nav-link" data-scroll-target="#model-2.2-normal">Model 2.2 — Normal</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -387,6 +388,255 @@ Note
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">class =</span> <span class="st">"sigma"</span>)</span>
 <span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p>What if we use the <code>make_stancode</code> function to see what the corresponding stan code looks like?</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">error_va =</span> va.ans.x <span class="sc">-</span> va.select.x) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">make_stancode</span>(f, <span class="at">data =</span> ., <span class="at">family =</span> c_family, <span class="at">stanvars =</span> <span class="fu">stanvar</span>(<span class="at">scode =</span> laplace_lpdf, <span class="at">block =</span> <span class="st">"functions"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>// generated with brms 2.22.0
+functions {
+  
+real laplace_lpdf(real y, real mu, real sigma) {
+  return -log(2 * sigma) - abs(y - mu) / sigma;
+}
+
+}
+data {
+  int&lt;lower=1&gt; N;  // total number of observations
+  vector[N] Y;  // response variable
+  // data for group-level effects of ID 1
+  int&lt;lower=1&gt; N_1;  // number of grouping levels
+  int&lt;lower=1&gt; M_1;  // number of coefficients per level
+  array[N] int&lt;lower=1&gt; J_1;  // grouping indicator per observation
+  // group-level predictor values
+  vector[N] Z_1_1;
+  int prior_only;  // should the likelihood be ignored?
+}
+transformed data {
+}
+parameters {
+  real Intercept;  // temporary intercept for centered predictors
+  real&lt;lower=0&gt; sigma;  // dispersion parameter
+  vector&lt;lower=0&gt;[M_1] sd_1;  // group-level standard deviations
+  array[M_1] vector[N_1] z_1;  // standardized group-level effects
+}
+transformed parameters {
+  vector[N_1] r_1_1;  // actual group-level effects
+  real lprior = 0;  // prior contributions to the log posterior
+  r_1_1 = (sd_1[1] * (z_1[1]));
+  lprior += student_t_lpdf(Intercept | 3, 0, 2.5);
+  lprior += student_t_lpdf(sigma | 3, 0, 2.5)
+    - 1 * student_t_lccdf(0 | 3, 0, 2.5);
+  lprior += student_t_lpdf(sd_1 | 3, 0, 2.5)
+    - 1 * student_t_lccdf(0 | 3, 0, 2.5);
+}
+model {
+  // likelihood including constants
+  if (!prior_only) {
+    // initialize linear predictor term
+    vector[N] mu = rep_vector(0.0, N);
+    mu += Intercept;
+    for (n in 1:N) {
+      // add more terms to the linear predictor
+      mu[n] += r_1_1[J_1[n]] * Z_1_1[n];
+    }
+    for (n in 1:N) {
+      target += laplace_lpdf(Y[n] | mu[n], sigma);
+    }
+  }
+  // priors including constants
+  target += lprior;
+  target += std_normal_lpdf(z_1[1]);
+}
+generated quantities {
+  // actual population-level intercept
+  real b_Intercept = Intercept;
+}</code></pre>
+</div>
+</div>
+<p>Fit the model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>m1<span class="fl">.1</span> <span class="ot">&lt;-</span> task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">error_va =</span> va.ans.x <span class="sc">-</span> va.select.x) <span class="sc">%&gt;%</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">brm</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">formula =</span> f, </span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">family =</span> c_family, </span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">stanvars =</span> <span class="fu">stanvar</span>(<span class="at">scode =</span> laplace_lpdf, <span class="at">block =</span> <span class="st">"functions"</span>), </span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">prior =</span> p, </span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> ., </span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">chains =</span> <span class="dv">4</span>, </span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># cores = 4, </span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># control = list(adapt_delta = 0.95), </span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">file =</span> <span class="st">"models/task2-m1.1"</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Check the fitted model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1<span class="fl">.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> Family: laplace 
+  Links: mu = identity; sigma = identity 
+Formula: error_va ~ 1 + (1 | participantId) 
+   Data: . (Number of observations: 130) 
+  Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
+         total post-warmup draws = 4000
+
+Multilevel Hyperparameters:
+~participantId (Number of levels: 13) 
+              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)     0.03      0.02     0.00     0.08 1.00      934     1810
+
+Regression Coefficients:
+          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept     0.01      0.02    -0.02     0.05 1.00     2502     1732
+
+Further Distributional Parameters:
+      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sigma     0.17      0.02     0.14     0.20 1.00     4567     2546
+
+Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m1<span class="fl">.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="models-task2_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We also need to define our own custom function for posterior predictive checks — NOTE that the following does not run …</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define a random number generator for Laplace distribution</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>laplace_rng <span class="ot">&lt;-</span> <span class="cf">function</span>(mu, sigma) {</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Generate from Laplace distribution using uniform transformation</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  u <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="fu">length</span>(mu)) <span class="sc">-</span> <span class="fl">0.5</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  mu <span class="sc">+</span> sigma <span class="sc">*</span> <span class="fu">sign</span>(u) <span class="sc">*</span> (<span class="sc">-</span><span class="fu">log</span>(<span class="dv">1</span> <span class="sc">-</span> <span class="dv">2</span> <span class="sc">*</span> <span class="fu">abs</span>(u)))</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the posterior predict function for our custom family</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>posterior_predict_laplace <span class="ot">&lt;-</span> <span class="cf">function</span>(i, prep, ...) {</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>  mu <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">get_dpar</span>(prep, <span class="st">"mu"</span>, <span class="at">i =</span> i)</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>  sigma <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">get_dpar</span>(prep, <span class="st">"sigma"</span>, <span class="at">i =</span> i)</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">laplace_rng</span>(mu, sigma)</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Make this function available globally</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a><span class="fu">assign</span>(<span class="st">"posterior_predict_laplace"</span>, posterior_predict_laplace, <span class="at">envir =</span> .GlobalEnv)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(m1<span class="fl">.1</span>, <span class="at">ndraws =</span> <span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="models-task2_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Compare to the later fit, this fit is much better …</p>
+</section>
+<section id="model-2.2-normal" class="level3">
+<h3 class="anchored" data-anchor-id="model-2.2-normal">Model 2.2 — Normal</h3>
+<p>Math model:</p>
+<p><span class="math display">\[
+\begin{align}
+\text{error_va}_{i} &amp;\sim \text{Normal}(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i]}) \\
+\mu_j &amp;\sim \mathcal{N}(0, 0.25), j \in [13] \\
+\sigma_j &amp;\sim \mathcal{N}(0, 1), j \in [13]
+\end{align}
+\]</span></p>
+<p>The corresponding <code>brms</code> formula would be as follows:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>f2 <span class="ot">&lt;-</span> <span class="fu">bf</span>(error_va <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> participantId),</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>        <span class="at">family =</span> <span class="fu">gaussian</span>())</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co"># get prior</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">error_va =</span> va.select.x <span class="sc">-</span> va.ans.x) <span class="sc">%&gt;%</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="fu">get_prior</span>(<span class="at">formula =</span> f2,</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> .)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["prior"],"name":[1],"type":["chr"],"align":["left"]},{"label":["class"],"name":[2],"type":["chr"],"align":["left"]},{"label":["coef"],"name":[3],"type":["chr"],"align":["left"]},{"label":["group"],"name":[4],"type":["chr"],"align":["left"]},{"label":["resp"],"name":[5],"type":["chr"],"align":["left"]},{"label":["dpar"],"name":[6],"type":["chr"],"align":["left"]},{"label":["nlpar"],"name":[7],"type":["chr"],"align":["left"]},{"label":["lb"],"name":[8],"type":["chr"],"align":["left"]},{"label":["ub"],"name":[9],"type":["chr"],"align":["left"]},{"label":["source"],"name":[10],"type":["chr"],"align":["left"]}],"data":[{"1":"student_t(3, 0, 2.5)","2":"Intercept","3":"","4":"","5":"","6":"","7":"","8":"","9":"","10":"default"},{"1":"student_t(3, 0, 2.5)","2":"sd","3":"","4":"","5":"","6":"","7":"","8":"0","9":"","10":"default"},{"1":"","2":"sd","3":"","4":"participantId","5":"","6":"","7":"","8":"","9":"","10":"default"},{"1":"","2":"sd","3":"Intercept","4":"participantId","5":"","6":"","7":"","8":"","9":"","10":"default"},{"1":"student_t(3, 0, 2.5)","2":"sigma","3":"","4":"","5":"","6":"","7":"","8":"0","9":"","10":"default"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="fl">0.5</span>), <span class="at">class =</span> <span class="st">"Intercept"</span>), </span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="fl">0.25</span>), <span class="at">class =</span> <span class="st">"sd"</span>, <span class="at">group =</span> <span class="st">"participantId"</span>), </span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">class =</span> <span class="st">"sigma"</span>)</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Let’s fit the model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>m1<span class="fl">.2</span> <span class="ot">&lt;-</span> task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">error_va =</span> va.ans.x <span class="sc">-</span> va.select.x) <span class="sc">%&gt;%</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">brm</span>(</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">formula =</span> f2,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> .,</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">prior =</span> p,</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.95</span>), <span class="co"># note this is higher than 0.95</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">chains =</span> <span class="dv">4</span>,</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">iter =</span> <span class="dv">8000</span>, <span class="co"># more iterations</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="co"># higher than usual</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">file=</span><span class="st">"models/task2-m1.2"</span>,</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">save_pars =</span> <span class="fu">save_pars</span>(<span class="at">all=</span><span class="cn">TRUE</span>)</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Let’s see some fitted results:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1<span class="fl">.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> Family: gaussian 
+  Links: mu = identity; sigma = identity 
+Formula: error_va ~ 1 + (1 | participantId) 
+   Data: . (Number of observations: 130) 
+  Draws: 4 chains, each with iter = 8000; warmup = 2000; thin = 1;
+         total post-warmup draws = 24000
+
+Multilevel Hyperparameters:
+~participantId (Number of levels: 13) 
+              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)     0.10      0.04     0.03     0.19 1.00     6601     6686
+
+Regression Coefficients:
+          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept     0.01      0.04    -0.06     0.09 1.00    10318    12162
+
+Further Distributional Parameters:
+      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sigma     0.25      0.02     0.22     0.29 1.00    19024    17436
+
+Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m1<span class="fl">.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="models-task2_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># posterior predictive check</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(m1<span class="fl">.2</span>, <span class="at">ndraws =</span> <span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="models-task2_files/figure-html/unnamed-chunk-16-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The fit doesn’t look that good lol</p>
 <!-- Hmm the half-normal model doesn't look quite right, perhaps this follows closer to an exponential distribution? Also we need to take care of teh number of times thigns were zero, so this should be a **zero-inflated exponential model**. Something like the following:  -->
 <!-- $$ -->
 <!-- \begin{align} -->
@@ -397,38 +647,6 @@ Note
 <!-- \sigma_u &\sim \text{Half-Cauchy}(0, 5)  -->
 <!-- \end{align} -->
 <!-- $$ -->
-<!-- The corresponding `brms` formula would be as follows:  -->
-<!-- ```{r} -->
-<!-- #| label: task 2 formula 2 -->
-<!-- f2 <- bf(error_va ~ 1 + (1 | participantId),  -->
-<!--         family = exponential()) -->
-<!-- # get prior  -->
-<!-- task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>% -->
-<!-- get_prior(formula = f2,  -->
-<!--           data = .) -->
-<!-- p <- c( -->
-<!--   prior(normal(0, 1), class = Intercept),  -->
-<!--   prior(cauchy(0, 5), class = "sd", group = "participantId") -->
-<!-- ) -->
-<!-- ``` -->
-<!-- Let's fit the model:  -->
-<!-- ```{r} -->
-<!-- #| output: false -->
-<!-- #| label: task2-fit-model-3 -->
-<!-- m2.3 <- task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>%  -->
-<!--   mutate(error_va = ifelse(abs(error_va) < 1e-8, 0, error_va)) %>%  -->
-<!--   mutate(error_va = ifelse(error_va < 0, 0, error_va)) %>%  -->
-<!--   brm(formula = f2, -->
-<!--       data = .,  -->
-<!--       prior = p, -->
-<!--       control = list(adapt_delta = 0.99), # note this is higher than 0.95 -->
-<!--       chains = 4,  -->
-<!--       iter = 8000, # more iterations -->
-<!--       warmup = 2000, # higher than usual  -->
-<!--       file="models/m2.3",  -->
-<!--       save_pars = save_pars(all=TRUE) -->
-<!--       ) -->
-<!-- ``` -->
 <!-- :::{.caution} -->
 <!-- While doing the fitting I found some issues ... For task 2, `error_va = va.ans.y - va.select.y` should always be non-negative, but I got some negative values that are very, very small. I am setting a tolerance of `1e-12` --- any value smaller than this range will be regarded as 0. See the following for the negative values  -->
 <!-- ```{r} -->
@@ -454,13 +672,6 @@ Note
 <!--       file="models/m2.1",  -->
 <!--       save_pars = save_pars(all=TRUE) -->
 <!--       ) -->
-<!-- ``` -->
-<!-- Let's see some fitted results:  -->
-<!-- ```{r} -->
-<!-- summary(m2.1) -->
-<!-- plot(m2.1) -->
-<!-- # posterior predictive check  -->
-<!-- pp_check(m2.1, ndraws = 100) -->
 <!-- ``` -->
 <!-- ## Model 2 -- Physical -->
 <!-- Math model:  -->
