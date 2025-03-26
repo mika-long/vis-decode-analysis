@@ -119,6 +119,7 @@ window.Quarto = {
   <ul class="collapse">
   <li><a href="#model-1.1-laplace-distribution" id="toc-model-1.1-laplace-distribution" class="nav-link" data-scroll-target="#model-1.1-laplace-distribution">Model 1.1 — Laplace distribution</a></li>
   <li><a href="#model-2.2-normal" id="toc-model-2.2-normal" class="nav-link" data-scroll-target="#model-2.2-normal">Model 2.2 — Normal</a></li>
+  <li><a href="#loo-comparisons" id="toc-loo-comparisons" class="nav-link" data-scroll-target="#loo-comparisons">LOO comparisons</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -636,7 +637,71 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 </div>
 </div>
 </div>
-<p>The fit doesn’t look that good lol</p>
+<p>The fit doesn’t look that good lol.</p>
+</section>
+<section id="loo-comparisons" class="level3">
+<h3 class="anchored" data-anchor-id="loo-comparisons">LOO comparisons</h3>
+<p>We can also perform loo comparison between <code>m1.1</code> and <code>m1.2</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">expose_functions</span>(m1<span class="fl">.1</span>, <span class="at">vectorize =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Define log-likelihood function for Laplace distribution</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>laplace_lpdf <span class="ot">&lt;-</span> <span class="cf">function</span>(y, mu, sigma) {</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>  <span class="sc">-</span><span class="fu">log</span>(<span class="dv">2</span> <span class="sc">*</span> sigma) <span class="sc">-</span> <span class="fu">abs</span>(y <span class="sc">-</span> mu) <span class="sc">/</span> sigma</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Define log-likelihood function for brms</span></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>log_lik_laplace <span class="ot">&lt;-</span> <span class="cf">function</span>(i, prep) {</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>  mu <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">get_dpar</span>(prep, <span class="st">"mu"</span>, <span class="at">i =</span> i)</span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>  sigma <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">get_dpar</span>(prep, <span class="st">"sigma"</span>, <span class="at">i =</span> i)</span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> prep<span class="sc">$</span>data<span class="sc">$</span>Y[i]</span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">laplace_lpdf</span>(y, mu, sigma)</span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Make this function available globally</span></span>
+<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a><span class="fu">assign</span>(<span class="st">"log_lik_laplace"</span>, log_lik_laplace, <span class="at">envir =</span> .GlobalEnv)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Alright let’s do the actual comparison:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">loo</span>(m1<span class="fl">.1</span>, m1<span class="fl">.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Output of model 'm1.1':
+
+Computed from 4000 by 130 log-likelihood matrix.
+
+         Estimate   SE
+elpd_loo      9.7 13.6
+p_loo         5.2  0.4
+looic       -19.4 27.1
+------
+MCSE of elpd_loo is 0.0.
+MCSE and ESS estimates assume MCMC draws (r_eff in [0.5, 1.3]).
+
+All Pareto k estimates are good (k &lt; 0.7).
+See help('pareto-k-diagnostic') for details.
+
+Output of model 'm1.2':
+
+Computed from 24000 by 130 log-likelihood matrix.
+
+         Estimate   SE
+elpd_loo     -9.3 12.1
+p_loo        10.8  2.1
+looic        18.7 24.2
+------
+MCSE of elpd_loo is 0.0.
+MCSE and ESS estimates assume MCMC draws (r_eff in [0.4, 1.7]).
+
+All Pareto k estimates are good (k &lt; 0.7).
+See help('pareto-k-diagnostic') for details.
+
+Model comparisons:
+     elpd_diff se_diff
+m1.1   0.0       0.0  
+m1.2 -19.0       4.7  </code></pre>
+</div>
+</div>
+<p>From the <code>pp_check</code>s and the loo comparison it is clear that the Laplace distribution (aka Double Exponential) distribution fits the model better.</p>
 <!-- Hmm the half-normal model doesn't look quite right, perhaps this follows closer to an exponential distribution? Also we need to take care of teh number of times thigns were zero, so this should be a **zero-inflated exponential model**. Something like the following:  -->
 <!-- $$ -->
 <!-- \begin{align} -->
