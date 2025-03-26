@@ -541,14 +541,22 @@ fit <- model$sample(
 fit$save_object(file = "mix_models/m6.rds")
 ```
 
-58 of 120000 has divergent transitions. 
+- if we don't specify anything about the variance or mean order between med and mod, than we get more divergent transitions ... around 104 
+- if we do specify variance (var_med > var_mod), then: 
+  - 58 of 120000 has divergent transitions (unsigned)
+  - 54 of 120000 has divergent transitions (signed)
+- if we specify mean and no variance: 
+  - 139 of 12000 ended with a divergence 
+- if we specify mean AND variance: 
+  - 40 of 12000 transitions ended with a divergence  
+
 
 Let's look at the fitted results: 
 
 ```{r}
 summary <- fit$summary()
 
-summary %>% filter(str_detect(variable, "^theta")) %>% 
+summary %>% filter(str_detect(variable, "^mu_")) %>% 
   ggplot(aes(y = variable)) + 
   geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
   geom_point(aes(x = median))

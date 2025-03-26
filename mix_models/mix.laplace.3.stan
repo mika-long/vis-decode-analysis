@@ -32,10 +32,10 @@ parameters {
   real intercept_sigma_mod; 
   real<lower=0> var_sigma_mod; 
 
-  real intercept_mu_med;          // global mean for mu_med
+  real<lower=intercept_mu_mod> intercept_mu_med;          // global mean for mu_med
   real<lower=var_mu_mod> var_mu_med;       // global sd for mu_med
   
-  real intercept_sigma_med;       // global mean for sigma_med
+  real<lower=intercept_sigma_mod> intercept_sigma_med;       // global mean for sigma_med
   real<lower=var_sigma_mod> var_sigma_med;       // global sd for sigma_med 
 }
 
