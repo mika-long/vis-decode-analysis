@@ -45,9 +45,17 @@ model {
   mu_med ~ normal(mu_med_global, sigma_med_global);
   sigma_med ~ gamma(2, tau_sigma_med);
   
-  // Priors for modal component (using provided priors)
-  mu_mod ~ normal(mu_mod_prior_mean, mu_mod_prior_sd);
-  sigma_mod ~ gamma(sigma_mod_prior_alpha, sigma_mod_prior_beta);
+  // Hyperpriors for modal component 
+  mu_mod_global ~ normal(0.01, 0.02); 
+  sigma_mu_mod ~ normal(0.03, 0.02); 
+  sigma_mod_global ~ normal(-1.79, 0.10); 
+  sigma_sigma_mod ~ normal(0.17, 0.12); 
+
+  // Hierarchical priors 
+  mu_mod ~ normal(mu_mod_global, sigma_mu_mod);
+  for (j in 1:J) {
+    log_sigma_mod[j] ~ normal(sigma_mod_global, sigma_sigma_mod); 
+  }
   
   // Prior for mixing parameter
   theta ~ beta(2, 2);  // weakly informative prior centered at 0.5
