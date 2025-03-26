@@ -27,9 +27,13 @@ library(brms)
 library(tidybayes)
 ```
 
+
+
 # Set up 
 
 read in data and write functions for processing: 
+
+
 
 ```{r}
 #| label: read-in-data
@@ -106,9 +110,13 @@ participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participant
 ```
 
 
+
+
 # Task 2 -- Find highest point on curve 
 
 First we get the data: 
+
+
 
 ```{r}
 #| label: get task 2 data
@@ -135,7 +143,11 @@ task2_df <- task_df %>% filter(task == "task2") %>%
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
 
+
+
 Some preliminary checks of relations, focusing on the **y** axes: 
+
+
 
 ```{r}
 #| layout-ncol: 2
@@ -150,7 +162,11 @@ task2_df %>% ggplot(aes(x = va.ans.y - va.select.y)) + geom_dots()
 task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
 ```
 
+
+
 Now let's look at things focusing on the **x** axes: 
+
+
 
 ```{r}
 #| layout-ncol: 2
@@ -185,6 +201,8 @@ task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = param.p, color = param.l
   )
 ```
 
+
+
 ## Model 1 -- Vis Angle space
 
 Let us first try to fit `va.ans.x - va.select.x` with two different models --- normal and laplace. 
@@ -208,6 +226,8 @@ Specify formula. There is no native implementation of the Laplace distribution^[
 :::{.callout-note collapsed="true"}
 There is a [wiki](https://en.wikipedia.org/wiki/Laplace_distribution) about Laplace distribution, which defines the pdf of a Laplace distribution to be $f(x | \mu, b) = \frac{1}{2b} \exp(-\frac{|x - \mu|}{b})$, where $\mu$ is a location parameter, and $b > 0$ is a scale parameter. And this is what the [stan manual](https://en.wikipedia.org/wiki/Laplace_distribution) defines the pdf of the **double exponential** distribution  --- $f(y|\mu, \sigma) = \frac{1}{2\sigma} \exp(- \frac{|y - \mu|}{\sigma})$, basically everything is the same except they're using different notations for the scale parameter ...  
 :::
+
+
 
 ```{r}
 # log of the laplace pdf 
@@ -244,16 +264,24 @@ p <- c(
 )
 ```
 
+
+
 :::{.callout-note collapsed="true"}
 What if we use the `make_stancode` function to see what the corresponding stan code looks like?
+
+
 
 ```{r}
 task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>% 
   make_stancode(f, data = ., family = c_family, stanvars = stanvar(scode = laplace_lpdf, block = "functions"))
 ```
+
+
 :::
 
 Fit the model:
+
+
 
 ```{r}
 #| output: false 
@@ -272,7 +300,11 @@ m1.1 <- task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>%
   )
 ```
 
+
+
 Check the fitted model:
+
+
 
 ```{r}
 summary(m1.1)
@@ -280,7 +312,11 @@ posterior_summary(m1.1)
 plot(m1.1)
 ```
 
+
+
 Let's compare this to, e.g., the model where we're assuming that everythign is fixed: 
+
+
 
 ```{r}
 # get_variables(m1.1)
@@ -301,7 +337,11 @@ posterior %>% ggplot(aes(y = PID)) +
   stat_halfeye(aes(x = sigma_participant))
 ```
 
+
+
 Define custom functions for posterior predictive check: 
+
+
 
 ```{r}
 # Define a random number generator for Laplace distribution
@@ -323,11 +363,15 @@ posterior_predict_laplace <- function(i, prep, ...) {
 pp_check(m1.1, ndraws = 100)
 ```
 
+
+
 - This posterior predictive check is reminding me that it could also be drawn from a Cauchy ... 
 
 ### Model 2.3 --- Cauchy 
 
 Note that a cauchy distribution is a student t distribution with degrees of freedom, `nu`, fixed to be 1. 
+
+
 
 ```{r}
 f <- bf(error_va ~ 1 + (1 | participantId),
@@ -345,7 +389,11 @@ p <- c(
 )
 ```
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 m1.3 <- task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>%
@@ -360,13 +408,19 @@ m1.3 <- task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>%
   )
 ```
 
+
+
 Check the fitted results: 
+
+
 
 ```{r}
 summary(m1.3)
 plot(m1.3)
 pp_check(m1.3, ndraws = 100)
 ```
+
+
 
 
 ### Model 2.2 --- Normal 
@@ -382,6 +436,8 @@ $$
 $$
 
 The corresponding `brms` formula would be as follows:
+
+
 
 ```{r}
 #| label: task 2 formula 2
@@ -404,7 +460,11 @@ p <- c(
 )
 ```
 
+
+
 Let's fit the model:
+
+
 
 ```{r}
 #| output: false
@@ -424,7 +484,11 @@ m1.2 <- task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>%
   )
 ```
 
+
+
 Let's see some fitted results:
+
+
 
 ```{r}
 summary(m1.2)
@@ -433,11 +497,15 @@ plot(m1.2)
 pp_check(m1.2, ndraws = 100)
 ```
 
+
+
 The fit doesn't look that good lol. 
 
 ### LOO comparisons 
 
 We can also perform loo comparison between `m1.1` and `m1.2`: 
+
+
 
 ```{r}
 expose_functions(m1.1, vectorize = TRUE)
@@ -456,11 +524,17 @@ log_lik_laplace <- function(i, prep) {
 }
 ```
 
+
+
 Alright let's do the actual comparison: 
+
+
 
 ```{r}
 loo(m1.1, m1.2, m1.3)
 ```
+
+
 
 From the `pp_check`s and the loo comparison it is clear that the Laplace distribution (aka Double Exponential) distribution fits the model better. 
 
@@ -713,3 +787,4 @@ From the `pp_check`s and the loo comparison it is clear that the Laplace distrib
 <!-- Hmm doesn't seem to be much different, which is to be expected, as slope is unit-less.  -->
 
 <!-- ---  -->
+
