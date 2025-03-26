@@ -375,6 +375,7 @@ The corresponding `brms` formula would be as follows:
 #| label: task 2 formula 2
 
 f2 <- bf(error_va ~ 1 + (1 | participantId),
+         sigma ~ 1 + (1 | participantId),
         family = gaussian())
 
 # get prior
@@ -382,10 +383,12 @@ task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
 get_prior(formula = f2,
           data = .)
 
+# define prior 
 p <- c(
-  prior(normal(0, 0.5), class = "Intercept"), 
-  prior(normal(0, 0.25), class = "sd", group = "participantId"), 
-  prior(normal(0, 1), class = "sigma")
+  prior(normal(0, 0.5), class = "Intercept", dpar="mu"), 
+  prior(normal(-1, 1), class = "Intercept", dpar="sigma"), 
+  prior(cauchy(0, 0.25), class = "sd", group = "participantId", dpar="mu", lb = 0),
+  prior(cauchy(0, 0.5), class = "sd", group = "participantId", dpar="sigma", lb = 0)
 )
 ```
 
@@ -400,10 +403,10 @@ m1.2 <- task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>%
     formula = f2,
     data = .,
     prior = p,
-    control = list(adapt_delta = 0.95), # note this is higher than 0.95
+    # control = list(adapt_delta = 0.95), # note this is higher than 0.95
     chains = 4,
-    iter = 8000, # more iterations
-    warmup = 2000, # higher than usual
+    # iter = 8000, # more iterations
+    # warmup = 2000, # higher than usual
     file="models/task2-m1.2",
     save_pars = save_pars(all=TRUE)
   )
@@ -448,7 +451,6 @@ loo(m1.1, m1.2, m1.3)
 ```
 
 From the `pp_check`s and the loo comparison it is clear that the Laplace distribution (aka Double Exponential) distribution fits the model better. 
-
 
 <!-- Hmm the half-normal model doesn't look quite right, perhaps this follows closer to an exponential distribution? Also we need to take care of teh number of times thigns were zero, so this should be a **zero-inflated exponential model**. Something like the following:  -->
 
