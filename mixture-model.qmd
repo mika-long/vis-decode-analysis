@@ -130,14 +130,16 @@ task1_df <- task_df %>% filter(task == "task1") %>%
 
 Ok here's the math model^[Note that the notation for a standard mixture model focuses on specifying the probability **density**, which is different than McElreath's approach of specifying things in a more generative fashion ...]: 
 
-$$
-\begin{align}
+$$\begin{align}
 p_Y(y_i) & =  \lambda \cdot \Pr(\hat{y}^{\text{med}}_i) + (1 - \lambda) \cdot \Pr(\hat{y}^{\text{mod}}_i) \\
 \hat{y}^{\text{med}}_i &\sim \mathcal{N}(y^\text{med}, (\sigma^\text{med}_{\text{PID}[i]})^2) \\ 
 \hat{y}^{\text{mod}}_i &\sim \mathcal{N}(y^\text{mod}, (\sigma^{\text{mod}}_{\text{PID}[i]})^2) \\ 
 (1) \,\, \lambda &\sim \text{Beta}(5, 5) 
-\end{align}
-$$
+\end{align}$$
+
+From modeling task 2, it seems that $\hat{y}^\text{mod}$ does not really follow a normal distribution, but in fact follows something like this: 
+$$\text{signed error} = \hat{y}^\text{mod}_i - y_i^\text{mod} \sim \text{Laplace}(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i]})$$
+
 
 :::{.column-margin}
 Perhaps a different way to write this in a generative fashion is: 
@@ -150,7 +152,7 @@ $$
 where $z_i$ is the component indicator variable for observation $i$. 
 :::
 
-
+## Simple BRMS model
 
 Let's try to write a simple brms model for this, note that right now $\lambda$ is just assumed to be drawn from Beta (or Dirichlet(1, 1)^[... which is going to be Uniform[0, 1] for the case of $K =2$])
 
@@ -168,19 +170,6 @@ get_prior(formula = formula, data = task1_df, family = mix)
 ```
 
 If we don't specify anything for `theta`, then theta is treated as drawn from a Dirichlet distribution, and theta values are assumed to be the same for all trials across all participants. 
-
-
-```{r}
-# # set prior 
-# prior <- c(
-#   prior(normal(0, 2), class = Intercept, dpar = mu1), 
-#   prior(normal(0, 2), class = Intercept, dpar = mu2), 
-#   # prior(beta(5, 5), class = theta), # dirichlet is the only valid prior for simplex parameters UGH 
-#   prior(normal(0, 2), class = sigma1, lb = 0), # truncated normal dist
-#   prior(normal(0, 2), class = sigma2, lb = 0) # truncate normal dist 
-# )
-```
-
 
 Fit the model: 
 
@@ -382,3 +371,11 @@ summary %>% filter(str_detect(variable, "sigma_m")) %>%
   geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
   geom_point(aes(x = median)) + xlim(0, 1)
 ```
+
+# Stan code --- Laplace distribution 
+
+Let's first write the math model: 
+
+$$\begin{align*}
+f(x) = \theta \cdot f_{\text{Laplace}}(x) + (1 - \theta) \cdot f_{\text{Gaussian}}(x)
+\end{align*}$$

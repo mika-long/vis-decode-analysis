@@ -116,6 +116,7 @@ window.Quarto = {
   <li><a href="#model-1-vis-angle-space" id="toc-model-1-vis-angle-space" class="nav-link" data-scroll-target="#model-1-vis-angle-space">Model 1 – Vis Angle space</a>
   <ul class="collapse">
   <li><a href="#model-1.1-laplace-distribution" id="toc-model-1.1-laplace-distribution" class="nav-link" data-scroll-target="#model-1.1-laplace-distribution">Model 1.1 — Laplace distribution</a></li>
+  <li><a href="#model-2.3-cauchy" id="toc-model-2.3-cauchy" class="nav-link" data-scroll-target="#model-2.3-cauchy">Model 2.3 — Cauchy</a></li>
   <li><a href="#model-2.2-normal" id="toc-model-2.2-normal" class="nav-link" data-scroll-target="#model-2.2-normal">Model 2.2 — Normal</a></li>
   <li><a href="#loo-comparisons" id="toc-loo-comparisons" class="nav-link" data-scroll-target="#loo-comparisons">LOO comparisons</a></li>
   </ul></li>
@@ -286,17 +287,29 @@ window.Quarto = {
 </div>
 </div>
 <p>Now let’s look at things focusing on the <strong>x</strong> axes:</p>
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.ans.x <span class="sc">-</span> data.select.x)) <span class="sc">+</span> </span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.ans.x <span class="sc">-</span> va.select.x)) <span class="sc">+</span> </span>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(RColorBrewer)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.ans.x <span class="sc">-</span> data.select.x)) <span class="sc">+</span> </span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.ans.x <span class="sc">-</span> va.select.x)) <span class="sc">+</span> </span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>() <span class="sc">+</span> </span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>participantId)</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> va.ans.x <span class="sc">-</span> va.select.x, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span> </span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> va.select.x <span class="sc">-</span> va.ans.x, <span class="at">x =</span> param.lambda)) <span class="sc">+</span> </span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.ans.x <span class="sc">-</span> va.select.x)) <span class="sc">+</span> </span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>() <span class="sc">+</span> </span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>participantId)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> va.ans.x <span class="sc">-</span> va.select.x, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span> </span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> va.select.x <span class="sc">-</span> va.ans.x, <span class="at">x =</span> param.lambda)) <span class="sc">+</span> </span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Signed error on x-axes against skewness"</span>)</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> va.select.x <span class="sc">-</span> va.ans.x, <span class="at">x =</span> param.p, <span class="at">color =</span> param.lambda)) <span class="sc">+</span> </span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> </span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Signed error on x-axes against flat-top-ness"</span>) <span class="sc">+</span> </span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_gradient2</span>(</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">low =</span> <span class="fu">brewer.pal</span>(<span class="dv">11</span>, <span class="st">"RdYlBu"</span>)[<span class="dv">1</span>],   <span class="co"># Red for negative</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">mid =</span> <span class="fu">brewer.pal</span>(<span class="dv">11</span>, <span class="st">"RdYlBu"</span>)[<span class="dv">6</span>],   <span class="co"># Yellow for zero</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">high =</span> <span class="fu">brewer.pal</span>(<span class="dv">11</span>, <span class="st">"RdYlBu"</span>)[<span class="dv">11</span>], <span class="co"># Blue for positive</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">midpoint =</span> <span class="dv">0</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell quarto-layout-panel" data-layout-ncol="2">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
@@ -318,6 +331,9 @@ window.Quarto = {
 <div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
 <p><img src="models-task2_files/figure-html/unnamed-chunk-2-5.png" class="img-fluid" width="672"></p>
 </div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="models-task2_files/figure-html/unnamed-chunk-2-6.png" class="img-fluid" width="672"></p>
+</div>
 </div>
 </div>
 <section id="model-1-vis-angle-space" class="level2 page-columns page-full">
@@ -325,15 +341,14 @@ window.Quarto = {
 <p>Let us first try to fit <code>va.ans.x - va.select.x</code> with two different models — normal and laplace.</p>
 <section id="model-1.1-laplace-distribution" class="level3 page-columns page-full">
 <h3 class="anchored" data-anchor-id="model-1.1-laplace-distribution">Model 1.1 — Laplace distribution</h3>
-<p><span class="math display">\[
-\begin{align*}
+<p>$$ <span class="math display">\[\begin{align*}
 \text{error_va}_{i} &amp;\sim \text{Laplace}(\mu_{\text{PID}[i]}, b_{\text{PID}[i]}) \\
-\mu_j &amp;\sim \mathcal{N}(0, 0.25), j \in [13] \\
-b_j &amp;\sim \mathcal{N}(0, 1), j \in [13]
-\end{align*}
-\]</span></p>
+\mu_j &amp;= \alpha_\mu + \mathcal{N}(0, \sigma_\mu^2), j \in [13] \\
+b_j &amp;= \alpha_b + \mathcal{N}(0, \sigma_b^2), j \in [13] \\
+
+\end{align*}\]</span> $$</p>
 <p>Specify formula. There is no native implementation of the Laplace distribution<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>:</p>
-<div class="no-row-height column-margin column-container"><div id="fn1"><p><sup>1</sup>&nbsp;except for the <a href="https://paulbuerkner.com/brms/reference/AsymLaplace.html"><code>asym_laplace</code> function</a>, which doesn’t seem to help. Maybe we’ll need to implement a custom function using <code>stan</code> … </p></div></div><div class="callout callout-style-default callout-note callout-titled">
+<div class="no-row-height column-margin column-container"><div id="fn1"><p><sup>1</sup>&nbsp;except for the <a href="https://paulbuerkner.com/brms/reference/AsymLaplace.html"><code>asym_laplace</code> function</a>, which doesn’t seem to help. Maybe we’ll need to implement a custom function using <code>stan</code> … </p></div></div><div class="callout callout-style-default callout-note callout-titled" data-collapsed="true">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
@@ -380,11 +395,22 @@ Note
 </div>
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define prior </span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="fl">0.5</span>), <span class="at">class =</span> <span class="st">"Intercept"</span>), </span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="fl">0.25</span>), <span class="at">class =</span> <span class="st">"sd"</span>, <span class="at">group =</span> <span class="st">"participantId"</span>), </span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">class =</span> <span class="st">"sigma"</span>)</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="fl">0.5</span>), <span class="at">class =</span> <span class="st">"Intercept"</span>, <span class="at">dpar=</span><span class="st">"mu"</span>), </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>), <span class="at">class =</span> <span class="st">"Intercept"</span>, <span class="at">dpar=</span><span class="st">"sigma"</span>), </span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">cauchy</span>(<span class="dv">0</span>, <span class="fl">0.25</span>), <span class="at">class =</span> <span class="st">"sd"</span>, <span class="at">group =</span> <span class="st">"participantId"</span>, <span class="at">dpar=</span><span class="st">"mu"</span>, <span class="at">lb =</span> <span class="dv">0</span>),</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">cauchy</span>(<span class="dv">0</span>, <span class="fl">0.5</span>), <span class="at">class =</span> <span class="st">"sd"</span>, <span class="at">group =</span> <span class="st">"participantId"</span>, <span class="at">dpar=</span><span class="st">"sigma"</span>, <span class="at">lb =</span> <span class="dv">0</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<div class="callout callout-style-default callout-note callout-titled" data-collapsed="true">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
 <p>What if we use the <code>make_stancode</code> function to see what the corresponding stan code looks like?</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">error_va =</span> va.ans.x <span class="sc">-</span> va.select.x) <span class="sc">%&gt;%</span> </span>
@@ -473,6 +499,8 @@ generated quantities {
 }</code></pre>
 </div>
 </div>
+</div>
+</div>
 <p>Fit the model:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>m1<span class="fl">.1</span> <span class="ot">&lt;-</span> task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">error_va =</span> va.ans.x <span class="sc">-</span> va.select.x) <span class="sc">%&gt;%</span></span>
@@ -493,30 +521,172 @@ generated quantities {
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1<span class="fl">.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> Family: laplace 
-  Links: mu = identity; sigma = identity 
+  Links: mu = identity; sigma = log 
 Formula: error_va ~ 1 + (1 | participantId) 
+         sigma ~ 1 + (1 | participantId)
    Data: . (Number of observations: 130) 
   Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
          total post-warmup draws = 4000
 
 Multilevel Hyperparameters:
 ~participantId (Number of levels: 13) 
-              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-sd(Intercept)     0.03      0.02     0.00     0.08 1.00      934     1810
+                    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)           0.03      0.02     0.00     0.08 1.00     1112     1591
+sd(sigma_Intercept)     0.17      0.12     0.01     0.44 1.00     1319     1060
 
 Regression Coefficients:
-          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-Intercept     0.01      0.02    -0.02     0.05 1.00     2502     1732
-
-Further Distributional Parameters:
-      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-sigma     0.17      0.02     0.14     0.20 1.00     4567     2546
+                Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept           0.01      0.02    -0.02     0.04 1.00     2348     2157
+sigma_Intercept    -1.79      0.10    -1.99    -1.58 1.00     2687     2264
 
 Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
 and Tail_ESS are effective sample size measures, and Rhat is the potential
 scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m1<span class="fl">.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">posterior_summary</span>(m1<span class="fl">.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                                                            Estimate
+b_Intercept                                                              0.009290107
+b_sigma_Intercept                                                       -1.785955202
+sd_participantId__Intercept                                              0.026241116
+sd_participantId__sigma_Intercept                                        0.173495770
+Intercept                                                                0.009290107
+Intercept_sigma                                                         -1.785955202
+r_participantId[0c671e0c-0be6-4ae5-a78e-638e59d43ddd,Intercept]         -0.004558380
+r_participantId[1a39e480-57b1-4bb6-ad31-cf90236fb047,Intercept]         -0.008206242
+r_participantId[214a00cf-a6e2-4c25-866c-804ac4c704f2,Intercept]          0.005313247
+r_participantId[51da084f-6438-4f40-9569-443698b4437e,Intercept]         -0.012594194
+r_participantId[5f37a06e-50e4-4489-948f-c4f25bd38d17,Intercept]         -0.019552853
+r_participantId[758f389c-6a06-4378-9b37-dc4b0a0b3a7d,Intercept]          0.018101979
+r_participantId[7856a1bc-7bae-436a-a91f-a94e3d3f5683,Intercept]         -0.003030238
+r_participantId[85349f2b-c75a-46ff-8f80-fafc92da11a7,Intercept]          0.018660999
+r_participantId[9cadaa1e-bea2-420a-b671-eebf5b7aadfc,Intercept]         -0.011051492
+r_participantId[9f6c940d-bb71-406e-872e-2873b533048f,Intercept]         -0.002754483
+r_participantId[c87f9143-d9e8-4f50-afca-03a0839951fb,Intercept]          0.014047583
+r_participantId[dc2d1f07-3b58-4484-a4b1-3f8308154717,Intercept]         -0.001965746
+r_participantId[f71b9ae5-1fc2-460f-879e-2984ea8df811,Intercept]          0.007297870
+r_participantId__sigma[0c671e0c-0be6-4ae5-a78e-638e59d43ddd,Intercept]  -0.075485412
+r_participantId__sigma[1a39e480-57b1-4bb6-ad31-cf90236fb047,Intercept]  -0.027974376
+r_participantId__sigma[214a00cf-a6e2-4c25-866c-804ac4c704f2,Intercept]  -0.013155971
+r_participantId__sigma[51da084f-6438-4f40-9569-443698b4437e,Intercept]   0.032576615
+r_participantId__sigma[5f37a06e-50e4-4489-948f-c4f25bd38d17,Intercept]   0.142228013
+r_participantId__sigma[758f389c-6a06-4378-9b37-dc4b0a0b3a7d,Intercept]  -0.039856994
+r_participantId__sigma[7856a1bc-7bae-436a-a91f-a94e3d3f5683,Intercept]  -0.072093084
+r_participantId__sigma[85349f2b-c75a-46ff-8f80-fafc92da11a7,Intercept]   0.148023350
+r_participantId__sigma[9cadaa1e-bea2-420a-b671-eebf5b7aadfc,Intercept]  -0.036963860
+r_participantId__sigma[9f6c940d-bb71-406e-872e-2873b533048f,Intercept]  -0.092961626
+r_participantId__sigma[c87f9143-d9e8-4f50-afca-03a0839951fb,Intercept]   0.084710846
+r_participantId__sigma[dc2d1f07-3b58-4484-a4b1-3f8308154717,Intercept]  -0.054689067
+r_participantId__sigma[f71b9ae5-1fc2-460f-879e-2984ea8df811,Intercept]  -0.050539962
+lprior                                                                  -0.448682002
+lp__                                                                   -28.988063812
+                                                                        Est.Error
+b_Intercept                                                            0.01574627
+b_sigma_Intercept                                                      0.10329566
+sd_participantId__Intercept                                            0.02068218
+sd_participantId__sigma_Intercept                                      0.11927741
+Intercept                                                              0.01574627
+Intercept_sigma                                                        0.10329566
+r_participantId[0c671e0c-0be6-4ae5-a78e-638e59d43ddd,Intercept]        0.02496066
+r_participantId[1a39e480-57b1-4bb6-ad31-cf90236fb047,Intercept]        0.02712685
+r_participantId[214a00cf-a6e2-4c25-866c-804ac4c704f2,Intercept]        0.02483099
+r_participantId[51da084f-6438-4f40-9569-443698b4437e,Intercept]        0.02481450
+r_participantId[5f37a06e-50e4-4489-948f-c4f25bd38d17,Intercept]        0.03214020
+r_participantId[758f389c-6a06-4378-9b37-dc4b0a0b3a7d,Intercept]        0.02908971
+r_participantId[7856a1bc-7bae-436a-a91f-a94e3d3f5683,Intercept]        0.02368357
+r_participantId[85349f2b-c75a-46ff-8f80-fafc92da11a7,Intercept]        0.03541931
+r_participantId[9cadaa1e-bea2-420a-b671-eebf5b7aadfc,Intercept]        0.02617980
+r_participantId[9f6c940d-bb71-406e-872e-2873b533048f,Intercept]        0.02211705
+r_participantId[c87f9143-d9e8-4f50-afca-03a0839951fb,Intercept]        0.02975726
+r_participantId[dc2d1f07-3b58-4484-a4b1-3f8308154717,Intercept]        0.02358295
+r_participantId[f71b9ae5-1fc2-460f-879e-2984ea8df811,Intercept]        0.02462027
+r_participantId__sigma[0c671e0c-0be6-4ae5-a78e-638e59d43ddd,Intercept] 0.17442426
+r_participantId__sigma[1a39e480-57b1-4bb6-ad31-cf90236fb047,Intercept] 0.16041242
+r_participantId__sigma[214a00cf-a6e2-4c25-866c-804ac4c704f2,Intercept] 0.15926751
+r_participantId__sigma[51da084f-6438-4f40-9569-443698b4437e,Intercept] 0.15961011
+r_participantId__sigma[5f37a06e-50e4-4489-948f-c4f25bd38d17,Intercept] 0.18987217
+r_participantId__sigma[758f389c-6a06-4378-9b37-dc4b0a0b3a7d,Intercept] 0.16696304
+r_participantId__sigma[7856a1bc-7bae-436a-a91f-a94e3d3f5683,Intercept] 0.17577617
+r_participantId__sigma[85349f2b-c75a-46ff-8f80-fafc92da11a7,Intercept] 0.19259053
+r_participantId__sigma[9cadaa1e-bea2-420a-b671-eebf5b7aadfc,Intercept] 0.16732139
+r_participantId__sigma[9f6c940d-bb71-406e-872e-2873b533048f,Intercept] 0.18660176
+r_participantId__sigma[c87f9143-d9e8-4f50-afca-03a0839951fb,Intercept] 0.16685333
+r_participantId__sigma[dc2d1f07-3b58-4484-a4b1-3f8308154717,Intercept] 0.17160813
+r_participantId__sigma[f71b9ae5-1fc2-460f-879e-2984ea8df811,Intercept] 0.16618131
+lprior                                                                 0.18728828
+lp__                                                                   4.92432799
+                                                                                Q2.5
+b_Intercept                                                            -2.049553e-02
+b_sigma_Intercept                                                      -1.986095e+00
+sd_participantId__Intercept                                             9.690583e-04
+sd_participantId__sigma_Intercept                                       7.766620e-03
+Intercept                                                              -2.049553e-02
+Intercept_sigma                                                        -1.986095e+00
+r_participantId[0c671e0c-0be6-4ae5-a78e-638e59d43ddd,Intercept]        -6.392484e-02
+r_participantId[1a39e480-57b1-4bb6-ad31-cf90236fb047,Intercept]        -7.447020e-02
+r_participantId[214a00cf-a6e2-4c25-866c-804ac4c704f2,Intercept]        -4.133966e-02
+r_participantId[51da084f-6438-4f40-9569-443698b4437e,Intercept]        -7.467721e-02
+r_participantId[5f37a06e-50e4-4489-948f-c4f25bd38d17,Intercept]        -1.037661e-01
+r_participantId[758f389c-6a06-4378-9b37-dc4b0a0b3a7d,Intercept]        -2.262131e-02
+r_participantId[7856a1bc-7bae-436a-a91f-a94e3d3f5683,Intercept]        -5.769097e-02
+r_participantId[85349f2b-c75a-46ff-8f80-fafc92da11a7,Intercept]        -2.979136e-02
+r_participantId[9cadaa1e-bea2-420a-b671-eebf5b7aadfc,Intercept]        -7.700082e-02
+r_participantId[9f6c940d-bb71-406e-872e-2873b533048f,Intercept]        -5.177527e-02
+r_participantId[c87f9143-d9e8-4f50-afca-03a0839951fb,Intercept]        -3.098344e-02
+r_participantId[dc2d1f07-3b58-4484-a4b1-3f8308154717,Intercept]        -5.323485e-02
+r_participantId[f71b9ae5-1fc2-460f-879e-2984ea8df811,Intercept]        -3.827324e-02
+r_participantId__sigma[0c671e0c-0be6-4ae5-a78e-638e59d43ddd,Intercept] -4.978825e-01
+r_participantId__sigma[1a39e480-57b1-4bb6-ad31-cf90236fb047,Intercept] -3.948549e-01
+r_participantId__sigma[214a00cf-a6e2-4c25-866c-804ac4c704f2,Intercept] -3.600984e-01
+r_participantId__sigma[51da084f-6438-4f40-9569-443698b4437e,Intercept] -2.659987e-01
+r_participantId__sigma[5f37a06e-50e4-4489-948f-c4f25bd38d17,Intercept] -1.133330e-01
+r_participantId__sigma[758f389c-6a06-4378-9b37-dc4b0a0b3a7d,Intercept] -4.247173e-01
+r_participantId__sigma[7856a1bc-7bae-436a-a91f-a94e3d3f5683,Intercept] -5.000682e-01
+r_participantId__sigma[85349f2b-c75a-46ff-8f80-fafc92da11a7,Intercept] -1.082147e-01
+r_participantId__sigma[9cadaa1e-bea2-420a-b671-eebf5b7aadfc,Intercept] -4.224916e-01
+r_participantId__sigma[9f6c940d-bb71-406e-872e-2873b533048f,Intercept] -5.444046e-01
+r_participantId__sigma[c87f9143-d9e8-4f50-afca-03a0839951fb,Intercept] -1.803684e-01
+r_participantId__sigma[dc2d1f07-3b58-4484-a4b1-3f8308154717,Intercept] -4.626893e-01
+r_participantId__sigma[f71b9ae5-1fc2-460f-879e-2984ea8df811,Intercept] -4.295147e-01
+lprior                                                                 -9.223776e-01
+lp__                                                                   -3.928340e+01
+                                                                              Q97.5
+b_Intercept                                                              0.04254726
+b_sigma_Intercept                                                       -1.57704658
+sd_participantId__Intercept                                              0.07567027
+sd_participantId__sigma_Intercept                                        0.43827459
+Intercept                                                                0.04254726
+Intercept_sigma                                                         -1.57704658
+r_participantId[0c671e0c-0be6-4ae5-a78e-638e59d43ddd,Intercept]          0.04215636
+r_participantId[1a39e480-57b1-4bb6-ad31-cf90236fb047,Intercept]          0.04189500
+r_participantId[214a00cf-a6e2-4c25-866c-804ac4c704f2,Intercept]          0.06519823
+r_participantId[51da084f-6438-4f40-9569-443698b4437e,Intercept]          0.02594474
+r_participantId[5f37a06e-50e4-4489-948f-c4f25bd38d17,Intercept]          0.02214868
+r_participantId[758f389c-6a06-4378-9b37-dc4b0a0b3a7d,Intercept]          0.09103543
+r_participantId[7856a1bc-7bae-436a-a91f-a94e3d3f5683,Intercept]          0.04402728
+r_participantId[85349f2b-c75a-46ff-8f80-fafc92da11a7,Intercept]          0.10970254
+r_participantId[9cadaa1e-bea2-420a-b671-eebf5b7aadfc,Intercept]          0.03407326
+r_participantId[9f6c940d-bb71-406e-872e-2873b533048f,Intercept]          0.04329850
+r_participantId[c87f9143-d9e8-4f50-afca-03a0839951fb,Intercept]          0.08962385
+r_participantId[dc2d1f07-3b58-4484-a4b1-3f8308154717,Intercept]          0.04768726
+r_participantId[f71b9ae5-1fc2-460f-879e-2984ea8df811,Intercept]          0.06607717
+r_participantId__sigma[0c671e0c-0be6-4ae5-a78e-638e59d43ddd,Intercept]   0.23232926
+r_participantId__sigma[1a39e480-57b1-4bb6-ad31-cf90236fb047,Intercept]   0.29551264
+r_participantId__sigma[214a00cf-a6e2-4c25-866c-804ac4c704f2,Intercept]   0.32004118
+r_participantId__sigma[51da084f-6438-4f40-9569-443698b4437e,Intercept]   0.41606495
+r_participantId__sigma[5f37a06e-50e4-4489-948f-c4f25bd38d17,Intercept]   0.60346277
+r_participantId__sigma[758f389c-6a06-4378-9b37-dc4b0a0b3a7d,Intercept]   0.29436317
+r_participantId__sigma[7856a1bc-7bae-436a-a91f-a94e3d3f5683,Intercept]   0.23305067
+r_participantId__sigma[85349f2b-c75a-46ff-8f80-fafc92da11a7,Intercept]   0.61280798
+r_participantId__sigma[9cadaa1e-bea2-420a-b671-eebf5b7aadfc,Intercept]   0.29544471
+r_participantId__sigma[9f6c940d-bb71-406e-872e-2873b533048f,Intercept]   0.21573820
+r_participantId__sigma[c87f9143-d9e8-4f50-afca-03a0839951fb,Intercept]   0.50338169
+r_participantId__sigma[dc2d1f07-3b58-4484-a4b1-3f8308154717,Intercept]   0.25820097
+r_participantId__sigma[f71b9ae5-1fc2-460f-879e-2984ea8df811,Intercept]   0.26543509
+lprior                                                                  -0.20912267
+lp__                                                                   -20.22060916</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m1<span class="fl">.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -525,36 +695,153 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 </div>
 </div>
 </div>
-<p>We also need to define our own custom function for posterior predictive checks — NOTE that the following does not run …</p>
+<p>Let’s compare this to, e.g., the model where we’re assuming that everythign is fixed:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define a random number generator for Laplace distribution</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>laplace_rng <span class="ot">&lt;-</span> <span class="cf">function</span>(mu, sigma) {</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Generate from Laplace distribution using uniform transformation</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  u <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="fu">length</span>(mu)) <span class="sc">-</span> <span class="fl">0.5</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  mu <span class="sc">+</span> sigma <span class="sc">*</span> <span class="fu">sign</span>(u) <span class="sc">*</span> (<span class="sc">-</span><span class="fu">log</span>(<span class="dv">1</span> <span class="sc">-</span> <span class="dv">2</span> <span class="sc">*</span> <span class="fu">abs</span>(u)))</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the posterior predict function for our custom family</span></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>posterior_predict_laplace <span class="ot">&lt;-</span> <span class="cf">function</span>(i, prep, ...) {</span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  mu <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">get_dpar</span>(prep, <span class="st">"mu"</span>, <span class="at">i =</span> i)</span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>  sigma <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">get_dpar</span>(prep, <span class="st">"sigma"</span>, <span class="at">i =</span> i)</span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">laplace_rng</span>(mu, sigma)</span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Make this function available globally</span></span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="fu">assign</span>(<span class="st">"posterior_predict_laplace"</span>, posterior_predict_laplace, <span class="at">envir =</span> .GlobalEnv)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(m1<span class="fl">.1</span>, <span class="at">ndraws =</span> <span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># get_variables(m1.1)</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co"># extract posterior sampels </span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>posterior <span class="ot">&lt;-</span> m1<span class="fl">.1</span> <span class="sc">%&gt;%</span> <span class="fu">spread_draws</span>(b_Intercept, sd_participantId__Intercept, r_participantId[PID, term], </span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>                      b_sigma_Intercept, sd_participantId__sigma_Intercept, r_participantId__sigma[PID, term]) <span class="sc">%&gt;%</span> </span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"Intercept"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">sigma_global =</span> <span class="fu">exp</span>(b_sigma_Intercept), </span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">participant_mean =</span> b_Intercept <span class="sc">+</span> r_participantId, </span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>         <span class="at">sigma_participant =</span> <span class="fu">exp</span>(b_sigma_Intercept <span class="sc">+</span> r_participantId__sigma)) </span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>posterior <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> PID)) <span class="sc">+</span> </span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>(<span class="fu">aes</span>(<span class="at">x =</span> participant_mean), <span class="at">.width =</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.95</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="models-task2_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="models-task2_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>posterior <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> PID)) <span class="sc">+</span> </span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>(<span class="fu">aes</span>(<span class="at">x =</span> sigma_participant))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="models-task2_files/figure-html/unnamed-chunk-7-2.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
-<p>Compare to the later fit, this fit is much better …</p>
+<p>Define custom functions for posterior predictive check:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define a random number generator for Laplace distribution</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>laplace_rng <span class="ot">&lt;-</span> <span class="cf">function</span>(mu, sigma) {</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Generate from Laplace distribution using uniform transformation</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  u <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="fu">length</span>(mu)) <span class="sc">-</span> <span class="fl">0.5</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  mu <span class="sc">+</span> sigma <span class="sc">*</span> <span class="fu">sign</span>(u) <span class="sc">*</span> (<span class="sc">-</span><span class="fu">log</span>(<span class="dv">1</span> <span class="sc">-</span> <span class="dv">2</span> <span class="sc">*</span> <span class="fu">abs</span>(u)))</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the posterior predict function for our custom family</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>posterior_predict_laplace <span class="ot">&lt;-</span> <span class="cf">function</span>(i, prep, ...) {</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>  mu <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">get_dpar</span>(prep, <span class="st">"mu"</span>, <span class="at">i =</span> i)</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>  sigma <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">get_dpar</span>(prep, <span class="st">"sigma"</span>, <span class="at">i =</span> i)</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">laplace_rng</span>(mu, sigma)</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(m1<span class="fl">.1</span>, <span class="at">ndraws =</span> <span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="models-task2_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li>This posterior predictive check is reminding me that it could also be drawn from a Cauchy …</li>
+</ul>
+</section>
+<section id="model-2.3-cauchy" class="level3">
+<h3 class="anchored" data-anchor-id="model-2.3-cauchy">Model 2.3 — Cauchy</h3>
+<p>Note that a cauchy distribution is a student t distribution with degrees of freedom, <code>nu</code>, fixed to be 1.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="fu">bf</span>(error_va <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> participantId),</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>        sigma <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> participantId), </span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>        <span class="at">family =</span> <span class="fu">student</span>())</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="co"># get prior</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">error_va =</span> va.select.x <span class="sc">-</span> va.ans.x) <span class="sc">%&gt;%</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="fu">get_prior</span>(<span class="at">formula =</span> f,</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> .)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["prior"],"name":[1],"type":["chr"],"align":["left"]},{"label":["class"],"name":[2],"type":["chr"],"align":["left"]},{"label":["coef"],"name":[3],"type":["chr"],"align":["left"]},{"label":["group"],"name":[4],"type":["chr"],"align":["left"]},{"label":["resp"],"name":[5],"type":["chr"],"align":["left"]},{"label":["dpar"],"name":[6],"type":["chr"],"align":["left"]},{"label":["nlpar"],"name":[7],"type":["chr"],"align":["left"]},{"label":["lb"],"name":[8],"type":["chr"],"align":["left"]},{"label":["ub"],"name":[9],"type":["chr"],"align":["left"]},{"label":["source"],"name":[10],"type":["chr"],"align":["left"]}],"data":[{"1":"student_t(3, 0, 2.5)","2":"Intercept","3":"","4":"","5":"","6":"","7":"","8":"","9":"","10":"default"},{"1":"gamma(2, 0.1)","2":"nu","3":"","4":"","5":"","6":"","7":"","8":"1","9":"","10":"default"},{"1":"student_t(3, 0, 2.5)","2":"sd","3":"","4":"","5":"","6":"","7":"","8":"0","9":"","10":"default"},{"1":"","2":"sd","3":"","4":"participantId","5":"","6":"","7":"","8":"","9":"","10":"default"},{"1":"","2":"sd","3":"Intercept","4":"participantId","5":"","6":"","7":"","8":"","9":"","10":"default"},{"1":"student_t(3, 0, 2.5)","2":"Intercept","3":"","4":"","5":"","6":"sigma","7":"","8":"","9":"","10":"default"},{"1":"student_t(3, 0, 2.5)","2":"sd","3":"","4":"","5":"","6":"sigma","7":"","8":"0","9":"","10":"default"},{"1":"","2":"sd","3":"","4":"participantId","5":"","6":"sigma","7":"","8":"","9":"","10":"default"},{"1":"","2":"sd","3":"Intercept","4":"participantId","5":"","6":"sigma","7":"","8":"","9":"","10":"default"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># constant prior for nu to make it cauchy </span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">constant</span>(<span class="dv">1</span>), <span class="at">class =</span> <span class="st">"nu"</span>)</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Fit the model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>m1<span class="fl">.3</span> <span class="ot">&lt;-</span> task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">error_va =</span> va.ans.x <span class="sc">-</span> va.select.x) <span class="sc">%&gt;%</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">brm</span>(</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">formula =</span> f, </span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">prior =</span> p, </span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> ., </span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">chains =</span> <span class="dv">4</span>, </span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># cores = 4, </span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># control = list(adapt_delta = 0.95), </span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">file =</span> <span class="st">"models/task2-m1.3"</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Check the fitted results:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1<span class="fl">.3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> Family: student 
+  Links: mu = identity; sigma = log; nu = identity 
+Formula: error_va ~ 1 + (1 | participantId) 
+         sigma ~ 1 + (1 | participantId)
+   Data: . (Number of observations: 130) 
+  Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
+         total post-warmup draws = 4000
+
+Multilevel Hyperparameters:
+~participantId (Number of levels: 13) 
+                    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)           0.03      0.02     0.00     0.07 1.00     1081     1424
+sd(sigma_Intercept)     0.18      0.15     0.00     0.53 1.00     1540     1258
+
+Regression Coefficients:
+                Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept           0.01      0.01    -0.02     0.04 1.00     2507     2254
+sigma_Intercept    -2.45      0.15    -2.74    -2.15 1.00     3090     2659
+
+Further Distributional Parameters:
+   Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+nu     1.00      0.00     1.00     1.00   NA       NA       NA
+
+Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m1<span class="fl">.3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="models-task2_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(m1<span class="fl">.3</span>, <span class="at">ndraws =</span> <span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="models-task2_files/figure-html/unnamed-chunk-12-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
 </section>
 <section id="model-2.2-normal" class="level3">
 <h3 class="anchored" data-anchor-id="model-2.2-normal">Model 2.2 — Normal</h3>
@@ -568,83 +855,85 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 \]</span></p>
 <p>The corresponding <code>brms</code> formula would be as follows:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>f2 <span class="ot">&lt;-</span> <span class="fu">bf</span>(error_va <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> participantId),</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>        <span class="at">family =</span> <span class="fu">gaussian</span>())</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co"># get prior</span></span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">error_va =</span> va.select.x <span class="sc">-</span> va.ans.x) <span class="sc">%&gt;%</span></span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="fu">get_prior</span>(<span class="at">formula =</span> f2,</span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> .)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>f2 <span class="ot">&lt;-</span> <span class="fu">bf</span>(error_va <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> participantId),</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>         sigma <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> participantId),</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>        <span class="at">family =</span> <span class="fu">gaussian</span>())</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="co"># get prior</span></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">error_va =</span> va.select.x <span class="sc">-</span> va.ans.x) <span class="sc">%&gt;%</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a><span class="fu">get_prior</span>(<span class="at">formula =</span> f2,</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> .)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
-{"columns":[{"label":["prior"],"name":[1],"type":["chr"],"align":["left"]},{"label":["class"],"name":[2],"type":["chr"],"align":["left"]},{"label":["coef"],"name":[3],"type":["chr"],"align":["left"]},{"label":["group"],"name":[4],"type":["chr"],"align":["left"]},{"label":["resp"],"name":[5],"type":["chr"],"align":["left"]},{"label":["dpar"],"name":[6],"type":["chr"],"align":["left"]},{"label":["nlpar"],"name":[7],"type":["chr"],"align":["left"]},{"label":["lb"],"name":[8],"type":["chr"],"align":["left"]},{"label":["ub"],"name":[9],"type":["chr"],"align":["left"]},{"label":["source"],"name":[10],"type":["chr"],"align":["left"]}],"data":[{"1":"student_t(3, 0, 2.5)","2":"Intercept","3":"","4":"","5":"","6":"","7":"","8":"","9":"","10":"default"},{"1":"student_t(3, 0, 2.5)","2":"sd","3":"","4":"","5":"","6":"","7":"","8":"0","9":"","10":"default"},{"1":"","2":"sd","3":"","4":"participantId","5":"","6":"","7":"","8":"","9":"","10":"default"},{"1":"","2":"sd","3":"Intercept","4":"participantId","5":"","6":"","7":"","8":"","9":"","10":"default"},{"1":"student_t(3, 0, 2.5)","2":"sigma","3":"","4":"","5":"","6":"","7":"","8":"0","9":"","10":"default"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":["prior"],"name":[1],"type":["chr"],"align":["left"]},{"label":["class"],"name":[2],"type":["chr"],"align":["left"]},{"label":["coef"],"name":[3],"type":["chr"],"align":["left"]},{"label":["group"],"name":[4],"type":["chr"],"align":["left"]},{"label":["resp"],"name":[5],"type":["chr"],"align":["left"]},{"label":["dpar"],"name":[6],"type":["chr"],"align":["left"]},{"label":["nlpar"],"name":[7],"type":["chr"],"align":["left"]},{"label":["lb"],"name":[8],"type":["chr"],"align":["left"]},{"label":["ub"],"name":[9],"type":["chr"],"align":["left"]},{"label":["source"],"name":[10],"type":["chr"],"align":["left"]}],"data":[{"1":"student_t(3, 0, 2.5)","2":"Intercept","3":"","4":"","5":"","6":"","7":"","8":"","9":"","10":"default"},{"1":"student_t(3, 0, 2.5)","2":"sd","3":"","4":"","5":"","6":"","7":"","8":"0","9":"","10":"default"},{"1":"","2":"sd","3":"","4":"participantId","5":"","6":"","7":"","8":"","9":"","10":"default"},{"1":"","2":"sd","3":"Intercept","4":"participantId","5":"","6":"","7":"","8":"","9":"","10":"default"},{"1":"student_t(3, 0, 2.5)","2":"Intercept","3":"","4":"","5":"","6":"sigma","7":"","8":"","9":"","10":"default"},{"1":"student_t(3, 0, 2.5)","2":"sd","3":"","4":"","5":"","6":"sigma","7":"","8":"0","9":"","10":"default"},{"1":"","2":"sd","3":"","4":"participantId","5":"","6":"sigma","7":"","8":"","9":"","10":"default"},{"1":"","2":"sd","3":"Intercept","4":"participantId","5":"","6":"sigma","7":"","8":"","9":"","10":"default"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 </div>
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="fl">0.5</span>), <span class="at">class =</span> <span class="st">"Intercept"</span>), </span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="fl">0.25</span>), <span class="at">class =</span> <span class="st">"sd"</span>, <span class="at">group =</span> <span class="st">"participantId"</span>), </span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">class =</span> <span class="st">"sigma"</span>)</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define prior </span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="fl">0.5</span>), <span class="at">class =</span> <span class="st">"Intercept"</span>, <span class="at">dpar=</span><span class="st">"mu"</span>), </span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>), <span class="at">class =</span> <span class="st">"Intercept"</span>, <span class="at">dpar=</span><span class="st">"sigma"</span>), </span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">cauchy</span>(<span class="dv">0</span>, <span class="fl">0.25</span>), <span class="at">class =</span> <span class="st">"sd"</span>, <span class="at">group =</span> <span class="st">"participantId"</span>, <span class="at">dpar=</span><span class="st">"mu"</span>, <span class="at">lb =</span> <span class="dv">0</span>),</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">cauchy</span>(<span class="dv">0</span>, <span class="fl">0.5</span>), <span class="at">class =</span> <span class="st">"sd"</span>, <span class="at">group =</span> <span class="st">"participantId"</span>, <span class="at">dpar=</span><span class="st">"sigma"</span>, <span class="at">lb =</span> <span class="dv">0</span>)</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Let’s fit the model:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>m1<span class="fl">.2</span> <span class="ot">&lt;-</span> task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">error_va =</span> va.ans.x <span class="sc">-</span> va.select.x) <span class="sc">%&gt;%</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">brm</span>(</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">formula =</span> f2,</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> .,</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">prior =</span> p,</span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.95</span>), <span class="co"># note this is higher than 0.95</span></span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">chains =</span> <span class="dv">4</span>,</span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">iter =</span> <span class="dv">8000</span>, <span class="co"># more iterations</span></span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="co"># higher than usual</span></span>
-<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">file=</span><span class="st">"models/task2-m1.2"</span>,</span>
-<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">save_pars =</span> <span class="fu">save_pars</span>(<span class="at">all=</span><span class="cn">TRUE</span>)</span>
-<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>m1<span class="fl">.2</span> <span class="ot">&lt;-</span> task2_df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">error_va =</span> va.ans.x <span class="sc">-</span> va.select.x) <span class="sc">%&gt;%</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">brm</span>(</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">formula =</span> f2,</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> .,</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">prior =</span> p,</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># control = list(adapt_delta = 0.95), # note this is higher than 0.95</span></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">chains =</span> <span class="dv">4</span>,</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># iter = 8000, # more iterations</span></span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># warmup = 2000, # higher than usual</span></span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">file=</span><span class="st">"models/task2-m1.2"</span>,</span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">save_pars =</span> <span class="fu">save_pars</span>(<span class="at">all=</span><span class="cn">TRUE</span>)</span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Let’s see some fitted results:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1<span class="fl">.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1<span class="fl">.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> Family: gaussian 
-  Links: mu = identity; sigma = identity 
+  Links: mu = identity; sigma = log 
 Formula: error_va ~ 1 + (1 | participantId) 
+         sigma ~ 1 + (1 | participantId)
    Data: . (Number of observations: 130) 
-  Draws: 4 chains, each with iter = 8000; warmup = 2000; thin = 1;
-         total post-warmup draws = 24000
+  Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
+         total post-warmup draws = 4000
 
 Multilevel Hyperparameters:
 ~participantId (Number of levels: 13) 
-              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-sd(Intercept)     0.10      0.04     0.03     0.19 1.00     6601     6686
+                    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)           0.07      0.04     0.00     0.16 1.00      828     1348
+sd(sigma_Intercept)     0.24      0.11     0.02     0.49 1.00      691      472
 
 Regression Coefficients:
-          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-Intercept     0.01      0.04    -0.06     0.09 1.00    10318    12162
-
-Further Distributional Parameters:
-      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-sigma     0.25      0.02     0.22     0.29 1.00    19024    17436
+                Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept           0.01      0.03    -0.05     0.08 1.00     1847     2070
+sigma_Intercept    -1.41      0.10    -1.60    -1.21 1.00     2282     2443
 
 Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
 and Tail_ESS are effective sample size measures, and Rhat is the potential
 scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m1<span class="fl">.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m1<span class="fl">.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="models-task2_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="models-task2_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># posterior predictive check</span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(m1<span class="fl">.2</span>, <span class="at">ndraws =</span> <span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># posterior predictive check</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(m1<span class="fl">.2</span>, <span class="at">ndraws =</span> <span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="models-task2_files/figure-html/unnamed-chunk-9-2.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="models-task2_files/figure-html/unnamed-chunk-13-2.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -655,54 +944,101 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <h3 class="anchored" data-anchor-id="loo-comparisons">LOO comparisons</h3>
 <p>We can also perform loo comparison between <code>m1.1</code> and <code>m1.2</code>:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">expose_functions</span>(m1<span class="fl">.1</span>, <span class="at">vectorize =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Define log-likelihood function for Laplace distribution</span></span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>laplace_lpdf <span class="ot">&lt;-</span> <span class="cf">function</span>(y, mu, sigma) {</span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>  <span class="sc">-</span><span class="fu">log</span>(<span class="dv">2</span> <span class="sc">*</span> sigma) <span class="sc">-</span> <span class="fu">abs</span>(y <span class="sc">-</span> mu) <span class="sc">/</span> sigma</span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Define log-likelihood function for brms</span></span>
-<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>log_lik_laplace <span class="ot">&lt;-</span> <span class="cf">function</span>(i, prep) {</span>
-<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>  mu <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">get_dpar</span>(prep, <span class="st">"mu"</span>, <span class="at">i =</span> i)</span>
-<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>  sigma <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">get_dpar</span>(prep, <span class="st">"sigma"</span>, <span class="at">i =</span> i)</span>
-<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> prep<span class="sc">$</span>data<span class="sc">$</span>Y[i]</span>
-<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">laplace_lpdf</span>(y, mu, sigma)</span>
-<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Make this function available globally</span></span>
-<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a><span class="fu">assign</span>(<span class="st">"log_lik_laplace"</span>, log_lik_laplace, <span class="at">envir =</span> .GlobalEnv)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">expose_functions</span>(m1<span class="fl">.1</span>, <span class="at">vectorize =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Trying to compile a simple C file</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Running /Library/Frameworks/R.framework/Resources/bin/R CMD SHLIB foo.c
+using C compiler: ‘Apple clang version 16.0.0 (clang-1600.0.26.6)’
+using SDK: ‘’
+clang -arch arm64 -I"/Library/Frameworks/R.framework/Resources/include" -DNDEBUG   -I"/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/Rcpp/include/"  -I"/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/RcppEigen/include/"  -I"/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/RcppEigen/include/unsupported"  -I"/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/BH/include" -I"/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/StanHeaders/include/src/"  -I"/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/StanHeaders/include/"  -I"/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/RcppParallel/include/"  -I"/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/rstan/include" -DEIGEN_NO_DEBUG  -DBOOST_DISABLE_ASSERTS  -DBOOST_PENDING_INTEGER_LOG2_HPP  -DSTAN_THREADS  -DUSE_STANC3 -DSTRICT_R_HEADERS  -DBOOST_PHOENIX_NO_VARIADIC_EXPRESSION  -D_HAS_AUTO_PTR_ETC=0  -include '/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/StanHeaders/include/stan/math/prim/fun/Eigen.hpp'  -D_REENTRANT -DRCPP_PARALLEL_USE_TBB=1   -I/opt/R/arm64/include    -fPIC  -falign-functions=64 -Wall -g -O2  -c foo.c -o foo.o
+In file included from &lt;built-in&gt;:1:
+In file included from /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/StanHeaders/include/stan/math/prim/fun/Eigen.hpp:22:
+In file included from /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/RcppEigen/include/Eigen/Dense:1:
+In file included from /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/RcppEigen/include/Eigen/Core:19:
+/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/RcppEigen/include/Eigen/src/Core/util/Macros.h:679:10: fatal error: 'cmath' file not found
+  679 | #include &lt;cmath&gt;
+      |          ^~~~~~~
+1 error generated.
+make: *** [foo.o] Error 1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define log-likelihood function for Laplace distribution</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>laplace_lpdf <span class="ot">&lt;-</span> <span class="cf">function</span>(y, mu, sigma) {</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>  <span class="sc">-</span><span class="fu">log</span>(<span class="dv">2</span> <span class="sc">*</span> sigma) <span class="sc">-</span> <span class="fu">abs</span>(y <span class="sc">-</span> mu) <span class="sc">/</span> sigma</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Define log-likelihood function for brms</span></span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>log_lik_laplace <span class="ot">&lt;-</span> <span class="cf">function</span>(i, prep) {</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>  mu <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">get_dpar</span>(prep, <span class="st">"mu"</span>, <span class="at">i =</span> i)</span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>  sigma <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">get_dpar</span>(prep, <span class="st">"sigma"</span>, <span class="at">i =</span> i)</span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> prep<span class="sc">$</span>data<span class="sc">$</span>Y[i]</span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">laplace_lpdf</span>(y, mu, sigma)</span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Alright let’s do the actual comparison:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">loo</span>(m1<span class="fl">.1</span>, m1<span class="fl">.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">loo</span>(m1<span class="fl">.1</span>, m1<span class="fl">.2</span>, m1<span class="fl">.3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Found 1 observations with a pareto_k &gt; 0.7 in model 'm1.1'. We
+recommend to set 'moment_match = TRUE' in order to perform moment matching for
+problematic observations.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Found 3 observations with a pareto_k &gt; 0.7 in model 'm1.2'. We
+recommend to set 'moment_match = TRUE' in order to perform moment matching for
+problematic observations.</code></pre>
+</div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Output of model 'm1.1':
 
 Computed from 4000 by 130 log-likelihood matrix.
 
          Estimate   SE
-elpd_loo      9.7 13.6
-p_loo         5.2  0.4
-looic       -19.4 27.1
+elpd_loo      8.8 13.7
+p_loo         9.2  1.1
+looic       -17.6 27.4
 ------
-MCSE of elpd_loo is 0.0.
-MCSE and ESS estimates assume MCMC draws (r_eff in [0.5, 1.3]).
+MCSE of elpd_loo is NA.
+MCSE and ESS estimates assume MCMC draws (r_eff in [0.4, 1.2]).
 
-All Pareto k estimates are good (k &lt; 0.7).
+Pareto k diagnostic values:
+                         Count Pct.    Min. ESS
+(-Inf, 0.7]   (good)     129   99.2%   896     
+   (0.7, 1]   (bad)        1    0.8%   &lt;NA&gt;    
+   (1, Inf)   (very bad)   0    0.0%   &lt;NA&gt;    
 See help('pareto-k-diagnostic') for details.
 
 Output of model 'm1.2':
 
-Computed from 24000 by 130 log-likelihood matrix.
+Computed from 4000 by 130 log-likelihood matrix.
 
          Estimate   SE
-elpd_loo     -9.3 12.1
-p_loo        10.8  2.1
-looic        18.7 24.2
+elpd_loo    -12.5 13.4
+p_loo        20.2  4.2
+looic        25.0 26.8
 ------
-MCSE of elpd_loo is 0.0.
-MCSE and ESS estimates assume MCMC draws (r_eff in [0.4, 1.7]).
+MCSE of elpd_loo is NA.
+MCSE and ESS estimates assume MCMC draws (r_eff in [0.3, 1.4]).
+
+Pareto k diagnostic values:
+                         Count Pct.    Min. ESS
+(-Inf, 0.7]   (good)     127   97.7%   82      
+   (0.7, 1]   (bad)        2    1.5%   &lt;NA&gt;    
+   (1, Inf)   (very bad)   1    0.8%   &lt;NA&gt;    
+See help('pareto-k-diagnostic') for details.
+
+Output of model 'm1.3':
+
+Computed from 4000 by 130 log-likelihood matrix.
+
+         Estimate   SE
+elpd_loo      7.1 14.6
+p_loo         9.4  0.2
+looic       -14.1 29.2
+------
+MCSE of elpd_loo is 0.1.
+MCSE and ESS estimates assume MCMC draws (r_eff in [0.5, 1.3]).
 
 All Pareto k estimates are good (k &lt; 0.7).
 See help('pareto-k-diagnostic') for details.
@@ -710,7 +1046,8 @@ See help('pareto-k-diagnostic') for details.
 Model comparisons:
      elpd_diff se_diff
 m1.1   0.0       0.0  
-m1.2 -19.0       4.7  </code></pre>
+m1.3  -1.7       3.4  
+m1.2 -21.3       4.6  </code></pre>
 </div>
 </div>
 <p>From the <code>pp_check</code>s and the loo comparison it is clear that the Laplace distribution (aka Double Exponential) distribution fits the model better.</p>
