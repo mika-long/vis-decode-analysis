@@ -43,8 +43,8 @@ transformed parameters {
   vector<lower=0>[J] sigma_med = exp(log_sigma_med); 
   vector<lower=0>[J] sigma_mod = exp(log_sigma_mod); 
 
-  // Theta related 
-  vector[N] med_mod_dist = abs(x_med - x_mod); 
+  // theta related 
+  vector[N] med_mod_dist = x_med - x_mod; 
   vector<lower=0, upper=1>[N] theta; 
   for (i in 1:N) {
     real logit_theta_i = beta_0 + beta_dist * med_mod_dist[i] + z_theta[PID[i]] * sqrt(var_theta); 

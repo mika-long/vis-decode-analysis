@@ -512,6 +512,10 @@ This just tell us on average participants overwhelmingly select the median opera
 
 # Stan code --- Laplace distribution + lambda varies with |med - mod| 
 
+The generative model for `theta` is defined as 
+$$\text{logit}(\theta_i) = \beta_0 + \beta_{\text{dist}} \cdot |x^{med}_i - x^{mod}_i| + z^\theta_{PID[i]} \cdot \sqrt{\text{var_theta}}$$
+
+
 Read in stan code: 
 
 ```{r}
@@ -542,7 +546,12 @@ fit$save_object(file = "mix_models/m6.rds")
 Let's look at the fitted results: 
 
 ```{r}
+summary <- fit$summary()
 
+summary %>% filter(str_detect(variable, "^theta")) %>% 
+  ggplot(aes(y = variable)) + 
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
+  geom_point(aes(x = median))
 ```
 
 
