@@ -135,7 +135,7 @@ task2_df <- task_df %>% filter(task == "task2") %>%
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
 
-Some preliminary checks of relations: 
+Some preliminary checks of relations, focusing on the **y** axes: 
 
 ```{r}
 #| layout-ncol: 2
@@ -149,339 +149,420 @@ task2_df %>% ggplot(aes(y = va.ans.y - va.select.y, x = dist_to_screen)) +
 task2_df %>% ggplot(aes(x = va.ans.y - va.select.y)) + geom_dots()
 task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
 
-# for the sake of determining the variance, let's only look at `data` space for now ... 
-
 task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>% 
   mutate(error_va = ifelse(abs(error_va) < 1e-8, 0, error_va)) %>%  
   # filter(error_va != 0) %>% 
   ggplot(aes(x = va.ans.x - va.select.x)) + 
   geom_dots()
+```
 
-task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>% 
-  mutate(error_va = ifelse(abs(error_va) < 1e-8, 0, error_va)) %>%  
-  # filter(error_va != 0) %>% 
-  ggplot(aes(x = data.ans.x - data.select.x)) + 
+Now let's look at things focusing on the **x** axes: 
+
+```{r}
+#| layout-ncol: 2
+
+
+task2_df %>% ggplot(aes(x = data.ans.x - data.select.x)) + 
   geom_dots()
-# this looks like a laplace distribution 
+
+task2_df %>% ggplot(aes(x = va.ans.x - va.select.x)) + 
+  geom_dots() + 
+  facet_wrap(~participantId)
+
+task2_df %>% ggplot(aes(y = va.ans.x - va.select.x, x = dist_to_screen)) + 
+  geom_point(alpha = 0.5)
+
+task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = param.lambda)) + 
+  geom_point(alpha = 0.5)
 ```
 
 ## Model 1 -- Vis Angle space
 
-Based on our prior assumptions so far, the vis angle space model should not include dist_to_screen but the physical model should. Therefore, a potential model looks as follows: 
+Let us first try to fit `va.ans.x - va.select.x` with two different models --- normal and laplace. 
+
+### Model 1.1 --- Laplace distribution 
 
 $$
 \begin{align}
-\text{error}_{\text{va}}[i] \sim \text{Half-Normal}(\sigma_{\text{PID}[i]}) \\ 
-\sigma_j \sim \text{Log-Normal}(0, 1)
+\text{error_va}_{i} &\sim \text{Laplace}(\mu_{\text{PID}[i]}, b_{\text{PID}[i]}) \\
+\mu_j &\sim \mathcal{N}(0, 0.25), j \in [13] \\ 
+b_j &\sim \mathcal{N}(0, 1), j \in [13] 
 \end{align}
 $$
 
-Specify formula: 
+Specify formula. There is no native implementation of the Laplace distribution^[except for the [`asym_laplace` function](https://paulbuerkner.com/brms/reference/AsymLaplace.html), which doesn't seem to help. Maybe we'll need to implement a custom function using `stan` ... ]:
+
+:::{.callout-note}
+There is a [wiki](https://en.wikipedia.org/wiki/Laplace_distribution) about Laplace distribution, which defines the pdf of a Laplace distribution to be $f(x | \mu, b) = \frac{1}{2b} \exp(-\frac{|x - \mu|}{b})$, where $\mu$ is a location parameter, and $b > 0$ is a scale parameter. And this is what the [stan manual](https://en.wikipedia.org/wiki/Laplace_distribution) defines the pdf of the **double exponential** distribution  --- $f(y|\mu, \sigma) = \frac{1}{2\sigma} \exp(- \frac{|y - \mu|}{\sigma})$, basically everything is the same except they're using different notations for the scale parameter ...  
+:::
 
 ```{r}
-#| label: task 2 formula 1 
+# log of the laplace pdf 
+laplace_lpdf <- "
+real laplace_lpdf(real y, real mu, real sigma) {
+  return -log(2 * sigma) - abs(y - mu) / sigma;
+}
+"
 
-f <- bf(error_va | trunc(lb = 0) ~ 0, 
-        sigma ~ 0 + (1 | participantId), 
-        family = gaussian())
+# define custom family 
+c_family = custom_family(
+  "laplace", 
+  dpars = c("mu", "sigma"), 
+  links = c("identity", "log"), 
+  lb = c(NA, 0), 
+  type = "real"
+)
 
-# get prior 
+f <- bf(error_va ~ 1 + (1 | participantId),
+        family = c_family)
+
+# get prior
 task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-get_prior(formula = f, 
+get_prior(formula = f,
           data = .)
 
-p <- prior(lognormal(0, 1), class = "sd", dpar="sigma", group="participantId")
-```
-
-Hmm the half-normal model doesn't look quite right, perhaps this follows closer to an exponential distribution? Also we need to take care of teh number of times thigns were zero, so this should be a **zero-inflated exponential model**. Something like the following: 
-
-$$
-\begin{align}
-\text{error}_{\text{va}}[i] &\sim \text{Exponential}(\lambda_{\text{PID}[i]}) \\ 
-\lambda &= \exp(\alpha + u_j) \\ 
-\alpha &\sim \mathcal{N}(0, 1) \\ 
-u_j &\sim \mathcal{N}(0, \sigma_u^2) \\ 
-\sigma_u &\sim \text{Half-Cauchy}(0, 5) 
-\end{align}
-$$
-
-The corresponding `brms` formula would be as follows: 
-
-```{r}
-#| label: task 2 formula 2
-
-f2 <- bf(error_va ~ 1 + (1 | participantId), 
-        family = exponential())
-
-# get prior 
-task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-get_prior(formula = f2, 
-          data = .)
-
+# define prior 
 p <- c(
-  prior(normal(0, 1), class = Intercept), 
-  prior(cauchy(0, 5), class = "sd", group = "participantId")
+  prior(normal(0, 0.5), class = "Intercept"), 
+  prior(normal(0, 0.25), class = "sd", group = "participantId"), 
+  prior(normal(0, 1), class = "sigma")
 )
 ```
 
-Let's fit the model: 
+What if we use the `make_stancode` function to see what the corresponding stan code looks like?
 
 ```{r}
-#| output: false
-#| label: task2-fit-model-3
+task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>% 
+  make_stancode(f, data = ., family = c_family, stanvars = stanvar(scode = laplace_lpdf, block = "functions"))
+```
 
-m2.3 <- task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>% 
-  mutate(error_va = ifelse(abs(error_va) < 1e-8, 0, error_va)) %>% 
-  mutate(error_va = ifelse(error_va < 0, 0, error_va)) %>% 
-  brm(formula = f2,
-      data = ., 
-      prior = p,
-      control = list(adapt_delta = 0.99), # note this is higher than 0.95
-      chains = 4, 
-      iter = 8000, # more iterations
-      warmup = 2000, # higher than usual 
-      file="models/m2.3", 
-      save_pars = save_pars(all=TRUE)
-      )
+
+Fit the model:
+
+```{r}
+m1.1 <- task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>%
+  brm(
+  formula = f, 
+  family = c_family, 
+  stanvars = stanvar(scode = laplace_lpdf, block = "functions"), 
+  prior = p, 
+  data = ., 
+  chains = 4, 
+  # cores = 4, 
+  # control = list(adapt_delta = 0.95), 
+  file = "models/task2-m1.1"
+)
+```
+
+Check the fitted model:
+
+```{r}
+summary(m1.1)
 ```
 
 
 
-:::{.caution}
-While doing the fitting I found some issues ... For task 2, `error_va = va.ans.y - va.select.y` should always be non-negative, but I got some negative values that are very, very small. I am setting a tolerance of `1e-12` --- any value smaller than this range will be regarded as 0. See the following for the negative values 
-
-```{r}
-task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>% filter(error_va < 0) %>% 
-  select(data.select.y, data.ans.y) %>% 
-  mutate(diff = data.select.y - data.ans.y) %>% 
-  pull(diff)
-```
-
-:::
-
-Fit the model: 
-
-```{r}
-#| output: false
-#| label: task2-fit-model
-
-m2.1 <- task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>% 
-  mutate(error_va = ifelse(abs(error_va) < 1e-8, 0, error_va)) %>% 
-  brm(formula = f,
-      data = ., 
-      prior = p,
-      control = list(adapt_delta = 0.99), # note this is higher than 0.95
-      chains = 4, 
-      iter = 8000, # more iterations
-      warmup = 2000, # higher than usual 
-      file="models/m2.1", 
-      save_pars = save_pars(all=TRUE)
-      )
-```
-
-Let's see some fitted results: 
-
-```{r}
-summary(m2.1)
-plot(m2.1)
-# posterior predictive check 
-pp_check(m2.1, ndraws = 100)
-```
-
-## Model 2 -- Physical
+### Model 2.2 --- Normal 
 
 Math model: 
 
 $$
-\begin{aligned}
-\text{error}_{\text{phy}}[i] &\sim \text{Half-Normal}(\sigma[i]) \\ 
-\sigma[i] &= \texttt{dist_to_screen} \times \hat{\sigma}[i]\\ 
-\hat{\sigma}[i] &\sim \text{Log-Normal}(0, 1)
-\end{aligned}
+\begin{align}
+\text{error_va}_{i} &\sim \text{Normal}(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i]}) \\
+\mu_j &\sim \mathcal{N}(0, 0.25), j \in [13] \\ 
+\sigma_j &\sim \mathcal{N}(0, 1), j \in [13] 
+\end{align}
 $$
 
-Formula: 
+<!-- Hmm the half-normal model doesn't look quite right, perhaps this follows closer to an exponential distribution? Also we need to take care of teh number of times thigns were zero, so this should be a **zero-inflated exponential model**. Something like the following:  -->
 
-```{r}
-f <- bf(error_phy | trunc(lb = 0) ~ 0, 
-        sigma ~ 0 + offset(log(dist_to_screen)) + (1 | participantId), 
-        family = gaussian())
+<!-- $$ -->
+<!-- \begin{align} -->
+<!-- \text{error}_{\text{va}}[i] &\sim \text{Exponential}(\lambda_{\text{PID}[i]}) \\  -->
+<!-- \lambda &= \exp(\alpha + u_j) \\  -->
+<!-- \alpha &\sim \mathcal{N}(0, 1) \\  -->
+<!-- u_j &\sim \mathcal{N}(0, \sigma_u^2) \\  -->
+<!-- \sigma_u &\sim \text{Half-Cauchy}(0, 5)  -->
+<!-- \end{align} -->
+<!-- $$ -->
 
-p <- prior(lognormal(0, 1), class = "sd", dpar="sigma", group="participantId")
-```
+<!-- The corresponding `brms` formula would be as follows:  -->
 
-Fit model: 
+<!-- ```{r} -->
+<!-- #| label: task 2 formula 2 -->
 
-```{r}
-#| output: false 
+<!-- f2 <- bf(error_va ~ 1 + (1 | participantId),  -->
+<!--         family = exponential()) -->
 
-m2.2 <- task2_df %>% 
-  mutate(error_phy = phy.ans.y - phy.select.y) %>% 
-  # note that the usual tolerance of 1e-12 is not good enough 
-  # mutate(error_phy = ifelse(abs(error_phy) < 1e-8, 0, error_phy)) %>% 
-  # let's just make everything negative to be 0 
-  mutate(error_phy = ifelse(error_phy < 0, 0, error_phy)) %>% 
-  brm(formula = f,
-      data = ., 
-      prior = p,
-      control = list(adapt_delta = 0.99), # note this is higher than 0.95
-      chains = 4, 
-      iter = 8000, # more iterations
-      warmup = 2000, # higher than usual 
-      file="models/m2.2", 
-      save_pars = save_pars(all=TRUE)
-      )
-```
+<!-- # get prior  -->
+<!-- task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>% -->
+<!-- get_prior(formula = f2,  -->
+<!--           data = .) -->
 
-Check fit: 
+<!-- p <- c( -->
+<!--   prior(normal(0, 1), class = Intercept),  -->
+<!--   prior(cauchy(0, 5), class = "sd", group = "participantId") -->
+<!-- ) -->
+<!-- ``` -->
 
-```{r}
-summary(m2.2)
-plot(m2.2)
-pp_check(m2.2, ndraws = 100)
-```
+<!-- Let's fit the model:  -->
 
-## Compare model 1 and model 2 
+<!-- ```{r} -->
+<!-- #| output: false -->
+<!-- #| label: task2-fit-model-3 -->
 
-```{r}
-m2.1 <- add_criterion(m2.1, "loo", moment_match=TRUE, recompile=TRUE)
-m2.2 <- add_criterion(m2.2, "loo", moment_match = TRUE, recompile=TRUE)
+<!-- m2.3 <- task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>%  -->
+<!--   mutate(error_va = ifelse(abs(error_va) < 1e-8, 0, error_va)) %>%  -->
+<!--   mutate(error_va = ifelse(error_va < 0, 0, error_va)) %>%  -->
+<!--   brm(formula = f2, -->
+<!--       data = .,  -->
+<!--       prior = p, -->
+<!--       control = list(adapt_delta = 0.99), # note this is higher than 0.95 -->
+<!--       chains = 4,  -->
+<!--       iter = 8000, # more iterations -->
+<!--       warmup = 2000, # higher than usual  -->
+<!--       file="models/m2.3",  -->
+<!--       save_pars = save_pars(all=TRUE) -->
+<!--       ) -->
+<!-- ``` -->
 
-loo_compare(m2.1, m2.2)
-```
 
-The visual angle version is also better. 
 
----
+<!-- :::{.caution} -->
+<!-- While doing the fitting I found some issues ... For task 2, `error_va = va.ans.y - va.select.y` should always be non-negative, but I got some negative values that are very, very small. I am setting a tolerance of `1e-12` --- any value smaller than this range will be regarded as 0. See the following for the negative values  -->
 
-Then we check to make sure that things are correct: 
+<!-- ```{r} -->
+<!-- task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>% filter(error_va < 0) %>%  -->
+<!--   select(data.select.y, data.ans.y) %>%  -->
+<!--   mutate(diff = data.select.y - data.ans.y) %>%  -->
+<!--   pull(diff) -->
+<!-- ``` -->
 
-```{r}
-#| output: false 
-#| code-fold: true 
-#| label: task 2 verify 
+<!-- ::: -->
 
-task2_df %>% ggplot(aes(x = data.select.x - data.ans.x)) + 
-  geom_dots()
+<!-- Fit the model:  -->
 
-task2_df %>% ggplot(aes(x = data.select.y - data.ans.y)) + 
-  geom_dots()
+<!-- ```{r} -->
+<!-- #| output: false -->
+<!-- #| label: task2-fit-model -->
 
-task2_df %>% ggplot(aes(x = pixel.select.x - pixel.ans.x)) + 
-  geom_dots()
+<!-- m2.1 <- task2_df %>% mutate(error_va = va.ans.y - va.select.y) %>%  -->
+<!--   mutate(error_va = ifelse(abs(error_va) < 1e-8, 0, error_va)) %>%  -->
+<!--   brm(formula = f, -->
+<!--       data = .,  -->
+<!--       prior = p, -->
+<!--       control = list(adapt_delta = 0.99), # note this is higher than 0.95 -->
+<!--       chains = 4,  -->
+<!--       iter = 8000, # more iterations -->
+<!--       warmup = 2000, # higher than usual  -->
+<!--       file="models/m2.1",  -->
+<!--       save_pars = save_pars(all=TRUE) -->
+<!--       ) -->
+<!-- ``` -->
 
-task2_df %>% ggplot(aes(x = pixel.select.y - pixel.ans.y)) + 
-  geom_dots()
+<!-- Let's see some fitted results:  -->
 
-task2_df %>% ggplot(aes(x = phy.select.x - phy.ans.x)) + 
-  geom_dots()  
+<!-- ```{r} -->
+<!-- summary(m2.1) -->
+<!-- plot(m2.1) -->
+<!-- # posterior predictive check  -->
+<!-- pp_check(m2.1, ndraws = 100) -->
+<!-- ``` -->
 
-task2_df %>% ggplot(aes(x = phy.select.y - phy.ans.y)) + 
-  geom_dots() 
+<!-- ## Model 2 -- Physical -->
 
-task2_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + 
-  geom_dots()  
+<!-- Math model:  -->
 
-task2_df %>% ggplot(aes(x = va.select.y - va.ans.y)) + 
-  geom_dots()  
-```
+<!-- $$ -->
+<!-- \begin{aligned} -->
+<!-- \text{error}_{\text{phy}}[i] &\sim \text{Half-Normal}(\sigma[i]) \\  -->
+<!-- \sigma[i] &= \texttt{dist_to_screen} \times \hat{\sigma}[i]\\  -->
+<!-- \hat{\sigma}[i] &\sim \text{Log-Normal}(0, 1) -->
+<!-- \end{aligned} -->
+<!-- $$ -->
 
-Note that `grad.x` is calcultaing the angle of the slope^[i.e. gradient] at selection `x`. It is NOT the perceived angle. 
+<!-- Formula:  -->
 
-Let's plot the relation between the angle selected and the parameters: 
+<!-- ```{r} -->
+<!-- f <- bf(error_phy | trunc(lb = 0) ~ 0,  -->
+<!--         sigma ~ 0 + offset(log(dist_to_screen)) + (1 | participantId),  -->
+<!--         family = gaussian()) -->
 
-```{r}
-#| code-fold: true 
-#| layout-ncol: 2
+<!-- p <- prior(lognormal(0, 1), class = "sd", dpar="sigma", group="participantId") -->
+<!-- ``` -->
 
-task2_df %>% ggplot(aes(y = data.select.grad, x = param.p)) +
-  geom_point(alpha = 0.5)
+<!-- Fit model:  -->
 
-task2_df %>% ggplot(aes(y = data.select.grad, x = param.q)) +
-  geom_point(alpha = 0.5)
+<!-- ```{r} -->
+<!-- #| output: false  -->
 
-task2_df %>% ggplot(aes(y = data.select.grad, x = param.lambda)) +
-  geom_point(alpha = 0.5)
+<!-- m2.2 <- task2_df %>%  -->
+<!--   mutate(error_phy = phy.ans.y - phy.select.y) %>%  -->
+<!--   # note that the usual tolerance of 1e-12 is not good enough  -->
+<!--   # mutate(error_phy = ifelse(abs(error_phy) < 1e-8, 0, error_phy)) %>%  -->
+<!--   # let's just make everything negative to be 0  -->
+<!--   mutate(error_phy = ifelse(error_phy < 0, 0, error_phy)) %>%  -->
+<!--   brm(formula = f, -->
+<!--       data = .,  -->
+<!--       prior = p, -->
+<!--       control = list(adapt_delta = 0.99), # note this is higher than 0.95 -->
+<!--       chains = 4,  -->
+<!--       iter = 8000, # more iterations -->
+<!--       warmup = 2000, # higher than usual  -->
+<!--       file="models/m2.2",  -->
+<!--       save_pars = save_pars(all=TRUE) -->
+<!--       ) -->
+<!-- ``` -->
 
-task2_df %>% ggplot(aes(y = data.select.grad, x = param.mu)) +
-  geom_point(alpha = 0.5)
+<!-- Check fit:  -->
 
-task2_df %>% ggplot(aes(y = data.select.grad, x = param.sigma)) +
-  geom_point(alpha = 0.5)
+<!-- ```{r} -->
+<!-- summary(m2.2) -->
+<!-- plot(m2.2) -->
+<!-- pp_check(m2.2, ndraws = 100) -->
+<!-- ``` -->
 
-task2_df %>% ggplot(aes(y = data.select.grad, x = dist_to_screen)) +
-  geom_point(alpha = 0.5)
-```
+<!-- ## Compare model 1 and model 2  -->
 
-The only thing that is worth noting is the relationship between `data.select.grad` and `dist_to_screen`. What about the corresponding angle? 
+<!-- ```{r} -->
+<!-- m2.1 <- add_criterion(m2.1, "loo", moment_match=TRUE, recompile=TRUE) -->
+<!-- m2.2 <- add_criterion(m2.2, "loo", moment_match = TRUE, recompile=TRUE) -->
 
-```{r}
-task2_df %>% ggplot(aes(y = data.select.angle, x = dist_to_screen)) +
-  geom_point(alpha = 0.5)
-```
+<!-- loo_compare(m2.1, m2.2) -->
+<!-- ``` -->
 
----
+<!-- The visual angle version is also better.  -->
 
-How to calculate the actual angle, based on the selection? First we can check out the distribution of calculated angle (relative to the highest point?)
+<!-- --- -->
 
-```{r}
-task2_df %>% 
-  mutate(diff.x = phy.select.x - phy.ans.x, 
-         diff.y = phy.select.y - phy.ans.y, 
-         angle = atan(diff.y / diff.x) * 180 / pi) %>% 
-  ggplot(aes(x = angle)) + 
-  geom_dots()
-```
+<!-- Then we check to make sure that things are correct:  -->
 
-We are seeing these extreme outliers because `diff.x` is very, very small, almost close to 0. The above calculations does not deal well with very, very small denominators. Doing things in the visual angle space gives the same outliers. Let's just round things up to 3: 
+<!-- ```{r} -->
+<!-- #| output: false  -->
+<!-- #| code-fold: true  -->
+<!-- #| label: task 2 verify  -->
 
-```{r}
-task2_df %>% mutate(diff.x = phy.select.x - phy.ans.x, 
-                    diff.y = phy.select.y - phy.ans.y) %>% 
-  mutate(diff.x = round(diff.x, 3), diff.y = round(diff.y, 3)) %>% 
-  mutate(angle = case_when(diff.x == 0 ~ 0, 
-                           diff.x != 0 ~ atan(diff.y / diff.x) * 180 / pi )) %>% 
-  ggplot(aes(x = angle)) + 
-  geom_dots()
+<!-- task2_df %>% ggplot(aes(x = data.select.x - data.ans.x)) +  -->
+<!--   geom_dots() -->
 
-task2_df %>% mutate(diff.x = phy.select.x - phy.ans.x, 
-                    diff.y = phy.select.y - phy.ans.y) %>% 
-  mutate(diff.x = round(diff.x, 3), diff.y = round(diff.y, 3)) %>% 
-  mutate(angle = case_when(diff.x == 0 ~ 0, 
-                           diff.x != 0 ~ atan(diff.y / diff.x) * 180 / pi )) %>% 
-  ggplot(aes(x = angle, y = data.select.angle)) + 
-  geom_point(alpha = 0.5) + 
-  geom_abline(intercept = 0, slope = 1, color = "black", linetype = "dashed")
-```
+<!-- task2_df %>% ggplot(aes(x = data.select.y - data.ans.y)) +  -->
+<!--   geom_dots() -->
 
-This just means that if we were to use the highest point and the selected point as ways to calculate the actual angle, then it is **larger** than the actual slope at the selected point. 
+<!-- task2_df %>% ggplot(aes(x = pixel.select.x - pixel.ans.x)) +  -->
+<!--   geom_dots() -->
 
-Is this newly calculated `angle` going to be related to `dist_to_screen`? 
+<!-- task2_df %>% ggplot(aes(x = pixel.select.y - pixel.ans.y)) +  -->
+<!--   geom_dots() -->
 
-```{r}
-task2_df %>% mutate(diff.x = phy.select.x - phy.ans.x, 
-                    diff.y = phy.select.y - phy.ans.y) %>% 
-  mutate(diff.x = round(diff.x, 3), diff.y = round(diff.y, 3)) %>% 
-  mutate(angle = case_when(diff.x == 0 ~ 0, 
-                           diff.x != 0 ~ atan(diff.y / diff.x) * 180 / pi )) %>% 
-  ggplot(aes(x = dist_to_screen, y = angle)) + 
-  geom_point(alpha = 0.5)
-```
+<!-- task2_df %>% ggplot(aes(x = phy.select.x - phy.ans.x)) +  -->
+<!--   geom_dots()   -->
 
-Compare to the graph before, the difference is that this one has a bigger variance. 
+<!-- task2_df %>% ggplot(aes(x = phy.select.y - phy.ans.y)) +  -->
+<!--   geom_dots()  -->
 
-What if we use the numbers in the visual angle space and not the physical space? 
+<!-- task2_df %>% ggplot(aes(x = va.select.x - va.ans.x)) +  -->
+<!--   geom_dots()   -->
 
-```{r}
-task2_df %>% mutate(diff.x = va.select.x - va.ans.x, 
-                    diff.y = va.select.y - va.ans.y) %>% 
-  mutate(diff.x = round(diff.x, 3), diff.y = round(diff.y, 3)) %>% 
-  mutate(angle = case_when(diff.x == 0 ~ 0, 
-                           diff.x != 0 ~ atan(diff.y / diff.x) * 180 / pi )) %>% 
-  ggplot(aes(x = dist_to_screen, y = angle)) + 
-  geom_point(alpha = 0.5)
-```
+<!-- task2_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +  -->
+<!--   geom_dots()   -->
+<!-- ``` -->
 
-Hmm doesn't seem to be much different, which is to be expected, as slope is unit-less. 
+<!-- Note that `grad.x` is calcultaing the angle of the slope^[i.e. gradient] at selection `x`. It is NOT the perceived angle.  -->
 
---- 
+<!-- Let's plot the relation between the angle selected and the parameters:  -->
+
+<!-- ```{r} -->
+<!-- #| code-fold: true  -->
+<!-- #| layout-ncol: 2 -->
+
+<!-- task2_df %>% ggplot(aes(y = data.select.grad, x = param.p)) + -->
+<!--   geom_point(alpha = 0.5) -->
+
+<!-- task2_df %>% ggplot(aes(y = data.select.grad, x = param.q)) + -->
+<!--   geom_point(alpha = 0.5) -->
+
+<!-- task2_df %>% ggplot(aes(y = data.select.grad, x = param.lambda)) + -->
+<!--   geom_point(alpha = 0.5) -->
+
+<!-- task2_df %>% ggplot(aes(y = data.select.grad, x = param.mu)) + -->
+<!--   geom_point(alpha = 0.5) -->
+
+<!-- task2_df %>% ggplot(aes(y = data.select.grad, x = param.sigma)) + -->
+<!--   geom_point(alpha = 0.5) -->
+
+<!-- task2_df %>% ggplot(aes(y = data.select.grad, x = dist_to_screen)) + -->
+<!--   geom_point(alpha = 0.5) -->
+<!-- ``` -->
+
+<!-- The only thing that is worth noting is the relationship between `data.select.grad` and `dist_to_screen`. What about the corresponding angle?  -->
+
+<!-- ```{r} -->
+<!-- task2_df %>% ggplot(aes(y = data.select.angle, x = dist_to_screen)) + -->
+<!--   geom_point(alpha = 0.5) -->
+<!-- ``` -->
+
+<!-- --- -->
+
+<!-- How to calculate the actual angle, based on the selection? First we can check out the distribution of calculated angle (relative to the highest point?) -->
+
+<!-- ```{r} -->
+<!-- task2_df %>%  -->
+<!--   mutate(diff.x = phy.select.x - phy.ans.x,  -->
+<!--          diff.y = phy.select.y - phy.ans.y,  -->
+<!--          angle = atan(diff.y / diff.x) * 180 / pi) %>%  -->
+<!--   ggplot(aes(x = angle)) +  -->
+<!--   geom_dots() -->
+<!-- ``` -->
+
+<!-- We are seeing these extreme outliers because `diff.x` is very, very small, almost close to 0. The above calculations does not deal well with very, very small denominators. Doing things in the visual angle space gives the same outliers. Let's just round things up to 3:  -->
+
+<!-- ```{r} -->
+<!-- task2_df %>% mutate(diff.x = phy.select.x - phy.ans.x,  -->
+<!--                     diff.y = phy.select.y - phy.ans.y) %>%  -->
+<!--   mutate(diff.x = round(diff.x, 3), diff.y = round(diff.y, 3)) %>%  -->
+<!--   mutate(angle = case_when(diff.x == 0 ~ 0,  -->
+<!--                            diff.x != 0 ~ atan(diff.y / diff.x) * 180 / pi )) %>%  -->
+<!--   ggplot(aes(x = angle)) +  -->
+<!--   geom_dots() -->
+
+<!-- task2_df %>% mutate(diff.x = phy.select.x - phy.ans.x,  -->
+<!--                     diff.y = phy.select.y - phy.ans.y) %>%  -->
+<!--   mutate(diff.x = round(diff.x, 3), diff.y = round(diff.y, 3)) %>%  -->
+<!--   mutate(angle = case_when(diff.x == 0 ~ 0,  -->
+<!--                            diff.x != 0 ~ atan(diff.y / diff.x) * 180 / pi )) %>%  -->
+<!--   ggplot(aes(x = angle, y = data.select.angle)) +  -->
+<!--   geom_point(alpha = 0.5) +  -->
+<!--   geom_abline(intercept = 0, slope = 1, color = "black", linetype = "dashed") -->
+<!-- ``` -->
+
+<!-- This just means that if we were to use the highest point and the selected point as ways to calculate the actual angle, then it is **larger** than the actual slope at the selected point.  -->
+
+<!-- Is this newly calculated `angle` going to be related to `dist_to_screen`?  -->
+
+<!-- ```{r} -->
+<!-- task2_df %>% mutate(diff.x = phy.select.x - phy.ans.x,  -->
+<!--                     diff.y = phy.select.y - phy.ans.y) %>%  -->
+<!--   mutate(diff.x = round(diff.x, 3), diff.y = round(diff.y, 3)) %>%  -->
+<!--   mutate(angle = case_when(diff.x == 0 ~ 0,  -->
+<!--                            diff.x != 0 ~ atan(diff.y / diff.x) * 180 / pi )) %>%  -->
+<!--   ggplot(aes(x = dist_to_screen, y = angle)) +  -->
+<!--   geom_point(alpha = 0.5) -->
+<!-- ``` -->
+
+<!-- Compare to the graph before, the difference is that this one has a bigger variance.  -->
+
+<!-- What if we use the numbers in the visual angle space and not the physical space?  -->
+
+<!-- ```{r} -->
+<!-- task2_df %>% mutate(diff.x = va.select.x - va.ans.x,  -->
+<!--                     diff.y = va.select.y - va.ans.y) %>%  -->
+<!--   mutate(diff.x = round(diff.x, 3), diff.y = round(diff.y, 3)) %>%  -->
+<!--   mutate(angle = case_when(diff.x == 0 ~ 0,  -->
+<!--                            diff.x != 0 ~ atan(diff.y / diff.x) * 180 / pi )) %>%  -->
+<!--   ggplot(aes(x = dist_to_screen, y = angle)) +  -->
+<!--   geom_point(alpha = 0.5) -->
+<!-- ``` -->
+
+<!-- Hmm doesn't seem to be much different, which is to be expected, as slope is unit-less.  -->
+
+<!-- ---  -->
