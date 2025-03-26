@@ -251,7 +251,6 @@ task1_df %>% ggplot(aes(x = va.med.x - va.select.x)) +
   geom_dots()
 ```
 
-
 Prepare data for stan: 
 
 ```{r}
@@ -379,3 +378,49 @@ Let's first write the math model:
 $$\begin{align*}
 f(x) = \theta \cdot f_{\text{Laplace}}(x) + (1 - \theta) \cdot f_{\text{Gaussian}}(x)
 \end{align*}$$
+
+Read in stan code: 
+
+```{r}
+model <- cmdstan_model("mix_models/mixture.laplace.stan")
+```
+
+Prepare data for stan: 
+
+```{r}
+N <- task1_df %>% nrow(.)
+x_select <- task1_df %>% pull(va.select.x)
+x_med <- task1_df %>% pull(va.med.x)
+x_mod <- task1_df %>% pull(va.mod.x)
+J <- task1_df %>% count(participantId) %>% nrow(.)
+PID <- as.numeric(factor(task1_df$participantId))
+
+stan_data <- list(
+  N = N, 
+  x_select = x_select, 
+  x_med = x_med, 
+  x_mod = x_mod, 
+  J = J, 
+  PID = PID
+)
+```
+
+Fit the model: 
+
+```{r}
+#| output: false 
+
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  parallel_chains = 4, 
+  iter_warmup = 2000, 
+  iter_sampling = 2000,
+  adapt_delta = 0.99, 
+  max_treedepth = 15
+)
+
+# save model 
+fit$save_object(file = "mix_models/m4.rds")
+```
+

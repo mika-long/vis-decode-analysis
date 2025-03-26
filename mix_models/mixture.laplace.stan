@@ -7,12 +7,6 @@ data {
   // participant related 
   int<lower=1> J;                       // number of participants
   array[N] int<lower=1, upper=J> PID;   // participant ID for each observation
-  
-  // Priors for x_mod parameters (you mentioned you have good priors for these)
-  real mu_mod_prior_mean;
-  real<lower=0> mu_mod_prior_sd;
-  real<lower=0> sigma_mod_prior_alpha;
-  real<lower=0> sigma_mod_prior_beta;
 }
 
 parameters {
@@ -21,41 +15,52 @@ parameters {
   
   // Participant-level parameters
   vector[J] mu_med;               // mean deviation for median component by participant
-  vector<lower=0>[J] sigma_med;   // sd for median component by participant
+  vector[J] log_sigma_med;        // sd for median component by participant
   vector[J] mu_mod;               // mean deviation for modal component by participant
-  vector<lower=0>[J] sigma_mod;   // scale for Laplace component by participant
+  vector[J] log_sigma_mod; 
   
   // Hyperparameters for hierarchical structure
-  real mu_med_global;             // global mean for mu_med
-  real<lower=0> sigma_med_global; // global sd for mu_med
-  real<lower=0> tau_sigma_med;    // scale for sigma_med
+  real intercept_mu_mod;          
+  real<lower=0> var_mu_mod; 
   
-  // Latent variables (optional - see note in model block)
-  // vector[N] hat_x_med;
-  // vector[N] hat_x_mod;
+  real intercept_sigma_mod; 
+  real<lower=0> var_sigma_mod; 
+
+  real intercept_mu_med;          // global mean for mu_med
+  real<lower=var_mu_mod> var_mu_med;       // global sd for mu_med
+  
+  real intercept_sigma_med;       // global mean for sigma_med
+  real<lower=var_sigma_mod> var_sigma_med;       // global sd for sigma_med 
+}
+
+transformed parameters {
+  vector<lower=0>[J] sigma_med = exp(log_sigma_med); 
+  vector<lower=0>[J] sigma_mod = exp(log_sigma_mod); 
 }
 
 model {
   // Hyperpriors
-  mu_med_global ~ normal(0, 5);
-  sigma_med_global ~ cauchy(0, 2.5);
-  tau_sigma_med ~ gamma(2, 0.1);
+  /* TODO */ 
+  intercept_mu_med ~ normal(0, 0.05);
+  var_mu_med ~ cauchy(0, 2.5);
+  intercept_sigma_med ~ normal(-2, 0.5);
+  var_sigma_med ~ normal(0.5, 0.3); 
+  /* END OF TODO */
   
   // Hierarchical priors for participant-level parameters
-  mu_med ~ normal(mu_med_global, sigma_med_global);
-  sigma_med ~ gamma(2, tau_sigma_med);
+  mu_med ~ normal(intercept_mu_med, var_mu_med);
+  log_sigma_med ~ normal(intercept_sigma_med, var_sigma_med); 
   
   // Hyperpriors for modal component 
-  mu_mod_global ~ normal(0.01, 0.02); 
-  sigma_mu_mod ~ normal(0.03, 0.02); 
-  sigma_mod_global ~ normal(-1.79, 0.10); 
-  sigma_sigma_mod ~ normal(0.17, 0.12); 
+  // Obtained from task 2 
+  intercept_mu_mod ~ normal(0.01, 0.02); 
+  var_mu_mod ~ normal(0.03, 0.02); 
+  intercept_sigma_mod ~ normal(-1.79, 0.10); 
+  var_sigma_mod ~ normal(0.17, 0.12); 
 
   // Hierarchical priors 
-  mu_mod ~ normal(mu_mod_global, sigma_mu_mod);
-  for (j in 1:J) {
-    log_sigma_mod[j] ~ normal(sigma_mod_global, sigma_sigma_mod); 
-  }
+  mu_mod ~ normal(intercept_mu_mod, var_mu_mod);
+  log_sigma_mod ~ normal(intercept_sigma_mod, var_sigma_mod); 
   
   // Prior for mixing parameter
   theta ~ beta(2, 2);  // weakly informative prior centered at 0.5
@@ -75,19 +80,6 @@ model {
     target += log_sum_exp(log(theta) + log_lik_med, 
                           log1m(theta) + log_lik_mod);
   }
-  
-  /* Alternative approach with explicit latent variables:
-  for (i in 1:N) {
-    // Sample latent variables
-    hat_x_med[i] ~ normal(x_med[i] + mu_med[PID[i]], sigma_med[PID[i]]);
-    hat_x_mod[i] ~ double_exponential(x_mod[i] + mu_mod[PID[i]], sigma_mod[PID[i]]);
-    
-    // Mixture model for observations
-    target += log_mix(theta,
-                     normal_lpdf(x_select[i] | hat_x_med[i], 0.0001),
-                     normal_lpdf(x_select[i] | hat_x_mod[i], 0.0001));
-  }
-  */
 }
 
 generated quantities {
