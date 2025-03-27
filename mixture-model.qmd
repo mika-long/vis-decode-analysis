@@ -114,7 +114,7 @@ Load data:
 #| label: get task 1 data 
 #| code-fold: true 
 
-task1_df <- task_df %>% filter(task == "task1") %>% 
+task1_df <- single_pid_df %>% filter(task == "task1") %>% # task_df
   select(-slider.x, -slider.y) %>% 
   left_join(participants, by = join_by(participantId)) %>% 
   mutate(data.select.left_area = psgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE), 
@@ -566,5 +566,70 @@ summary %>% filter(str_detect(variable, "^mu_")) %>%
   geom_point(aes(x = median))
 ```
 
+# Fit single participant with stan 
 
+## Assume that `lambda ~ beta(2, 2)` + single participant 
+
+Read in stan code: 
+
+```{r}
+model <- cmdstan_model("mix_models/sheng.mix.1.stan")
+```
+
+Prepare data for stan: 
+
+```{r}
+N <- task1_df %>% nrow(.)
+x <- task1_df %>% pull(va.select.x)
+x_med <- task1_df %>% pull(va.med.x)
+x_mod <- task1_df %>% pull(va.mod.x)
+
+stan_data <- list(
+  N = N, 
+  x = x, 
+  x_med = x_med, 
+  x_mod = x_mod
+)
+```
+
+Fit model: 
+
+```{r}
+#| output: false 
+
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  parallel_chains = 4, 
+  # iter_warmup = 3000, 
+  # iter_sampling = 3000,
+  adapt_delta = 0.8, 
+  max_treedepth = 10
+)
+
+# save model 
+fit$save_object(file = "mix_models/sheng.m1.rds")
+```
+
+No divergent transitions! 
+
+```{r}
+summary <- fit$summary()
+
+summary %>% filter(str_detect(variable, "lambda")) %>% 
+  ggplot(aes(y = variable)) + 
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
+  geom_point(aes(x = median))
+# with almost certainty I am choosing the median operator lol 
+
+summary %>% filter(str_detect(variable, "^mu")) %>% 
+  ggplot(aes(y = variable)) + 
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
+  geom_point(aes(x = median))
+
+summary %>% filter(str_detect(variable, "^sigma")) %>% 
+  ggplot(aes(y = variable)) + 
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
+  geom_point(aes(x = median))
+```
 
