@@ -253,8 +253,13 @@ p <- c(
   prior(cauchy(0, 0.5), class = "sd", group = "participantId", dpar="sigma", lb = 0)
 )
 
-p <- c(
-  prior(normal(0, 0.5), class = "Intercept"), 
+p1 <- c(
+  prior(normal(0, 0.5), class = "Intercept", lb=0), 
+  prior(cauchy(0, 0.5), class = "sigma", lb = 0)
+)
+
+p2 <- c(
+  prior(lognormal(0, 0.25), class = "Intercept", lb=0), 
   prior(cauchy(0, 0.5), class = "sigma", lb = 0)
 )
 ```
@@ -274,23 +279,24 @@ Fit the model:
 ```{r}
 #| output: false 
 
-m1.1 <- task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>%
+m1.1.2 <- task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>%
   brm(
     formula = f, 
     family = c_family, 
     stanvars = stanvar(scode = laplace_lpdf, block = "functions"), 
-    prior = p, 
+    prior = p2, 
     data = ., 
     chains = 4, 
     # cores = 4, 
     # control = list(adapt_delta = 0.95), 
-    # file = "models/task2-m1.1"
+    file = "models/task2-m1.1.2"
   )
 ```
 
 Check the fitted model:
 
 ```{r}
+summary(m1.1.2)
 summary(m1.1)
 # posterior_summary(m1.1)
 plot(m1.1)
@@ -328,6 +334,10 @@ m1.1 %>% spread_draws(b_Intercept, sigma) %>%
 Define custom functions for posterior predictive check: 
 
 ```{r}
+
+expose_functions(m1.1, vectorize = TRUE)
+expose_functions(m1.1.2, vectorize = TRUE)
+
 # Define a random number generator for Laplace distribution
 laplace_rng <- function(mu, sigma) {
   # Generate from Laplace distribution using uniform transformation
@@ -343,9 +353,22 @@ posterior_predict_laplace <- function(i, prep, ...) {
 }
 ```
 
+Define `log_lik` functions: 
+
 ```{r}
-pp_check(m1.1, ndraws = 100)
+log_lik_laplace <- function(i, prep) {
+  mu <- brms::get_dpar(prep, "mu", i = i)
+  sigma <- brms::get_dpar(prep, "simga", i = i)
+  trials <- prep$data$vint1[i]
+  y <- prep$data$Y[i]
+  laplace_lpdf(y, mu, sigma)
+}
+
+loo(m1.1.2)
 ```
+
+
+---
 
 - This posterior predictive check is reminding me that it could also be drawn from a Cauchy ... 
 

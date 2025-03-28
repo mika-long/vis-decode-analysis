@@ -6,8 +6,7 @@ data {
 }
 
 parameters {
-  // mixture weight
-  real<lower=0, upper=1> lambda;
+  real beta;
 
   // intercept for x_med and x_mod
   real mu_mod;
@@ -18,28 +17,51 @@ parameters {
   real<lower=sigma_mod> sigma_med; // difference between sigmas
 }
 
+transformed parameters {
+  vector<lower=0, upper=1>[N] lambda;
+
+  for (n in 1:N) {
+    // Calculate difference between mode and median
+    real diff = x_med[n] - x_mod[n];
+
+    lambda[n] = inv_logit(beta * square(diff));
+    // OR
+    // lambda[n] = inv_logit(beta * abs(diff));
+    // lambda[n] = inv_logit(square(diff));
+  }
+}
+
 model {
   // priors
   mu_mod ~ normal(0.01, 0.01);
   sigma_mod ~ normal(0.15, 0.01);
   mu_med ~ normal(0, 0.05);
   sigma_med ~ normal(0.15, 0.6);
-  lambda ~ beta(2, 2);
+  beta ~ normal(0, 2);
   
   // likelihood
   for (n in 1:N) {
     // Two-component mixture model
-    target += log_mix(lambda,
-                      normal_lpdf(x[n] | x_med + mu_med, sigma_med),
-                      double_exponential_lpdf(x[n] | x_mod + mu_mod, sigma_mod));
+    target += log_mix(lambda[n],
+                      normal_lpdf(x[n] | x_med[n] + mu_med, sigma_med),
+                      double_exponential_lpdf(x[n] | x_mod[n] + mu_mod, sigma_mod));
   }
 }
 generated quantities {
   vector[N] log_lik; 
+  vector[N] y_rep; // posterior predictive checks
   
   for (n in 1:N) {
-    log_lik[n] = log_mix(lambda,
-                         normal_lpdf(x[n] | x_med + mu_med, sigma_med),
-                         double_exponential_lpdf(x[n] | x_mod + mu_mod, sigma_mod));
+    log_lik[n] = log_mix(lambda[n],
+                         normal_lpdf(x[n] | x_med[n] + mu_med, sigma_med),
+                         double_exponential_lpdf(x[n] | x_mod[n] + mu_mod, sigma_mod));
+
+    // Generate posterior predictive samples
+    if (bernoulli_rng(lambda[n]) == 1) {
+      // Sample from normal component
+      y_rep[n] = normal_rng(x_med[n] + mu_med, sigma_med);
+    } else {
+      y_rep[n] = double_exponential_rng(x_mod[n] + mu_mod, sigma_mod);
+    }
   }
 }
