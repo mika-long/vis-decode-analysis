@@ -717,11 +717,42 @@ m2_loo <- m2$loo()
 m3 <- readRDS("mix_models/sheng.m2.3.rds") # diff^2
 m3_loo <- m3$loo()
 
-loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo, "Model 3" = m3_loo))
+brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo, "Model 3" = m3_loo), 
+                  method = c("stacking"))
 ```
 
-Hmm so the absolute difference is the best one? 
+From this we know the model using absolute difference between median and mode is the best one^[we can verify this using `m2$code()` to check the original code used to run]. 
 
+```{r}
+summary <- m2$summary()
 
+summary %>% filter(str_detect(variable, "lambda")) %>% 
+  ggplot(aes(y = variable)) + 
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
+  geom_point(aes(x = median)) + xlim(0, 1)
+# with almost certainty I am choosing the median operator lol 
 
+summary %>% filter(str_detect(variable, "beta")) %>% 
+  ggplot(aes(y = variable)) + 
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
+  geom_point(aes(x = median))
+
+summary %>% filter(str_detect(variable, "^mu")) %>% 
+  ggplot(aes(y = variable)) + 
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
+  geom_point(aes(x = median))
+
+summary %>% filter(str_detect(variable, "^sigma")) %>% 
+  ggplot(aes(y = variable)) + 
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
+  geom_point(aes(x = median))
+```
+
+Posterior predictive check: 
+
+```{r}
+y_rep <- m2$draws("y_rep", format = "matrix")
+
+bayesplot::ppc_dens_overlay(stan_data$x, y_rep[1:100, ])
+```
 
