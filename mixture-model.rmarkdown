@@ -12,7 +12,6 @@ format:
 ```{r}
 #| echo: false
 #| output: false
-#| label: setup
 
 library(tidyverse)
 library(ggplot2)
@@ -36,7 +35,6 @@ library(sgt)
 
 
 ```{r}
-#| label: read-in-data
 #| code-fold: true
 #| output: false 
 
@@ -64,7 +62,6 @@ single_pid_df <- task_df %>% filter(!participantId %in% not_sheng)
 ```
 
 ```{r}
-#| label: define-function
 #| code-fold: true
 
 # origin is top left  
@@ -93,7 +90,6 @@ tolerance <- 1e-10
 ```
 
 ```{r}
-#| label: define-special-dfs
 #| code-fold: true
 
 p <- df %>% filter(participantId %in% ids) %>% 
@@ -123,7 +119,6 @@ Load data:
 
 
 ```{r}
-#| label: get task 1 data 
 #| code-fold: true 
 
 task1_df <- single_pid_df %>% filter(task == "task1") %>% # task_df
@@ -507,7 +502,6 @@ Checking the posterior results:
 
 ```{r}
 #| column: margin 
-#| label: this should be correct 
 
 fit$draws() %>% 
   spread_draws(`beta`) %>%
@@ -536,7 +530,6 @@ Save the stan model:
 
 ```{r}
 #| eval: false 
-#| label: is this it? 
 
 fit$save_object(file = "mix_models/sheng.mix.2.3.rds")
 ```
@@ -613,6 +606,7 @@ Fit the model:
 
 ```{r}
 #| output: false 
+#| eval: false 
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
@@ -699,6 +693,7 @@ Fit the model:
 
 ```{r}
 #| output: false 
+#| eval: false 
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
@@ -783,6 +778,7 @@ Fit the model:
 
 ```{r}
 #| output: false 
+#| eval: false 
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
