@@ -120,6 +120,10 @@ window.Quarto = {
   <li><a href="#lambda-inv-logitbeta-med---mod2" id="toc-lambda-inv-logitbeta-med---mod2" class="nav-link" data-scroll-target="#lambda-inv-logitbeta-med---mod2">lambda = inv-logit(beta * (med - mod)^2)</a></li>
   <li><a href="#compare-all-models" id="toc-compare-all-models" class="nav-link" data-scroll-target="#compare-all-models">Compare all models</a></li>
   </ul></li>
+  <li><a href="#lambda-inv-logit-alpha-beta-x.med---x.mod" id="toc-lambda-inv-logit-alpha-beta-x.med---x.mod" class="nav-link" data-scroll-target="#lambda-inv-logit-alpha-beta-x.med---x.mod">lambda = inv-logit (alpha + beta * (x.med - x.mod))</a></li>
+  <li><a href="#lambda-inv-logitalpha-beta-absx.med---x.mod" id="toc-lambda-inv-logitalpha-beta-absx.med---x.mod" class="nav-link" data-scroll-target="#lambda-inv-logitalpha-beta-absx.med---x.mod">lambda = inv-logit(alpha + beta * abs(x.med - x.mod))</a></li>
+  <li><a href="#lambda-inv-logitalpha-beta-squarex.med---x.mod" id="toc-lambda-inv-logitalpha-beta-squarex.med---x.mod" class="nav-link" data-scroll-target="#lambda-inv-logitalpha-beta-squarex.med---x.mod">lambda = inv-logit(alpha + beta * square(x.med - x.mod))</a></li>
+  <li><a href="#compare-all-six-models" id="toc-compare-all-six-models" class="nav-link" data-scroll-target="#compare-all-six-models">Compare all six models</a></li>
   </ul></li>
   <li><a href="#different-participants" id="toc-different-participants" class="nav-link" data-scroll-target="#different-participants">Different participants</a></li>
   </ul>
@@ -307,7 +311,7 @@ p_X(x_i) &amp; =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdo
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mixture-model_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div></div></div>
@@ -321,7 +325,7 @@ p_X(x_i) &amp; =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdo
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mixture-model_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div></div><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
@@ -333,7 +337,7 @@ p_X(x_i) &amp; =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdo
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mixture-model_files/figure-html/unnamed-chunk-6-2.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-11-2.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div></div><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
@@ -345,7 +349,7 @@ p_X(x_i) &amp; =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdo
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mixture-model_files/figure-html/unnamed-chunk-6-3.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-11-3.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div></div></div>
@@ -379,7 +383,7 @@ p_X(x_i) &amp; =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdo
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mixture-model_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div></div></div>
@@ -393,7 +397,7 @@ p_X(x_i) &amp; =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdo
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mixture-model_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div></div><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
@@ -405,7 +409,7 @@ p_X(x_i) &amp; =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdo
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mixture-model_files/figure-html/unnamed-chunk-12-2.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-17-2.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div></div><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
@@ -417,7 +421,7 @@ p_X(x_i) &amp; =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdo
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mixture-model_files/figure-html/unnamed-chunk-12-3.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-17-3.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div></div></div>
@@ -448,7 +452,7 @@ p_X(x_i) &amp; =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdo
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mixture-model_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div></div></div>
@@ -462,7 +466,7 @@ p_X(x_i) &amp; =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdo
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mixture-model_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div></div><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
@@ -474,7 +478,7 @@ p_X(x_i) &amp; =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdo
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mixture-model_files/figure-html/unnamed-chunk-18-2.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-23-2.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div></div><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
@@ -486,7 +490,7 @@ p_X(x_i) &amp; =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdo
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mixture-model_files/figure-html/unnamed-chunk-18-3.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-23-3.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div></div></div>
@@ -517,7 +521,7 @@ p_X(x_i) &amp; =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdo
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mixture-model_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-28-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div></div></div>
@@ -531,7 +535,7 @@ p_X(x_i) &amp; =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdo
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mixture-model_files/figure-html/unnamed-chunk-24-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div></div><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
@@ -543,7 +547,7 @@ p_X(x_i) &amp; =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdo
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mixture-model_files/figure-html/unnamed-chunk-24-2.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-29-2.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div></div><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
@@ -555,7 +559,7 @@ p_X(x_i) &amp; =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdo
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mixture-model_files/figure-html/unnamed-chunk-24-3.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-29-3.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div></div></div>
@@ -612,16 +616,284 @@ Model 2 1.000 </code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mixture-model_files/figure-html/unnamed-chunk-28-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-33-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
+<p>One thing about the above model is that <code>lambda</code> is constrained to be &gt;= 0.5. This is because of how we defined the function. We could also fit models that have an intercept, allowing the full range to be something more broad.</p>
 </section>
+</section>
+<section id="lambda-inv-logit-alpha-beta-x.med---x.mod" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="lambda-inv-logit-alpha-beta-x.med---x.mod">lambda = inv-logit (alpha + beta * (x.med - x.mod))</h2>
+<p>Read stan model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">cmdstan_model</span>(<span class="st">"mix_models/sheng.mix.2.4.stan"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Fit the model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> model<span class="sc">$</span><span class="fu">sample</span>(</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> stan_data, </span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, </span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">parallel_chains =</span> <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Posterior predictive checks:</p>
+<div class="cell page-columns page-full">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>summary <span class="ot">&lt;-</span> fit<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a><span class="fu">custom_pp_check</span>(fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-37-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div></div></div>
+<p>Checking the posterior results:</p>
+<div class="cell page-columns page-full">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">spread_draws</span>(<span class="st">`</span><span class="at">alpha</span><span class="st">`</span>, <span class="st">`</span><span class="at">beta</span><span class="st">`</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">4</span><span class="sc">:</span><span class="dv">5</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> value, <span class="at">y =</span> name)) <span class="sc">+</span> </span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-38-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div></div><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">spread_draws</span>(<span class="st">`</span><span class="at">mu_med</span><span class="st">`</span>, <span class="st">`</span><span class="at">mu_mod</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">4</span><span class="sc">:</span><span class="dv">5</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> value, <span class="at">y =</span> name)) <span class="sc">+</span> </span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-38-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div></div><div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">spread_draws</span>(<span class="st">`</span><span class="at">sigma_med</span><span class="st">`</span>, <span class="st">`</span><span class="at">sigma_mod</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">4</span><span class="sc">:</span><span class="dv">5</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> value, <span class="at">y =</span> name)) <span class="sc">+</span> </span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-38-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div></div></div>
+<p>Save the stan model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">save_object</span>(<span class="at">file =</span> <span class="st">"mix_models/sheng.mix.2.4.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="lambda-inv-logitalpha-beta-absx.med---x.mod" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="lambda-inv-logitalpha-beta-absx.med---x.mod">lambda = inv-logit(alpha + beta * abs(x.med - x.mod))</h2>
+<p>Read stan model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">cmdstan_model</span>(<span class="st">"mix_models/sheng.mix.2.5.stan"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Fit the model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> model<span class="sc">$</span><span class="fu">sample</span>(</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> stan_data, </span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, </span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">parallel_chains =</span> <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Posterior predictive checks:</p>
+<div class="cell page-columns page-full">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>summary <span class="ot">&lt;-</span> fit<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a><span class="fu">custom_pp_check</span>(fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-43-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div></div></div>
+<p>Checking the posterior results:</p>
+<div class="cell page-columns page-full">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">spread_draws</span>(<span class="st">`</span><span class="at">alpha</span><span class="st">`</span>, <span class="st">`</span><span class="at">beta</span><span class="st">`</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">4</span><span class="sc">:</span><span class="dv">5</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> value, <span class="at">y =</span> name)) <span class="sc">+</span> </span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-44-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div></div><div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">spread_draws</span>(<span class="st">`</span><span class="at">mu_med</span><span class="st">`</span>, <span class="st">`</span><span class="at">mu_mod</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">4</span><span class="sc">:</span><span class="dv">5</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> value, <span class="at">y =</span> name)) <span class="sc">+</span> </span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-44-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div></div><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">spread_draws</span>(<span class="st">`</span><span class="at">sigma_med</span><span class="st">`</span>, <span class="st">`</span><span class="at">sigma_mod</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">4</span><span class="sc">:</span><span class="dv">5</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> value, <span class="at">y =</span> name)) <span class="sc">+</span> </span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-44-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div></div></div>
+<p>Save the stan model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">save_object</span>(<span class="at">file =</span> <span class="st">"mix_models/sheng.mix.2.5.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="lambda-inv-logitalpha-beta-squarex.med---x.mod" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="lambda-inv-logitalpha-beta-squarex.med---x.mod">lambda = inv-logit(alpha + beta * square(x.med - x.mod))</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">cmdstan_model</span>(<span class="st">"mix_models/sheng.mix.2.6.stan"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Fit the model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> model<span class="sc">$</span><span class="fu">sample</span>(</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> stan_data, </span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, </span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">parallel_chains =</span> <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Posterior predictive checks:</p>
+<div class="cell page-columns page-full">
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>summary <span class="ot">&lt;-</span> fit<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a><span class="fu">custom_pp_check</span>(fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-49-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div></div></div>
+<p>Checking the posterior results:</p>
+<div class="cell page-columns page-full">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">spread_draws</span>(<span class="st">`</span><span class="at">alpha</span><span class="st">`</span>, <span class="st">`</span><span class="at">beta</span><span class="st">`</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">4</span><span class="sc">:</span><span class="dv">5</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> value, <span class="at">y =</span> name)) <span class="sc">+</span> </span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-50-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div></div><div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">spread_draws</span>(<span class="st">`</span><span class="at">mu_med</span><span class="st">`</span>, <span class="st">`</span><span class="at">mu_mod</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">4</span><span class="sc">:</span><span class="dv">5</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> value, <span class="at">y =</span> name)) <span class="sc">+</span> </span>
+<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-50-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div></div><div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">spread_draws</span>(<span class="st">`</span><span class="at">sigma_med</span><span class="st">`</span>, <span class="st">`</span><span class="at">sigma_mod</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">4</span><span class="sc">:</span><span class="dv">5</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> value, <span class="at">y =</span> name)) <span class="sc">+</span> </span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-50-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div></div></div>
+<p>Save the stan model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">save_object</span>(<span class="at">file =</span> <span class="st">"mix_models/sheng.mix.2.6.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="compare-all-six-models" class="level2">
+<h2 class="anchored" data-anchor-id="compare-all-six-models">Compare all six models</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>m1 <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="at">file =</span> <span class="st">"mix_models/sheng.mix.2.1.rds"</span>)</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>m2 <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="at">file =</span> <span class="st">"mix_models/sheng.mix.2.2.rds"</span>)</span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>m3 <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="at">file =</span> <span class="st">"mix_models/sheng.mix.2.3.rds"</span>)</span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>m4 <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="at">file =</span> <span class="st">"mix_models/sheng.mix.2.4.rds"</span>)</span>
+<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a>m5 <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="at">file =</span> <span class="st">"mix_models/sheng.mix.2.5.rds"</span>)</span>
+<span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a>m6 <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="at">file =</span> <span class="st">"mix_models/sheng.mix.2.6.rds"</span>)</span>
+<span id="cb60-7"><a href="#cb60-7" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate loo </span></span>
+<span id="cb60-8"><a href="#cb60-8" aria-hidden="true" tabindex="-1"></a>m1_loo <span class="ot">&lt;-</span> m1<span class="sc">$</span><span class="fu">loo</span>()</span>
+<span id="cb60-9"><a href="#cb60-9" aria-hidden="true" tabindex="-1"></a>m2_loo <span class="ot">&lt;-</span> m2<span class="sc">$</span><span class="fu">loo</span>()</span>
+<span id="cb60-10"><a href="#cb60-10" aria-hidden="true" tabindex="-1"></a>m3_loo <span class="ot">&lt;-</span> m3<span class="sc">$</span><span class="fu">loo</span>()</span>
+<span id="cb60-11"><a href="#cb60-11" aria-hidden="true" tabindex="-1"></a>m4_loo <span class="ot">&lt;-</span> m4<span class="sc">$</span><span class="fu">loo</span>()</span>
+<span id="cb60-12"><a href="#cb60-12" aria-hidden="true" tabindex="-1"></a>m5_loo <span class="ot">&lt;-</span> m5<span class="sc">$</span><span class="fu">loo</span>()</span>
+<span id="cb60-13"><a href="#cb60-13" aria-hidden="true" tabindex="-1"></a>m6_loo <span class="ot">&lt;-</span> m6<span class="sc">$</span><span class="fu">loo</span>()</span>
+<span id="cb60-14"><a href="#cb60-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb60-15"><a href="#cb60-15" aria-hidden="true" tabindex="-1"></a>brms<span class="sc">::</span><span class="fu">loo_model_weights</span>(<span class="fu">list</span>(<span class="st">"Model 1"</span> <span class="ot">=</span> m1_loo, <span class="st">"Model 2"</span> <span class="ot">=</span> m2_loo, <span class="st">"Model 3"</span> <span class="ot">=</span> m3_loo, </span>
+<span id="cb60-16"><a href="#cb60-16" aria-hidden="true" tabindex="-1"></a>                             <span class="st">"Model 4"</span> <span class="ot">=</span> m4_loo, <span class="st">"Model 5"</span> <span class="ot">=</span> m5_loo, <span class="st">"Model 6"</span> <span class="ot">=</span> m6_loo),</span>
+<span id="cb60-17"><a href="#cb60-17" aria-hidden="true" tabindex="-1"></a>                  <span class="at">method =</span> <span class="fu">c</span>(<span class="st">"stacking"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Method: stacking
+------
+        weight
+Model 1 0.000 
+Model 2 0.302 
+Model 3 0.000 
+Model 4 0.000 
+Model 5 0.698 
+Model 6 0.000 </code></pre>
+</div>
+</div>
+<p>So the model with the intercept is apparently better than the model without the intercept. Let’s see what the lambda values look like for <code>m5</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>summary <span class="ot">&lt;-</span> m5<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>summary <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="fu">str_detect</span>(variable, <span class="st">"^lambda"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(median) <span class="sc">%&gt;%</span> </span>
+<span id="cb62-5"><a href="#cb62-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> <span class="fu">reorder</span>(variable, median))) <span class="sc">+</span></span>
+<span id="cb62-6"><a href="#cb62-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_segment</span>(<span class="fu">aes</span>(<span class="at">x =</span> q5, <span class="at">xend =</span> q95, <span class="at">yend =</span> variable)) <span class="sc">+</span></span>
+<span id="cb62-7"><a href="#cb62-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x =</span> median))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-53-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Hmm with variance this big, what are we actually learning …?</p>
 </section>
 </section>
 <section id="different-participants" class="level1">
 <h1>Different participants</h1>
+<p>Math model:</p>
+<p><span class="math display">\[\begin{align*}
+p_X(x_i) &amp; =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdot \Pr(\hat{x}^{\text{mod}}_i) \\
+\hat{x}^{\text{med}}_i &amp;\sim \mathcal{N}(x^\text{med}_i, (\sigma^\text{med}_{\text{PID}[i]})^2) \\
+\hat{y}^{\text{mod}}_i &amp;\sim \text{Laplace}(x^\text{mod}_i, (\sigma^{\text{mod}}_{\text{PID}[i]})^2) \\
+(*) \,\, \lambda &amp;\sim \text{Beta}(2, 2)
+\end{align*}\]</span></p>
 </section>
 
 </main>
