@@ -26,10 +26,14 @@ library(cmdstanr)
 library(sgt)
 ```
 
+
+
 # Read in data and all processing 
 
 - All the things selected by the participants will be named `xxx.select.xxx` 
 - All the things related to the actual answer will be named `xxx.ans.xxx`
+
+
 
 ```{r}
 #| label: read-in-data
@@ -110,9 +114,13 @@ vis_distance <- data.frame(participantId = p,
 participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participantId))
 ```
 
+
+
 # Task 1 --- split area into equal halves 
 
 Load data: 
+
+
 
 ```{r}
 #| label: get task 1 data 
@@ -136,6 +144,8 @@ task1_df <- single_pid_df %>% filter(task == "task1") %>% # task_df
          va.mod.x = vis_angle(phy.mod.x, dist_to_screen))
 ```
 
+
+
 **Note that unless specifically mentioned, all estimations are done in visual angle measures.** 
 
 # Single participant 
@@ -153,13 +163,19 @@ p_X(x_i) & =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdot \P
 
 If we set $\lambda \sim \text{Beta}(5, 5)$ then the sampling is more concentrated around 0.5, and if we set $\lambda \sim \text{Beta}(2, 2)$ then the sampling is closr to a uniform distribution over [0, 1]. 
 
+
+
 ```{r}
 #| eval: false 
 model <- cmdstan_model("mix_models/sheng.mix.1.stan")
 # model$print()
 ```
 
+
+
 Prepare data for stan: 
+
+
 
 ```{r}
 #| eval: false 
@@ -176,7 +192,11 @@ stan_data <- list(
 )
 ```
 
+
+
 Fit the stan model: 
+
+
 
 ```{r}
 #| output: false 
@@ -196,7 +216,11 @@ fit <- readRDS("mix_models/sheng.mix.1.rds")
 ```
 
 
+
+
 Posterior predictive checks: 
+
+
 
 ```{r}
 #| column: margin 
@@ -211,7 +235,11 @@ custom_pp_check <- function(fitted_model) {
 custom_pp_check(fit)
 ```
 
+
+
 Checking the posterior results: 
+
+
 
 ```{r}
 #| column: margin 
@@ -234,7 +262,11 @@ fit$draws() %>%
   stat_halfeye()
 ```
 
+
+
 Save the stan model: 
+
+
 
 ```{r}
 #| eval: false 
@@ -242,18 +274,26 @@ Save the stan model:
 fit$save_object(file = "mix_models/sheng.mix.1.rds")
 ```
 
+
+
 ## Different lambda --- varies by row 
 
 Everything about the previous math model is the same, except for the part related to $\lambda$. 
 
 ### lambda = inv-logit(beta * (med - mod))
 
+
+
 ```{r}
 #| eval: false 
 model <- cmdstan_model("mix_models/sheng.mix.2.1.stan")
 ``` 
 
+
+
 Fit the stan model: 
+
+
 
 ```{r}
 #| output: false 
@@ -272,7 +312,11 @@ fit <- model$sample(
 fit <- readRDS("mix_models/sheng.mix.2.1.rds")
 ```
 
+
+
 Posterior predictive checks: 
+
+
 
 ```{r}
 #| column: margin 
@@ -281,7 +325,11 @@ summary <- fit$summary()
 custom_pp_check(fit)
 ```
 
+
+
 Checking the posterior results: 
+
+
 
 ```{r}
 #| column: margin 
@@ -305,7 +353,11 @@ fit$draws() %>%
 ```
 
 
+
+
 Save the stan model: 
+
+
 
 ```{r}
 #| eval: false 
@@ -313,14 +365,22 @@ Save the stan model:
 fit$save_object(file = "mix_models/sheng.mix.2.1.rds")
 ```
 
+
+
 ### lambda = inv-logit(beta * abs(med - mod))
+
+
 
 ```{r}
 #| eval: false 
 model <- cmdstan_model("mix_models/sheng.mix.2.2.stan")
 ``` 
 
+
+
 Fit the stan model: 
+
+
 
 ```{r}
 #| output: false 
@@ -339,7 +399,11 @@ fit <- model$sample(
 fit <- readRDS("mix_models/sheng.mix.2.2.rds")
 ```
 
+
+
 Posterior predictive checks: 
+
+
 
 ```{r}
 #| column: margin 
@@ -348,7 +412,11 @@ summary <- fit$summary()
 custom_pp_check(fit)
 ```
 
+
+
 Checking the posterior results: 
+
+
 
 ```{r}
 #| column: margin 
@@ -372,7 +440,11 @@ fit$draws() %>%
 ```
 
 
+
+
 Save the stan model: 
+
+
 
 ```{r}
 #| eval: false 
@@ -380,14 +452,22 @@ Save the stan model:
 fit$save_object(file = "mix_models/sheng.mix.2.2.rds")
 ```
 
+
+
 ### lambda = inv-logit(beta * (med - mod)^2)
+
+
 
 ```{r}
 #| eval: false 
 model <- cmdstan_model("mix_models/sheng.mix.2.3.stan")
 ``` 
 
+
+
 Fit the stan model: 
+
+
 
 ```{r}
 #| output: false 
@@ -406,7 +486,11 @@ fit <- model$sample(
 fit <- readRDS("mix_models/sheng.mix.2.1.rds")
 ```
 
+
+
 Posterior predictive checks: 
+
+
 
 ```{r}
 #| column: margin 
@@ -415,7 +499,11 @@ summary <- fit$summary()
 custom_pp_check(fit)
 ```
 
+
+
 Checking the posterior results: 
+
+
 
 ```{r}
 #| column: margin 
@@ -440,7 +528,11 @@ fit$draws() %>%
 ```
 
 
+
+
 Save the stan model: 
+
+
 
 ```{r}
 #| eval: false 
@@ -449,7 +541,11 @@ Save the stan model:
 fit$save_object(file = "mix_models/sheng.mix.2.3.rds")
 ```
 
+
+
 ### Compare all models 
+
+
 
 ```{r}
 m1 <- readRDS("mix_models/sheng.mix.2.1.rds") # diff
@@ -463,7 +559,11 @@ brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo, "Model 3" =
                   method = c("stacking"))
 ```
 
+
+
 The second model seems to be fitting well. 
+
+
 
 ```{r}
 m4 <- readRDS("mix_models/sheng.mix.1.rds")
@@ -472,9 +572,13 @@ m4_loo <- m4$loo()
 brms::loo_model_weights(list("Model 4" = m4_loo, "Model 2" = m2_loo), method = c("stacking"))
 ```
 
+
+
 It also performs better than the first one where we had a single lambda. 
 
 Let's look at all of the other lambdas: 
+
+
 
 ```{r}
 summary <- m2$summary()
@@ -486,18 +590,26 @@ summary %>% filter(str_detect(variable, "^lambda")) %>%
   geom_point(aes(x = median))
 ```
 
+
+
 One thing about the above model is that `lambda` is constrained to be >= 0.5. This is because of how we defined the function. We could also fit models that have an intercept, allowing the full range to be something more broad. 
 
 ## lambda = inv-logit (alpha + beta * (x.med - x.mod))
 
 Read stan model: 
 
+
+
 ```{r}
 #| eval: false 
 model <- cmdstan_model("mix_models/sheng.mix.2.4.stan")
 ``` 
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| output: false 
@@ -513,7 +625,11 @@ fit <- model$sample(
 fit <- readRDS("mix_models/sheng.mix.2.4.rds")
 ```
 
+
+
 Posterior predictive checks: 
+
+
 
 ```{r}
 #| column: margin 
@@ -522,7 +638,11 @@ summary <- fit$summary()
 custom_pp_check(fit)
 ```
 
+
+
 Checking the posterior results: 
+
+
 
 ```{r}
 #| column: margin 
@@ -546,7 +666,11 @@ fit$draws() %>%
   stat_halfeye()
 ```
 
+
+
 Save the stan model: 
+
+
 
 ```{r}
 #| eval: false 
@@ -554,16 +678,24 @@ Save the stan model:
 fit$save_object(file = "mix_models/sheng.mix.2.4.rds")
 ```
 
+
+
 ## lambda = inv-logit(alpha + beta * abs(x.med - x.mod))
 
 Read stan model: 
+
+
 
 ```{r}
 #| eval: false 
 model <- cmdstan_model("mix_models/sheng.mix.2.5.stan")
 ``` 
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| output: false 
@@ -579,7 +711,11 @@ fit <- model$sample(
 fit <- readRDS("mix_models/sheng.mix.2.5.rds")
 ```
 
+
+
 Posterior predictive checks: 
+
+
 
 ```{r}
 #| column: margin 
@@ -588,7 +724,11 @@ summary <- fit$summary()
 custom_pp_check(fit)
 ```
 
+
+
 Checking the posterior results: 
+
+
 
 ```{r}
 #| column: margin 
@@ -612,7 +752,11 @@ fit$draws() %>%
   stat_halfeye()
 ```
 
+
+
 Save the stan model: 
+
+
 
 ```{r}
 #| eval: false 
@@ -620,14 +764,22 @@ Save the stan model:
 fit$save_object(file = "mix_models/sheng.mix.2.5.rds")
 ```
 
+
+
 ## lambda = inv-logit(alpha + beta * square(x.med - x.mod))
+
+
 
 ```{r}
 #| eval: false 
 model <- cmdstan_model("mix_models/sheng.mix.2.6.stan")
 ``` 
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| output: false 
@@ -643,7 +795,11 @@ fit <- model$sample(
 fit <- readRDS("mix_models/sheng.mix.2.6.rds")
 ```
 
+
+
 Posterior predictive checks: 
+
+
 
 ```{r}
 #| column: margin 
@@ -652,7 +808,11 @@ summary <- fit$summary()
 custom_pp_check(fit)
 ```
 
+
+
 Checking the posterior results: 
+
+
 
 ```{r}
 #| column: margin 
@@ -676,7 +836,11 @@ fit$draws() %>%
   stat_halfeye()
 ```
 
+
+
 Save the stan model: 
+
+
 
 ```{r}
 #| eval: false 
@@ -684,7 +848,11 @@ Save the stan model:
 fit$save_object(file = "mix_models/sheng.mix.2.6.rds")
 ```
 
+
+
 ## Compare all six models 
+
+
 
 ```{r}
 m1 <- readRDS(file = "mix_models/sheng.mix.2.1.rds")
@@ -706,7 +874,11 @@ brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo, "Model 3" =
                   method = c("stacking"))
 ```
 
+
+
 So the model with the intercept is apparently better than the model without the intercept. Let's see what the lambda values look like for `m5`: 
+
+
 
 ```{r}
 summary <- m5$summary()
@@ -717,6 +889,8 @@ summary %>% filter(str_detect(variable, "^lambda")) %>%
   geom_segment(aes(x = q5, xend = q95, yend = variable)) +
   geom_point(aes(x = median))
 ```
+
+
 
 Hmm with variance this big, what are we actually learning ...? 
 
@@ -730,3 +904,4 @@ p_X(x_i) & =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdot \P
 \hat{y}^{\text{mod}}_i &\sim \text{Laplace}(x^\text{mod}_i, (\sigma^{\text{mod}}_{\text{PID}[i]})^2) \\ 
 (*) \,\, \lambda &\sim \text{Beta}(2, 2) 
 \end{align*}$$
+
