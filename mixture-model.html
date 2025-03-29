@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.6.40">
+<meta name="generator" content="quarto-1.6.42">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -63,10 +63,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="mixture-model_files/libs/quarto-html/tippy.umd.min.js"></script>
 <script src="mixture-model_files/libs/quarto-html/anchor.min.js"></script>
 <link href="mixture-model_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="mixture-model_files/libs/quarto-html/quarto-syntax-highlighting-549806ee2085284f45b00abea8c6df48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="mixture-model_files/libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="mixture-model_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="mixture-model_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="mixture-model_files/libs/bootstrap/bootstrap-973236bd072d72a04ee9cd82dcc9cb29.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="mixture-model_files/libs/bootstrap/bootstrap-261d1f112351a20645309ec42307c212.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
@@ -103,7 +103,26 @@ window.Quarto = {
 <body>
 
 <div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
-<div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#read-in-data-and-all-processing" id="toc-read-in-data-and-all-processing" class="nav-link active" data-scroll-target="#read-in-data-and-all-processing">Read in data and all processing</a></li>
+  <li><a href="#task-1-split-area-into-equal-halves" id="toc-task-1-split-area-into-equal-halves" class="nav-link" data-scroll-target="#task-1-split-area-into-equal-halves">Task 1 — split area into equal halves</a></li>
+  <li><a href="#single-participant" id="toc-single-participant" class="nav-link" data-scroll-target="#single-participant">Single participant</a>
+  <ul class="collapse">
+  <li><a href="#same-lambda" id="toc-same-lambda" class="nav-link" data-scroll-target="#same-lambda">Same lambda</a></li>
+  <li><a href="#different-lambda-varies-by-row" id="toc-different-lambda-varies-by-row" class="nav-link" data-scroll-target="#different-lambda-varies-by-row">Different lambda — varies by row</a>
+  <ul class="collapse">
+  <li><a href="#lambda-inv-logitk-med---mod" id="toc-lambda-inv-logitk-med---mod" class="nav-link" data-scroll-target="#lambda-inv-logitk-med---mod">lambda = inv-logit(k * (med - mod))</a></li>
+  <li><a href="#lambda-inv-logitk-absmed---mod" id="toc-lambda-inv-logitk-absmed---mod" class="nav-link" data-scroll-target="#lambda-inv-logitk-absmed---mod">lambda = inv-logit(k * abs(med - mod))</a></li>
+  <li><a href="#lambda-inv-logitk-med---mod2" id="toc-lambda-inv-logitk-med---mod2" class="nav-link" data-scroll-target="#lambda-inv-logitk-med---mod2">lambda = inv-logit(k * (med - mod)^2)</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#different-participants" id="toc-different-participants" class="nav-link" data-scroll-target="#different-participants">Different participants</a></li>
+  </ul>
+</nav>
 </div>
 <main class="content page-columns page-full" id="quarto-document-content">
 
@@ -151,7 +170,11 @@ window.Quarto = {
 <span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">data.select.x =</span> location.x, </span>
 <span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.select.y =</span> location.y,</span>
 <span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>         <span class="at">pixel.select.x =</span> pixel.x, </span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>         <span class="at">pixel.select.y =</span> pixel.y)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>         <span class="at">pixel.select.y =</span> pixel.y)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co"># create a dataframe for single participant (Sheng only) </span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>not_sheng <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"5f37a06e-50e4-4489-948f-c4f25bd38d17"</span>, <span class="st">"85349f2b-c75a-46ff-8f80-fafc92da11a7"</span>)</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>single_pid_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span>participantId <span class="sc">%in%</span> not_sheng)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <div class="cell">
@@ -204,293 +227,153 @@ window.Quarto = {
 </details>
 </div>
 </section>
-<section id="task-1-split-area-into-equal-halves" class="level1 page-columns page-full">
+<section id="task-1-split-area-into-equal-halves" class="level1">
 <h1>Task 1 — split area into equal halves</h1>
 <p>Load data:</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>task1_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task1"</span>) <span class="sc">%&gt;%</span> </span>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>task1_df <span class="ot">&lt;-</span> single_pid_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task1"</span>) <span class="sc">%&gt;%</span> <span class="co"># task_df</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>slider.x, <span class="sc">-</span>slider.y) <span class="sc">%&gt;%</span> </span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">data.select.left_area =</span> <span class="fu">psgt</span>(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>), </span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.ans.x =</span> <span class="fu">qsgt</span>(<span class="fl">0.5</span>, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">data.select.left_area =</span> <span class="fu">psgt</span>(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>), </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.ans.x =</span> <span class="fu">qsgt</span>(<span class="fl">0.5</span>, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># pixel related </span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pixel.med.x =</span> <span class="fu">data_to_pixel_x</span>(data.ans.x), </span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">pixel.mod.x =</span> <span class="fu">data_to_pixel_x</span>(param.mu)) <span class="sc">%&gt;%</span> </span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># phy related </span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.select.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.select.x, pixelToMM), </span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.med.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.med.x, pixelToMM), </span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.mod.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.mod.x, pixelToMM)) <span class="sc">%&gt;%</span> </span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># visual angle related </span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">va.select.x =</span> <span class="fu">vis_angle</span>(phy.select.x, dist_to_screen), </span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.med.x =</span> <span class="fu">vis_angle</span>(phy.med.x, dist_to_screen), </span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.mod.x =</span> <span class="fu">vis_angle</span>(phy.mod.x, dist_to_screen))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>Ok here’s the math model<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>:</p>
-<div class="no-row-height column-margin column-container"><div id="fn1"><p><sup>1</sup>&nbsp;Note that the notation for a standard mixture model focuses on specifying the probability <strong>density</strong>, which is different than McElreath’s approach of specifying things in a more generative fashion …</p></div></div><p><span class="math display">\[
-\begin{align}
-\Pr(y_i) &amp; =  \lambda \cdot \Pr(\hat{y}^{\text{med}}_i) + (1 - \lambda) \cdot \Pr(\hat{y}^{\text{mod}}_i) \\
-\hat{y}^{\text{med}}_i &amp;\sim \mathcal{N}(y^\text{med}, (\sigma^\text{med}_{\text{PID}[i]})^2) \\
-\hat{y}^{\text{mod}}_i &amp;\sim \mathcal{N}(y^\text{mod}, (\sigma^{\text{mod}}_{\text{PID}[i]})^2) \\
-(*) \,\, \lambda &amp;\sim \text{Beta}(5, 5)
-\end{align}
-\]</span></p>
-
-<div class="no-row-height column-margin column-container"><div class="">
-<p>Perhaps a different way to write this in a generative fashion is: <span class="math display">\[
-\begin{align}
-z_i &amp;\sim \text{Categorical}(\pi_1, \pi_2) \\
-y_i &amp;\sim \mathcal{N}(\mu_{z_i}, \sigma_{z_i})
-\end{align}
-\]</span> where <span class="math inline">\(z_i\)</span> is the component indicator variable for observation <span class="math inline">\(i\)</span>.</p>
-</div><div id="fn2"><p><sup>2</sup>&nbsp;… which is going to be Uniform[0, 1] for the case of <span class="math inline">\(K =2\)</span></p></div></div><p>Let’s try to write a simple brms model for this, note that right now <span class="math inline">\(\lambda\)</span> is just assumed to be drawn from Beta (or Dirichlet(1, 1)<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>)</p>
+<p><strong>Note that unless specifically mentioned, all estimations are done in visual angle measures.</strong></p>
+</section>
+<section id="single-participant" class="level1 page-columns page-full">
+<h1>Single participant</h1>
+<p>Math model:</p>
+<p><span class="math display">\[\begin{align*}
+p_X(x_i) &amp; =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdot \Pr(\hat{x}^{\text{mod}}_i) \\
+\hat{x}^{\text{med}}_i &amp;\sim \mathcal{N}(x^\text{med}, (\sigma^\text{med})^2) \\
+\hat{y}^{\text{mod}}_i &amp;\sim \text{Laplace}(x^\text{mod}, (\sigma^{\text{mod}})^2) \\
+(1) \,\, \lambda &amp;\sim \text{Beta}(2, 2)
+\end{align*}\]</span></p>
+<section id="same-lambda" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="same-lambda">Same lambda</h2>
+<p>If we set <span class="math inline">\(\lambda \sim \text{Beta}(5, 5)\)</span> then the sampling is more concentrated around 0.5, and if we set <span class="math inline">\(\lambda \sim \text{Beta}(2, 2)\)</span> then the sampling is closr to a uniform distribution over [0, 1].</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>mix <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">mixture</span>(gaussian, gaussian, <span class="at">order =</span> <span class="st">"none"</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>formula <span class="ot">&lt;-</span> <span class="fu">bf</span>(data.select.x <span class="sc">~</span> <span class="dv">0</span> <span class="sc">+</span> data.ans.x<span class="sc">:</span>mu1 <span class="sc">+</span> param.mu<span class="sc">:</span>mu2,</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>              mu1 <span class="sc">~</span> <span class="dv">0</span>, </span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>              mu2 <span class="sc">~</span> <span class="dv">0</span>, </span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>              sigma1 <span class="sc">~</span> <span class="dv">0</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> participantId), </span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>              sigma2 <span class="sc">~</span> <span class="dv">0</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> participantId)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>              )</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co"># get prior </span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="fu">get_prior</span>(<span class="at">formula =</span> formula, <span class="at">data =</span> task1_df, <span class="at">family =</span> mix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>                prior class      coef         group resp   dpar nlpar lb ub
-         dirichlet(1) theta                                                
- student_t(3, 0, 2.5)    sd                              sigma1        0   
- student_t(3, 0, 2.5)    sd           participantId      sigma1        0   
- student_t(3, 0, 2.5)    sd Intercept participantId      sigma1        0   
- student_t(3, 0, 2.5)    sd                              sigma2        0   
- student_t(3, 0, 2.5)    sd           participantId      sigma2        0   
- student_t(3, 0, 2.5)    sd Intercept participantId      sigma2        0   
-       source
-      default
-      default
- (vectorized)
- (vectorized)
-      default
- (vectorized)
- (vectorized)</code></pre>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">cmdstan_model</span>(<span class="st">"mix_models/sheng.mix.1.stan"</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># model$print()</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-</div>
-<p>If we don’t specify anything for <code>theta</code>, then theta is treated as drawn from a Dirichlet distribution, and theta values are assumed to be the same for all trials across all participants.</p>
+<p>Prepare data for stan:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># # set prior </span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># prior &lt;- c(</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   prior(normal(0, 2), class = Intercept, dpar = mu1), </span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">#   prior(normal(0, 2), class = Intercept, dpar = mu2), </span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co">#   # prior(beta(5, 5), class = theta), # dirichlet is the only valid prior for simplex parameters UGH </span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co">#   prior(normal(0, 2), class = sigma1, lb = 0), # truncated normal dist</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co">#   prior(normal(0, 2), class = sigma2, lb = 0) # truncate normal dist </span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co"># )</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>N <span class="ot">&lt;-</span> task1_df <span class="sc">%&gt;%</span> <span class="fu">nrow</span>(.)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> task1_df <span class="sc">%&gt;%</span> <span class="fu">pull</span>(va.select.x)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>x_med <span class="ot">&lt;-</span> task1_df <span class="sc">%&gt;%</span> <span class="fu">pull</span>(va.med.x)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>x_mod <span class="ot">&lt;-</span> task1_df <span class="sc">%&gt;%</span> <span class="fu">pull</span>(va.mod.x)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>stan_data <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">N =</span> N, </span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> x, </span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">x_med =</span> x_med, </span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">x_mod =</span> x_mod</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Fit the model:</p>
+<p>Fit the stan model:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>mixture_model <span class="ot">&lt;-</span> <span class="fu">brm</span>(</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> formula,</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> task1_df, </span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> mix, </span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># prior = prior, </span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, </span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">cores =</span> <span class="dv">4</span>, </span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">iter =</span> <span class="dv">10000</span>, </span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">warmup =</span> <span class="dv">5000</span>, </span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">file =</span> <span class="st">"models/task1"</span>, </span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.95</span>),</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> model<span class="sc">$</span><span class="fu">sample</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> stan_data, </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, </span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">parallel_chains =</span> <span class="dv">4</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Check the fitted model:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mixture_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code> Family: mixture(gaussian, gaussian) 
-  Links: mu1 = identity; sigma1 = log; mu2 = identity; sigma2 = log; theta1 = identity; theta2 = identity 
-Formula: data.select.x ~ 0 + data.ans.x:mu1 + param.mu:mu2 
-         mu1 ~ 0
-         mu2 ~ 0
-         sigma1 ~ 0 + (1 | participantId)
-         sigma2 ~ 0 + (1 | participantId)
-   Data: task1_df (Number of observations: 130) 
-  Draws: 4 chains, each with iter = 10000; warmup = 5000; thin = 1;
-         total post-warmup draws = 20000
+<p>Posterior predictive checks:</p>
+<div class="cell page-columns page-full">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>summary <span class="ot">&lt;-</span> fit<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>custom_pp_check <span class="ot">&lt;-</span> <span class="cf">function</span>(fitted_model) {</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  y_rep <span class="ot">&lt;-</span> fitted_model<span class="sc">$</span><span class="fu">draws</span>(<span class="st">"y_rep"</span>, <span class="at">format =</span> <span class="st">"matrix"</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> fitted_model<span class="sc">$</span><span class="fu">draws</span>(<span class="st">"x_org"</span>, <span class="at">format =</span> <span class="st">"matrix"</span>)[<span class="dv">1</span>, ] <span class="sc">%&gt;%</span> <span class="fu">as.vector</span>(.)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  bayesplot<span class="sc">::</span><span class="fu">ppc_dens_overlay</span>(y, y_rep[<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>, ])</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="fu">custom_pp_check</span>(fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
-Multilevel Hyperparameters:
-~participantId (Number of levels: 13) 
-                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS
-sd(sigma1_Intercept)     0.45      1.14     0.01     3.18 1.00     9832
-sd(sigma2_Intercept)     0.45      1.08     0.01     3.12 1.00     9655
-                     Tail_ESS
-sd(sigma1_Intercept)    11949
-sd(sigma2_Intercept)    10580
-
-Further Distributional Parameters:
-       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-theta1     0.50      0.37     0.00     1.00 1.00     8246    13182
-theta2     0.50      0.37     0.00     1.00 1.00     8246    13182
-
-Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
-and Tail_ESS are effective sample size measures, and Rhat is the potential
-scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pairs</span>(mixture_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mixture-model_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
-</div>
-</div>
-<p>Let’s look at the stan code of this:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make_stancode</span>(<span class="at">formula =</span> formula, </span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">data =</span> task1_df,</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">family =</span> mix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>// generated with brms 2.22.0
-functions {
-}
-data {
-  int&lt;lower=1&gt; N;  // total number of observations
-  vector[N] Y;  // response variable
-  vector[2] con_theta;  // prior concentration
-  // data for group-level effects of ID 1
-  int&lt;lower=1&gt; N_1;  // number of grouping levels
-  int&lt;lower=1&gt; M_1;  // number of coefficients per level
-  array[N] int&lt;lower=1&gt; J_1;  // grouping indicator per observation
-  // group-level predictor values
-  vector[N] Z_1_sigma1_1;
-  // data for group-level effects of ID 2
-  int&lt;lower=1&gt; N_2;  // number of grouping levels
-  int&lt;lower=1&gt; M_2;  // number of coefficients per level
-  array[N] int&lt;lower=1&gt; J_2;  // grouping indicator per observation
-  // group-level predictor values
-  vector[N] Z_2_sigma2_1;
-  int prior_only;  // should the likelihood be ignored?
-}
-transformed data {
-}
-parameters {
-  simplex[2] theta;  // mixing proportions
-  vector&lt;lower=0&gt;[M_1] sd_1;  // group-level standard deviations
-  array[M_1] vector[N_1] z_1;  // standardized group-level effects
-  vector&lt;lower=0&gt;[M_2] sd_2;  // group-level standard deviations
-  array[M_2] vector[N_2] z_2;  // standardized group-level effects
-}
-transformed parameters {
-  // mixing proportions
-  real&lt;lower=0,upper=1&gt; theta1;
-  real&lt;lower=0,upper=1&gt; theta2;
-  vector[N_1] r_1_sigma1_1;  // actual group-level effects
-  vector[N_2] r_2_sigma2_1;  // actual group-level effects
-  real lprior = 0;  // prior contributions to the log posterior
-  theta1 = theta[1];
-  theta2 = theta[2];
-  r_1_sigma1_1 = (sd_1[1] * (z_1[1]));
-  r_2_sigma2_1 = (sd_2[1] * (z_2[1]));
-  lprior += dirichlet_lpdf(theta | con_theta);
-  lprior += student_t_lpdf(sd_1 | 3, 0, 2.5)
-    - 1 * student_t_lccdf(0 | 3, 0, 2.5);
-  lprior += student_t_lpdf(sd_2 | 3, 0, 2.5)
-    - 1 * student_t_lccdf(0 | 3, 0, 2.5);
-}
-model {
-  // likelihood including constants
-  if (!prior_only) {
-    // initialize linear predictor term
-    vector[N] mu1 = rep_vector(0.0, N);
-    // initialize linear predictor term
-    vector[N] sigma1 = rep_vector(0.0, N);
-    // initialize linear predictor term
-    vector[N] mu2 = rep_vector(0.0, N);
-    // initialize linear predictor term
-    vector[N] sigma2 = rep_vector(0.0, N);
-    for (n in 1:N) {
-      // add more terms to the linear predictor
-      sigma1[n] += r_1_sigma1_1[J_1[n]] * Z_1_sigma1_1[n];
-    }
-    for (n in 1:N) {
-      // add more terms to the linear predictor
-      sigma2[n] += r_2_sigma2_1[J_2[n]] * Z_2_sigma2_1[n];
-    }
-    sigma1 = exp(sigma1);
-    sigma2 = exp(sigma2);
-    // likelihood of the mixture model
-    for (n in 1:N) {
-      array[2] real ps;
-      ps[1] = log(theta1) + normal_lpdf(Y[n] | mu1[n], sigma1[n]);
-      ps[2] = log(theta2) + normal_lpdf(Y[n] | mu2[n], sigma2[n]);
-      target += log_sum_exp(ps);
-    }
-  }
-  // priors including constants
-  target += lprior;
-  target += std_normal_lpdf(z_1[1]);
-  target += std_normal_lpdf(z_2[1]);
-}
-generated quantities {
-}</code></pre>
-</div>
-</div>
-<p>Looking at the above sections<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>, we have the following:</p>
-<div class="no-row-height column-margin column-container"><div id="fn3"><p><sup>3</sup>&nbsp;termed <code>transformed parameters</code>, see <a href="https://mc-stan.org/docs/reference-manual/blocks.html#program-block-transformed-parameters">here</a> for more details</p></div></div><ul>
-<li><code>functions</code>: the place to define custom functions to be used in the model fitting process</li>
-<li><code>data</code>: declares all data that will be provided to th model from <code>R</code>. This includes observed variables, group identifiers, and any fixed values needed for the model.</li>
-<li><code>transformed data</code>: define deterministic transformations of data that only need to be computed once, before sampling begins. Useful for efficiency.</li>
-<li><code>parameters</code>: the place to declare parameters that Stan will estimate. These are the unknowns in the model.</li>
-<li><code>model</code>: the core of the stan program, where we define the likelihood of the data given the parameters and specify the prior distributions. The <code>target</code> variable represents the <strong>log posterior density</strong> that Stan is trying to sample from.</li>
-</ul>
-<hr>
-<p>Let’s say we try to add participant-level or row-level varying theta, then the stan code is going to look as follows:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>stan_code <span class="ot">&lt;-</span> <span class="st">"</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="st">functions {</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="st">}</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="st">data {</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="st">  int&lt;lower=1&gt; N; // total number of observations</span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="st">  vector[N] y; // observed values </span></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="st">  vector[N] y_med; // known median values </span></span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="st">  vector[N] y_mod; // known mode values </span></span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="st">  // participant data </span></span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="st">  int&lt;lower=1&gt; N_p; // number of participants </span></span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="st">  array[N] int&lt;lower=1&gt; PID; // participant ID for each observation </span></span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="st">  // prior parameters </span></span>
-<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a><span class="st">  real&lt;lower=0&gt; alpha; // beta prior parameter for lambda </span></span>
-<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="st">  real&lt;lower=0&gt; beta; // beta prior parameter for lambda </span></span>
-<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a><span class="st">}</span></span>
-<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="st">parameters {</span></span>
-<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a><span class="st">  real&lt;lower=0, upper=1&gt; lambda; // mixing weight</span></span>
-<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
-<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a><span class="st">  // participant-specific standard deviations </span></span>
-<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a><span class="st">  vector&lt;lower=0&gt;[N_p] sigma_med; </span></span>
-<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a><span class="st">  vector&lt;lower=0&gt;[N_p] sigma_mod; </span></span>
-<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a><span class="st">}</span></span>
-<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a><span class="st">model {</span></span>
-<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a><span class="st">  // priors</span></span>
-<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a><span class="st">  lambda ~ beta(alpha, beta); </span></span>
-<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a><span class="st">  sigma_med ~ student_t(3, 0, 2.5); // TODO --- change this </span></span>
-<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a><span class="st">  sigma_mod ~ student_t(3, 0, 2.5); // TODO --- change this </span></span>
-<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
-<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a><span class="st">  // likelihood</span></span>
-<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a><span class="st">  for (n in 1:N) {</span></span>
-<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a><span class="st">    int p = PID[n]; // participant ID for this observation </span></span>
-<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a><span class="st">    // Two-component mixture model</span></span>
-<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a><span class="st">    target += log_mix(lambda[p], normal_lpdf(Y[n] | Y_med[n], sigma_med[p]), normal_lpdf(y[n] | y_mod[n], sigma_mod[p]));</span></span>
-<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a><span class="st">  }</span></span>
-<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a><span class="st">}</span></span>
-<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a><span class="st">generated quantities {</span></span>
-<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a><span class="st">  vector[N] log_lik; </span></span>
-<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
-<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a><span class="st">  for (n in 1:N) {</span></span>
-<span id="cb14-42"><a href="#cb14-42" aria-hidden="true" tabindex="-1"></a><span class="st">    int p = PID[n]; </span></span>
-<span id="cb14-43"><a href="#cb14-43" aria-hidden="true" tabindex="-1"></a><span class="st">    </span></span>
-<span id="cb14-44"><a href="#cb14-44" aria-hidden="true" tabindex="-1"></a><span class="st">    log_lik[n] = log_mix(lambda[p], normal_lpdf(Y[n] | Y_med[n], sigma_med[p]), normal_lpdf(y[n] | y_mod[n], sigma_mod[p]));</span></span>
-<span id="cb14-45"><a href="#cb14-45" aria-hidden="true" tabindex="-1"></a><span class="st">  }</span></span>
-<span id="cb14-46"><a href="#cb14-46" aria-hidden="true" tabindex="-1"></a><span class="st">}</span></span>
-<span id="cb14-47"><a href="#cb14-47" aria-hidden="true" tabindex="-1"></a><span class="st">"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>Note that we are using the <code>log_mix</code> function instead of the <code>log_sum_exp</code> function, but they are equivalent for the case of two components. In the <a href="https://mc-stan.org/docs/functions-reference/real-valued_basic_functions.html">documentation</a> we have</p>
-<p><span class="math display">\[
-\begin{align}
-\text{log_mix}(\theta, \lambda_1, \lambda_2) &amp;= \log (\theta \exp(\lambda_1) + (1 - \theta) \exp(\lambda_2)) \\
-&amp;= \text{log_sum_exp}(\log (\theta) + \lambda_1, \log (1 - \theta) + \lambda_2)
-\end{align}
-\]</span></p>
-</section>
+</div></div></div>
+<p>Checking the posterior results:</p>
+<div class="cell page-columns page-full">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">spread_draws</span>(<span class="st">`</span><span class="at">lambda</span><span class="st">`</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> lambda)) <span class="sc">+</span> </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div></div><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">spread_draws</span>(<span class="st">`</span><span class="at">mu_med</span><span class="st">`</span>, <span class="st">`</span><span class="at">mu_mod</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">4</span><span class="sc">:</span><span class="dv">5</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> value, <span class="at">y =</span> name)) <span class="sc">+</span> </span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-6-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div></div><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">draws</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">spread_draws</span>(<span class="st">`</span><span class="at">sigma_med</span><span class="st">`</span>, <span class="st">`</span><span class="at">sigma_mod</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="dv">4</span><span class="sc">:</span><span class="dv">5</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> value, <span class="at">y =</span> name)) <span class="sc">+</span> </span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="mixture-model_files/figure-html/unnamed-chunk-6-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div></div></div>
+<p>Save the stan model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>fit<span class="sc">$</span><span class="fu">save_object</span>(<span class="at">file =</span> <span class="st">"mix_models/sheng.mix.1.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="different-lambda-varies-by-row" class="level2">
+<h2 class="anchored" data-anchor-id="different-lambda-varies-by-row">Different lambda — varies by row</h2>
+<p>Everything about the previous math model is the same, except for the part related to <span class="math inline">\(\lambda\)</span>.</p>
+<p>…</p>
+<section id="lambda-inv-logitk-med---mod" class="level3">
+<h3 class="anchored" data-anchor-id="lambda-inv-logitk-med---mod">lambda = inv-logit(k * (med - mod))</h3>
+<p>…</p>
+</section>
+<section id="lambda-inv-logitk-absmed---mod" class="level3">
+<h3 class="anchored" data-anchor-id="lambda-inv-logitk-absmed---mod">lambda = inv-logit(k * abs(med - mod))</h3>
+<p>…</p>
+</section>
+<section id="lambda-inv-logitk-med---mod2" class="level3">
+<h3 class="anchored" data-anchor-id="lambda-inv-logitk-med---mod2">lambda = inv-logit(k * (med - mod)^2)</h3>
+<p>…</p>
+</section>
+</section>
+</section>
+<section id="different-participants" class="level1">
+<h1>Different participants</h1>
+</section>
 
 </main>
 <!-- /main column -->

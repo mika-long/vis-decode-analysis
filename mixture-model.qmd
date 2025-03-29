@@ -3,6 +3,10 @@ title: "mixture-model"
 format: 
   html: 
     reference-location: margin
+    toc: true
+    code-overflow: wrap
+    grid: 
+      margin-width: 450px 
 ---
 
 ```{r}
@@ -132,453 +136,33 @@ task1_df <- single_pid_df %>% filter(task == "task1") %>% # task_df
          va.mod.x = vis_angle(phy.mod.x, dist_to_screen))
 ```
 
-Ok here's the math model^[Note that the notation for a standard mixture model focuses on specifying the probability **density**, which is different than McElreath's approach of specifying things in a more generative fashion ...]: 
+**Note that unless specifically mentioned, all estimations are done in visual angle measures.** 
 
-$$\begin{align}
-p_Y(y_i) & =  \lambda \cdot \Pr(\hat{y}^{\text{med}}_i) + (1 - \lambda) \cdot \Pr(\hat{y}^{\text{mod}}_i) \\
-\hat{y}^{\text{med}}_i &\sim \mathcal{N}(y^\text{med}, (\sigma^\text{med}_{\text{PID}[i]})^2) \\ 
-\hat{y}^{\text{mod}}_i &\sim \mathcal{N}(y^\text{mod}, (\sigma^{\text{mod}}_{\text{PID}[i]})^2) \\ 
-(1) \,\, \lambda &\sim \text{Beta}(5, 5) 
-\end{align}$$
-
-From modeling task 2, it seems that $\hat{y}^\text{mod}$ does not really follow a normal distribution, but in fact follows something like this: 
-$$\text{signed error} = \hat{y}^\text{mod}_i - y_i^\text{mod} \sim \text{Laplace}(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i]})$$
-
-
-:::{.column-margin}
-Perhaps a different way to write this in a generative fashion is: 
-$$
-\begin{align}
-z_i &\sim \text{Categorical}(\pi_1, \pi_2) \\ 
-y_i &\sim \mathcal{N}(\mu_{z_i}, \sigma_{z_i})
-\end{align}
-$$
-where $z_i$ is the component indicator variable for observation $i$. 
-:::
-
-## Simple BRMS model
-
-Let's try to write a simple brms model for this, note that right now $\lambda$ is just assumed to be drawn from Beta (or Dirichlet(1, 1)^[... which is going to be Uniform[0, 1] for the case of $K =2$])
-
-```{r}
-mix <- brms::mixture(gaussian, gaussian, order = "none")
-formula <- bf(data.select.x ~ 0 + data.ans.x:mu1 + param.mu:mu2,
-              mu1 ~ 0, 
-              mu2 ~ 0, 
-              sigma1 ~ 0 + (1 | participantId), 
-              sigma2 ~ 0 + (1 | participantId)
-              )
-# get prior 
-get_prior(formula = formula, data = task1_df, family = mix)
-
-```
-
-If we don't specify anything for `theta`, then theta is treated as drawn from a Dirichlet distribution, and theta values are assumed to be the same for all trials across all participants. 
-
-Fit the model: 
-
-```{r}
-#| output: false 
-
-mixture_model <- brm(
-  formula = formula,
-  data = task1_df, 
-  family = mix, 
-  # prior = prior, 
-  chains = 4, 
-  cores = 4, 
-  iter = 10000, 
-  warmup = 5000, 
-  file = "models/task1", 
-  control = list(adapt_delta = 0.95),
-)
-```
-
-Check the fitted model: 
-
-```{r}
-summary(mixture_model)
-pairs(mixture_model)
-```
-
-Let's look at the stan code of this: 
-
-```{r}
-make_stancode(formula = formula, 
-              data = task1_df,
-              family = mix)
-```
-
-Looking at the above sections^[termed `transformed parameters`, see [here](https://mc-stan.org/docs/reference-manual/blocks.html#program-block-transformed-parameters) for more details], we have the following: 
-
-- `functions`: the place to define custom functions to be used in the model fitting process 
-- `data`: declares all data that will be provided to th model from `R`. This includes observed variables, group identifiers, and any fixed values needed for the model. 
-- `transformed data`: define deterministic transformations of data that only need to be computed once, before sampling begins. Useful for efficiency.
-- `parameters`: the place to declare parameters that Stan will estimate. These are the unknowns in the model. 
-- `model`: the core of the stan program, where we define the likelihood of the data given the parameters and specify the prior distributions. The `target` variable represents the **log posterior density** that Stan is trying to sample from. 
-
-
-# Stan code 
-
-## Same lambda for all participants
-
-Everything is in **visual angle** space. 
-
-$$
-\begin{align}
-p_Y(y_i) & =  \lambda \cdot \Pr(\hat{y}^{\text{med}}_i) + (1 - \lambda) \cdot \Pr(\hat{y}^{\text{mod}}_i) \\
-\hat{y}^{\text{med}}_i &\sim \mathcal{N}(y^\text{med}, (\sigma^\text{med}_{\text{PID}[i]})^2) \\ 
-\hat{y}^{\text{mod}}_i &\sim \mathcal{N}(y^\text{mod}, (\sigma^{\text{mod}}_{\text{PID}[i]})^2) \\ 
-\lambda &\sim \text{Beta}(2, 2) 
-\end{align}
-$$
-
-```{r}
-model <- cmdstan_model("mix_models/m1.stan")
-model$print()
-```
-
-:::{.caution-note}
-Note that we are using the `log_mix` function instead of the `log_sum_exp` function, but they are equivalent for the case of two components. In the [documentation](https://mc-stan.org/docs/functions-reference/real-valued_basic_functions.html) we have 
-
-$$
-\begin{align}
-\text{log_mix}(\theta, \lambda_1, \lambda_2) &= \log (\theta \exp(\lambda_1) + (1 - \theta) \exp(\lambda_2)) \\ 
-&= \text{log_sum_exp}(\log (\theta) + \lambda_1, \log (1 - \theta) + \lambda_2)
-\end{align}
-$$
-:::
-
-
-```{r}
-task1_df %>% ggplot(aes(x = va.med.x - va.select.x)) + 
-  geom_dots()
-```
-
-Prepare data for stan: 
-
-```{r}
-N <- task1_df %>% nrow(.)
-y <- task1_df %>% pull(va.select.x)
-y_med <- task1_df %>% pull(va.med.x)
-y_mod <- task1_df %>% pull(va.mod.x)
-N_p <- task1_df %>% count(participantId) %>% nrow(.)
-PID <- as.numeric(factor(task1_df$participantId))
-
-stan_data <- list(
-  N = N, 
-  y = y, 
-  y_med = y_med, 
-  y_mod = y_mod, 
-  N_p = N_p, 
-  PID = PID
-)
-```
-
-Fit the stan model^[there are several options here, one can use `rstan`, `brms`, and `cmdstanr`. I am going with `cmdstanr` here, as it always run wit the latest version of stan.]: 
-
-```{r}
-#| output: false 
-
-fit <- model$sample(
-  data = stan_data, 
-  chains = 4, 
-  parallel_chains = 4, 
-  iter_warmup = 5000, 
-  iter_sampling = 10000,
-  adapt_delta = 0.99, 
-  max_treedepth = 12
-)
-
-# save model 
-fit$save_object(file = "mix_models/m1.rds")
-```
-
-The above gives 47% of divergent transitions, possibly because the prior is bad ...? 
-
-Let's check the fitted result: 
-
-```{r}
-summary <- fit$summary()
-
-# plot posterior summaries 
-summary %>% filter(str_detect(variable, "lambda")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median)) + xlim(0.5, 1)
-```
-
-```{r}
-# plot posterior summaries 
-summary %>% filter(str_detect(variable, "sigma_m")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median)) + xlim(0, 1)
-```
-
-## Same lambda for same participant, different for different participants 
+# Single participant 
 
 Math model: 
 
-$$
-\begin{align}
-p_Y(y_i) & =  \lambda_{\text{PID}[i]} \cdot \Pr(\hat{y}^{\text{med}}_i) + (1 - \lambda_{\text{PID}[i]}) \cdot \Pr(\hat{y}^{\text{mod}}_i) \\
-\hat{y}^{\text{med}}_i &\sim \mathcal{N}(y^\text{med}, (\sigma^\text{med}_{\text{PID}[i]})^2) \\ 
-\hat{y}^{\text{mod}}_i &\sim \mathcal{N}(y^\text{mod}, (\sigma^{\text{mod}}_{\text{PID}[i]})^2) \\ 
-\lambda_{\text{PID}[i]} &\sim \text{Beta}(2, 2) 
-\end{align}
-$$
-
-Read in the stan model: 
-
-```{r}
-model <- cmdstan_model("mix_models/m2.stan")
-```
-
-Fit the model: 
-
-```{r}
-#| output: false 
-
-fit <- model$sample(
-  data = stan_data, 
-  chains = 4, 
-  parallel_chains = 4, 
-  iter_warmup = 5000, 
-  iter_sampling = 10000,
-  adapt_delta = 0.99, 
-  max_treedepth = 12
-)
-
-# save model 
-fit$save_object(file = "mix_models/m2.rds")
-```
-
-42% transitions ended with a divergence ... 
-
-```{r}
-summary <- fit$summary()
-
-# plot posterior summaries 
-summary %>% filter(str_detect(variable, "lambda")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median)) + 
-  xlim(0, 1)
-```
-
-```{r}
-# plot posterior summaries 
-summary %>% filter(str_detect(variable, "sigma_m")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median)) + xlim(0, 1)
-```
-
-# Stan code --- Laplace distribution 
-
-Let's first write the math model: 
-
 $$\begin{align*}
-f(x) = \theta \cdot f_{\text{Laplace}}(x) + (1 - \theta) \cdot f_{\text{Gaussian}}(x)
+p_X(x_i) & =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdot \Pr(\hat{x}^{\text{mod}}_i) \\
+\hat{x}^{\text{med}}_i &\sim \mathcal{N}(x^\text{med}, (\sigma^\text{med})^2) \\ 
+\hat{y}^{\text{mod}}_i &\sim \text{Laplace}(x^\text{mod}, (\sigma^{\text{mod}})^2) \\ 
+(1) \,\, \lambda &\sim \text{Beta}(2, 2) 
 \end{align*}$$
 
-Read in stan code: 
+## Same lambda 
+
+If we set $\lambda \sim \text{Beta}(5, 5)$ then the sampling is more concentrated around 0.5, and if we set $\lambda \sim \text{Beta}(2, 2)$ then the sampling is closr to a uniform distribution over [0, 1]. 
 
 ```{r}
-model <- cmdstan_model("mix_models/mix.laplace.stan")
-```
-
-Prepare data for stan: 
-
-```{r}
-N <- task1_df %>% nrow(.)
-x_select <- task1_df %>% pull(va.select.x)
-x_med <- task1_df %>% pull(va.med.x)
-x_mod <- task1_df %>% pull(va.mod.x)
-J <- task1_df %>% count(participantId) %>% nrow(.)
-PID <- as.numeric(factor(task1_df$participantId))
-
-stan_data <- list(
-  N = N, 
-  x_select = x_select, 
-  x_med = x_med, 
-  x_mod = x_mod, 
-  J = J, 
-  PID = PID
-)
-```
-
-Fit the model: 
-
-```{r}
-#| output: false 
-
-fit <- model$sample(
-  data = stan_data, 
-  chains = 4, 
-  parallel_chains = 4, 
-  iter_warmup = 3000, 
-  iter_sampling = 3000,
-  adapt_delta = 0.99, 
-  max_treedepth = 15
-)
-
-# save model 
-fit$save_object(file = "mix_models/m4.rds")
-```
-
-This has 23 out of 8000 divergent transitions. 
-
-Let's check the fitted model: 
-
-```{r}
-summary <- fit$summary()
-
-summary %>% filter(rhat > 1.01)
-
-# plot posterior summaries 
-summary %>% filter(variable %in% c("intercept_mu_mod", "var_mu_mod", 
-                                   "intercept_mu_med", "var_mu_med")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median)) # + 
-  # xlim(0, 1)
-
-summary %>% filter(variable %in% c("theta")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median))
-```
-
-Posterior predictive check: 
-
-```{r}
-posterior_samples <- fit$draws(format = "df")
-
-y_rep <- posterior_samples %>% 
-  select(starts_with("hat_x_med"), starts_with("hat_x_mod")) %>% 
-   as.matrix(.)
-
-component_indicators <- posterior_samples %>%
-  select(starts_with("component_indicator")) %>%
-  as.matrix()
-```
-
-# Stan code --- Laplace distribution + participant-level theta 
-
-Read in stan code: 
-
-```{r}
-model <- cmdstan_model("mix_models/mix.laplace.2.stan")
-```
-
-Fit the model: 
-
-```{r}
-#| output: false 
-
-fit <- model$sample(
-  data = stan_data, 
-  chains = 4, 
-  parallel_chains = 4, 
-  iter_warmup = 3000, 
-  iter_sampling = 3000,
-  adapt_delta = 0.99, 
-  max_treedepth = 15
-)
-
-# save model 
-fit$save_object(file = "mix_models/m5.rds")
-```
-
-This has 1% divergent transitions. Let's check the fitted models: 
-
-```{r}
-summary <- fit$summary()
-
-# summary %>% filter(rhat > 1.001)
-
-# plot posterior summaries 
-summary %>% filter(variable %in% c("intercept_mu_mod", "var_mu_mod", 
-                                   "intercept_mu_med", "var_mu_med")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median)) 
-
-summary %>% filter(str_detect(variable, "^theta")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median))
-```
-
-This just tell us on average participants overwhelmingly select the median operator, instead of the mode operator ... 
-
-# Stan code --- Laplace distribution + lambda varies with |med - mod| 
-
-The generative model for `theta` is defined as 
-$$\text{logit}(\theta_i) = \beta_0 + \beta_{\text{dist}} \cdot |x^{med}_i - x^{mod}_i| + z^\theta_{PID[i]} \cdot \sqrt{\text{var_theta}}$$
-
-
-Read in stan code: 
-
-```{r}
-model <- cmdstan_model("mix_models/mix.laplace.3.stan")
-```
-
-Fit the model: 
-
-```{r}
-#| output: false 
-
-fit <- model$sample(
-  data = stan_data, 
-  chains = 4, 
-  parallel_chains = 4, 
-  iter_warmup = 3000, 
-  iter_sampling = 3000,
-  adapt_delta = 0.99, 
-  max_treedepth = 15
-)
-
-# save model 
-fit$save_object(file = "mix_models/m6.rds")
-```
-
-- if we don't specify anything about the variance or mean order between med and mod, than we get more divergent transitions ... around 104 
-- if we do specify variance (var_med > var_mod), then: 
-  - 58 of 120000 has divergent transitions (unsigned)
-  - 54 of 120000 has divergent transitions (signed)
-- if we specify mean and no variance: 
-  - 139 of 12000 ended with a divergence 
-- if we specify mean AND variance: 
-  - 40 of 12000 transitions ended with a divergence  
-
-
-Let's look at the fitted results: 
-
-```{r}
-summary <- fit$summary()
-
-summary %>% filter(str_detect(variable, "^mu_")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median))
-```
-
-# Fit single participant with stan 
-
-## Assume that `lambda ~ beta(2, 2)` + single participant 
-
-Read in stan code: 
-
-```{r}
+#| eval: false 
 model <- cmdstan_model("mix_models/sheng.mix.1.stan")
+# model$print()
 ```
 
 Prepare data for stan: 
 
 ```{r}
+#| eval: false 
 N <- task1_df %>% nrow(.)
 x <- task1_df %>% pull(va.select.x)
 x_med <- task1_df %>% pull(va.med.x)
@@ -592,167 +176,89 @@ stan_data <- list(
 )
 ```
 
-Fit model: 
+Fit the stan model: 
 
 ```{r}
 #| output: false 
+#| eval: false 
 
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
-  parallel_chains = 4, 
-  # iter_warmup = 3000, 
-  # iter_sampling = 3000,
-  adapt_delta = 0.8, 
-  max_treedepth = 10
+  parallel_chains = 4
 )
-
-# save model 
-fit$save_object(file = "mix_models/sheng.m1.rds")
 ```
 
-No divergent transitions! 
-
 ```{r}
-summary <- fit$summary()
-
-summary %>% filter(str_detect(variable, "lambda")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median))
-# with almost certainty I am choosing the median operator lol 
-
-summary %>% filter(str_detect(variable, "^mu")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median))
-
-summary %>% filter(str_detect(variable, "^sigma")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median))
-```
-
-Let's do some posterior predictive checks: 
-
-```{r}
-y_rep <- fit$draws("y_rep", format = "matrix")
-
-bayesplot::ppc_dens_overlay(stan_data$x, y_rep[1:100, ])
-```
-
-This fit actually doesn't look that bad. 
-
-## Modeling the effect of median and mode 
-
-Read in stan code: 
-
-```{r}
-model <- cmdstan_model("mix_models/sheng.mix.2.stan")
-```
-
-Fit model: 
-
-```{r}
+#| echo: false
 #| output: false 
-
-fit <- model$sample(
-  data = stan_data, 
-  chains = 4, 
-  parallel_chains = 4, 
-  # iter_warmup = 3000, 
-  # iter_sampling = 3000,
-  adapt_delta = 0.8, 
-  max_treedepth = 10
-)
-
-# save model 
-fit$save_object(file = "mix_models/sheng.m2.3.rds")
+fit <- readRDS("mix_models/sheng.mix.1.rds")
 ```
 
-No divergent transitions! 
+
+Posterior predictive checks: 
 
 ```{r}
+#| column: margin 
 summary <- fit$summary()
 
-summary %>% filter(str_detect(variable, "lambda")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median)) + xlim(0, 1)
-# with almost certainty I am choosing the median operator lol 
+custom_pp_check <- function(fitted_model) {
+  y_rep <- fitted_model$draws("y_rep", format = "matrix")
+  y <- fitted_model$draws("x_org", format = "matrix")[1, ] %>% as.vector(.)
+  bayesplot::ppc_dens_overlay(y, y_rep[1:100, ])
+}
 
-summary %>% filter(str_detect(variable, "beta")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median))
-
-summary %>% filter(str_detect(variable, "^mu")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median))
-
-summary %>% filter(str_detect(variable, "^sigma")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median))
+custom_pp_check(fit)
 ```
 
-Let's do some posterior predictive checks: 
+Checking the posterior results: 
 
 ```{r}
-y_rep <- fit$draws("y_rep", format = "matrix")
+#| column: margin 
 
-bayesplot::ppc_dens_overlay(stan_data$x, y_rep[1:100, ])
+fit$draws() %>% 
+  spread_draws(`lambda`) %>%
+  ggplot(aes(x = lambda)) + 
+  stat_halfeye()
+
+fit$draws() %>% 
+  spread_draws(`mu_med`, `mu_mod`) %>% 
+  pivot_longer(4:5) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+
+fit$draws() %>% 
+  spread_draws(`sigma_med`, `sigma_mod`) %>% 
+  pivot_longer(4:5) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
 ```
 
-The difference between using `abs(diff)` and `diff^2` isn't that big ... but the difference between `diff` and `abs(diff)` is definitely there ... 
-
-I think we would need a `loo` comparison ... 
+Save the stan model: 
 
 ```{r}
-m1 <- readRDS("mix_models/sheng.m2.1.rds") # diff 
-m1_loo <- m1$loo()
-m2 <- readRDS("mix_models/sheng.m2.2.rds") # abs diff 
-m2_loo <- m2$loo()
-m3 <- readRDS("mix_models/sheng.m2.3.rds") # diff^2
-m3_loo <- m3$loo()
+#| eval: false 
 
-brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo, "Model 3" = m3_loo), 
-                  method = c("stacking"))
+fit$save_object(file = "mix_models/sheng.mix.1.rds")
 ```
 
-From this we know the model using absolute difference between median and mode is the best one^[we can verify this using `m2$code()` to check the original code used to run]. 
+## Different lambda --- varies by row 
 
-```{r}
-summary <- m2$summary()
+Everything about the previous math model is the same, except for the part related to $\lambda$. 
 
-summary %>% filter(str_detect(variable, "lambda")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median)) + xlim(0, 1)
-# with almost certainty I am choosing the median operator lol 
+... 
 
-summary %>% filter(str_detect(variable, "beta")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median))
+### lambda = inv-logit(k * (med - mod))
 
-summary %>% filter(str_detect(variable, "^mu")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median))
+... 
 
-summary %>% filter(str_detect(variable, "^sigma")) %>% 
-  ggplot(aes(y = variable)) + 
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +  
-  geom_point(aes(x = median))
-```
+### lambda = inv-logit(k * abs(med - mod))
 
-Posterior predictive check: 
+...
 
-```{r}
-y_rep <- m2$draws("y_rep", format = "matrix")
+### lambda = inv-logit(k * (med - mod)^2)
 
-bayesplot::ppc_dens_overlay(stan_data$x, y_rep[1:100, ])
-```
+... 
+
+# Different participants 
 
