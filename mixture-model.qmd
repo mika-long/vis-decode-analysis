@@ -484,7 +484,239 @@ summary %>% filter(str_detect(variable, "^lambda")) %>%
   geom_point(aes(x = median))
 ```
 
+One thing about the above model is that `lambda` is constrained to be >= 0.5. This is because of how we defined the function. We could also fit models that have an intercept, allowing the full range to be something more broad. 
 
+## lambda = inv-logit (alpha + beta * (x.med - x.mod))
+
+Read stan model: 
+
+```{r}
+#| eval: false 
+model <- cmdstan_model("mix_models/sheng.mix.2.4.stan")
+``` 
+
+Fit the model: 
+
+```{r}
+#| output: false 
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  parallel_chains = 4)
+```
+
+```{r}
+#| echo: false
+#| output: false 
+fit <- readRDS("mix_models/sheng.mix.2.4.rds")
+```
+
+Posterior predictive checks: 
+
+```{r}
+#| column: margin 
+summary <- fit$summary()
+
+custom_pp_check(fit)
+```
+
+Checking the posterior results: 
+
+```{r}
+#| column: margin 
+
+fit$draws() %>% 
+  spread_draws(`alpha`, `beta`) %>%
+  pivot_longer(4:5) %>%
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+
+fit$draws() %>% 
+  spread_draws(`mu_med`, `mu_mod`) %>% 
+  pivot_longer(4:5) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+
+fit$draws() %>% 
+  spread_draws(`sigma_med`, `sigma_mod`) %>% 
+  pivot_longer(4:5) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+```
+
+Save the stan model: 
+
+```{r}
+#| eval: false 
+
+fit$save_object(file = "mix_models/sheng.mix.2.4.rds")
+```
+
+## lambda = inv-logit(alpha + beta * abs(x.med - x.mod))
+
+Read stan model: 
+
+```{r}
+#| eval: false 
+model <- cmdstan_model("mix_models/sheng.mix.2.5.stan")
+``` 
+
+Fit the model: 
+
+```{r}
+#| output: false 
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  parallel_chains = 4)
+```
+
+```{r}
+#| echo: false
+#| output: false 
+fit <- readRDS("mix_models/sheng.mix.2.5.rds")
+```
+
+Posterior predictive checks: 
+
+```{r}
+#| column: margin 
+summary <- fit$summary()
+
+custom_pp_check(fit)
+```
+
+Checking the posterior results: 
+
+```{r}
+#| column: margin 
+
+fit$draws() %>% 
+  spread_draws(`alpha`, `beta`) %>%
+  pivot_longer(4:5) %>%
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+
+fit$draws() %>% 
+  spread_draws(`mu_med`, `mu_mod`) %>% 
+  pivot_longer(4:5) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+
+fit$draws() %>% 
+  spread_draws(`sigma_med`, `sigma_mod`) %>% 
+  pivot_longer(4:5) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+```
+
+Save the stan model: 
+
+```{r}
+#| eval: false 
+
+fit$save_object(file = "mix_models/sheng.mix.2.5.rds")
+```
+
+## lambda = inv-logit(alpha + beta * square(x.med - x.mod))
+
+```{r}
+#| eval: false 
+model <- cmdstan_model("mix_models/sheng.mix.2.6.stan")
+``` 
+
+Fit the model: 
+
+```{r}
+#| output: false 
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  parallel_chains = 4)
+```
+
+```{r}
+#| echo: false
+#| output: false 
+fit <- readRDS("mix_models/sheng.mix.2.6.rds")
+```
+
+Posterior predictive checks: 
+
+```{r}
+#| column: margin 
+summary <- fit$summary()
+
+custom_pp_check(fit)
+```
+
+Checking the posterior results: 
+
+```{r}
+#| column: margin 
+
+fit$draws() %>% 
+  spread_draws(`alpha`, `beta`) %>%
+  pivot_longer(4:5) %>%
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+
+fit$draws() %>% 
+  spread_draws(`mu_med`, `mu_mod`) %>% 
+  pivot_longer(4:5) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+
+fit$draws() %>% 
+  spread_draws(`sigma_med`, `sigma_mod`) %>% 
+  pivot_longer(4:5) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+```
+
+Save the stan model: 
+
+```{r}
+#| eval: false 
+
+fit$save_object(file = "mix_models/sheng.mix.2.6.rds")
+```
+
+## Compare all six models 
+
+```{r}
+m1 <- readRDS(file = "mix_models/sheng.mix.2.1.rds")
+m2 <- readRDS(file = "mix_models/sheng.mix.2.2.rds")
+m3 <- readRDS(file = "mix_models/sheng.mix.2.3.rds")
+m4 <- readRDS(file = "mix_models/sheng.mix.2.4.rds")
+m5 <- readRDS(file = "mix_models/sheng.mix.2.5.rds")
+m6 <- readRDS(file = "mix_models/sheng.mix.2.6.rds")
+# calculate loo 
+m1_loo <- m1$loo()
+m2_loo <- m2$loo()
+m3_loo <- m3$loo()
+m4_loo <- m4$loo()
+m5_loo <- m5$loo()
+m6_loo <- m6$loo()
+
+brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo, "Model 3" = m3_loo, 
+                             "Model 4" = m4_loo, "Model 5" = m5_loo, "Model 6" = m6_loo),
+                  method = c("stacking"))
+```
+
+So the model with the intercept is apparently better than the model without the intercept. Let's see what the lambda values look like for `m5`: 
+
+```{r}
+summary <- m5$summary()
+
+summary %>% filter(str_detect(variable, "^lambda")) %>%
+  arrange(median) %>% 
+  ggplot(aes(y = reorder(variable, median))) +
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) +
+  geom_point(aes(x = median))
+```
+
+Hmm with variance this big, what are we actually learning ...? 
 
 # Different participants 
 
