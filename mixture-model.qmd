@@ -246,19 +246,245 @@ fit$save_object(file = "mix_models/sheng.mix.1.rds")
 
 Everything about the previous math model is the same, except for the part related to $\lambda$. 
 
-... 
+### lambda = inv-logit(beta * (med - mod))
 
-### lambda = inv-logit(k * (med - mod))
+```{r}
+#| eval: false 
+model <- cmdstan_model("mix_models/sheng.mix.2.1.stan")
+``` 
 
-... 
+Fit the stan model: 
 
-### lambda = inv-logit(k * abs(med - mod))
+```{r}
+#| output: false 
+#| eval: false 
 
-...
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  parallel_chains = 4
+)
+```
 
-### lambda = inv-logit(k * (med - mod)^2)
+```{r}
+#| echo: false
+#| output: false 
+fit <- readRDS("mix_models/sheng.mix.2.1.rds")
+```
 
-... 
+Posterior predictive checks: 
+
+```{r}
+#| column: margin 
+summary <- fit$summary()
+
+custom_pp_check(fit)
+```
+
+Checking the posterior results: 
+
+```{r}
+#| column: margin 
+
+fit$draws() %>% 
+  spread_draws(`beta`) %>%
+  ggplot(aes(x = beta)) + 
+  stat_halfeye()
+
+fit$draws() %>% 
+  spread_draws(`mu_med`, `mu_mod`) %>% 
+  pivot_longer(4:5) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+
+fit$draws() %>% 
+  spread_draws(`sigma_med`, `sigma_mod`) %>% 
+  pivot_longer(4:5) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+```
+
+
+Save the stan model: 
+
+```{r}
+#| eval: false 
+
+fit$save_object(file = "mix_models/sheng.mix.2.1.rds")
+```
+
+### lambda = inv-logit(beta * abs(med - mod))
+
+```{r}
+#| eval: false 
+model <- cmdstan_model("mix_models/sheng.mix.2.2.stan")
+``` 
+
+Fit the stan model: 
+
+```{r}
+#| output: false 
+#| eval: false 
+
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  parallel_chains = 4
+)
+```
+
+```{r}
+#| echo: false
+#| output: false 
+fit <- readRDS("mix_models/sheng.mix.2.2.rds")
+```
+
+Posterior predictive checks: 
+
+```{r}
+#| column: margin 
+summary <- fit$summary()
+
+custom_pp_check(fit)
+```
+
+Checking the posterior results: 
+
+```{r}
+#| column: margin 
+
+fit$draws() %>% 
+  spread_draws(`beta`) %>%
+  ggplot(aes(x = beta)) + 
+  stat_halfeye()
+
+fit$draws() %>% 
+  spread_draws(`mu_med`, `mu_mod`) %>% 
+  pivot_longer(4:5) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+
+fit$draws() %>% 
+  spread_draws(`sigma_med`, `sigma_mod`) %>% 
+  pivot_longer(4:5) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+```
+
+
+Save the stan model: 
+
+```{r}
+#| eval: false 
+
+fit$save_object(file = "mix_models/sheng.mix.2.2.rds")
+```
+
+### lambda = inv-logit(beta * (med - mod)^2)
+
+```{r}
+#| eval: false 
+model <- cmdstan_model("mix_models/sheng.mix.2.3.stan")
+``` 
+
+Fit the stan model: 
+
+```{r}
+#| output: false 
+#| eval: false 
+
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  parallel_chains = 4
+)
+```
+
+```{r}
+#| echo: false
+#| output: false 
+fit <- readRDS("mix_models/sheng.mix.2.1.rds")
+```
+
+Posterior predictive checks: 
+
+```{r}
+#| column: margin 
+summary <- fit$summary()
+
+custom_pp_check(fit)
+```
+
+Checking the posterior results: 
+
+```{r}
+#| column: margin 
+
+fit$draws() %>% 
+  spread_draws(`beta`) %>%
+  ggplot(aes(x = beta)) + 
+  stat_halfeye()
+
+fit$draws() %>% 
+  spread_draws(`mu_med`, `mu_mod`) %>% 
+  pivot_longer(4:5) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+
+fit$draws() %>% 
+  spread_draws(`sigma_med`, `sigma_mod`) %>% 
+  pivot_longer(4:5) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+```
+
+
+Save the stan model: 
+
+```{r}
+#| eval: false 
+
+fit$save_object(file = "mix_models/sheng.mix.2.3.rds")
+```
+
+### Compare all models 
+
+```{r}
+m1 <- readRDS("mix_models/sheng.mix.2.1.rds") # diff
+m1_loo <- m1$loo()
+m2 <- readRDS("mix_models/sheng.mix.2.2.rds") # abs diff
+m2_loo <- m2$loo()
+m3 <- readRDS("mix_models/sheng.mix.2.3.rds") # diff^2
+m3_loo <- m3$loo()
+
+brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo, "Model 3" = m3_loo),
+                  method = c("stacking"))
+```
+
+The second model seems to be fitting well. 
+
+```{r}
+m4 <- readRDS("mix_models/sheng.mix.1.rds")
+m4_loo <- m4$loo()
+
+brms::loo_model_weights(list("Model 4" = m4_loo, "Model 2" = m2_loo), method = c("stacking"))
+```
+
+It also performs better than the first one where we had a single lambda. 
+
+Let's look at all of the other lambdas: 
+
+```{r}
+summary <- m2$summary()
+
+summary %>% filter(str_detect(variable, "^lambda")) %>%
+  arrange(median) %>% 
+  ggplot(aes(y = reorder(variable, median))) +
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) +
+  geom_point(aes(x = median))
+```
+
+
 
 # Different participants 
 
