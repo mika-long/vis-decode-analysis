@@ -1,0 +1,127 @@
+---
+title: "brms-syntax"
+format: html
+---
+
+```{r}
+#| echo: false
+#| output: false
+#| label: setup
+
+library(tidyverse)
+library(ggplot2)
+# setting the theme 
+theme_set(theme_minimal())
+# model
+library(brms)
+# plot results 
+library(tidybayes)
+```
+
+# Get simulation data 
+
+Model: 
+
+$$\begin{align*}
+y_i &\sim \mathcal{N}(\alpha_{\text{PID}[i]}, \beta_{\text{PID}[i]}) \\ 
+\alpha_j &\sim \mathcal{N}(5, 1), j \in [50] \\ 
+\beta_j &\sim |\mathcal{N}(0, 2)|, j \in [50]
+\end{align*}$$
+
+Let's say we have 100 participants. 
+
+```{r}
+n <- 50
+trials <- 20
+intercept <- rnorm(n, mean = 5, sd = 1)
+variance <- abs(rnorm(n, mean = 0, sd = 1))
+
+data <- data.frame(PID = rep(1:n, each = trials), 
+           mean = rep(intercept, each = trials), 
+           variance = rep(variance, each = trials)) %>% 
+   mutate(out = map2_dbl(mean, variance, ~rnorm(1, mean = .x, sd = .y)))
+
+# get a sense of what data looks like 
+data %>%
+  ggplot(aes(x = out)) +
+  geom_dots()
+```
+
+# Model 1 
+
+```{r}
+f <- bf(out ~ 1)
+
+get_prior(f, data = data)
+```
+
+```{r}
+#| output: false 
+m1 <- brm(f, data = data, family = gaussian)
+get_variables(m1)
+```
+
+Check fitted results: 
+
+```{r}
+summary(m1)
+plot(m1)
+```
+
+
+# Model 1.1 
+
+```{r}
+f <- bf(out ~ 0 + (1 | PID))
+
+get_prior(f, data = data)
+```
+
+```{r}
+#| output: false 
+
+m1.1 <- brm(f, data = data, family = gaussian)
+```
+
+Check output: 
+
+```{r}
+summary(m1.1)
+plot(m1.1)
+```
+
+
+
+# Model 2 
+
+```{r}
+f <- bf(out ~ 1 + (1 | PID))
+
+get_prior(f, data = data)
+
+m2 <- brm(f, data = data, family = gaussian)
+```
+
+
+
+# Model 3 
+
+```{r}
+f <- bf(out ~ 1 + (1 | PID), 
+        sigma ~ 1)
+
+get_prior(f, data = data)
+
+m3 <- brm(f, data = data, family = gaussian)
+```
+
+# Model 4 
+
+```{r}
+f <- bf(out ~ 1 + (1 | PID), 
+        sigma ~ 1 + (1 | PID))
+
+get_prior(f, data = data)
+
+m4 <- brm(f, data = data, family = gaussian)
+```
