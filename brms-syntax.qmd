@@ -66,8 +66,21 @@ Check fitted results:
 ```{r}
 summary(m1)
 plot(m1)
+m1 %>% spread_draws(b_Intercept, sigma, Intercept) %>%
+  pivot_longer(4:ncol(.)) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
 ```
 
+Hmm from this we see that `b_Intercept` and `Intercept` are literally the same ... 
+
+Let's also check the stan code:
+
+```{r}
+make_stancode(bf(out ~ 1), data = data, family = gaussian())
+```
+
+From the above we know that by construction, `b_Intercept` = `Intercept`. 
 
 # Model 1.1 
 
@@ -81,7 +94,13 @@ get_prior(f, data = data)
 #| output: false 
 
 m1.1 <- brm(f, data = data, family = gaussian)
+get_variables(m1.1)
 ```
+
+From the `get_variables` outcome, there are the things we care about: 
+- `sd_PID__Intercept`: standard deviation 
+- `sigma`: unclear ... 
+- `r_PID[num, Intercept]`: intercept per participant 
 
 Check output: 
 
@@ -98,11 +117,28 @@ plot(m1.1)
 f <- bf(out ~ 1 + (1 | PID))
 
 get_prior(f, data = data)
-
-m2 <- brm(f, data = data, family = gaussian)
 ```
 
+```{r}
+#| output: false 
 
+m2 <- brm(f, data = data, family = gaussian)
+get_variables(m2)
+```
+
+`get_variables` give us:
+- "b_Intercept"
+- "sd_PID__Intercept"  
+- "sigma"
+- "Intercept"          
+
+Stan code:
+
+```{r}
+make_stancode(out ~ 1 + (1 | PID), 
+              data = data, 
+              family = gaussian)
+```
 
 # Model 3 
 
@@ -122,6 +158,22 @@ f <- bf(out ~ 1 + (1 | PID),
         sigma ~ 1 + (1 | PID))
 
 get_prior(f, data = data)
-
-m4 <- brm(f, data = data, family = gaussian)
 ```
+
+```{r}
+#| output: false 
+m4 <- brm(f, data = data, family = gaussian)
+get_variables(m4)
+```
+
+`get_variables` give: 
+- `b_Intercept` 
+- `b_sigma_Intercept` 
+- `sd_PID__Intercept` 
+- `sd_PID__sigma_Intercept` 
+- `Intercept` 
+- `Intercept_sigma` 
+- `r_PID[num, Intercept]`
+- `r_PID__sigma[num, Intercept]`
+
+
