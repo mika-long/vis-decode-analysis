@@ -265,6 +265,101 @@ s.5.va %>% spread_draws(b_Intercept, b_sigma_Intercept) %>%
   stat_halfeye() + xlim(0, NA)
 ```
 
+### Model 2 --- Physical 
+
+Math model: 
+
+$$\begin{aligned}
+\text{error_phy}_i / \texttt{dist_to_screen}  &\sim \mathcal{N}(\mu, \sigma_{i}) \\ 
+\mu &\sim \mathcal{N}(0, 1) \\ 
+\sigma_{i} &= \beta \cdot (\texttt{phy.ans.y}_i) \cdot \hat{\sigma}, & j \in [13] \\ 
+\hat{\sigma} &\sim \mathcal{N}(0, 1) & j \in [13]
+\end{aligned}$$
+
+`brms` formula: 
+
+```{r}
+f <- bf(error_phy.adj ~ 1, 
+        sigma ~ 1 + offset(log(phy.ans.y)))
+
+# task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>% 
+#   get_prior(f, data = .)
+
+p <- c(
+  prior(normal(0, 1), class = Intercept), 
+  prior(normal(0, 1), class = Intercept, dpar = sigma)
+)
+
+# task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>% 
+#   mutate(error_phy.adj = error_phy / dist_to_screen) %>% 
+#   make_stancode(f, data = ., prior = p)
+```
+
+Fit the model: 
+
+```{r}
+s.5.phy <- task5_df %>% 
+  mutate(error_phy = phy.select.x - phy.ans.x) %>% 
+  mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% 
+  filter(va.ans.y != 0) %>% # account for weird bugs
+  mutate(error_phy.adj = error_phy / dist_to_screen) %>% 
+  brm(
+    formula = f, 
+    prior = p, 
+    chains = 4
+  )
+```
+
+Check model fit and posterior: 
+
+```{r}
+summary(s.5.phy)
+plot(s.5.phy)
+pp_check(s.5.phy, ndraws = 100)
+```
+
+## Project from dot to Y Axes
+
+Distribution of signed error: 
+
+```{r}
+#| code-fold: true 
+
+task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) + 
+  geom_dots() + 
+  geom_vline(xintercept = 0, color="black", linetype="dashed") + 
+  labs(title = "Task 5 - Project from dot to Y-Axes - Visual Angle")
+```
+
+Relationship between signed error and distance to x-axes (in visual angle space): 
+
+```{r}
+#| code-fold: true
+
+task5_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) + 
+  geom_point(alpha = 0.5) + 
+  geom_hline(yintercept = 0, linetype="dashed", color="gray") + 
+  labs(title = "Task 5 - Project from dot to Y-Axes - Visual Angle")
+```
+
+We apply the same approach, fit two models, and compare them. 
+
+### Model 1 -- Vis Angle 
+
+```{r}
+f <- bf(error_va ~ 1 , 
+        sigma ~ 0 + log(va.ans.x)) # what's the difference between this and 0 + offset(log(va.ans.x)) ??? 
+
+# get prior 
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+get_prior(formula = f, 
+          data = .)
+
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+make_stancode(formula = f, 
+              data = .)
+```
+
 
 
 ## Multiple participants 
@@ -482,14 +577,12 @@ Potential plotting related code:
 
 There could also be two versions of this ... one is additive and the other is duplicative ... 
 
-$$
-\begin{aligned}
+$$\begin{aligned}
 \text{error_phy}_i &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i], i}) \\ 
 \mu_j &\sim \mathcal{N}(\mu_0, \sigma_0), & j \in [13] \\ 
 \sigma_{j, i} &= \beta \cdot (\texttt{dist_to_screen}_j + \texttt{phy.ans.y}_i) \cdot \hat{\sigma}_j, & j \in [13] \\ 
 \hat{\sigma}_j &\sim \mathcal{N}(\hat{\mu}, \hat{\sigma}) & j \in [13]
-\end{aligned}
-$$
+\end{aligned}$$
 
 We could also fold the distance to screen in the `error_phy` part, which would make the the notation look like this: 
 
