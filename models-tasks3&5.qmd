@@ -1,5 +1,5 @@
 ---
-title: "Tasks 5 and 3 models"
+title: "Tasks 5 and 3 models (projections)"
 format:
   html: 
     code-fold: false
@@ -52,6 +52,10 @@ task_df <- df %>% filter(grepl("task", trialId) & grepl("test", trialId) ) %>%
          data.select.y = location.y,
          pixel.select.x = pixel.x, 
          pixel.select.y = pixel.y)
+
+# create a dataframe for single participant (Sheng only) 
+not_sheng <- c("5f37a06e-50e4-4489-948f-c4f25bd38d17", "85349f2b-c75a-46ff-8f80-fafc92da11a7")
+single_pid_df <- task_df %>% filter(!participantId %in% not_sheng)
 ```
 
 ```{r}
@@ -113,7 +117,7 @@ Get data:
 #| label: task 5 load data
 #| code-fold: true 
 
-task5_df <- task_df %>% filter(task == "task5") %>% 
+task5_df <- single_pid_df %>% filter(task == "task5") %>% # or use task_df for full 
   select(participantId, task, id, data.select.x, data.select.y, slider.x, slider.y) %>% 
   rename(data.ans.x = data.select.x, 
          data.ans.y = data.select.y, 
@@ -187,19 +191,95 @@ task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) +
   labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
 ```
 
+## Model fitting Overview 
+- Models can be fitted in visual angle space, as well as physical space 
+- Within each space, the effect of "distance to the other axis" could be *multiplicative* or *additive*. 
+- We could start with a single participant, before extending to multiple participants 
+
+## Single participant 
+
+### Model 1 --- Vis Angle 
+
+The data looks kind of skewed ... but for now let's fit a normal model 
+
+$$\begin{align*}
+\texttt{error_va}_i &\sim \mathcal{N}(\mu, \sigma_i) \\ 
+\sigma_i = \alpha \cdot \texttt{va.ans.y}_i &\leftrightarrow \log(\sigma_i) = \log(\alpha) + \log(\texttt{va.ans.y}_i)
+\end{align*}$$
+
+```{r}
+f <- bf(error_va ~ 1, 
+        sigma ~ 1 + offset(log(va.ans.y)))
+
+# task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+# get_prior(formula = f, 
+#           data = .)
+
+p <- c(
+  prior(normal(0, 0.5), class = Intercept), 
+  prior(normal(0, 1), class = Intercept, dpar = "sigma")
+)
+
+# task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+# make_stancode(f, data = ., prior = p, family = gaussian())
+```
+
+Fit model: 
+
+```{r}
+#| output: false 
+s.5.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  # account for numerical precision 
+  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  # account for bugs in task 5 
+  filter(va.ans.y != 0) %>% 
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p,
+    chains = 4, 
+    # cores = 4,
+    # control = list(adapt_delta = 0.99),
+    # iter = 6000, 
+    file = "models/s.5.va", 
+    save_pars = save_pars(all = TRUE)
+)
+```
+
+```{r}
+summary(s.5.va)
+plot(s.5.va)
+pp_check(s.5.va, ndraws = 100)
+```
+
+:::{.callout-note collapsed="true"}
+I also tried a skewed normal distribution with the same prior and compare the two using `loo`; the normal actually is better 
+:::
+
+```{r}
+s.5.va %>% spread_draws(b_Intercept, b_sigma_Intercept) %>% 
+  mutate(b_sigma = exp(b_sigma_Intercept)) %>% 
+  pivot_longer(cols = c(b_Intercept, b_sigma)) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye() + xlim(0, NA)
+```
+
+
+
+## Multiple participants 
+
 ### Model 1 -- Vis Angle 
 
-Model 1: 
+Math: 
 
-$$
-\begin{align}
+$$\begin{align}
 \text{error_va}_{i} &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i], i}) \\ 
 \mu_j &\sim \mathcal{N}(\mu_0, \sigma_0), & j \in [13] \\ 
 \sigma_{j, i} &= \alpha_j \cdot \texttt{va.ans.y}_i, & j \in [13] \\ 
 \implies \log(\sigma_{j, i}) &= \log(\alpha_j) + \log(\texttt{va.ans.y}_i) + \gamma_j, & j \in [13] \\ 
 \gamma_j &\sim \mathcal{N}(0, \sigma_\gamma), & j \in [13]
-\end{align}
-$$
+\end{align}$$
 
 Let's first get a sense of what the parameters and priors look like: 
 
