@@ -1,6 +1,8 @@
 ---
 title: "brms-syntax"
-format: html
+format:
+  html: 
+    toc: true 
 ---
 
 ```{r}
@@ -209,7 +211,7 @@ get_variables(m2)
 - `b_Intercept`
 - `sd_PID__Intercept` --- NEW
 - `sigma`
-- `Intercept`
+- `Intercept`: the same as `b_Intercept` 
 - `r_PID[num, Intercept]` --- NEW 
 
 Stan code:
@@ -220,6 +222,24 @@ make_stancode(out ~ 1 + (1 | PID),
               data = data,
               family = gaussian)
 ```
+
+:::{.callout}
+### Non-centered parameterization 
+
+In centered parameterization, you might write models like 
+$$\begin{align*}
+a_j &\sim \mathcal{N}(a_0, \sigma_0) \\ 
+y &\sim \mathcal{N}(a_j, ...) 
+\end{align*}$$
+
+In non-centered parameterization, you write things like this instead: 
+$$\begin{align*}
+z_j &\sim \mathcal{N}(0, 1) \\ 
+a_j &= a_0 + \sigma \times z_j \\ 
+y &\sim \mathcal{N}(a_j, ...) 
+\end{align*}$$
+:::
+
 
 Let's walk through this one, annotating only the new ones compared to what we had before: 
 
@@ -239,7 +259,7 @@ data {
 1. The number of different levels in the group, `PID`. Which would be the number of participants. 
 2. ??? 
 3. This array is a mapping function, which tells us which participant this row is corresponding to. 
-4. ???  
+4. Unclear ... 
 
 ```default
 parameters {
@@ -249,8 +269,8 @@ parameters {
   array[M_1] vector[N_1] z_1;  // standardized group-level effects # <6>
 }
 ```
-5. If `M_1 = 1`, what does this even mean? It becomes a one?  
-6. ??? What is this?? How do you arran a vector ...? 
+5. Since `M_1 = 1`, `sd_1` is a vector of length 1, and we still have to access its value by `sd_1[1]`  
+6. By the same logic, `z_1` is also a vector of length 1, and `z_1[1]` is a vector of length `N_1`.  
 
 ```default
 transformed parameters {
@@ -264,9 +284,9 @@ transformed parameters {
     - 1 * student_t_lccdf(0 | 3, 0, 2.5);
 }
 ```
-7. ... 
-8. ... 
-9. ... 
+7. This is the centered parameterization of random effects. Think of this as $r_{\text{PID}[i]} = \sigma \times z_{\text{PID}[i]}$ where $z_j \sim \mathcal{N}(0, 1)$  
+8. Recall that `sd_1[1]` is a scalar value, and `z_1[1]` is a vector of length `N_1`. 
+9. `sd_1` is a vector, and `student_t_lpdf` handles this by computing the sum of log probabilities across all elements. Since there is only one element, `student_t_lpdf(sd_1 | ...)` is equivalent to `student_t_lpdf(sd_1[1] | ...)` 
 
 ```default
 model {
@@ -286,7 +306,7 @@ model {
   target += std_normal_lpdf(z_1[1]);              # <11> 
 }
 ```
-10. ... 
+10. Recall that `J_1` is a vector of length `N`, which maps row to the participant it's associated with. REcall that `r_1_1` is a vector of length `N_1`, where `N_1` is the number of participants. `Z_1_1` of length `N`, is a **multiplier** for the random effect. In the most basic random intercept model, `Z_1_1` would be a vector of all 1s.   
 11. They are doing some standardized tricks here ... 
 
 --- 
@@ -307,6 +327,8 @@ Further Distributional Parameters:
       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
 sigma     0.91      0.02     0.87     0.95 1.00     2990     2879
 ```
+
+I think `sd(Intercept)` corresponds to `sd_PID__Intercept`. 
 
 
 <!-- # Model 3  -->
@@ -359,5 +381,122 @@ make_stancode(bf(out ~ 1 + (1 | PID),
 
 Now let's break this one down: 
 
-... 
+```default
+data {
+  int<lower=1> N;  // total number of observations
+  vector[N] Y;  // response variable
+  // data for group-level effects of ID 1
+  int<lower=1> N_1;  // number of grouping levels
+  int<lower=1> M_1;  // number of coefficients per level
+  array[N] int<lower=1> J_1;  // grouping indicator per observation
+  // group-level predictor values
+  vector[N] Z_1_1;
+  // data for group-level effects of ID 2
+  int<lower=1> N_2;  // number of grouping levels                    # <1> 
+  int<lower=1> M_2;  // number of coefficients per level             # <2> 
+  array[N] int<lower=1> J_2;  // grouping indicator per observation  # <3> 
+  // group-level predictor values
+  vector[N] Z_2_sigma_1;                                             # <4> 
+  int prior_only;  // should the likelihood be ignored?
+}
+```
+1. ... 
+2. ... 
+3. ... 
+4. ... 
+
+```default
+parameters {
+  real Intercept;  // temporary intercept for centered predictors
+  real Intercept_sigma;  // temporary intercept for centered predictors # <5> 
+  vector<lower=0>[M_1] sd_1;  // group-level standard deviations
+  array[M_1] vector[N_1] z_1;  // standardized group-level effects
+  vector<lower=0>[M_2] sd_2;  // group-level standard deviations        # <6> 
+  array[M_2] vector[N_2] z_2;  // standardized group-level effects      # <7> 
+}
+```
+5. ... 
+6. ... 
+7. ... 
+
+```default
+transformed parameters {
+  vector[N_1] r_1_1;  // actual group-level effects
+  vector[N_2] r_2_sigma_1;  // actual group-level effects       # <8>
+  real lprior = 0;  // prior contributions to the log posterior 
+  r_1_1 = (sd_1[1] * (z_1[1]));
+  r_2_sigma_1 = (sd_2[1] * (z_2[1]));                           # <9> 
+  lprior += student_t_lpdf(Intercept | 3, 5.3, 2.5);
+  lprior += student_t_lpdf(Intercept_sigma | 3, 0, 2.5);
+  lprior += student_t_lpdf(sd_1 | 3, 0, 2.5)                    # <10> 
+    - 1 * student_t_lccdf(0 | 3, 0, 2.5);
+  lprior += student_t_lpdf(sd_2 | 3, 0, 2.5)                    # <11> 
+    - 1 * student_t_lccdf(0 | 3, 0, 2.5);
+}
+```
+8. ... 
+9. ... 
+10. ... 
+11. ... 
+
+```default
+model {
+  // likelihood including constants
+  if (!prior_only) {
+    // initialize linear predictor term
+    vector[N] mu = rep_vector(0.0, N);
+    // initialize linear predictor term
+    vector[N] sigma = rep_vector(0.0, N);               # <12> 
+    mu += Intercept;
+    sigma += Intercept_sigma;                           # <13> 
+    for (n in 1:N) {
+      // add more terms to the linear predictor
+      mu[n] += r_1_1[J_1[n]] * Z_1_1[n];
+    }
+    for (n in 1:N) {
+      // add more terms to the linear predictor
+      sigma[n] += r_2_sigma_1[J_2[n]] * Z_2_sigma_1[n]; # <14> 
+    }
+    sigma = exp(sigma);                                 # <15> 
+    target += normal_lpdf(Y | mu, sigma);              
+  }
+  // priors including constants
+  target += lprior;
+  target += std_normal_lpdf(z_1[1]);
+  target += std_normal_lpdf(z_2[1]);
+}
+```
+12. ... 
+13. ... 
+14. ... 
+15. `sigma` is specified with a default `log` link, which is why we need to turn it to its right space 
+
+---
+
+If you do `summary(m4)` you get this: 
+
+```
+Multilevel Hyperparameters:
+~PID (Number of levels: 50) 
+                    Estimate Est.Error l-95% CI u-95% CI Rhat  Bulk_ESS Tail_ESS
+sd(Intercept)           1.03      0.12     0.84     1.27 1.07        66      330
+sd(sigma_Intercept)     1.45      0.14     1.20     1.77 1.02       162      355
+
+
+Regression Coefficients:
+                Estimate Est.Error l-95% CI u-95% CI Rhat   Bulk_ESS Tail_ESS
+Intercept           5.21      0.14     4.91     5.50 1.08         69      154
+sigma_Intercept    -0.92      0.19    -1.31    -0.56 1.03         61      156
+               
+Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).
+```
+
+where 
+
+- `sd(Intercept)` corresponds to `sd_PID__Intercept`
+- `sd(sigma_Intercept)` corresponds to `sd_PID__sigma_Intercept`
+- `Intercept` corresponds to `b_Intercept`
+- `sigma_Intercept` corresponds to `b_sigma_Intercept` 
 

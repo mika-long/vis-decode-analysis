@@ -103,7 +103,17 @@ window.Quarto = {
 <body>
 
 <div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
-<div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#get-simulation-data" id="toc-get-simulation-data" class="nav-link active" data-scroll-target="#get-simulation-data">Get simulation data</a></li>
+  <li><a href="#model-1" id="toc-model-1" class="nav-link" data-scroll-target="#model-1">Model 1</a></li>
+  <li><a href="#model-2" id="toc-model-2" class="nav-link" data-scroll-target="#model-2">Model 2</a></li>
+  <li><a href="#model-4" id="toc-model-4" class="nav-link" data-scroll-target="#model-4">Model 4</a></li>
+  </ul>
+</nav>
 </div>
 <main class="content page-columns page-full" id="quarto-document-content">
 
@@ -167,7 +177,7 @@ y_i &amp;\sim \mathcal{N}(\alpha_{\text{PID}[i]}, \beta_{\text{PID}[i]}) \\
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">get_prior</span>(f, <span class="at">data =</span> data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                  prior     class coef group resp dpar nlpar lb ub  source
- student_t(3, 4.9, 2.5) Intercept                                  default
+ student_t(3, 5.3, 2.5) Intercept                                  default
    student_t(3, 0, 2.5)     sigma                             0    default</code></pre>
 </div>
 </div>
@@ -200,7 +210,7 @@ parameters {
 }
 transformed parameters {
   real lprior = 0;  // prior contributions to the log posterior
-  lprior += student_t_lpdf(Intercept | 3, 4.9, 2.5);
+  lprior += student_t_lpdf(Intercept | 3, 5.3, 2.5);
   lprior += student_t_lpdf(sigma | 3, 0, 2.5)
     - 1 * student_t_lccdf(0 | 3, 0, 2.5);
 }
@@ -341,7 +351,7 @@ generated quantities {
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">get_prior</span>(f, <span class="at">data =</span> data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                  prior     class      coef group resp dpar nlpar lb ub
- student_t(3, 4.9, 2.5) Intercept                                      
+ student_t(3, 5.3, 2.5) Intercept                                      
    student_t(3, 0, 2.5)        sd                                  0   
    student_t(3, 0, 2.5)        sd             PID                  0   
    student_t(3, 0, 2.5)        sd Intercept   PID                  0   
@@ -364,7 +374,7 @@ generated quantities {
 <li><code>b_Intercept</code></li>
 <li><code>sd_PID__Intercept</code> — NEW</li>
 <li><code>sigma</code></li>
-<li><code>Intercept</code></li>
+<li><code>Intercept</code>: the same as <code>b_Intercept</code></li>
 <li><code>r_PID[num, Intercept]</code> — NEW</li>
 </ul>
 <p>Stan code:</p>
@@ -400,7 +410,7 @@ transformed parameters {
   vector[N_1] r_1_1;  // actual group-level effects
   real lprior = 0;  // prior contributions to the log posterior
   r_1_1 = (sd_1[1] * (z_1[1]));
-  lprior += student_t_lpdf(Intercept | 3, 4.9, 2.5);
+  lprior += student_t_lpdf(Intercept | 3, 5.3, 2.5);
   lprior += student_t_lpdf(sigma | 3, 0, 2.5)
     - 1 * student_t_lccdf(0 | 3, 0, 2.5);
   lprior += student_t_lpdf(sd_1 | 3, 0, 2.5)
@@ -427,7 +437,28 @@ generated quantities {
   real b_Intercept = Intercept;
 }</code></pre>
 </div>
-</div></div><p>Let’s walk through this one, annotating only the new ones compared to what we had before:</p>
+</div></div><div class="callout callout-style-simple callout-none no-icon callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Non-centered parameterization
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>In centered parameterization, you might write models like <span class="math display">\[\begin{align*}
+a_j &amp;\sim \mathcal{N}(a_0, \sigma_0) \\
+y &amp;\sim \mathcal{N}(a_j, ...)
+\end{align*}\]</span></p>
+<p>In non-centered parameterization, you write things like this instead: <span class="math display">\[\begin{align*}
+z_j &amp;\sim \mathcal{N}(0, 1) \\
+a_j &amp;= a_0 + \sigma \times z_j \\
+y &amp;\sim \mathcal{N}(a_j, ...)
+\end{align*}\]</span></p>
+</div>
+</div>
+<p>Let’s walk through this one, annotating only the new ones compared to what we had before:</p>
 <div class="sourceCode" id="annotated-cell-14"><pre class="sourceCode default code-annotation-code code-with-copy code-annotated"><code class="sourceCode default"><span id="annotated-cell-14-1"><a href="#annotated-cell-14-1" aria-hidden="true" tabindex="-1"></a>data {</span>
 <span id="annotated-cell-14-2"><a href="#annotated-cell-14-2" aria-hidden="true" tabindex="-1"></a>  int&lt;lower=1&gt; N;  // total number of observations</span>
 <span id="annotated-cell-14-3"><a href="#annotated-cell-14-3" aria-hidden="true" tabindex="-1"></a>  vector[N] Y;  // response variable</span>
@@ -454,7 +485,7 @@ generated quantities {
 </dd>
 <dt data-target-cell="annotated-cell-14" data-target-annotation="4">4</dt>
 <dd>
-<span data-code-cell="annotated-cell-14" data-code-lines="9" data-code-annotation="4">???</span>
+<span data-code-cell="annotated-cell-14" data-code-lines="9" data-code-annotation="4">Unclear …</span>
 </dd>
 </dl>
 <div class="sourceCode" id="annotated-cell-15"><pre class="sourceCode default code-annotation-code code-with-copy code-annotated"><code class="sourceCode default"><span id="annotated-cell-15-1"><a href="#annotated-cell-15-1" aria-hidden="true" tabindex="-1"></a>parameters {</span>
@@ -466,12 +497,12 @@ generated quantities {
 <dl class="code-annotation-container-grid">
 <dt data-target-cell="annotated-cell-15" data-target-annotation="5">5</dt>
 <dd>
-<span data-code-cell="annotated-cell-15" data-code-lines="4" data-code-annotation="5">If <code>M_1 = 1</code>, what does this even mean? It becomes a one?<br>
+<span data-code-cell="annotated-cell-15" data-code-lines="4" data-code-annotation="5">Since <code>M_1 = 1</code>, <code>sd_1</code> is a vector of length 1, and we still have to access its value by <code>sd_1[1]</code><br>
 </span>
 </dd>
 <dt data-target-cell="annotated-cell-15" data-target-annotation="6">6</dt>
 <dd>
-<span data-code-cell="annotated-cell-15" data-code-lines="5" data-code-annotation="6">??? What is this?? How do you arran a vector …?</span>
+<span data-code-cell="annotated-cell-15" data-code-lines="5" data-code-annotation="6">By the same logic, <code>z_1</code> is also a vector of length 1, and <code>z_1[1]</code> is a vector of length <code>N_1</code>.</span>
 </dd>
 </dl>
 <div class="sourceCode" id="annotated-cell-16"><pre class="sourceCode default code-annotation-code code-with-copy code-annotated"><code class="sourceCode default"><span id="annotated-cell-16-1"><a href="#annotated-cell-16-1" aria-hidden="true" tabindex="-1"></a>transformed parameters {</span>
@@ -487,15 +518,16 @@ generated quantities {
 <dl class="code-annotation-container-grid">
 <dt data-target-cell="annotated-cell-16" data-target-annotation="7">7</dt>
 <dd>
-<span data-code-cell="annotated-cell-16" data-code-lines="2" data-code-annotation="7">…</span>
+<span data-code-cell="annotated-cell-16" data-code-lines="2" data-code-annotation="7">This is the centered parameterization of random effects. Think of this as <span class="math inline">\(r_{\text{PID}[i]} = \sigma \times z_{\text{PID}[i]}\)</span> where <span class="math inline">\(z_j \sim \mathcal{N}(0, 1)\)</span><br>
+</span>
 </dd>
 <dt data-target-cell="annotated-cell-16" data-target-annotation="8">8</dt>
 <dd>
-<span data-code-cell="annotated-cell-16" data-code-lines="4" data-code-annotation="8">…</span>
+<span data-code-cell="annotated-cell-16" data-code-lines="4" data-code-annotation="8">Recall that <code>sd_1[1]</code> is a scalar value, and <code>z_1[1]</code> is a vector of length <code>N_1</code>.</span>
 </dd>
 <dt data-target-cell="annotated-cell-16" data-target-annotation="9">9</dt>
 <dd>
-<span data-code-cell="annotated-cell-16" data-code-lines="8" data-code-annotation="9">…</span>
+<span data-code-cell="annotated-cell-16" data-code-lines="8" data-code-annotation="9"><code>sd_1</code> is a vector, and <code>student_t_lpdf</code> handles this by computing the sum of log probabilities across all elements. Since there is only one element, <code>student_t_lpdf(sd_1 | ...)</code> is equivalent to <code>student_t_lpdf(sd_1[1] | ...)</code></span>
 </dd>
 </dl>
 <div class="sourceCode" id="annotated-cell-17"><pre class="sourceCode default code-annotation-code code-with-copy code-annotated"><code class="sourceCode default"><span id="annotated-cell-17-1"><a href="#annotated-cell-17-1" aria-hidden="true" tabindex="-1"></a>model {</span>
@@ -517,7 +549,8 @@ generated quantities {
 <dl class="code-annotation-container-grid">
 <dt data-target-cell="annotated-cell-17" data-target-annotation="10">10</dt>
 <dd>
-<span data-code-cell="annotated-cell-17" data-code-lines="9" data-code-annotation="10">…</span>
+<span data-code-cell="annotated-cell-17" data-code-lines="9" data-code-annotation="10">Recall that <code>J_1</code> is a vector of length <code>N</code>, which maps row to the participant it’s associated with. REcall that <code>r_1_1</code> is a vector of length <code>N_1</code>, where <code>N_1</code> is the number of participants. <code>Z_1_1</code> of length <code>N</code>, is a <strong>multiplier</strong> for the random effect. In the most basic random intercept model, <code>Z_1_1</code> would be a vector of all 1s.<br>
+</span>
 </dd>
 <dt data-target-cell="annotated-cell-17" data-target-annotation="11">11</dt>
 <dd>
@@ -538,6 +571,7 @@ Intercept     5.23      0.14     4.96     5.50 1.03      167      362
 Further Distributional Parameters:
       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
 sigma     0.91      0.02     0.87     0.95 1.00     2990     2879</code></pre>
+<p>I think <code>sd(Intercept)</code> corresponds to <code>sd_PID__Intercept</code>.</p>
 <!-- # Model 3  -->
 <!-- ```{r} -->
 <!-- f <- bf(out ~ 1 + (1 | PID),  -->
@@ -555,7 +589,7 @@ sigma     0.91      0.02     0.87     0.95 1.00     2990     2879</code></pre>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="fu">get_prior</span>(f, <span class="at">data =</span> data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                  prior     class      coef group resp  dpar nlpar lb ub
- student_t(3, 4.9, 2.5) Intercept                                       
+ student_t(3, 5.3, 2.5) Intercept                                       
    student_t(3, 0, 2.5)        sd                                   0   
    student_t(3, 0, 2.5)        sd             PID                   0   
    student_t(3, 0, 2.5)        sd Intercept   PID                   0   
@@ -633,7 +667,7 @@ transformed parameters {
   real lprior = 0;  // prior contributions to the log posterior
   r_1_1 = (sd_1[1] * (z_1[1]));
   r_2_sigma_1 = (sd_2[1] * (z_2[1]));
-  lprior += student_t_lpdf(Intercept | 3, 4.9, 2.5);
+  lprior += student_t_lpdf(Intercept | 3, 5.3, 2.5);
   lprior += student_t_lpdf(Intercept_sigma | 3, 0, 2.5);
   lprior += student_t_lpdf(sd_1 | 3, 0, 2.5)
     - 1 * student_t_lccdf(0 | 3, 0, 2.5);
@@ -673,7 +707,161 @@ generated quantities {
 }</code></pre>
 </div>
 </div></div><p>Now let’s break this one down:</p>
-<p>…</p>
+<div class="sourceCode" id="annotated-cell-22"><pre class="sourceCode default code-annotation-code code-with-copy code-annotated"><code class="sourceCode default"><span id="annotated-cell-22-1"><a href="#annotated-cell-22-1" aria-hidden="true" tabindex="-1"></a>data {</span>
+<span id="annotated-cell-22-2"><a href="#annotated-cell-22-2" aria-hidden="true" tabindex="-1"></a>  int&lt;lower=1&gt; N;  // total number of observations</span>
+<span id="annotated-cell-22-3"><a href="#annotated-cell-22-3" aria-hidden="true" tabindex="-1"></a>  vector[N] Y;  // response variable</span>
+<span id="annotated-cell-22-4"><a href="#annotated-cell-22-4" aria-hidden="true" tabindex="-1"></a>  // data for group-level effects of ID 1</span>
+<span id="annotated-cell-22-5"><a href="#annotated-cell-22-5" aria-hidden="true" tabindex="-1"></a>  int&lt;lower=1&gt; N_1;  // number of grouping levels</span>
+<span id="annotated-cell-22-6"><a href="#annotated-cell-22-6" aria-hidden="true" tabindex="-1"></a>  int&lt;lower=1&gt; M_1;  // number of coefficients per level</span>
+<span id="annotated-cell-22-7"><a href="#annotated-cell-22-7" aria-hidden="true" tabindex="-1"></a>  array[N] int&lt;lower=1&gt; J_1;  // grouping indicator per observation</span>
+<span id="annotated-cell-22-8"><a href="#annotated-cell-22-8" aria-hidden="true" tabindex="-1"></a>  // group-level predictor values</span>
+<span id="annotated-cell-22-9"><a href="#annotated-cell-22-9" aria-hidden="true" tabindex="-1"></a>  vector[N] Z_1_1;</span>
+<span id="annotated-cell-22-10"><a href="#annotated-cell-22-10" aria-hidden="true" tabindex="-1"></a>  // data for group-level effects of ID 2</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-22" data-target-annotation="1" onclick="event.preventDefault();" href="">1</a><span id="annotated-cell-22-11" class="code-annotation-target"><a href="#annotated-cell-22-11" aria-hidden="true" tabindex="-1"></a>  int&lt;lower=1&gt; N_2;  // number of grouping levels</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-22" data-target-annotation="2" onclick="event.preventDefault();" href="">2</a><span id="annotated-cell-22-12" class="code-annotation-target"><a href="#annotated-cell-22-12" aria-hidden="true" tabindex="-1"></a>  int&lt;lower=1&gt; M_2;  // number of coefficients per level</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-22" data-target-annotation="3" onclick="event.preventDefault();" href="">3</a><span id="annotated-cell-22-13" class="code-annotation-target"><a href="#annotated-cell-22-13" aria-hidden="true" tabindex="-1"></a>  array[N] int&lt;lower=1&gt; J_2;  // grouping indicator per observation</span>
+<span id="annotated-cell-22-14"><a href="#annotated-cell-22-14" aria-hidden="true" tabindex="-1"></a>  // group-level predictor values</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-22" data-target-annotation="4" onclick="event.preventDefault();" href="">4</a><span id="annotated-cell-22-15" class="code-annotation-target"><a href="#annotated-cell-22-15" aria-hidden="true" tabindex="-1"></a>  vector[N] Z_2_sigma_1;</span>
+<span id="annotated-cell-22-16"><a href="#annotated-cell-22-16" aria-hidden="true" tabindex="-1"></a>  int prior_only;  // should the likelihood be ignored?</span>
+<span id="annotated-cell-22-17"><a href="#annotated-cell-22-17" aria-hidden="true" tabindex="-1"></a>}</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-22" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-22" data-code-lines="11" data-code-annotation="1">…</span>
+</dd>
+<dt data-target-cell="annotated-cell-22" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-22" data-code-lines="12" data-code-annotation="2">…</span>
+</dd>
+<dt data-target-cell="annotated-cell-22" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-22" data-code-lines="13" data-code-annotation="3">…</span>
+</dd>
+<dt data-target-cell="annotated-cell-22" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-22" data-code-lines="15" data-code-annotation="4">…</span>
+</dd>
+</dl>
+<div class="sourceCode" id="annotated-cell-23"><pre class="sourceCode default code-annotation-code code-with-copy code-annotated"><code class="sourceCode default"><span id="annotated-cell-23-1"><a href="#annotated-cell-23-1" aria-hidden="true" tabindex="-1"></a>parameters {</span>
+<span id="annotated-cell-23-2"><a href="#annotated-cell-23-2" aria-hidden="true" tabindex="-1"></a>  real Intercept;  // temporary intercept for centered predictors</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-23" data-target-annotation="5" onclick="event.preventDefault();" href="">5</a><span id="annotated-cell-23-3" class="code-annotation-target"><a href="#annotated-cell-23-3" aria-hidden="true" tabindex="-1"></a>  real Intercept_sigma;  // temporary intercept for centered predictors</span>
+<span id="annotated-cell-23-4"><a href="#annotated-cell-23-4" aria-hidden="true" tabindex="-1"></a>  vector&lt;lower=0&gt;[M_1] sd_1;  // group-level standard deviations</span>
+<span id="annotated-cell-23-5"><a href="#annotated-cell-23-5" aria-hidden="true" tabindex="-1"></a>  array[M_1] vector[N_1] z_1;  // standardized group-level effects</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-23" data-target-annotation="6" onclick="event.preventDefault();" href="">6</a><span id="annotated-cell-23-6" class="code-annotation-target"><a href="#annotated-cell-23-6" aria-hidden="true" tabindex="-1"></a>  vector&lt;lower=0&gt;[M_2] sd_2;  // group-level standard deviations</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-23" data-target-annotation="7" onclick="event.preventDefault();" href="">7</a><span id="annotated-cell-23-7" class="code-annotation-target"><a href="#annotated-cell-23-7" aria-hidden="true" tabindex="-1"></a>  array[M_2] vector[N_2] z_2;  // standardized group-level effects</span>
+<span id="annotated-cell-23-8"><a href="#annotated-cell-23-8" aria-hidden="true" tabindex="-1"></a>}</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-23" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-23" data-code-lines="3" data-code-annotation="5">…</span>
+</dd>
+<dt data-target-cell="annotated-cell-23" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-23" data-code-lines="6" data-code-annotation="6">…</span>
+</dd>
+<dt data-target-cell="annotated-cell-23" data-target-annotation="7">7</dt>
+<dd>
+<span data-code-cell="annotated-cell-23" data-code-lines="7" data-code-annotation="7">…</span>
+</dd>
+</dl>
+<div class="sourceCode" id="annotated-cell-24"><pre class="sourceCode default code-annotation-code code-with-copy code-annotated"><code class="sourceCode default"><span id="annotated-cell-24-1"><a href="#annotated-cell-24-1" aria-hidden="true" tabindex="-1"></a>transformed parameters {</span>
+<span id="annotated-cell-24-2"><a href="#annotated-cell-24-2" aria-hidden="true" tabindex="-1"></a>  vector[N_1] r_1_1;  // actual group-level effects</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-24" data-target-annotation="8" onclick="event.preventDefault();" href="">8</a><span id="annotated-cell-24-3" class="code-annotation-target"><a href="#annotated-cell-24-3" aria-hidden="true" tabindex="-1"></a>  vector[N_2] r_2_sigma_1;  // actual group-level effects</span>
+<span id="annotated-cell-24-4"><a href="#annotated-cell-24-4" aria-hidden="true" tabindex="-1"></a>  real lprior = 0;  // prior contributions to the log posterior </span>
+<span id="annotated-cell-24-5"><a href="#annotated-cell-24-5" aria-hidden="true" tabindex="-1"></a>  r_1_1 = (sd_1[1] * (z_1[1]));</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-24" data-target-annotation="9" onclick="event.preventDefault();" href="">9</a><span id="annotated-cell-24-6" class="code-annotation-target"><a href="#annotated-cell-24-6" aria-hidden="true" tabindex="-1"></a>  r_2_sigma_1 = (sd_2[1] * (z_2[1]));</span>
+<span id="annotated-cell-24-7"><a href="#annotated-cell-24-7" aria-hidden="true" tabindex="-1"></a>  lprior += student_t_lpdf(Intercept | 3, 5.3, 2.5);</span>
+<span id="annotated-cell-24-8"><a href="#annotated-cell-24-8" aria-hidden="true" tabindex="-1"></a>  lprior += student_t_lpdf(Intercept_sigma | 3, 0, 2.5);</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-24" data-target-annotation="10" onclick="event.preventDefault();" href="">10</a><span id="annotated-cell-24-9" class="code-annotation-target"><a href="#annotated-cell-24-9" aria-hidden="true" tabindex="-1"></a>  lprior += student_t_lpdf(sd_1 | 3, 0, 2.5)</span>
+<span id="annotated-cell-24-10"><a href="#annotated-cell-24-10" aria-hidden="true" tabindex="-1"></a>    - 1 * student_t_lccdf(0 | 3, 0, 2.5);</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-24" data-target-annotation="11" onclick="event.preventDefault();" href="">11</a><span id="annotated-cell-24-11" class="code-annotation-target"><a href="#annotated-cell-24-11" aria-hidden="true" tabindex="-1"></a>  lprior += student_t_lpdf(sd_2 | 3, 0, 2.5)</span>
+<span id="annotated-cell-24-12"><a href="#annotated-cell-24-12" aria-hidden="true" tabindex="-1"></a>    - 1 * student_t_lccdf(0 | 3, 0, 2.5);</span>
+<span id="annotated-cell-24-13"><a href="#annotated-cell-24-13" aria-hidden="true" tabindex="-1"></a>}</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-24" data-target-annotation="8">8</dt>
+<dd>
+<span data-code-cell="annotated-cell-24" data-code-lines="3" data-code-annotation="8">…</span>
+</dd>
+<dt data-target-cell="annotated-cell-24" data-target-annotation="9">9</dt>
+<dd>
+<span data-code-cell="annotated-cell-24" data-code-lines="6" data-code-annotation="9">…</span>
+</dd>
+<dt data-target-cell="annotated-cell-24" data-target-annotation="10">10</dt>
+<dd>
+<span data-code-cell="annotated-cell-24" data-code-lines="9" data-code-annotation="10">…</span>
+</dd>
+<dt data-target-cell="annotated-cell-24" data-target-annotation="11">11</dt>
+<dd>
+<span data-code-cell="annotated-cell-24" data-code-lines="11" data-code-annotation="11">…</span>
+</dd>
+</dl>
+<div class="sourceCode" id="annotated-cell-25"><pre class="sourceCode default code-annotation-code code-with-copy code-annotated"><code class="sourceCode default"><span id="annotated-cell-25-1"><a href="#annotated-cell-25-1" aria-hidden="true" tabindex="-1"></a>model {</span>
+<span id="annotated-cell-25-2"><a href="#annotated-cell-25-2" aria-hidden="true" tabindex="-1"></a>  // likelihood including constants</span>
+<span id="annotated-cell-25-3"><a href="#annotated-cell-25-3" aria-hidden="true" tabindex="-1"></a>  if (!prior_only) {</span>
+<span id="annotated-cell-25-4"><a href="#annotated-cell-25-4" aria-hidden="true" tabindex="-1"></a>    // initialize linear predictor term</span>
+<span id="annotated-cell-25-5"><a href="#annotated-cell-25-5" aria-hidden="true" tabindex="-1"></a>    vector[N] mu = rep_vector(0.0, N);</span>
+<span id="annotated-cell-25-6"><a href="#annotated-cell-25-6" aria-hidden="true" tabindex="-1"></a>    // initialize linear predictor term</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-25" data-target-annotation="12" onclick="event.preventDefault();" href="">12</a><span id="annotated-cell-25-7" class="code-annotation-target"><a href="#annotated-cell-25-7" aria-hidden="true" tabindex="-1"></a>    vector[N] sigma = rep_vector(0.0, N);</span>
+<span id="annotated-cell-25-8"><a href="#annotated-cell-25-8" aria-hidden="true" tabindex="-1"></a>    mu += Intercept;</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-25" data-target-annotation="13" onclick="event.preventDefault();" href="">13</a><span id="annotated-cell-25-9" class="code-annotation-target"><a href="#annotated-cell-25-9" aria-hidden="true" tabindex="-1"></a>    sigma += Intercept_sigma;</span>
+<span id="annotated-cell-25-10"><a href="#annotated-cell-25-10" aria-hidden="true" tabindex="-1"></a>    for (n in 1:N) {</span>
+<span id="annotated-cell-25-11"><a href="#annotated-cell-25-11" aria-hidden="true" tabindex="-1"></a>      // add more terms to the linear predictor</span>
+<span id="annotated-cell-25-12"><a href="#annotated-cell-25-12" aria-hidden="true" tabindex="-1"></a>      mu[n] += r_1_1[J_1[n]] * Z_1_1[n];</span>
+<span id="annotated-cell-25-13"><a href="#annotated-cell-25-13" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="annotated-cell-25-14"><a href="#annotated-cell-25-14" aria-hidden="true" tabindex="-1"></a>    for (n in 1:N) {</span>
+<span id="annotated-cell-25-15"><a href="#annotated-cell-25-15" aria-hidden="true" tabindex="-1"></a>      // add more terms to the linear predictor</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-25" data-target-annotation="14" onclick="event.preventDefault();" href="">14</a><span id="annotated-cell-25-16" class="code-annotation-target"><a href="#annotated-cell-25-16" aria-hidden="true" tabindex="-1"></a>      sigma[n] += r_2_sigma_1[J_2[n]] * Z_2_sigma_1[n];</span>
+<span id="annotated-cell-25-17"><a href="#annotated-cell-25-17" aria-hidden="true" tabindex="-1"></a>    }</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-25" data-target-annotation="15" onclick="event.preventDefault();" href="">15</a><span id="annotated-cell-25-18" class="code-annotation-target"><a href="#annotated-cell-25-18" aria-hidden="true" tabindex="-1"></a>    sigma = exp(sigma);</span>
+<span id="annotated-cell-25-19"><a href="#annotated-cell-25-19" aria-hidden="true" tabindex="-1"></a>    target += normal_lpdf(Y | mu, sigma);              </span>
+<span id="annotated-cell-25-20"><a href="#annotated-cell-25-20" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="annotated-cell-25-21"><a href="#annotated-cell-25-21" aria-hidden="true" tabindex="-1"></a>  // priors including constants</span>
+<span id="annotated-cell-25-22"><a href="#annotated-cell-25-22" aria-hidden="true" tabindex="-1"></a>  target += lprior;</span>
+<span id="annotated-cell-25-23"><a href="#annotated-cell-25-23" aria-hidden="true" tabindex="-1"></a>  target += std_normal_lpdf(z_1[1]);</span>
+<span id="annotated-cell-25-24"><a href="#annotated-cell-25-24" aria-hidden="true" tabindex="-1"></a>  target += std_normal_lpdf(z_2[1]);</span>
+<span id="annotated-cell-25-25"><a href="#annotated-cell-25-25" aria-hidden="true" tabindex="-1"></a>}</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-25" data-target-annotation="12">12</dt>
+<dd>
+<span data-code-cell="annotated-cell-25" data-code-lines="7" data-code-annotation="12">…</span>
+</dd>
+<dt data-target-cell="annotated-cell-25" data-target-annotation="13">13</dt>
+<dd>
+<span data-code-cell="annotated-cell-25" data-code-lines="9" data-code-annotation="13">…</span>
+</dd>
+<dt data-target-cell="annotated-cell-25" data-target-annotation="14">14</dt>
+<dd>
+<span data-code-cell="annotated-cell-25" data-code-lines="16" data-code-annotation="14">…</span>
+</dd>
+<dt data-target-cell="annotated-cell-25" data-target-annotation="15">15</dt>
+<dd>
+<span data-code-cell="annotated-cell-25" data-code-lines="18" data-code-annotation="15"><code>sigma</code> is specified with a default <code>log</code> link, which is why we need to turn it to its right space</span>
+</dd>
+</dl>
+<hr>
+<p>If you do <code>summary(m4)</code> you get this:</p>
+<pre><code>Multilevel Hyperparameters:
+~PID (Number of levels: 50) 
+                    Estimate Est.Error l-95% CI u-95% CI Rhat  Bulk_ESS Tail_ESS
+sd(Intercept)           1.03      0.12     0.84     1.27 1.07        66      330
+sd(sigma_Intercept)     1.45      0.14     1.20     1.77 1.02       162      355
+
+
+Regression Coefficients:
+                Estimate Est.Error l-95% CI u-95% CI Rhat   Bulk_ESS Tail_ESS
+Intercept           5.21      0.14     4.91     5.50 1.08         69      154
+sigma_Intercept    -0.92      0.19    -1.31    -0.56 1.03         61      156
+               
+Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
+<p>where</p>
+<ul>
+<li><code>sd(Intercept)</code> corresponds to <code>sd_PID__Intercept</code></li>
+<li><code>sd(sigma_Intercept)</code> corresponds to <code>sd_PID__sigma_Intercept</code></li>
+<li><code>Intercept</code> corresponds to <code>b_Intercept</code></li>
+<li><code>sigma_Intercept</code> corresponds to <code>b_sigma_Intercept</code></li>
+</ul>
 </section>
 
 </main>
