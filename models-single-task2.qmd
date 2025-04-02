@@ -224,7 +224,7 @@ For now we'll focus on modeling the error on the x-axis; while thinking about ho
 
 ---
 
-## Task 2 - Vis Angle Model 
+## Task 2 - Vis Angle - error on X 
 
 Math model: 
 
@@ -493,7 +493,7 @@ loo(s.2.va.1, s.2.va.2, s.2.va.3)
 
 So the results are: **Laplace** > **Cauchy** > **Normal**. 
 
-## Task 2 - Vis Angle - Varying variance 
+## Task 2 - Vis Angle - error on X - Varying variance 
 
 Let's stick with the Laplace distribution for now. Let's check the posterior for the parameters: 
 
@@ -594,6 +594,42 @@ loo(s.2.va.1, s.2.va.4)
 ```
 
 Yes it is! 
+
+
+## Task 2 - Vis Angle - error on Y 
+
+$$\text{error}_i \sim \text{Exponential}(\lambda)$$
+$$\lambda \sim \mathcal{N}(1.5, 1)$$
+
+```{r}
+f <- bf(error.y ~ 1, 
+        family = exponential())
+
+p <- prior(normal(1.5, 1), class = Intercept)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+s.2.va.y <- task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+  get_prior(f, data = ., prior = prior(normal(1.5, 1)))
+
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+  mutate(ifelse(error.y < 0, 0, error.y)) %>% 
+  # mutate(log.error.y = log(error.y * 10)) %>% 
+  make_stancode(f, data = ., prior = p)
+```
+
+Fit the model:
+
+```{r}
+task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+  brm(formula = f, 
+      prior = prior(normal(1.5, 1), class = Intercept), 
+      cores = 4, 
+      file = "models/s.2.va.y")
+```
+
 
 ## Task 2 - Physical Model 
 
