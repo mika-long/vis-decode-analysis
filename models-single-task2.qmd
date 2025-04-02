@@ -144,7 +144,7 @@ First we get the data:
 #| label: get task 2 data
 #| code-fold: true 
 
-task2_df <- single_df %>% filter(task == "task2") %>% 
+task2_df <- single_pid_df %>% filter(task == "task2") %>% 
   select(-slider.x, -slider.y) %>% 
   mutate(data.ans.x = param.mu, 
          data.ans.y = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE),
@@ -623,6 +623,18 @@ Yes it is!
 
 
 ## Task 2 - Vis Angle - error on Y 
+
+```{r}
+task2_df %>% mutate(error.y = va.ans.y - va.select.y, error.x = va.ans.x - va.select.x) %>% 
+  ggplot(aes(x = error.y)) + geom_dots()
+
+task2_df %>% mutate(error.y = va.ans.y - va.select.y, error.x = va.ans.x - va.select.x) %>% 
+  filter(error.y < 0) %>% 
+  select(error.y, data.ans.y, data.select.y, error.x) %>% 
+  filter(error.x != 0)
+
+```
+
 
 $$\text{error}_i \sim \text{Exponential}(\lambda)$$
 $$\lambda \sim \mathcal{N}(1.5, 1)$$
