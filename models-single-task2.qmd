@@ -361,7 +361,7 @@ f <- bf(error_va ~ 1,
 # define prior 
 p <- c(
   prior(normal(0, 0.5), class = "Intercept"), 
-  prior(normal(0, 1), class = "sigma")
+  prior(cauchy(0, 0.5), class = "sigma")
 )
 ```
 
@@ -417,7 +417,9 @@ f <- bf(error_va ~ 1,
 
 p <- c(
   # constant prior for nu to make it cauchy 
-  prior(constant(1), class = "nu")
+  prior(constant(1), class = "nu"),
+  prior(normal(0, 0.5), class = "Intercept"), 
+  prior(cauchy(0, 0.5), class = "sigma")
 )
 ```
 
@@ -440,6 +442,8 @@ make_stancode(formula = f,
 Fit the model: 
 
 ```{r}
+#| output: false 
+
 s.2.va.3 <- task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>%
   brm(
     formula = f, 
