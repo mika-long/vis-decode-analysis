@@ -27,9 +27,13 @@ library(brms)
 library(tidybayes)
 ```
 
+
+
 # Set up 
 
 read in data and write functions for processing: 
+
+
 
 ```{r}
 #| label: read-in-data
@@ -110,9 +114,13 @@ participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participant
 ```
 
 
+
+
 # Task 2 -- Find highest point on curve 
 
 First we get the data: 
+
+
 
 ```{r}
 #| label: get task 2 data
@@ -144,7 +152,11 @@ task2_df <- single_pid_df %>% filter(task == "task2") %>%
   mutate(flat = (abs(data.left.grad) + abs(data.right.grad))/2)
 ```
 
+
+
 Checking relations, focusing on the **y** axes: 
+
+
 
 ```{r}
 #| layout-ncol: 2
@@ -161,7 +173,11 @@ task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
 task2_df %>% ggplot(aes(x = (phy.ans.y - phy.select.y) / dist_to_screen)) + geom_dots()
 ```
 
+
+
 Checking relations, ocusing on the **x** axes: 
+
+
 
 ```{r}
 #| layout-ncol: 2
@@ -190,7 +206,11 @@ task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = param.lambda)) +
   labs(title = "Signed error on x-axes against skewness")
 ```
 
+
+
 Here's one way to approximate `param.p`: 
+
+
 
 ```{r}
 #| code-fold: true 
@@ -215,6 +235,8 @@ task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = flat, color = param.lamb
     midpoint = 0
   )
 ```
+
+
 
 
 
@@ -243,6 +265,8 @@ To fit a laplace distribution, we need to define our own custom distribution, si
 :::{.callout-note collapsed="true"}
 There is a [wiki](https://en.wikipedia.org/wiki/Laplace_distribution) about Laplace distribution, which defines the pdf of a Laplace distribution to be $f(x | \mu, b) = \frac{1}{2b} \exp(-\frac{|x - \mu|}{b})$, where $\mu$ is a location parameter, and $b > 0$ is a scale parameter. And this is what the [stan manual](https://en.wikipedia.org/wiki/Laplace_distribution) defines the pdf of the **double exponential** distribution  --- $f(y|\mu, \sigma) = \frac{1}{2\sigma} \exp(- \frac{|y - \mu|}{\sigma})$, basically everything is the same except they're using different notations for the scale parameter ...  
 :::
+
+
 
 ```{r}
 # log of the laplace pdf 
@@ -297,7 +321,11 @@ task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
                 )
 ```
 
+
+
 Fit the model:
+
+
 
 ```{r}
 #| output: false 
@@ -314,16 +342,24 @@ s.2.va.1 <- task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   )
 ```
 
+
+
 Check the fitted model:
+
+
 
 ```{r}
 summary(s.2.va.1)
 plot(s.2.va.1)
 ```
 
+
+
 Given that we are using custom families, we also need to define our custom function to perform posterior predictive checks: 
 
 Define custom functions for posterior predictive check: 
+
+
 
 ```{r}
 #| code-fold: true 
@@ -348,11 +384,15 @@ posterior_predict_laplace <- function(i, prep, ...) {
 pp_check(s.2.va.1, ndraws = 100)
 ```
 
+
+
 ### Task 2 - Vis Angle - Normal distribution 
 
 Same math model, except we now have $\texttt{error_va}_i \sim \mathcal{N}(\mu, \sigma^2)$, instead of a Laplace distribution. 
 
 Formula: 
+
+
 
 ```{r}
 f <- bf(error_va ~ 1,
@@ -380,7 +420,11 @@ make_stancode(formula = f,
               prior = p)
 ```
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| output: false
@@ -397,7 +441,11 @@ s.2.va.2 <- task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   )
 ```
 
+
+
 Check fitted results and posterior 
+
+
 
 ```{r}
 summary(s.2.va.2)
@@ -405,11 +453,15 @@ plot(s.2.va.2)
 pp_check(s.2.va.2, ndraws = 100)
 ```
 
+
+
 Compared to the fit of the Laplace this one doesn't look as good ... 
 
 ### Task 2 - Vis Angle - Cauchy 
 
 Note that a cauchy distribution is a student t distribution with degrees of freedom, `nu`, fixed to be 1. 
+
+
 
 ```{r}
 f <- bf(error_va ~ 1,
@@ -439,7 +491,11 @@ make_stancode(formula = f,
               prior = p)
 ```
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| output: false 
@@ -454,7 +510,11 @@ s.2.va.3 <- task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   )
 ```
 
+
+
 Check the fitted results: 
+
+
 
 ```{r}
 summary(s.2.va.3)
@@ -462,9 +522,13 @@ plot(s.2.va.3)
 pp_check(s.2.va.3, ndraws = 100)
 ```
 
+
+
 ### LOO comparisons 
 
 Recall that the when using a custom `brms` family, we need to define our own funtions. First define the `log_lik` (log likelihood) related functions: 
+
+
 
 ```{r}
 expose_functions(s.2.va.1, vectorize = TRUE)
@@ -485,17 +549,25 @@ log_lik_laplace <- function(i, prep) {
 loo(s.2.va.1)
 ```
 
+
+
 Loo comparison between all visual angle related models: 
+
+
 
 ```{r}
 loo(s.2.va.1, s.2.va.2, s.2.va.3)
 ```
+
+
 
 So the results are: **Laplace** > **Cauchy** > **Normal**. 
 
 ## Task 2 - Vis Angle - Varying variance 
 
 Let's stick with the Laplace distribution for now. Let's check the posterior for the parameters: 
+
+
 
 ```{r}
 s.2.va.1 %>% spread_draws(Intercept, sigma) %>% 
@@ -504,12 +576,16 @@ s.2.va.1 %>% spread_draws(Intercept, sigma) %>%
   stat_halfeye()
 ```
 
+
+
 New math model: 
 $$\begin{align*}
 \text{error_va}_{i} &\sim \text{Laplace}(\mu, \sigma) \\
 \mu &\sim \mathcal{N}(\bar{\mu}, \sigma_\mu^2) \\ 
 \sigma_i &= f(\text{flat}_i) = \exp(\alpha + \beta \text{flat}_i)
 \end{align*}$$
+
+
 
 ```{r}
 #| column: margin 
@@ -519,7 +595,11 @@ s.2.va.1 %>% spread_draws(sigma) %>%
   labs(x = "log(sigma)")
 ```
 
+
+
 Formula: 
+
+
 
 ```{r}
 # single participant 
@@ -552,7 +632,11 @@ task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
                 )
 ```
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 s.2.va.4 <- task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
@@ -565,7 +649,11 @@ s.2.va.4 <- task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     file = "models/s.2.va.4")
 ```
 
+
+
 Check fit and posterior: 
+
+
 
 ```{r}
 summary(s.2.va.4)
@@ -573,11 +661,17 @@ plot(s.2.va.4)
 pp_check(s.2.va.4, ndraws = 100)
 ```
 
+
+
 Is this a better fit?
+
+
 
 ```{r}
 loo(s.2.va.1, s.2.va.4)
 ```
+
+
 
 Yes it is! 
 
