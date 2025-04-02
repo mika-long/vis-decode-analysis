@@ -656,6 +656,7 @@ Check fit and posterior:
 
 
 ```{r}
+expose_functions(s.2.va.4, vectorize = TRUE)
 summary(s.2.va.4)
 plot(s.2.va.4)
 pp_check(s.2.va.4, ndraws = 100)
@@ -668,6 +669,7 @@ Is this a better fit?
 
 
 ```{r}
+expose_functions(s.2.va.4, vectorize = TRUE)
 loo(s.2.va.1, s.2.va.4)
 ```
 
