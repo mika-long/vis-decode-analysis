@@ -228,11 +228,11 @@ For now we'll focus on modeling the error on the x-axis; while thinking about ho
 
 Math model: 
 
-$$\begin{align*}
+$$\begin{align}
 \text{error_va}_{i} &\sim \text{Some Distribution}(\mu, \sigma) \\
 \mu &\sim \mathcal{N}(\alpha, \sigma_\mu^2) \\ 
-\sigma &\sim \mathcal{N}(\beta, \sigma_b^2)
-\end{align*}$$
+\sigma &\sim \text{Half-Cauchy}(\beta, \sigma_b^2)
+\end{align}$$
 
 We have at least two choices for the "Some Distribution" --- Normal and Laplace. 
 
@@ -269,7 +269,7 @@ f <- bf(error_va ~ 1,
 
 # define prior 
 p1 <- c(
-  prior(normal(0, 0.5), class = "Intercept", lb=0), 
+  prior(normal(0, 0.5), class = "Intercept"), 
   prior(cauchy(0, 0.5), class = "sigma", lb = 0)
 )
 
@@ -492,6 +492,94 @@ loo(s.2.va.1, s.2.va.2, s.2.va.3)
 ```
 
 So the results are: **Laplace** > **Cauchy** > **Normal**. 
+
+## Task 2 - Vis Angle - Varying variance 
+
+Let's stick with the Laplace distribution for now. Let's check the posterior for the parameters: 
+
+```{r}
+s.2.va.1 %>% spread_draws(Intercept, sigma) %>% 
+  pivot_longer(4:5) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+```
+
+New math model: 
+$$\begin{align*}
+\text{error_va}_{i} &\sim \text{Laplace}(\mu, \sigma) \\
+\mu &\sim \mathcal{N}(\bar{\mu}, \sigma_\mu^2) \\ 
+\sigma_i &= f(\text{flat}_i) = \exp(\alpha + \beta \text{flat}_i)
+\end{align*}$$
+
+```{r}
+#| column: margin 
+s.2.va.1 %>% spread_draws(sigma) %>% 
+  mutate(log_sigma = log(sigma)) %>% 
+  ggplot(aes(x = log_sigma)) + stat_halfeye() + 
+  labs(x = "log(sigma)")
+```
+
+Formula: 
+
+```{r}
+# single participant 
+f <- bf(error_va ~ 1, 
+        sigma ~ 1 + flat, 
+        family = c_family)
+
+# define prior 
+p <- c(
+  prior(normal(0, 0.5), class = "Intercept"), 
+  prior(normal(0, 1), class = "Intercept", dpar = "sigma")
+)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+
+# get prior
+task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+get_prior(formula = f,
+          data = .)
+
+# get stan code 
+task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  make_stancode(formula = f, 
+                data = .,
+                prior = p, 
+                stanvars = stanvar(scode = laplace_lpdf, block = "functions")
+                )
+```
+
+Fit the model: 
+
+```{r}
+s.2.va.4 <- task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  brm(formula = f, 
+    family = c_family, 
+    stanvars = stanvar(scode = laplace_lpdf, block = "functions"), 
+    prior = p, 
+    data = ., 
+    chains = 4, 
+    file = "models/s.2.va.4")
+```
+
+Check fit and posterior: 
+
+```{r}
+summary(s.2.va.4)
+plot(s.2.va.4)
+pp_check(s.2.va.4, ndraws = 100)
+```
+
+Is this a better fit?
+
+```{r}
+loo(s.2.va.1, s.2.va.4)
+```
+
+Yes it is! 
 
 ## Task 2 - Physical Model 
 
