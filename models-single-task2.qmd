@@ -611,7 +611,7 @@ p <- prior(normal(1.5, 1), class = Intercept)
 ```{r}
 #| eval: false 
 #| echo: false 
-s.2.va.y <- task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
   get_prior(f, data = ., prior = prior(normal(1.5, 1)))
 
 task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
@@ -623,12 +623,67 @@ task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>%
 Fit the model:
 
 ```{r}
-task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+s.2.va.y <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
   brm(formula = f, 
       prior = prior(normal(1.5, 1), class = Intercept), 
       cores = 4, 
       file = "models/s.2.va.y")
 ```
+
+Check fit and posterior: 
+
+```{r}
+summary(s.2.va.y)
+plot(s.2.va.y)
+pp_check(s.2.va.y, ndraws = 100)
+```
+
+Hmm perhaps this is a gamma distribution rather than a exponential distribution? We know that the Gamma distribution is parameterized by two things: a shape parameter $\alpha$ and a rate parameter $\theta$^[See [stan](https://mc-stan.org/docs/functions-reference/positive_continuous_distributions.html#gamma-distribution) and [wiki](https://en.wikipedia.org/wiki/Gamma_distribution)]: 
+
+```{r}
+f <- bf(error.y ~ 1, 
+        family = Gamma())
+
+p <- prior(normal(1.5, 1), class = Intercept)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+  get_prior(f, data = .)
+
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+  mutate(ifelse(error.y < 0, 0, error.y)) %>% 
+  # mutate(log.error.y = log(error.y * 10)) %>% 
+  make_stancode(f, data = .)
+```
+
+Fit model: 
+
+```{r}
+s.2.va.y.1 <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+  # mutate(error.y = ifelse(error.y < 0, 0, error.y)) %>% 
+  brm(f, 
+      cores = 4, 
+      data = ., 
+      file = "models/s.2.va.y.1")
+```
+
+Check fit and posterior: 
+
+```{r}
+summary(s.2.va.y.1)
+plot(s.2.va.y.1)
+pp_check(s.2.va.y.1, ndraws = 100)
+```
+
+```{r}
+loo(s.2.va.y, s.2.va.y.1)
+```
+
+So this Gamma distribution fits better than the exponential distribution. 
+
 
 
 ## Task 2 - Physical Model 
