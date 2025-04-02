@@ -210,7 +210,7 @@ $$\begin{align*}
 
 We have at least two choices for the "Some Distribution" --- Normal and Laplace. 
 
-### Task 2 - Vis Angle Model 1 --- Laplace distribution 
+### Task 2 - Vis Angle - Laplace distribution 
 
 To fit a laplace distribution, we need to define our own custom distribution, since `brms` does not provide a default defined Laplace distributino. 
 
@@ -322,7 +322,7 @@ posterior_predict_laplace <- function(i, prep, ...) {
 pp_check(s.2.va.1, ndraws = 100)
 ```
 
-### Task 2 - Vis Angle - Normal Distribution 
+### Task 2 - Vis Angle - Normal distribution 
 
 Same math model, except we now have $\texttt{error_va}_i \sim \mathcal{N}(\mu, \sigma^2)$, instead of a Laplace distribution. 
 
@@ -379,23 +379,15 @@ plot(s.2.va.2)
 pp_check(s.2.va.2, ndraws = 100)
 ```
 
-The fit doesn't look that good lol. 
+Compared to the fit of the Laplace this one doesn't look as good ... 
 
----
-
-### Model 2.3 --- Cauchy 
+### Task 2 - Vis Angle - Cauchy 
 
 Note that a cauchy distribution is a student t distribution with degrees of freedom, `nu`, fixed to be 1. 
 
 ```{r}
-f <- bf(error_va ~ 1 + (1 | participantId),
-        sigma ~ 1 + (1 | participantId), 
+f <- bf(error_va ~ 1,
         family = student())
-
-# get prior
-task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-get_prior(formula = f,
-          data = .)
 
 p <- c(
   # constant prior for nu to make it cauchy 
@@ -403,29 +395,42 @@ p <- c(
 )
 ```
 
+```{r}
+#| echo: false
+#| eval: false
+
+# get prior
+task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+get_prior(formula = f,
+          data = .)
+
+# check stan code 
+task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+make_stancode(formula = f,
+              data = ., 
+              prior = p)
+```
+
 Fit the model: 
 
 ```{r}
-m1.3 <- task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>%
+s.2.va.3 <- task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>%
   brm(
     formula = f, 
     prior = p, 
     data = ., 
     chains = 4, 
-    # cores = 4, 
-    # control = list(adapt_delta = 0.95), 
-    file = "models/task2-m1.3"
+    file = "models/s.2.va.3"
   )
 ```
 
 Check the fitted results: 
 
 ```{r}
-summary(m1.3)
-plot(m1.3)
-pp_check(m1.3, ndraws = 100)
+summary(s.2.va.3)
+plot(s.2.va.3)
+pp_check(s.2.va.3, ndraws = 100)
 ```
-
 
 ### LOO comparisons 
 
@@ -719,3 +724,12 @@ From the `pp_check`s and the loo comparison it is clear that the Laplace distrib
 <!-- Hmm doesn't seem to be much different, which is to be expected, as slope is unit-less.  -->
 
 <!-- ---  -->
+
+
+## Task 2 - Physical Model 
+
+TODO 
+
+## Compare Vis Angle Models Against Physical Models 
+
+TODO 
