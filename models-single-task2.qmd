@@ -532,6 +532,12 @@ p <- c(
   prior(normal(0, 0.5), class = "Intercept"), 
   prior(normal(0, 1), class = "Intercept", dpar = "sigma")
 )
+
+laplace_lpdf <- "
+real laplace_lpdf(real y, real mu, real sigma) {
+  return -log(2 * sigma) - abs(y - mu) / sigma;
+}
+"
 ```
 
 ```{r}
@@ -578,6 +584,12 @@ Is this a better fit?
 
 ```{r}
 expose_functions(s.2.va.4, vectorize = TRUE)
+
+# Define log-likelihood function for Laplace distribution
+laplace_lpdf <- function(y, mu, sigma) {
+  -log(2 * sigma) - abs(y - mu) / sigma
+}
+
 loo(s.2.va.1, s.2.va.4)
 ```
 
