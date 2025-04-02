@@ -194,7 +194,7 @@ task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = param.p, color = param.l
 
 **NOTE** that error measured on the y-axis is very small, while error measured on the x-axis is larger. 
 
-For now we'll focus on modeling the error on the x-axis; while thinking about how the flatness of the curve influences the error and result? 
+For now we'll focus on modeling the error on the x-axis; while thinking about how the flatness of the curve influences the error and result? There is however no good way of calculating `param.p` though, so maynbe this could have been something else? Like the tangent value to the next thing ...? 
 
 ---
 
@@ -208,7 +208,7 @@ $$\begin{align*}
 \sigma &\sim \mathcal{N}(\beta, \sigma_b^2)
 \end{align*}$$
 
-We have two choices for the "Some Distribution" --- Normal and Laplace. 
+We have at least two choices for the "Some Distribution" --- Normal and Laplace. 
 
 ### Task 2 - Vis Angle Model 1 --- Laplace distribution 
 
@@ -295,41 +295,13 @@ summary(s.2.va.1)
 plot(s.2.va.1)
 ```
 
-Let's compare this to, e.g., the model where we're assuming that everything is fixed: 
-
-```{r}
-# get_variables(m1.1)
-
-# extract posterior sampels 
-posterior <- m1.1 %>% spread_draws(b_Intercept, sd_participantId__Intercept, r_participantId[PID, term], 
-                      b_sigma_Intercept, sd_participantId__sigma_Intercept, r_participantId__sigma[PID, term]) %>% 
-  filter(term == "Intercept") %>% 
-  mutate(sigma_global = exp(b_sigma_Intercept), 
-         participant_mean = b_Intercept + r_participantId, 
-         sigma_participant = exp(b_sigma_Intercept + r_participantId__sigma)) 
-
-
-posterior %>% ggplot(aes(y = PID)) + 
-  stat_halfeye(aes(x = participant_mean), .width = c(0.5, 0.95))
-
-posterior %>% ggplot(aes(y = PID)) + 
-  stat_halfeye(aes(x = sigma_participant))
-
-### 
-# single participant posterior 
-### 
-m1.1 %>% spread_draws(b_Intercept, sigma) %>%
-  pivot_longer(cols = c(b_Intercept, sigma)) %>% 
-  ggplot(aes(x = value, y = name)) + stat_halfeye() + 
-  labs(title = "Sheng's posterior")
-```
+Given that we are using custom families, we also need to define our custom function to perform posterior predictive checks: 
 
 Define custom functions for posterior predictive check: 
 
 ```{r}
-
-expose_functions(m1.1, vectorize = TRUE)
-expose_functions(m1.1.2, vectorize = TRUE)
+#| code-fold: true 
+expose_functions(s.2.va.1, vectorize = TRUE)
 
 # Define a random number generator for Laplace distribution
 laplace_rng <- function(mu, sigma) {
@@ -346,24 +318,70 @@ posterior_predict_laplace <- function(i, prep, ...) {
 }
 ```
 
-Define `log_lik` functions: 
-
 ```{r}
-log_lik_laplace <- function(i, prep) {
-  mu <- brms::get_dpar(prep, "mu", i = i)
-  sigma <- brms::get_dpar(prep, "simga", i = i)
-  trials <- prep$data$vint1[i]
-  y <- prep$data$Y[i]
-  laplace_lpdf(y, mu, sigma)
-}
-
-loo(m1.1.2)
+pp_check(s.2.va.1, ndraws = 100)
 ```
 
+### Task 2 - Vis Angle - Normal Distribution 
+
+Same math model, except we now have $\texttt{error_va}_i \sim \mathcal{N}(\mu, \sigma^2)$, instead of a Laplace distribution. 
+
+Formula: 
+
+```{r}
+f <- bf(error_va ~ 1,
+        family = gaussian())
+
+# define prior 
+p <- c(
+  prior(normal(0, 0.5), class = "Intercept"), 
+  prior(normal(0, 1), class = "sigma")
+)
+```
+
+```{r}
+#| echo: false 
+#| eval: false 
+
+# get prior
+task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+get_prior(formula = f,
+          data = .)
+
+task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+make_stancode(formula = f,
+              data = ., 
+              prior = p)
+```
+
+Fit the model: 
+
+```{r}
+#| output: false
+#| label: task2-fit-model-3
+
+s.2.va.2 <- task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>%
+  brm(
+    formula = f,
+    data = .,
+    prior = p,
+    chains = 4,
+    file="models/s.2.va.2",
+    save_pars = save_pars(all=TRUE)
+  )
+```
+
+Check fitted results and posterior 
+
+```{r}
+summary(s.2.va.2)
+plot(s.2.va.2)
+pp_check(s.2.va.2, ndraws = 100)
+```
+
+The fit doesn't look that good lol. 
 
 ---
-
-- This posterior predictive check is reminding me that it could also be drawn from a Cauchy ... 
 
 ### Model 2.3 --- Cauchy 
 
@@ -409,73 +427,21 @@ pp_check(m1.3, ndraws = 100)
 ```
 
 
-### Model 2.2 --- Normal 
-
-Math model: 
-
-$$
-\begin{align}
-\text{error_va}_{i} &\sim \text{Normal}(\mu_{\text{PID}[i]}, \sigma_{\text{PID}[i]}) \\
-\mu_j &\sim \mathcal{N}(0, 0.25), j \in [13] \\ 
-\sigma_j &\sim \mathcal{N}(0, 1), j \in [13] 
-\end{align}
-$$
-
-The corresponding `brms` formula would be as follows:
-
-```{r}
-#| label: task 2 formula 2
-
-f2 <- bf(error_va ~ 1 + (1 | participantId),
-         sigma ~ 1 + (1 | participantId),
-        family = gaussian())
-
-# get prior
-task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-get_prior(formula = f2,
-          data = .)
-
-# define prior 
-p <- c(
-  prior(normal(0, 0.5), class = "Intercept", dpar="mu"), 
-  prior(normal(-1, 1), class = "Intercept", dpar="sigma"), 
-  prior(cauchy(0, 0.25), class = "sd", group = "participantId", dpar="mu", lb = 0),
-  prior(cauchy(0, 0.5), class = "sd", group = "participantId", dpar="sigma", lb = 0)
-)
-```
-
-Let's fit the model:
-
-```{r}
-#| output: false
-#| label: task2-fit-model-3
-
-m1.2 <- task2_df %>% mutate(error_va = va.ans.x - va.select.x) %>%
-  brm(
-    formula = f2,
-    data = .,
-    prior = p,
-    # control = list(adapt_delta = 0.95), # note this is higher than 0.95
-    chains = 4,
-    # iter = 8000, # more iterations
-    # warmup = 2000, # higher than usual
-    file="models/task2-m1.2",
-    save_pars = save_pars(all=TRUE)
-  )
-```
-
-Let's see some fitted results:
-
-```{r}
-summary(m1.2)
-plot(m1.2)
-# posterior predictive check
-pp_check(m1.2, ndraws = 100)
-```
-
-The fit doesn't look that good lol. 
-
 ### LOO comparisons 
+
+Define `log_lik` functions: 
+
+```{r}
+log_lik_laplace <- function(i, prep) {
+  mu <- brms::get_dpar(prep, "mu", i = i)
+  sigma <- brms::get_dpar(prep, "simga", i = i)
+  trials <- prep$data$vint1[i]
+  y <- prep$data$Y[i]
+  laplace_lpdf(y, mu, sigma)
+}
+
+loo(m1.1.2)
+```
 
 We can also perform loo comparison between `m1.1` and `m1.2`: 
 
