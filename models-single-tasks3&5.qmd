@@ -692,7 +692,7 @@ Distribution of signed error:
 task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
   geom_dots() +
   geom_vline(xintercept = 0, linetype="dashed", color="black") +
-  labs(title="Task 3 -- CDF Median")
+  labs(title="Task 3 -- Find dot on curve where y == 0.5")
 ```
 
 Relationship between distance from the y-axes and the signed distribution:

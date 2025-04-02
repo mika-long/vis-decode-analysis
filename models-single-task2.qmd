@@ -205,8 +205,8 @@ task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = param.p, color = param.l
     midpoint = 0
   )
 
-task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = flat, color = param.lambda)) + 
-  geom_point() + 
+task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = flat)) + 
+  geom_point(alpha = 0.5) + 
   labs(title = "Signed error on x-axes against flat-top-ness") + 
   scale_color_gradient2(
     low = brewer.pal(11, "RdYlBu")[1],   # Red for negative
