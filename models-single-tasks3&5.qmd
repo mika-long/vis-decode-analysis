@@ -160,7 +160,7 @@ task5_df %>% ggplot(aes(x = phy.select.y - phy.ans.y)) +
   geom_dots() 
 
 task5_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + 
-  geom_dots()  
+  ggdist::geom_swarm()
 
 task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) + 
   geom_dots()  
