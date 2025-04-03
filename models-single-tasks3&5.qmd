@@ -212,8 +212,8 @@ f <- bf(error_va ~ 0,
         sigma ~ 1 + va.ans.y) # offset(log(va.ans.y))
 
 p <- c(
-  prior(normal(0, 1), class = Intercept, dpar = sigma),           # this is alpha 
-  prior(normal(0, 1), class = b, coef = "va.ans.y", dpar = sigma) # this is beta 
+  prior(normal(0, 1), class = Intercept, dpar = sigma, lb = 0),           # this is alpha 
+  prior(normal(0, 1), class = b, coef = "va.ans.y", dpar = sigma, lb = 0) # this is beta 
 )
 ```
 
@@ -223,10 +223,12 @@ p <- c(
 
 task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
 get_prior(formula = f,
-          data = .)
+          data = ., 
+          familiy = brmsfamily("gaussian", link_sigma = "identity"))
 
 task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-make_stancode(f, data = ., prior = p, family = gaussian())
+  make_stancode(f, data = ., family = brmsfamily(family = "gaussian", link_sigma = "identity"), 
+                prior = p)
 ```
 
 
@@ -244,9 +246,9 @@ s.5x.va.1 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     formula = f,
     prior = p,
     data = .,
-    family = gaussian(),
+    family = brmsfamily(family = "gaussian", link_sigma = "identity"),
     chains = 4, 
-    file = "models/s.5x.va.1", 
+    # file = "models/s.5x.va.1", 
     save_pars = save_pars(all = TRUE)
 )
 ```
@@ -497,8 +499,8 @@ f <- bf(error_va ~ 0,
         sigma ~ 1 + va.ans.x) # what's the difference between this and 0 + offset(log(va.ans.x)) ???
 
 p <- c(
-  prior(normal(0, 1), class = Intercept, dpar = sigma), 
-  prior(normal(0, 1), class = b, coef = va.ans.x, dpar = sigma)
+  prior(normal(0, 1), class = "Intercept", dpar = "sigma", lb = 0), 
+  prior(normal(0, 1), class = "b", dpar = "sigma", lb = 0)
 )
 ```
 
@@ -508,12 +510,14 @@ p <- c(
 
 task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
 get_prior(formula = f,
-          data = .)
+          data = ., 
+          family = brmsfamily("gaussian", link_sigma = "identity"))
 
 task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
 make_stancode(formula = f,
               data = ., 
-              prior = p)
+              prior = p, 
+              family = brmsfamily("gaussian", link_sigma = "identity"))
 ```
 
 Fit the model: 
@@ -529,9 +533,9 @@ s.5y.va.1 <- task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
     formula = f,
     prior = p,
     data = .,
-    family = gaussian(),
+    family = brmsfamily("gaussian", link_sigma = "identity"),
     chains = 4, 
-    file = "models/s.5y.va.1", 
+    # file = "models/s.5y.va.1", 
     save_pars = save_pars(all = TRUE)
 )
 ```
