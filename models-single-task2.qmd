@@ -56,6 +56,32 @@ task_df <- df %>% filter(grepl("task", trialId) & grepl("test", trialId) ) %>%
 # create a dataframe for single participant (Sheng only) 
 not_sheng <- c("5f37a06e-50e4-4489-948f-c4f25bd38d17", "85349f2b-c75a-46ff-8f80-fafc92da11a7")
 single_pid_df <- task_df %>% filter(!participantId %in% not_sheng)
+
+# another option for single 
+single_df <- read.csv("single_pid.csv") %>% as_tibble(.) %>% 
+  filter(grepl("task", trialId) | grepl("test", trialId)) %>% 
+  select(participantId, trialId, responseId, answer) %>% 
+  filter(!responseId %in% c("dist-calibration-CM", "ball-positions")) %>% 
+  mutate(answer = as.numeric(answer)) %>% 
+  pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
+  separate_wider_delim(trialId, delim = "_", names = c("task", "type", "id")) %>% 
+  select(-type) %>% 
+  rename(data.select.x = location.x, 
+         data.select.y = location.y,
+         pixel.select.x = pixel.x, 
+         pixel.select.y = pixel.y)
+
+participants <- read.csv("single_pid.csv") %>% as_tibble(.) %>% 
+  filter(grepl("calibra", trialId)) %>% 
+  select(participantId, responseId, trialId, answer) %>% 
+  filter(grepl("MM", responseId)) %>% 
+  select(participantId, responseId, answer) %>% 
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  rename(pixelToMM = pixelsPerMM, dist_to_screen = `dist-calibration-MM`) %>% 
+  mutate(pixelToMM = as.numeric(pixelToMM), 
+         dist_to_screen = as.numeric(dist_to_screen))
+
+# single_df %>% left_join(participants, by = join_by(participantId)) -> single_df
 ```
 
 ```{r}
@@ -224,7 +250,7 @@ For now we'll focus on modeling the error on the x-axis; while thinking about ho
 
 ---
 
-## Task 2 - Vis Angle Model 
+## Task 2 - Vis Angle - error on X 
 
 Math model: 
 
@@ -493,7 +519,7 @@ loo(s.2.va.1, s.2.va.2, s.2.va.3)
 
 So the results are: **Laplace** > **Cauchy** > **Normal**. 
 
-## Task 2 - Vis Angle - Varying variance 
+## Task 2 - Vis Angle - error on X - Varying variance 
 
 Let's stick with the Laplace distribution for now. Let's check the posterior for the parameters: 
 
@@ -594,6 +620,115 @@ loo(s.2.va.1, s.2.va.4)
 ```
 
 Yes it is! 
+
+
+## Task 2 - Vis Angle - error on Y 
+
+```{r}
+task2_df %>% mutate(error.y = va.ans.y - va.select.y, error.x = va.ans.x - va.select.x) %>% 
+  ggplot(aes(x = error.y)) + geom_dots()
+
+task2_df %>% mutate(error.y = va.ans.y - va.select.y, error.x = va.ans.x - va.select.x) %>% 
+  filter(error.y < 0) %>% 
+  select(error.y, data.ans.y, data.select.y, error.x) %>% 
+  filter(error.x != 0)
+
+```
+
+
+$$\text{error}_i \sim \text{Exponential}(\lambda)$$
+$$\lambda \sim \mathcal{N}(1.5, 1)$$
+
+```{r}
+f <- bf(error.y ~ 1, 
+        family = exponential())
+
+p <- prior(normal(1.5, 1), class = Intercept)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+  get_prior(f, data = ., prior = prior(normal(1.5, 1)))
+
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+  mutate(ifelse(error.y < 0, 0, error.y)) %>% 
+  # mutate(log.error.y = log(error.y * 10)) %>% 
+  make_stancode(f, data = ., prior = p)
+```
+
+Fit the model:
+
+```{r}
+s.2.va.y <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+  brm(formula = f, 
+      prior = prior(normal(1.5, 1), class = Intercept), 
+      cores = 4, 
+      file = "models/s.2.va.y")
+```
+
+Check fit and posterior: 
+
+```{r}
+summary(s.2.va.y)
+plot(s.2.va.y)
+pp_check(s.2.va.y, ndraws = 100)
+```
+
+Hmm perhaps this is a gamma distribution rather than a exponential distribution? We know that the Gamma distribution is parameterized by two things: a shape parameter $\alpha$ and a rate parameter $\theta$^[See [stan](https://mc-stan.org/docs/functions-reference/positive_continuous_distributions.html#gamma-distribution) and [wiki](https://en.wikipedia.org/wiki/Gamma_distribution)]: 
+
+```{r}
+f <- bf(error.y ~ 1, 
+        family = Gamma())
+
+p <- prior(normal(1.5, 1), class = Intercept)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+  get_prior(f, data = .)
+
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+  mutate(ifelse(error.y < 0, 0, error.y)) %>% 
+  # mutate(log.error.y = log(error.y * 10)) %>% 
+  make_stancode(f, data = .)
+```
+
+Fit model: 
+
+```{r}
+s.2.va.y.1 <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+  # mutate(error.y = ifelse(error.y < 0, 0, error.y)) %>% 
+  brm(f, 
+      cores = 4, 
+      data = ., 
+      file = "models/s.2.va.y.1")
+```
+
+Check fit and posterior: 
+
+```{r}
+summary(s.2.va.y.1)
+plot(s.2.va.y.1)
+pp_check(s.2.va.y.1, ndraws = 100)
+```
+
+```{r}
+loo(s.2.va.y, s.2.va.y.1)
+```
+
+So this Gamma distribution fits better than the exponential distribution. 
+
+What if we model `log(error.y)` instead of `error.y` directly? 
+
+```{r}
+task2_df %>% mutate(error.y = log(abs(va.ans.y - va.select.y))) %>% 
+  ggplot(aes(x = error.y)) + geom_dots()
+```
+
 
 ## Task 2 - Physical Model 
 

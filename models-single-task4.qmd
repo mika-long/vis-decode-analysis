@@ -157,4 +157,5 @@ task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) +
   geom_dots()
 ```
 
-I don't see any apparent trends ... 
+TODO -- maybe we can do a exponential model ...? 
+
