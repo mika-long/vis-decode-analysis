@@ -754,8 +754,7 @@ f <- bf(error_va ~ 0,
         sigma ~ 1 + offset(log.va.ans.x))
 
 p <- c(
-  prior(normal(0, 1), class = Intercept, dpar = sigma) # , 
-  # prior(normal(0, 1), class = b, dpar = sigma)
+  prior(normal(0, 1), class = Intercept, dpar = sigma) 
 )
 ```
 
@@ -790,7 +789,7 @@ s.3.va.1 <- task3_df %>%
     family = gaussian(),
     prior = p,
     chains = 4,
-    # file="models/s.3.va.1",
+    file="models/s.3.va.1",
     save_pars = save_pars(all=TRUE)
 )
 ```
