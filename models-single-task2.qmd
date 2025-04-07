@@ -384,11 +384,13 @@ find_x_for_y_uniroot <- function(y_target, x_values, y_values, x_interval) {
 }
 
 # Find all x values for a given y by searching in different intervals
-find_all_x_for_y <- function(y_target, x_values, y_values, n_segments = 5) {
+find_all_x_for_y <- function(y_target, x_values, y_values, n_segments = 3) {
+  x_values <- unlist(x_values)
+  y_values <- unlist(y_values)
   x_min <- min(x_values)
   x_max <- max(x_values)
   segment_width <- (x_max - x_min) / n_segments
-  
+
   results <- numeric(0)
   for (i in 1:n_segments) {
     segment_start <- x_min + (i-1) * segment_width
@@ -401,6 +403,8 @@ find_all_x_for_y <- function(y_target, x_values, y_values, n_segments = 5) {
       results <- c(results, root)
     }
   }
+  
+  print(results)
   
   return(results)
 }
@@ -425,6 +429,33 @@ d %>% as.data.frame(.) %>%
          va.x = vis_angle(phy.x, 449) - 4.91137) %>% 
   ggplot(aes(x = va.x)) + geom_dots()
 ```
+
+---
+
+Let's try to generalize this to the original dataset: 
+
+```{r}
+task2_df %>% add_predicted_draws(s.2.va.y) %>% 
+  nest(.) %>% 
+  # create x_vals and y_vals 
+  mutate(x_vals = rep(list(seq(-5, 5, 0.01)), n())) %>% # unnest(x_vals) %>% 
+  mutate(y_vals = list(dsgt(unlist(x_vals), mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE))) %>% 
+  unnest(data) %>% 
+  mutate(va.pred.y = va.ans.y + .prediction, 
+         phy.pred.y = size(va.pred.y, dist_to_screen), 
+         pixel.pred.y = phy_to_pixel_y(phy.pred.y, pixelToMM), 
+         data.pred.y = pixel_to_data_y(pixel.pred.y)) -> temp 
+
+
+temp %>% ungroup(.) %>% select(contains("data")) %>% 
+  mutate(data.error = data.select.y - data.pred.y) %>% 
+  ggplot(aes(x = data.error)) + geom_dots()
+  
+# TODO --- can't translate from `data.pred.y` to `data.pred.x` at the moment ....... 
+```
+
+
+
 
 Compare this to the actual error on x: 
 
