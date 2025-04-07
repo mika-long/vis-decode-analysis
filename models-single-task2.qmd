@@ -374,7 +374,7 @@ find_x_for_y_uniroot <- function(y_target, x_values, y_values, x_interval) {
   root_func <- function(x) interp_func(x) - y_target
   
   # Find the root (where function equals zero)
-  result <- try(uniroot(root_func, interval = x_interval, extendInt = "yes"), silent = TRUE)
+  result <- try(uniroot(root_func, interval = x_interval, extendInt = "yes", tol = 1e-10), silent = FALSE)
   
   if (inherits(result, "try-error")) {
     return(NULL)  # No root found in this interval
@@ -384,7 +384,7 @@ find_x_for_y_uniroot <- function(y_target, x_values, y_values, x_interval) {
 }
 
 # Find all x values for a given y by searching in different intervals
-find_all_x_for_y <- function(y_target, x_values, y_values, n_segments = 3) {
+find_all_x_for_y <- function(y_target, x_values, y_values, n_segments = 5) {
   x_values <- unlist(x_values)
   y_values <- unlist(y_values)
   x_min <- min(x_values)
@@ -403,9 +403,6 @@ find_all_x_for_y <- function(y_target, x_values, y_values, n_segments = 3) {
       results <- c(results, root)
     }
   }
-  
-  print(results)
-  
   return(results)
 }
 ```
@@ -438,8 +435,8 @@ Let's try to generalize this to the original dataset:
 task2_df %>% add_predicted_draws(s.2.va.y) %>% 
   nest(.) %>% 
   # create x_vals and y_vals 
-  mutate(x_vals = rep(list(seq(-5, 5, 0.01)), n())) %>% # unnest(x_vals) %>% 
-  mutate(y_vals = list(dsgt(unlist(x_vals), mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE))) %>% 
+  mutate(x_vals = rep(tibble(seq(-5, 5, 0.01)), n())) %>% 
+  mutate(y_vals = list(tibble(unlist(x_vals), mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE))) # %>% 
   unnest(data) %>% 
   mutate(va.pred.y = va.ans.y + .prediction, 
          phy.pred.y = size(va.pred.y, dist_to_screen), 
@@ -454,6 +451,40 @@ temp %>% ungroup(.) %>% select(contains("data")) %>%
 # TODO --- can't translate from `data.pred.y` to `data.pred.x` at the moment ....... 
 ```
 
+Hmm why is this not working ...? 
+
+```{r}
+set.seed(51)
+task2_df %>% add_predicted_draws(s.2.va.y) %>% 
+  nest(.) %>% 
+  # create x_vals and y_vals 
+  mutate(x_vals = rep(list(seq(-5, 5, 0.01)), n())) %>% 
+  mutate(y_vals = list(dsgt(unlist(x_vals), mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE))) %>% 
+  ungroup(.) %>% 
+  slice(1) %>% 
+  unnest(data) %>% 
+  mutate(va.pred.y = va.ans.y + .prediction, 
+         phy.pred.y = size(va.pred.y, dist_to_screen), 
+         pixel.pred.y = phy_to_pixel_y(phy.pred.y, pixelToMM), 
+         data.pred.y = pixel_to_data_y(pixel.pred.y)) -> temp 
+
+temp %>% select(data.pred.y, x_vals, y_vals) %>% 
+  slice(1) %>% unnest(c(x_vals, y_vals)) %>% 
+  mutate(data.pred.x = list(find_all_x_for_y(data.pred.y, x_vals, y_vals)))
+
+temp_y <- temp %>% slice(1) %>% pull(y_vals) %>% unlist(.)
+temp_x <- seq(-5, 5, 0.01) 
+find_all_x_for_y(0.2466129, temp_x, temp_y)
+
+data.frame(x = temp_x, y = temp_y) %>% 
+  ggplot(aes(x = x, y = y)) + geom_line() + xlim(-5, 5) + ylim(0, 1) + 
+  geom_hline(yintercept = 0.246) + 
+  geom_vline(xintercept = c(0.5230175,2.0922857))
+
+find_all_x_for_y(0.246, temp_x, temp_y, n_segments = 10)
+
+# STUCK HERE BECAUSE WE CAN"T FIND IT UGH >>> 
+```
 
 
 
