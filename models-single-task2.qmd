@@ -334,6 +334,8 @@ data.frame(x = x, y = y) %>%
 
 Create a function that uses `approxfunc` and `optimize` to find value of `x` given `y`: 
 
+TODO: start from the following: 
+
 ```{r}
 # Create an interpolating function from your discrete points
 create_interp_func <- function(x_values, y_values) {
@@ -382,6 +384,14 @@ find_all_x_for_y <- function(y_target, x_values, y_values, n_segments = 10) {
 }
 ```
 
+Let's draw from the posterior distribution :
+
+```{r}
+posterior_predict(s.2.va.y) %>% as.vector(.) %>%
+  sample(., 100) %>% 
+  data.frame(.) %>% 
+  ggplot(aes(y = -`.`)) + stat_halfeye()
+```
 
 
 
