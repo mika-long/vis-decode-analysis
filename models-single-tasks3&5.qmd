@@ -873,6 +873,87 @@ s.3.va.2 %>% spread_draws(`^b_.*`, regex = TRUE) %>%
 
 This is similar to the results we obtained for the other stuff. 
 
+---
+
+**Option 3**: $\sigma_i = \alpha_i + d_i$ 
+
+```{r}
+f <- bf(error_va ~ 0,
+        sigma ~ 1 + offset(va.ans.x), 
+        family = brmsfamily("gaussian", link_sigma = "identity"))
+
+p <- c(
+  prior(normal(1, 1), class = Intercept, dpar = sigma, lb=0) # , 
+  # prior(normal(1, 1), class = b, dpar = sigma, lb = 0)
+)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+
+task3_df %>% mutate(error_va = va.select.y - va.ans.y, 
+                    log.va.ans.x = log(va.ans.x)) %>%
+get_prior(formula = f,
+          data = .)
+
+task3_df %>% mutate(error_va = va.select.y - va.ans.y, 
+                    log.va.ans.x = log(va.ans.x)) %>%
+make_stancode(formula = f,
+              data = ., 
+              prior = p
+              )
+```
+
+Fit the model: 
+
+```{r}
+#| output: false
+
+s.3.va.3 <- task3_df %>%
+  mutate(error_va = va.select.y - va.ans.y) %>%
+  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>%
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p,
+    chains = 4,
+    file="models/s.3.va.3",
+    save_pars = save_pars(all=TRUE), 
+    control = list(adapt_delta = 0.99)
+)
+```
+
+Check fit and posterior: 
+
+```{r}
+summary(s.3.va.3)
+```
+
+```{r}
+#| layout-ncol: 2
+
+plot(s.3.va.3)
+pp_check(s.3.va.3, ndraws = 100)
+```
+
+```{r}
+s.3.va.3 %>% get_variables(.)
+```
+
+
+---
+
+Compare across models: 
+
+```{r}
+loo(s.3.va.1, s.3.va.2, s.3.va.3)
+```
+
+Ok from this we see that this relationship is definitely NOT additive. 
+
+
 ### Task 3 Physical Model
 
 **TODO** 
