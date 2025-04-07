@@ -83,6 +83,27 @@ vis_angle <- function(size, distance){
   return(2 * atan(size / (2 * distance)) * 180 / pi)
 }
 
+# return size given vis angle 
+size <- function(va, distance){
+  return(tan((va / (180 / pi)) / 2) * 2 * distance)
+}
+
+phy_to_pixel_y <- function(phy, pxMM){
+  return(410 - phy * pxMM)
+}
+
+phy_to_pixel_x <- function(phy, pxMM){
+  return(50 + phy * pxMM)
+}
+
+pixel_to_data_x <- function(pixel){
+  return((pixel - 317.5)/53.5)
+}
+
+pixel_to_data_y <- function(pixel){
+  return((410 - pixel)/395)
+}
+
 # tolerance for numerical precision 
 tolerance <- 1e-10
 ```
@@ -316,37 +337,38 @@ Go from error on Y to error on X. Let's start with a random row.
 set.seed(51)
 task2_df %>% sample_n(1) %>% 
   select(contains("param"))
+
+task2_df %>% sample_n(1) %>% left_join(participants)
 ```
 
 This is what the plot looks like: 
 
 ```{r}
 #| code-fold: true 
-x <- seq(-5, 5, 0.01)
-y <- dsgt(x, mu = -1.3, sigma = 1.3, lambda = 0.3, p = 2.9, q = 46.8, mean.cent = FALSE)
-data.frame(x = x, y = y) %>% 
-  ggplot(aes(x = x, y = y)) + 
+x_vals <- seq(-5, 5, 0.01)
+y_vals <- dsgt(x, mu = -1.3, sigma = 1.3, lambda = 0.3, p = 2.9, q = 46.8, mean.cent = FALSE)
+
+# plot
+data.frame(x = x_vals, y = y_vals) %>% 
+  ggplot(aes(x = x_vals, y = y_vals)) + 
   geom_line() + 
   xlim(-5, 5) + 
   ylim(0, 1) + 
-  geom_vline(xintercept = -1.3, linetype = "dashed", color = "gray")
+  geom_vline(xintercept = -1.3, linetype = "dashed", color = "gray") + 
+  geom_hline(yintercept = 0.21, linetype = "dashed", color = "gray") 
 ```
 
-Create a function that uses `approxfunc` and `optimize` to find value of `x` given `y`: 
+Create a function that uses `approxfunc` and `uniroot` to find value of `x` given `y`: 
 
-TODO: start from the following: 
+- Suppose we have only access to discrete values of `x` and `y`
 
 ```{r}
-# Create an interpolating function from your discrete points
-create_interp_func <- function(x_values, y_values) {
-  interp_func <- approxfun(x_values, y_values, rule = 2)
-  return(interp_func)
-}
+#| code-fold: true 
 
 # Find an x value corresponding to a target y using uniroot
 find_x_for_y_uniroot <- function(y_target, x_values, y_values, x_interval) {
   # Create interpolation function
-  interp_func <- create_interp_func(x_values, y_values)
+  interp_func <- approxfun(x_values, y_values)
   
   # Define the function whose root we want to find: f(x) - y_target = 0
   root_func <- function(x) interp_func(x) - y_target
@@ -362,7 +384,7 @@ find_x_for_y_uniroot <- function(y_target, x_values, y_values, x_interval) {
 }
 
 # Find all x values for a given y by searching in different intervals
-find_all_x_for_y <- function(y_target, x_values, y_values, n_segments = 10) {
+find_all_x_for_y <- function(y_target, x_values, y_values, n_segments = 5) {
   x_min <- min(x_values)
   x_max <- max(x_values)
   segment_width <- (x_max - x_min) / n_segments
@@ -384,14 +406,25 @@ find_all_x_for_y <- function(y_target, x_values, y_values, n_segments = 10) {
 }
 ```
 
-Let's draw from the posterior distribution :
-
 ```{r}
-posterior_predict(s.2.va.y) %>% as.vector(.) %>%
-  sample(., 100) %>% 
-  data.frame(.) %>% 
-  ggplot(aes(y = -`.`)) + stat_halfeye()
+data.true_y <- dsgt(-1.3, mu = -1.3, sigma = 1.3, lambda = 0.3, p = 2.9, q = 46.8, mean.cent = FALSE)
+va.y_pred <- 2.648185  - sample(as.vector(posterior_predict(s.2.va.y)), 100) # this is in visual angle space 
+phy.y_pred <- size(va.y_pred, 485)
+pixel.y_pred <- phy_to_pixel_y(phy.y_pred, 3.73)
+data.y_pred <- pixel_to_data_y(pixel.y_pred)
+
+data.frame(y = y_pred) %>% 
+  ggplot(aes(y = y_pred)) + stat_halfeye() + ylim(0.25, 0.3)
+
+sapply(data.y_pred, function(x) find_all_x_for_y(x, x_vals, y_vals)) %>% 
+  unlist(.) %>% as.data.frame(.) %>% 
+  pivot_longer(cols = everything()) %>%
+  ggplot(aes(x = value + 1.3)) + stat_halfeye()
+
 ```
+
+
+
 
 
 
