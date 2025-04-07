@@ -238,7 +238,7 @@ task2_df %>% mutate(error.y = va.ans.y - va.select.y, error.x = va.ans.x - va.se
 Math model: 
 
 $$\text{error}_i \sim \text{Exponential}(\lambda)$$
-$$\lambda \sim \mathcal{N}(1.5, 1)$$
+$$\log(\lambda) \sim \mathcal{N}(0, 1)$$
 
 ```{r}
 task2_df %>% mutate(phy.error.x = phy.select.x - phy.ans.x, 
@@ -280,8 +280,6 @@ s.2.va.y <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
   brm(formula = f, 
       prior = prior(normal(0, 1), class = Intercept), 
       cores = 4, 
-      # iter = 4000, 
-      # control = list(adapt_delta = 0.9) 
       file = "models/s.2.va.y"
       )
 ```
@@ -310,6 +308,79 @@ s.2.va.y %>% spread_draws(b_Intercept) %>%
   ggplot(aes(x = rate)) + stat_halfeye()
 ```
 
+--- 
+
+Go from error on Y to error on X. Let's start with a random row. 
+
+```{r}
+set.seed(51)
+task2_df %>% sample_n(1) %>% 
+  select(contains("param"))
+```
+
+This is what the plot looks like: 
+
+```{r}
+#| code-fold: true 
+x <- seq(-5, 5, 0.01)
+y <- dsgt(x, mu = -1.3, sigma = 1.3, lambda = 0.3, p = 2.9, q = 46.8, mean.cent = FALSE)
+data.frame(x = x, y = y) %>% 
+  ggplot(aes(x = x, y = y)) + 
+  geom_line() + 
+  xlim(-5, 5) + 
+  ylim(0, 1) + 
+  geom_vline(xintercept = -1.3, linetype = "dashed", color = "gray")
+```
+
+Create a function that uses `approxfunc` and `optimize` to find value of `x` given `y`: 
+
+```{r}
+# Create an interpolating function from your discrete points
+create_interp_func <- function(x_values, y_values) {
+  interp_func <- approxfun(x_values, y_values, rule = 2)
+  return(interp_func)
+}
+
+# Find an x value corresponding to a target y using uniroot
+find_x_for_y_uniroot <- function(y_target, x_values, y_values, x_interval) {
+  # Create interpolation function
+  interp_func <- create_interp_func(x_values, y_values)
+  
+  # Define the function whose root we want to find: f(x) - y_target = 0
+  root_func <- function(x) interp_func(x) - y_target
+  
+  # Find the root (where function equals zero)
+  result <- try(uniroot(root_func, interval = x_interval), silent = TRUE)
+  
+  if (inherits(result, "try-error")) {
+    return(NULL)  # No root found in this interval
+  } else {
+    return(result$root)
+  }
+}
+
+# Find all x values for a given y by searching in different intervals
+find_all_x_for_y <- function(y_target, x_values, y_values, n_segments = 10) {
+  x_min <- min(x_values)
+  x_max <- max(x_values)
+  segment_width <- (x_max - x_min) / n_segments
+  
+  results <- numeric(0)
+  for (i in 1:n_segments) {
+    segment_start <- x_min + (i-1) * segment_width
+    segment_end <- x_min + i * segment_width
+    
+    root <- find_x_for_y_uniroot(y_target, x_values, y_values, 
+                                 c(segment_start, segment_end))
+    
+    if (!is.null(root)) {
+      results <- c(results, root)
+    }
+  }
+  
+  return(results)
+}
+```
 
 
 
