@@ -186,6 +186,7 @@ task5_df %>% ggplot(aes(x = va.select.x - va.ans.x)) +
 ```
 
 - This doesn't quite look normal, but more like a _skewed_ normal distribution ... 
+- But to what extent does modelling skewness matter? Probably not. Better to model this with a normal distribution. 
 
 Relationship between signed error (in visual angle space) and distance to X-axes: 
 
@@ -205,15 +206,17 @@ $$\begin{aligned}
 \sigma_i &= f(d_i) \,\, \text{where} \,\, d_i = \texttt{va.ans.y}_i
 \end{aligned}$$
 
-**Option 1**: $\sigma_i = f(d_i) = \log(\alpha + \beta \times \texttt{va.ans.y}_i)$
+Note that since the default in `brms` is a log link function, i.e., $\log(\sigma) = f(d_i) \to \sigma = \exp(f(d_i))$
+
+**Option 1**: $\sigma_i = \exp(f(d_i)) = \exp(\alpha + \texttt{va.ans.y}_i) = \exp(\alpha) \times \exp(\log(\texttt{va.ans.y}_i)) = \exp(\alpha) \times \texttt{va.ans.y}_i$
 
 ```{r}
 f <- bf(error_va ~ 0, 
-        sigma ~ 1 + va.ans.y) # offset(log(va.ans.y))
+        sigma ~ 1 + offset(log.va.ans.y)) 
 
 p <- c(
-  prior(normal(0, 1), class = Intercept, dpar = sigma, lb = 0),           # this is alpha 
-  prior(normal(0, 1), class = b, coef = "va.ans.y", dpar = sigma, lb = 0) # this is beta 
+  prior(normal(0, 1), class = Intercept, dpar = sigma) # ,           
+  # prior(normal(0, 1), class = b, coef = "va.ans.y", dpar = sigma, lb = 0) # this is beta 
 )
 ```
 
@@ -221,13 +224,16 @@ p <- c(
 #| eval: false 
 #| echo: false 
 
-task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+task5_df %>% mutate(error_va = va.select.x - va.ans.x, 
+                    log.va.ans.y = log(va.ans.y)) %>%
 get_prior(formula = f,
           data = ., 
-          familiy = brmsfamily("gaussian", link_sigma = "identity"))
+          # familiy = brmsfamily("gaussian", link_sigma = "identity")
+          )
 
-task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-  make_stancode(f, data = ., family = brmsfamily(family = "gaussian", link_sigma = "identity"), 
+task5_df %>% mutate(error_va = va.select.x - va.ans.x, 
+                    log.va.ans.y = log(va.ans.y)) %>%
+  make_stancode(f, data = ., # family = brmsfamily(family = "gaussian", link_sigma = "identity"), 
                 prior = p)
 ```
 
@@ -237,7 +243,8 @@ Fit model:
 ```{r}
 #| output: false 
 
-s.5x.va.1 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+s.5x.va.1 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x, 
+                                 log.va.ans.y = log(va.ans.y)) %>%
   # account for numerical precision 
   mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
   # account for bugs in task 5 
@@ -246,7 +253,7 @@ s.5x.va.1 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     formula = f,
     prior = p,
     data = .,
-    family = brmsfamily(family = "gaussian", link_sigma = "identity"),
+    # family = brmsfamily(family = "gaussian", link_sigma = "identity"),
     chains = 4, 
     # file = "models/s.5x.va.1", 
     save_pars = save_pars(all = TRUE)
@@ -263,15 +270,21 @@ plot(s.5x.va.1)
 pp_check(s.5x.va.1, ndraws = 100)
 ```
 
-Check the posterior estimations of `alpha` and `beta`: 
+Check the posterior estimations of `alpha`: 
 
 ```{r}
-s.5x.va.1 %>% spread_draws(`b_sigma_.*`, regex=TRUE)
+s.5x.va.1 %>% spread_draws(`b_sigma_.*`, regex=TRUE) %>% 
+  mutate(alpha = exp(b_sigma_Intercept)) %>% 
+  ggplot(aes(x = alpha)) + 
+  stat_halfeye() + 
+  xlim(0.01, 0.02)
 ```
+
+
 
 ---
 
-**Option 2**: $\sigma_i = f(d_i) = \log(\beta \times \texttt{va.ans.y}_i)$
+**Option 2**: $\sigma_i = \exp(f(d_i)) = \exp(\alpha + \beta \times \texttt{va.ans.y}_i)$
 
 ```{r}
 f <- bf(error_va ~ 0, 
@@ -492,15 +505,15 @@ We apply the same approach, fit two models, and compare them.
 
 ### Task 5.2 --- Vis Angle Model
 
-**Option 1**: $\sigma_i = f(d_i) = \exp(\alpha + \beta d_i)$
+**Option 1**: $\sigma_i = \exp(f(d_i)) = \exp(\alpha) \times \exp(\log(d_i))$
 
 ```{r}
 f <- bf(error_va ~ 0,
-        sigma ~ 1 + va.ans.x) # what's the difference between this and 0 + offset(log(va.ans.x)) ???
+        sigma ~ 1 + offset(log.va.ans.x)) 
 
 p <- c(
-  prior(normal(0, 1), class = "Intercept", dpar = "sigma", lb = 0), 
-  prior(normal(0, 1), class = "b", dpar = "sigma", lb = 0)
+  prior(normal(0, 1), class = "Intercept", dpar = "sigma") # , 
+  # prior(normal(0, 1), class = "b", dpar = "sigma", lb = 0)
 )
 ```
 
@@ -508,23 +521,28 @@ p <- c(
 #| eval: false 
 #| echo: false 
 
-task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
+task5_df %>% mutate(error_va = va.select.y - va.ans.y, 
+                    log.va.ans.x = log(va.ans.x)) %>%
 get_prior(formula = f,
           data = ., 
-          family = brmsfamily("gaussian", link_sigma = "identity"))
+          # family = brmsfamily("gaussian", link_sigma = "identity")
+          )
 
-task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
+task5_df %>% mutate(error_va = va.select.y - va.ans.y, 
+                    log.va.ans.x = log(va.ans.x)) %>%
 make_stancode(formula = f,
               data = ., 
               prior = p, 
-              family = brmsfamily("gaussian", link_sigma = "identity"))
+              # family = brmsfamily("gaussian", link_sigma = "identity")
+              )
 ```
 
 Fit the model: 
 
 ```{r}
 #| output: false 
-s.5y.va.1 <- task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
+s.5y.va.1 <- task5_df %>% mutate(error_va = va.select.y - va.ans.y, 
+                                 log.va.ans.x = log(va.ans.x)) %>%
   # account for numerical precision 
   mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
   # account for bugs in task 5 
@@ -533,7 +551,7 @@ s.5y.va.1 <- task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
     formula = f,
     prior = p,
     data = .,
-    family = brmsfamily("gaussian", link_sigma = "identity"),
+    # family = brmsfamily("gaussian", link_sigma = "identity"),
     chains = 4, 
     # file = "models/s.5y.va.1", 
     save_pars = save_pars(all = TRUE)
@@ -551,6 +569,18 @@ summary(s.5y.va.1)
 
 plot(s.5y.va.1)
 pp_check(s.5y.va.1, ndraws = 100)
+```
+
+Let's check the posterior of alpha: 
+
+```{r}
+#| code-fold: true 
+
+s.5y.va.1 %>% spread_draws(b_sigma_Intercept) %>% 
+  mutate(alpha = exp(b_sigma_Intercept)) %>% 
+  ggplot(aes(x = alpha)) + 
+  stat_halfeye() + 
+  xlim(0.01, 0.02)
 ```
 
 ---
@@ -717,15 +747,15 @@ $$\begin{align*}
 
 ### Task 3 --- Visual Angle Model
 
-**Option 1**: $\sigma_i = f(d_i) = \exp(\alpha + \beta \cdot d_i)$
+**Option 1**: $\log(\sigma_i) = f(d_i) \to \sigma_i = \exp(f(d_i)) = \exp(\alpha) \times d_i$
 
 ```{r}
 f <- bf(error_va ~ 0,
-        sigma ~ 1 + va.ans.x)
+        sigma ~ 1 + offset(log.va.ans.x))
 
 p <- c(
-  prior(normal(0, 1), class = Intercept, dpar = sigma), 
-  prior(normal(0, 1), class = b, dpar = sigma)
+  prior(normal(0, 1), class = Intercept, dpar = sigma) # , 
+  # prior(normal(0, 1), class = b, dpar = sigma)
 )
 ```
 
@@ -733,11 +763,13 @@ p <- c(
 #| eval: false 
 #| echo: false 
 
-task3_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
+task3_df %>% mutate(error_va = va.select.y - va.ans.y, 
+                    log.va.ans.x = log(va.ans.x)) %>%
 get_prior(formula = f,
           data = .)
 
-task3_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
+task3_df %>% mutate(error_va = va.select.y - va.ans.y, 
+                    log.va.ans.x = log(va.ans.x)) %>%
 make_stancode(formula = f,
               data = ., 
               prior = p)
@@ -749,7 +781,8 @@ Fit the model:
 #| output: false
 
 s.3.va.1 <- task3_df %>%
-  mutate(error_va = va.select.y - va.ans.y) %>%
+  mutate(error_va = va.select.y - va.ans.y, 
+         log.va.ans.x = log(va.ans.x)) %>%
   mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>%
   brm(
     formula = f,
@@ -757,7 +790,7 @@ s.3.va.1 <- task3_df %>%
     family = gaussian(),
     prior = p,
     chains = 4,
-    file="models/s.3.va.1",
+    # file="models/s.3.va.1",
     save_pars = save_pars(all=TRUE)
 )
 ```
@@ -771,6 +804,17 @@ summary(s.3.va.1)
 plot(s.3.va.1)
 pp_check(s.3.va.1, ndraws = 100)
 ```
+
+Check posterior of alpha: 
+
+```{r}
+s.3.va.1 %>% spread_draws(b_sigma_Intercept) %>% 
+  mutate(alpha = exp(b_sigma_Intercept)) %>% 
+  ggplot(aes(x = alpha)) + 
+  stat_halfeye() + 
+  xlim(0.01, 0.02)
+```
+
 
 ---
 
