@@ -274,7 +274,6 @@ task2_df %>% mutate(phy.error.x = phy.select.x - phy.ans.x,
   filter(pixel.error.y == 0)
 ```
 
-
 ```{r}
 f <- bf(error.y ~ 1, 
         family = exponential())
