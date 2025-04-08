@@ -158,14 +158,18 @@ task4_df %>% ggplot(aes(x = va.ans.y / va.ans.x, y = data.ans.slope)) +
 task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) + 
   geom_dots()
 
+task4_df %>% filter(data.select.slope - data.ans.slope == 0)
+
 task4_df %>% ggplot(aes(x = atan(data.select.slope) * 180 / pi - atan(data.ans.slope) * 180 / pi)) + 
   geom_dots()
 
 task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) + 
   geom_dots()
 
-task4_df %>% ggplot(aes(x = atan(data_to_screen_slope(data.select.slope)) * 180 / pi - atan(data_to_screen_slope(data.ans.slope) * 180 / pi))) + 
-  geom_dots()
+task4_df %>% ggplot(aes(x = atan(data_to_screen_slope(data.select.slope)) * 180 / pi - atan(data_to_screen_slope(data.ans.slope)) * 180 / pi)) + 
+  # geom_dots()
+  stat_ecdf()
+# maybe try to fit a model here 
 ```
 
 If we map the mathematical slope to the actual slope, this is what we get: 
@@ -297,6 +301,7 @@ summary(s.4.1)
 
 ```{r}
 plot(s.4.1)
+pp_check(s.4.1, ndraws = 100, type = "pit_ecdf")
 pp_check(s.4.1, ndraws = 100)
 ```
 

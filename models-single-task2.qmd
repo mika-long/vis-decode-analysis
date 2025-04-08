@@ -358,6 +358,7 @@ data.frame(x = x_vals, y = y_vals) %>%
 ```
 
 Create a function that uses `approxfunc` and `uniroot` to find value of `x` given `y`: 
+-- Matt's suggestion --- use the actual density function `dsgt` and not the `approx` 
 
 - Suppose we have only access to discrete values of `x` and `y`
 

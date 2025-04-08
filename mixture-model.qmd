@@ -472,6 +472,7 @@ It also performs better than the first one where we had a single lambda.
 Let's look at all of the other lambdas: 
 
 ```{r}
+m2 <- readRDS("mix_models/sheng.mix.2.2.rds") # abs diff
 summary <- m2$summary()
 
 summary %>% filter(str_detect(variable, "^lambda")) %>%
@@ -607,7 +608,11 @@ fit$draws() %>%
   pivot_longer(4:5) %>% 
   ggplot(aes(x = value, y = name)) + 
   stat_halfeye()
+
+fit$code()
 ```
+
+
 
 Save the stan model: 
 
@@ -682,6 +687,12 @@ Save the stan model:
 fit$save_object(file = "mix_models/sheng.mix.2.6.rds")
 ```
 
+```{r}
+task1_df %>% 
+```
+
+
+
 ## Compare all six models 
 
 ```{r}
@@ -717,6 +728,45 @@ summary %>% filter(str_detect(variable, "^lambda")) %>%
 ```
 
 Hmm with variance this big, what are we actually learning ...? 
+
+```{r}
+task1_df %>% ggplot(aes(x  = param.lambda, y = va.select.x - va.med.x)) + geom_point()
+```
+
+```{r}
+fit$code()
+```
+
+```{r}
+as_draws_rvars(fit)$y_rep
+
+task1_df %>% mutate(yrep = as_draws_rvars(fit)$y_rep) %>% 
+  # turn this into long format data frame 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = yrep - va.med.x)) + stat_lineribbon()
+```
+
+```{r}
+
+as_draws_rvars(fit)$lambda
+
+m2 <- readRDS("mix_models/sheng.mix.2.2.rds") # abs diff
+summary <- m2$summary()
+
+summary %>% filter(str_detect(variable, "^lambda")) %>%
+  arrange(median) %>% 
+  ggplot(aes(y = reorder(variable, median))) +
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) +
+  geom_point(aes(x = median))
+
+
+task1_df %>% mutate(mix_paramter = as_draws_rvars(fit)$lambda) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = mix_paramter)) + 
+  stat_ribbon()
+
+m2$code()
+```
 
 # Different participants 
 
