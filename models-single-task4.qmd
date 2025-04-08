@@ -77,6 +77,22 @@ vis_angle <- function(size, distance){
   return(2 * atan(size / (2 * distance)) * 180 / pi)
 }
 
+phy_to_pixel_y <- function(phy, pxMM){
+  return(410 - phy * pxMM)
+}
+
+phy_to_pixel_x <- function(phy, pxMM){
+  return(50 + phy * pxMM)
+}
+
+pixel_to_data_x <- function(pixel){
+  return((pixel - 317.5)/53.5)
+}
+
+pixel_to_data_y <- function(pixel){
+  return((410 - pixel)/395)
+}
+
 # tolerance for numerical precision 
 tolerance <- 1e-10
 ```
@@ -109,12 +125,38 @@ participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participant
 ```{r}
 #| label: get task 4 data 
 
+epsilon <- 1e-10
+
 task4_df <- single_pid_df %>% filter(task == "task4") %>% 
   select(-slider.x, -slider.y) %>% 
   mutate(data.select.slope = dsgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE), 
          data.ans.slope = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE)) %>% 
-  left_join(participants, by = join_by(participantId))
+  left_join(participants, by = join_by(participantId)) %>% 
+  mutate(phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM), 
+         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM),
+         va.select.x = vis_angle(phy.select.x, dist_to_screen), 
+         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>%
+  mutate(data.ans.x = param.mu, 
+         data.ans.y = 1 / 2 * (psgt(data.ans.x + epsilon, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE) +  
+                                            psgt(data.ans.x - epsilon, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE))) %>%
+  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x), 
+         pixel.ans.y = data_to_pixel_y(data.ans.y)) %>% 
+  mutate(phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM), 
+         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM)) %>% 
+  mutate(va.ans.x = vis_angle(phy.ans.x, dist_to_screen), 
+         va.ans.y = vis_angle(phy.ans.y, dist_to_screen)) 
+
 ```
+
+```{r}
+task4_df %>% ggplot(aes(x = va.ans.x - va.select.x)) + geom_dots()
+task4_df %>% ggplot(aes(x = va.ans.y - va.select.y)) + geom_dots()
+task4_df %>% ggplot(aes(x = atan(va.ans.y / va.ans.x) * 180 / pi)) + geom_dots()
+task4_df %>% ggplot(aes(x = va.ans.y / va.ans.x, y = data.ans.slope)) + 
+  geom_point()
+```
+
+
 
 Let's first see the distribution of signed error: 
 
@@ -133,7 +175,7 @@ Let's see if there's any obvious relation between signed error and parameters of
 ```{r}
 #| layout-ncol: 2
 #| code-fold: true 
-
+#| output: false 
 
 task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = dist_to_screen)) + 
   geom_point()
@@ -157,5 +199,47 @@ task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) +
   geom_dots()
 ```
 
-TODO -- maybe we can do a exponential model ...? 
+--- 
+
+```{r}
+
+```
+
+I don't get it. why is it producing these values ...? Let's debug it. 
+
+```{r}
+#| output: false 
+debug(psgt)
+psgt(-1, -1, 0.6, 0.2, 2.9, 5.2, mean.cent = FALSE)
+undebug(psgt)
+```
+
+
+
+
+```{r}
+x_vals <- seq(-5, 5, 0.01)
+task4_df %>% select(contains("param")) %>% 
+  mutate(y_vals = list(psgt(x_vals, mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE)), 
+         id = 1:110) %>% 
+  unnest(y_vals) %>% 
+  ggplot(aes(x = y_vals)) + geom_dots()
+
+
+# %>% 
+  filter(if_any(everything(), is.na))
+```
+
+
+
+```{r}
+x <- seq(-5, 5, 0.01)
+y <- psgt(x, mu = -0.8, sigma = 0.9, lambda = 0, p = 4.8, q = 31.8, mean.cent = FALSE)
+data.frame(x = x, y = y) %>% 
+  ggplot(aes(x = x, y = y)) + 
+  geom_line() # + 
+  geom_vline(xintercept = -1.4, color = "gray", linetype = "dashed") + 
+  geom_hline(yintercept = psgt(-1.4, mu = -1.4, sigma = 0.8, lambda = 0.2, p = 4, q = 1.7, mean.cent = FALSE))
+```
+
 
