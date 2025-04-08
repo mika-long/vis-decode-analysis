@@ -140,18 +140,19 @@ Math model:
 $$\begin{align*}
 p_X(x_i) & =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdot \Pr(\hat{x}^{\text{mod}}_i) \\
 \hat{x}^{\text{med}}_i &\sim \mathcal{N}(x^\text{med}, (\sigma^\text{med})^2) \\ 
-\hat{y}^{\text{mod}}_i &\sim \text{Laplace}(x^\text{mod}, (\sigma^{\text{mod}})^2) \\ 
-(1) \,\, \lambda &\sim \text{Beta}(2, 2) 
+\hat{x}^{\text{mod}}_i &\sim \text{Laplace}(x^\text{mod}, (\sigma^{\text{mod}})^2) \\ 
+(1) \,\, \lambda &\sim \text{Beta}(5, 5) 
 \end{align*}$$
 
 ## Same lambda 
 
-If we set $\lambda \sim \text{Beta}(5, 5)$ then the sampling is more concentrated around 0.5, and if we set $\lambda \sim \text{Beta}(2, 2)$ then the sampling is closr to a uniform distribution over [0, 1]. 
+If we set $\lambda \sim \text{Beta}(5, 5)$ then the sampling is more concentrated around 0.5, and if we set $\lambda \sim \text{Beta}(2, 2)$ then the sampling is closer to a uniform distribution over [0, 1]. 
 
 ```{r}
 #| eval: false 
 model <- cmdstan_model("mix_models/sheng.mix.1.stan")
 # model$print()
+model 
 ```
 
 Prepare data for stan: 
@@ -189,7 +190,6 @@ fit <- model$sample(
 #| output: false 
 fit <- readRDS("mix_models/sheng.mix.1.rds")
 ```
-
 
 Posterior predictive checks: 
 
@@ -246,6 +246,7 @@ Everything about the previous math model is the same, except for the part relate
 ```{r}
 #| eval: false 
 model <- cmdstan_model("mix_models/sheng.mix.2.1.stan")
+model
 ``` 
 
 Fit the stan model: 
@@ -313,6 +314,7 @@ fit$save_object(file = "mix_models/sheng.mix.2.1.rds")
 ```{r}
 #| eval: false 
 model <- cmdstan_model("mix_models/sheng.mix.2.2.stan")
+model
 ``` 
 
 Fit the stan model: 
@@ -398,7 +400,7 @@ fit <- model$sample(
 ```{r}
 #| echo: false
 #| output: false 
-fit <- readRDS("mix_models/sheng.mix.2.1.rds")
+fit <- readRDS("mix_models/sheng.mix.2.3.rds")
 ```
 
 Posterior predictive checks: 
