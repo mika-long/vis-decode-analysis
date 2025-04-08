@@ -153,9 +153,38 @@ task4_df %>% ggplot(aes(x = va.ans.x - va.select.x)) + geom_dots()
 task4_df %>% ggplot(aes(x = va.ans.y - va.select.y)) + geom_dots()
 task4_df %>% ggplot(aes(x = atan(va.ans.y / va.ans.x) * 180 / pi)) + geom_dots()
 task4_df %>% ggplot(aes(x = va.ans.y / va.ans.x, y = data.ans.slope)) + 
-  geom_point()
+  geom_point() + coord_equal()
+
+task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) + 
+  geom_dots()
+
+task4_df %>% ggplot(aes(x = atan(data.select.slope) * 180 / pi - atan(data.ans.slope) * 180 / pi)) + 
+  geom_dots()
+
+task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) + 
+  geom_dots()
+
+task4_df %>% ggplot(aes(x = atan(data_to_screen_slope(data.select.slope)) * 180 / pi - atan(data_to_screen_slope(data.ans.slope) * 180 / pi))) + 
+  geom_dots()
 ```
 
+If we map the mathematical slope to the actual slope, this is what we get: 
+
+- y axis range [0,1] correspond to 395 px -> 395px / unit 
+- x axis range [-5, 5] correspond to 535 px -> 53.5 px / unit 
+
+```{r}
+data_to_screen_slope <- function(k){
+  return(k * 395 / 53.5)
+}
+
+task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope), y = data_to_screen_slope(data.ans.slope))) + 
+  geom_point(alpha = 0.5) + 
+  coord_equal()
+
+task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) + 
+  geom_dots()
+```
 
 
 Let's first see the distribution of signed error: 
@@ -230,16 +259,9 @@ task4_df %>% select(contains("param")) %>%
   filter(if_any(everything(), is.na))
 ```
 
+# Model 
 
+For now let's model things as an exponential distribution. 
 
-```{r}
-x <- seq(-5, 5, 0.01)
-y <- psgt(x, mu = -0.8, sigma = 0.9, lambda = 0, p = 4.8, q = 31.8, mean.cent = FALSE)
-data.frame(x = x, y = y) %>% 
-  ggplot(aes(x = x, y = y)) + 
-  geom_line() # + 
-  geom_vline(xintercept = -1.4, color = "gray", linetype = "dashed") + 
-  geom_hline(yintercept = psgt(-1.4, mu = -1.4, sigma = 0.8, lambda = 0.2, p = 4, q = 1.7, mean.cent = FALSE))
-```
 
 
