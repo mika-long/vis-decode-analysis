@@ -253,15 +253,56 @@ task4_df %>% select(contains("param")) %>%
          id = 1:110) %>% 
   unnest(y_vals) %>% 
   ggplot(aes(x = y_vals)) + geom_dots()
-
-
-# %>% 
-  filter(if_any(everything(), is.na))
 ```
 
 # Model 
 
 For now let's model things as an exponential distribution. 
 
+```{r}
+task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) + 
+  geom_dots()
+```
 
+Math model: 
+$$\text{error}_i \sim \text{Exponential}(\lambda)$$
+$$\log(\lambda) \sim \mathcal{N}(0, 1)$$
+
+```{r}
+f <- bf(error ~ 1, 
+        family = exponential())
+
+# mu has log-link, so we don't pose any bounds on it 
+p <- prior(normal(0, 1), class = Intercept)
+```
+
+Fit the model:
+
+```{r}
+#| output: false 
+s.4.1 <- task4_df %>% 
+  mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>% 
+  brm(formula = f, 
+      prior = prior(normal(0, 1), class = Intercept), 
+      cores = 4, 
+      file = "models/s.4.1"
+      )
+```
+
+Check fit: 
+
+```{r}
+summary(s.4.1)
+```
+
+```{r}
+plot(s.4.1)
+pp_check(s.4.1, ndraws = 100)
+```
+
+```{r}
+s.4.1 %>% spread_draws(b_Intercept) %>% 
+  mutate(lambda = exp(b_Intercept)) %>% 
+  ggplot(aes(x = lambda)) + stat_halfeye()
+```
 
