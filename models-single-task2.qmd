@@ -256,6 +256,8 @@ task2_df %>% mutate(error.y = va.ans.y - va.select.y, error.x = va.ans.x - va.se
   filter(error.x != 0)
 ```
 
+### Exponential Distribution
+
 Math model: 
 
 $$\text{error}_i \sim \text{Exponential}(\lambda)$$
@@ -328,9 +330,64 @@ s.2.va.y %>% spread_draws(b_Intercept) %>%
   ggplot(aes(x = rate)) + stat_halfeye()
 ```
 
+### Pareto Distribution
+
+```{r}
+# Define the Pareto custom family
+pareto_family <- custom_family(
+  "custom_pareto",
+  dpars = c("mu", "shape"),  # parameters: mu = scale, shape = alpha
+  links = c("log", "log"),   # log links ensure parameters are positive
+  lb = c(0, 0),              # lower bounds for both parameters
+  type = "real"
+)
+
+# The Stan code for the Pareto log-likelihood function
+# Note: Stan already has a built-in pareto_lpdf function
+stan_funs <- "
+  // Use the built-in pareto_lpdf function
+  real custom_pareto_lpdf(real y, real mu, real shape) {
+    return pareto_lpdf(y | mu, shape);
+  }
+  
+  real custom_pareto_rng(real mu, real shape) {
+    return mu * pow(1 - uniform_rng(0, 1), -1/shape);
+  }
+"
+```
+
+```{r}
+# Define the formula for the model
+# Here we're modeling both parameters as constants
+f <- bf(
+  error ~ 1,  # Intercept-only model for mu (scale parameter)
+  shape ~ 1  # Intercept-only model for shape parameter
+)
+
+p <- c(
+    # Prior for the scale parameter (on log scale)
+    prior(constant(log(1e-10)), class = "Intercept"),
+    # Prior for the shape parameter (on log scale)
+    prior(normal(0, 2), class = "Intercept", dpar = "shape")
+  )
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+
+task2_df %>% mutate(...)
+  get_prior(formula = f, family = pareto_family)
+
+task2_df %>% mutate(...)
+  make_stancode(formula = f, family = pareto_family, prior = p)
+```
+
 --- 
 
-Go from error on Y to error on X. Let's start with a random row. 
+## Go from error on Y to error on X
+
+Let's start with a random row. 
 
 ```{r}
 set.seed(51)

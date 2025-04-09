@@ -127,6 +127,10 @@ participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participant
 
 epsilon <- 1e-10
 
+data_to_screen_slope <- function(k){
+  return(k * 395 / 53.5)
+}
+
 task4_df <- single_pid_df %>% filter(task == "task4") %>% 
   select(-slider.x, -slider.y) %>% 
   mutate(data.select.slope = dsgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE), 
@@ -178,9 +182,7 @@ If we map the mathematical slope to the actual slope, this is what we get:
 - x axis range [-5, 5] correspond to 535 px -> 53.5 px / unit 
 
 ```{r}
-data_to_screen_slope <- function(k){
-  return(k * 395 / 53.5)
-}
+
 
 task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope), y = data_to_screen_slope(data.ans.slope))) + 
   geom_point(alpha = 0.5) + 
@@ -315,12 +317,10 @@ s.4.1 %>% spread_draws(b_Intercept) %>%
 
 - [pareto distribution](https://en.wikipedia.org/wiki/Pareto_distribution) and its [stan implementation](https://mc-stan.org/docs/functions-reference/positive_lower-bounded_distributions.html#pareto-distribution)
 
-TODO: check the following code is correct 
-
 ```{r}
 # Define the Pareto custom family
 pareto_family <- custom_family(
-  "pareto",
+  "custom_pareto",
   dpars = c("mu", "shape"),  # parameters: mu = scale, shape = alpha
   links = c("log", "log"),   # log links ensure parameters are positive
   lb = c(0, 0),              # lower bounds for both parameters
@@ -331,44 +331,96 @@ pareto_family <- custom_family(
 # Note: Stan already has a built-in pareto_lpdf function
 stan_funs <- "
   // Use the built-in pareto_lpdf function
-  real pareto_lpdf(real y, real mu, real shape) {
+  real custom_pareto_lpdf(real y, real mu, real shape) {
     return pareto_lpdf(y | mu, shape);
   }
   
-  real pareto_rng(real mu, real shape) {
+  real custom_pareto_rng(real mu, real shape) {
     return mu * pow(1 - uniform_rng(0, 1), -1/shape);
   }
 "
+```
 
+```{r}
 # Define the formula for the model
 # Here we're modeling both parameters as constants
-formula <- bf(
-  y ~ 1,  # Intercept-only model for mu (scale parameter)
+f <- bf(
+  error ~ 1,  # Intercept-only model for mu (scale parameter)
   shape ~ 1  # Intercept-only model for shape parameter
 )
 
-# Fit the model with brms
-fit_pareto <- brm(
-  formula = formula,
-  data = df,
-  family = pareto_family,
-  prior = c(
+p <- c(
     # Prior for the scale parameter (on log scale)
-    prior(normal(0, 1), class = "Intercept"),
+    prior(constant(log(1e-10)), class = "Intercept"),
     # Prior for the shape parameter (on log scale)
     prior(normal(0, 1), class = "Intercept", dpar = "shape")
-  ),
-  stanvars = stanvar(scode = stan_funs, block = "functions"),
-  chains = 4,
-  iter = 2000,
-  warmup = 1000,
-  cores = 4,
-  seed = 123,
-  control = list(adapt_delta = 0.95)
-)
-
-# Examine model results
-summary(fit_pareto)
+  )
 ```
 
+```{r}
+#| eval: false 
+#| echo: false 
+
+task4_df %>%  mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>% 
+  get_prior(formula = f, family = pareto_family)
+
+task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>% 
+  make_stancode(formula = f, family = pareto_family, prior = p)
+```
+
+
+```{r}
+#| output: false 
+# Fit the model with brms
+s.4.2 <- task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>%  brm(
+  formula = f,
+  data = .,
+  family = pareto_family,
+  prior = p,
+  stanvars = stanvar(scode = stan_funs, block = "functions"),
+  chains = 4,
+  file = "models/s.4.2", 
+  # init = list()
+  # control = list(adapt_delta = 0.95)
+)
+```
+
+Check fit: 
+
+```{r}
+# Examine model results
+summary(s.4.2)
+```
+
+Define custom functions for pp_check: 
+
+```{r}
+
+expose_functions(s.4.2, vectorize = TRUE)
+
+# Define the posterior_predict function in R as per vignette
+posterior_predict_custom_pareto <- function(i, draws, ...) {
+  mu <- draws$dpars$mu[i]
+  shape <- draws$dpars$shape[i]
+  # Use Stan's rng function indirectly via brms
+  custom_pareto_rng(mu, shape)
+}
+
+pp_check(s.4.2, ndraws = 100) + xlim(0, 1)
+```
+
+```{r}
+log_lik_custom_pareto <- function(i, prep){
+  mu <- brms::get_dpar(prep, "mu", i = i)
+  shape <- brms::get_dpar(prep, "shape", i = i)
+  y <- prep$data$Y[i]
+  custom_pareto_lpdf(y, mu, shape)
+}
+```
+
+## Model Comparison
+
+```{r}
+loo(s.4.1, s.4.2)
+```
 
