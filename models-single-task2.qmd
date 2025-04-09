@@ -433,6 +433,16 @@ log_lik_custom_pareto <- function(i, prep){
 }
 ```
 
+Let's check the posterior of alpha: 
+
+```{r}
+s.2.va.y.2 %>% spread_draws(b_shape_Intercept) %>% 
+  mutate(alpha = exp(b_shape_Intercept)) %>% 
+  ggplot(aes(x = alpha)) + 
+  stat_halfeye()
+```
+
+
 ### Model Comparison 
 
 ```{r}
