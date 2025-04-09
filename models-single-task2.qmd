@@ -360,15 +360,15 @@ stan_funs <- "
 # Define the formula for the model
 # Here we're modeling both parameters as constants
 f <- bf(
-  error ~ 1,  # Intercept-only model for mu (scale parameter)
+  error.y ~ 1,  # Intercept-only model for mu (scale parameter)
   shape ~ 1  # Intercept-only model for shape parameter
 )
 
 p <- c(
     # Prior for the scale parameter (on log scale)
-    prior(constant(log(1e-10)), class = "Intercept"),
+    prior(constant(log(7.028422e-11)), class = "Intercept"),
     # Prior for the shape parameter (on log scale)
-    prior(normal(0, 2), class = "Intercept", dpar = "shape")
+    prior(normal(0, 1), class = "Intercept", dpar = "shape")
   )
 ```
 
@@ -376,12 +376,71 @@ p <- c(
 #| eval: false 
 #| echo: false 
 
-task2_df %>% mutate(...)
+task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
   get_prior(formula = f, family = pareto_family)
 
-task2_df %>% mutate(...)
+task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
   make_stancode(formula = f, family = pareto_family, prior = p)
 ```
+
+Fit the model: 
+
+```{r}
+#| output: false 
+s.2.va.y.2 <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  brm(
+    formula = f,
+    data = .,
+    family = pareto_family,
+    prior = p,
+    stanvars = stanvar(scode = stan_funs, block = "functions"),
+    chains = 4,
+    file = "models/s.2.va.y.2", 
+    # init = list()
+    # control = list(adapt_delta = 0.95)
+  )
+```
+
+Check fit and posterior check: 
+
+```{r}
+summary(s.2.va.y.2)
+```
+
+Define custom functions for `pp_check`: 
+
+```{r}
+
+expose_functions(s.2.va.y.2, vectorize = TRUE)
+
+# Define the posterior_predict function in R as per vignette
+posterior_predict_custom_pareto <- function(i, draws, ...) {
+  mu <- draws$dpars$mu[i]
+  shape <- draws$dpars$shape[i]
+  # Use Stan's rng function indirectly via brms
+  custom_pareto_rng(mu, shape)
+}
+
+pp_check(s.2.va.y.2, ndraws = 100) # + xlim(0, 1)
+```
+
+```{r}
+log_lik_custom_pareto <- function(i, prep){
+  mu <- brms::get_dpar(prep, "mu", i = i)
+  shape <- brms::get_dpar(prep, "shape", i = i)
+  y <- prep$data$Y[i]
+  custom_pareto_lpdf(y, mu, shape)
+}
+```
+
+### Model Comparison 
+
+```{r}
+loo(s.2.va.y, s.2.va.y.2)
+```
+
+Hmm so the pareto distribution does actually fit better. 
+
 
 --- 
 
