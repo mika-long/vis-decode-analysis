@@ -97,6 +97,15 @@ participants <- p %>% filter(grepl("pixelsPerMM|dist-calibration-MM", responseId
   rename(pixelToMM = pixelsPerMM, dist_to_screen = `dist-calibration-MM`)
 ```
 
+Read in the demographic from prolific: 
+
+```{r}
+prolific_demographic <- read.csv("pilot-01-demographic.csv") %>% as_tibble(.)
+
+prolific_demographic %>% t(.) %>% view(.)
+```
+
+
 
 # Task 1 -- Split area into equal halves
 
@@ -106,11 +115,22 @@ Load data:
 #| label: get task 1 data 
 #| code-fold: true 
 
-task1_df <- task_df %>% filter(task == "task1") %>% 
+task1_df <- task_df %>% filter(task == "task1") %>% # task_df
   select(-slider.x, -slider.y) %>% 
+  left_join(participants, by = join_by(participantId)) %>% 
   mutate(data.select.left_area = psgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE), 
          data.ans.x = qsgt(0.5, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)) %>% 
-  left_join(participants, by = join_by(participantId))
+  # pixel related 
+  mutate(pixel.med.x = data_to_pixel_x(data.ans.x), 
+         pixel.mod.x = data_to_pixel_x(param.mu)) %>% 
+  # phy related 
+  mutate(phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM), 
+         phy.med.x = pixel_to_phy_x(pixel.med.x, pixelToMM), 
+         phy.mod.x = pixel_to_phy_x(pixel.mod.x, pixelToMM)) %>% 
+  # visual angle related 
+  mutate(va.select.x = vis_angle(phy.select.x, dist_to_screen), 
+         va.med.x = vis_angle(phy.med.x, dist_to_screen), 
+         va.mod.x = vis_angle(phy.mod.x, dist_to_screen))
 ```
 
 Plotting selection, answer, and `x` coordinate for highest point against lambda: 
@@ -210,18 +230,18 @@ task2_df %>% ggplot(aes(y = phy.ans.y - phy.select.y, x = dist_to_screen)) +
 task2_df %>% ggplot(aes(y = va.ans.y - va.select.y, x = dist_to_screen)) + 
   geom_point()
 
+
+task2_df %>% ggplot(aes(x = data.ans.y - data.select.y)) + geom_dots()
 task2_df %>% ggplot(aes(x = va.ans.y - va.select.y)) + geom_dots()
 task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
 task2_df %>% ggplot(aes(x = (phy.ans.y - phy.select.y) / dist_to_screen)) + geom_dots()
 ```
 
-Checking relations, ocusing on the **x** axes: 
+Checking relations, focusing on the **x** axes: 
 
 ```{r}
 #| layout-ncol: 2
 #| code-fold: true
-
-library(RColorBrewer)
 
 task2_df %>% ggplot(aes(x = data.ans.x - data.select.x)) + 
   geom_dots()
@@ -302,6 +322,14 @@ task3_df %>% ggplot(aes(x = va.select.x - va.ans.x)) +
 task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
   geom_dots()
 ```
+
+It is not very normal that we have a bunch of selections that have this big of a variation on y ... 
+
+```{r}
+task3_df %>% filter(data.select.y - data.ans.y > 0.4)
+```
+
+Hmm it is very clear that this participant only selected values very close to 1 ... which is NOT what we wanted ... 
 
 Distribution of signed error:
 
