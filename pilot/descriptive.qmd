@@ -78,8 +78,6 @@ vis_angle <- function(size, distance){
 tolerance <- 1e-10
 ```
 
-TODO --- things from here could be changed for the purpose of the actual collected data 
-
 ```{r}
 #| label: define-special-dfs
 #| code-fold: true
@@ -166,16 +164,294 @@ task1_df %>% ggplot(aes(y = data.select.left_area^(1/0.7), x = param.lambda)) +
   geom_point()
 ```
 
-# Task 2 --- 
+# Task 2 -- Find highest point on curve 
 
-... 
+First we get the data: 
+
+```{r}
+#| label: get task 2 data
+#| code-fold: true 
+
+task2_df <- task_df %>% filter(task == "task2") %>% 
+  select(-slider.x, -slider.y) %>% 
+  mutate(data.ans.x = param.mu, 
+         data.ans.y = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE),
+         # data.select.grad = numDeriv::grad(dsgt, data.select.x, mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
+         # data.select.angle = atan(data.select.grad) * 180 / pi
+         # this is the gradient of the left of the highest point 
+         data.left.grad = numDeriv::grad(dsgt, param.mu - 1, mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
+         data.right.grad = numDeriv::grad(dsgt, param.mu + 1, mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
+         ) %>% 
+  left_join(participants, by = join_by(participantId)) %>% 
+  # calculate things related to participants' selection 
+  mutate(phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM), 
+         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM),
+         va.select.x = vis_angle(phy.select.x, dist_to_screen), 
+         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>% 
+  # calculate things related to answer 
+  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x), 
+         pixel.ans.y = data_to_pixel_y(data.ans.y), 
+         phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM), 
+         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM),
+         va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
+         va.ans.y = vis_angle(phy.ans.y, dist_to_screen)) %>% 
+  mutate(flat = (abs(data.left.grad) + abs(data.right.grad))/2)
+```
+
+Checking relations, focusing on the **y** axes: 
+
+```{r}
+#| layout-ncol: 2
+#| code-fold: true
+
+task2_df %>% ggplot(aes(y = phy.ans.y - phy.select.y, x = dist_to_screen)) + 
+  geom_point()
+
+task2_df %>% ggplot(aes(y = va.ans.y - va.select.y, x = dist_to_screen)) + 
+  geom_point()
+
+task2_df %>% ggplot(aes(x = va.ans.y - va.select.y)) + geom_dots()
+task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
+task2_df %>% ggplot(aes(x = (phy.ans.y - phy.select.y) / dist_to_screen)) + geom_dots()
+```
+
+Checking relations, ocusing on the **x** axes: 
+
+```{r}
+#| layout-ncol: 2
+#| code-fold: true
+
+library(RColorBrewer)
+
+task2_df %>% ggplot(aes(x = data.ans.x - data.select.x)) + 
+  geom_dots()
+
+task2_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + 
+  geom_dots()
+
+task2_df %>% ggplot(aes(x = (phy.ans.x - phy.select.x)/dist_to_screen)) + 
+  geom_dots()
+
+task2_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + 
+  geom_dots() + 
+  facet_wrap(~participantId)
+
+task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = dist_to_screen)) + 
+  geom_point(alpha = 0.5)
+
+task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = param.lambda)) + 
+  geom_point(alpha = 0.5) + 
+  labs(title = "Signed error on x-axes against skewness")
+```
+
+# Task 3 -- Find point on curve where `y == 0.5`
+
+First we get the data:
+
+```{r}
+task3_df <- task_df %>% filter(task == "task3") %>%
+  select(-slider.x, -slider.y) %>%
+  left_join(participants, by = join_by(participantId)) %>%
+  # do all the calculations for user's selected
+  mutate(pixel.select.x = data_to_pixel_x(data.select.x),
+         pixel.select.y = data_to_pixel_y(data.select.y),
+         phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM),
+         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM),
+         va.select.x = vis_angle(phy.select.x, dist_to_screen),
+         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>%
+  mutate(data.ans.y = 0.5,
+         data.ans.x = qsgt(0.5, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)) %>%
+  # do all the calculations for the actual answer
+  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x),
+         pixel.ans.y = data_to_pixel_y(data.ans.y),
+         phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM),
+         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM),
+         va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
+         va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
+```
+
+Verify that the scales are correct:
+
+```{r}
+#| output: false
+#| code-fold: true
+#| label: task 3 verify
+
+# verify that the results are of correct scale
+task3_df %>% ggplot(aes(x = data.select.x - data.ans.x)) +
+  geom_dots()
+
+task3_df %>% ggplot(aes(x = data.select.y - data.ans.y)) +
+  geom_dots()
+
+task3_df %>% ggplot(aes(x = pixel.select.x - pixel.ans.x)) +
+  geom_dots()
+
+task3_df %>% ggplot(aes(x = pixel.select.y - pixel.ans.y)) +
+  geom_dots()
+
+task3_df %>% ggplot(aes(x = phy.select.x - phy.ans.x)) +
+  geom_dots()
+
+task3_df %>% ggplot(aes(x = phy.select.y - phy.ans.y)) +
+  geom_dots()
+
+task3_df %>% ggplot(aes(x = va.select.x - va.ans.x)) +
+  geom_dots()
+
+task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
+  geom_dots()
+```
+
+Distribution of signed error:
+
+```{r}
+#| code-fold: true
+
+task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
+  geom_dots() +
+  geom_vline(xintercept = 0, linetype="dashed", color="black") +
+  labs(title="Task 3 -- Find dot on curve where y == 0.5")
+```
+
+Relationship between distance from the y-axes and the signed distribution:
+
+```{r}
+task3_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, linetype="dashed", color="black") +
+  labs(title="Task 3 -- CDF Median")
+```
 
 
-# Task 3 --- 
+# Task 4 -- Find slope 
+
+```{r}
+#| label: get task 4 data 
+
+task4_df <- task_df %>% filter(task == "task4") %>% 
+  select(-slider.x, -slider.y) %>% 
+  mutate(data.select.slope = dsgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE), 
+         data.ans.slope = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE)) %>% 
+  left_join(participants, by = join_by(participantId))
+```
+
+Let's first see the distribution of signed error: 
+
+```{r}
+task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) + 
+  geom_dots()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = dist_to_screen)) + 
+  geom_point()
+```
+
+It seems that the selected slope is consistently smaller than the actual slope of the answer. 
+
+Let's see if there's any obvious relation between signed error and parameters of the distribution: 
+
+```{r}
+#| layout-ncol: 2
+#| code-fold: true 
 
 
-# Task 4 --- 
-... 
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = dist_to_screen)) + 
+  geom_point()
 
-# Task 5 --- 
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.mu)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.sigma)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.lambda)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.p)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.q)) + 
+  geom_point()
+```
+# Task 5 --- Project from dot to axes 
+
+Get data: 
+
+```{r}
+#| label: task 5 load data
+#| code-fold: true 
+
+task5_df <- task_df %>% filter(task == "task5") %>% 
+  select(participantId, task, id, data.select.x, data.select.y, slider.x, slider.y) %>% 
+  rename(data.ans.x = data.select.x, 
+         data.ans.y = data.select.y, 
+         data.select.x = slider.x, 
+         data.select.y = slider.y) %>% 
+  left_join(participants, by = join_by(participantId)) %>% 
+  # do all the calculations for user's selected 
+  mutate(pixel.select.x = data_to_pixel_x(data.select.x), 
+         pixel.select.y = data_to_pixel_y(data.select.y), 
+         phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM),
+         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM), 
+         va.select.x = vis_angle(phy.select.x, dist_to_screen),
+         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>% 
+  # do all the calculations for the actual answer
+  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x),
+         pixel.ans.y = data_to_pixel_y(data.ans.y),
+         phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM),
+         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM), 
+         va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
+         va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
+```
+
+Verify that the results are in the right scale: 
+
+```{r}
+#| output: false 
+#| code-fold: true
+#| label: task 5 verify 
+
+task5_df %>% ggplot(aes(x = pixel.select.x - pixel.ans.x)) + 
+  geom_dots()
+
+task5_df %>% ggplot(aes(x = pixel.select.y - pixel.ans.y)) + 
+  geom_dots()
+
+task5_df %>% ggplot(aes(x = phy.select.x - phy.ans.x)) + 
+  geom_dots()  
+
+task5_df %>% ggplot(aes(x = phy.select.y - phy.ans.y)) + 
+  geom_dots() 
+
+task5_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + 
+  ggdist::geom_swarm()
+
+task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) + 
+  geom_dots()  
+
+```
+
+## Task 5.1 --- Project from dot to X axes
+
+Distribution of signed error: 
+
+```{r}
+#| code-fold: true
+
+task5_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + 
+  geom_dots() +
+  geom_vline(xintercept = 0, linetype="dashed", color="black") + 
+  labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle") 
+```
+
+Relationship between signed error (in visual angle space) and distance to X-axes: 
+
+```{r}
+#| code-fold: true
+
+task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) + 
+  geom_point(alpha = 0.5) +
+  geom_vline(xintercept = 0, linetype="dashed", color="gray") + 
+  labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
+```
 
