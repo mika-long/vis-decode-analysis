@@ -357,12 +357,72 @@ task3_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
 ```{r}
 #| label: get task 4 data 
 
+epsilon <- 1e-10
+
+data_to_screen_slope <- function(k){
+  return(k * 395 / 53.5)
+}
+
 task4_df <- task_df %>% filter(task == "task4") %>% 
   select(-slider.x, -slider.y) %>% 
   mutate(data.select.slope = dsgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE), 
          data.ans.slope = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE)) %>% 
-  left_join(participants, by = join_by(participantId))
+  left_join(participants, by = join_by(participantId)) %>% 
+  mutate(phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM), 
+         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM),
+         va.select.x = vis_angle(phy.select.x, dist_to_screen), 
+         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>%
+  mutate(data.ans.x = param.mu, 
+         data.ans.y = 1 / 2 * (psgt(data.ans.x + epsilon, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE) +  
+                                            psgt(data.ans.x - epsilon, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE))) %>%
+  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x), 
+         pixel.ans.y = data_to_pixel_y(data.ans.y)) %>% 
+  mutate(phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM), 
+         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM)) %>% 
+  mutate(va.ans.x = vis_angle(phy.ans.x, dist_to_screen), 
+         va.ans.y = vis_angle(phy.ans.y, dist_to_screen)) 
 ```
+
+```{r}
+task4_df %>% ggplot(aes(x = va.ans.x - va.select.x)) + geom_dots()
+task4_df %>% ggplot(aes(x = va.ans.y - va.select.y)) + geom_dots()
+task4_df %>% ggplot(aes(x = atan(va.ans.y / va.ans.x) * 180 / pi)) + geom_dots()
+task4_df %>% ggplot(aes(x = va.ans.y / va.ans.x, y = data.ans.slope)) + 
+  geom_point() + coord_equal()
+
+task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) + 
+  geom_dots()
+
+task4_df %>% filter(data.select.slope - data.ans.slope == 0)
+
+task4_df %>% ggplot(aes(x = atan(data.select.slope) * 180 / pi - atan(data.ans.slope) * 180 / pi)) + 
+  geom_dots()
+
+task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) + 
+  geom_dots()
+
+task4_df %>% ggplot(aes(x = atan(data_to_screen_slope(data.select.slope)) * 180 / pi - atan(data_to_screen_slope(data.ans.slope)) * 180 / pi)) + 
+  # geom_dots()
+  stat_ecdf()
+# maybe try to fit a model here 
+```
+
+If we map the mathematical slope to the actual slope, this is what we get: 
+
+- y axis range [0, 1] correspond to 395 px -> 395px / unit 
+- x axis range [-5, 5] correspond to 535 px -> 53.5 px / unit 
+
+```{r}
+
+
+task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope), y = data_to_screen_slope(data.ans.slope))) + 
+  geom_point(alpha = 0.5) + 
+  coord_equal()
+
+task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) + 
+  geom_dots()
+```
+
 
 Let's first see the distribution of signed error: 
 
@@ -371,7 +431,7 @@ task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) +
   geom_dots()
 
 task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = dist_to_screen)) + 
-  geom_point()
+  geom_point(alpha = 0.5)
 ```
 
 It seems that the selected slope is consistently smaller than the actual slope of the answer. 
@@ -381,7 +441,7 @@ Let's see if there's any obvious relation between signed error and parameters of
 ```{r}
 #| layout-ncol: 2
 #| code-fold: true 
-
+#| output: false 
 
 task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = dist_to_screen)) + 
   geom_point()
@@ -400,7 +460,12 @@ task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.p)) +
 
 task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.q)) + 
   geom_point()
+
+task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) + 
+  geom_dots()
 ```
+
+
 # Task 5 --- Project from dot to axes 
 
 Get data: 
@@ -439,6 +504,8 @@ Verify that the results are in the right scale:
 #| code-fold: true
 #| label: task 5 verify 
 
+task5_df %>% ggplot(aes(x = data.ans.x - data.select.x)) + geom_dots()
+
 task5_df %>% ggplot(aes(x = pixel.select.x - pixel.ans.x)) + 
   geom_dots()
 
@@ -458,6 +525,14 @@ task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
   geom_dots()  
 
 ```
+
+Let's see which participant made this big of an error: 
+
+```{r}
+task5_df %>% filter(data.ans.x - data.select.x > 2)
+```
+
+
 
 ## Task 5.1 --- Project from dot to X axes
 
