@@ -46,11 +46,15 @@ task_df <- df %>% filter(status == "completed") %>%
   mutate(answer = as.numeric(answer)) %>% 
   pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
   separate_wider_delim(trialId, delim = "_", names = c("task", "type", "id")) %>% 
+  filter(type != "train") %>% 
   select(-type) %>% 
   rename(data.select.x = location.x, 
          data.select.y = location.y,
          pixel.select.x = pixel.x, 
-         pixel.select.y = pixel.y)
+         pixel.select.y = pixel.y) %>% 
+  filter(!participantId %in% exclude_participants)
+
+exclude_participants <- c("67fd4f955123c6d79ae66a3a", "67eedf7be13ffb77c677d4dd")
 ```
 
 ```{r}
@@ -82,6 +86,8 @@ vis_angle <- function(size, distance){
 tolerance <- 1e-10
 ```
 
+We need to reverse engineer the pixel location of `squarePos` so that we can actually calculate this thing ocrrectly. 
+
 ```{r}
 #| label: define-special-dfs
 #| code-fold: true
@@ -90,17 +96,37 @@ p <- df %>% filter(status == "completed") %>%
   select(participantId, trialId, responseId, answer) %>% 
   filter(grepl("calibration", trialId))
 
-# potential todo: we might want to change things ... with how the distance is calculated ... 
+p %>% filter(responseId == "ball-positions") %>% 
+  select(participantId, answer) %>% 
+  mutate(answer = gsub("\\[|\\]", "", answer)) %>% 
+  mutate(split_answer = str_split(answer, ",")) %>% 
+  mutate(numeric_vectors = map(split_answer, ~ as.numeric(.x))) %>% 
+  unnest(split_answer) %>% 
+  mutate(split_answer = as.numeric(split_answer)) %>% 
+  group_by(participantId) %>% 
+  summarise(avg.ball.pos = sum(split_answer) / 5, 
+            min.ball.pos = min(split_answer),
+            max.ball.pos = max(split_answer)) -> avg_ball_pos
 
-demographics <- df %>% filter(status == "completed") %>% 
-  select(participantId, trialId, responseId, answer) %>% 
-  filter(grepl("gender|age|feedback|strategy", responseId))
+avg_ball_pos %>% mutate(true_ball_pos = (avg.ball.pos * 5 - min.ball.pos - max.ball.pos)/3) %>% 
+  select(participantId, true_ball_pos) -> true_ball_pos
 
-participants <- p %>% filter(grepl("pixelsPerMM|dist-calibration-MM", responseId)) %>% 
-  select(-trialId) %>% 
-  mutate(answer = as.numeric(answer)) %>% 
-  pivot_wider(names_from = responseId, values_from = answer) %>% 
-  rename(pixelToMM = pixelsPerMM, dist_to_screen = `dist-calibration-MM`)
+participants <- p %>% filter(grepl("pixelsPerMM|dist-calibration-MM", responseId)) %>%
+  select(-trialId) %>%
+  mutate(answer = as.numeric(answer)) %>%
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  rename(pixelToMM = pixelsPerMM, dist_to_screen = `dist-calibration-MM`) %>%
+  filter(!participantId %in% exclude_participants) %>%
+  left_join(calculated_avg_ball) %>% 
+  mutate(phy = dist_to_screen * tan(13.5 * pi / 180), 
+         px = phy * pixelToMM, 
+         square_pos = round(px + avg_ball))
+
+participants %>% left_join(true_ball_pos) %>% 
+  mutate(ball.square.dist = (square_pos - true_ball_pos) / pixelToMM, 
+         d = ball.square.dist / tan(13.5 * pi / 180)) %>% 
+  select(participantId, pixelToMM, d) %>% 
+  rename(dist_to_screen = d) -> participants
 ```
 
 Read in the demographic from prolific: 
@@ -142,11 +168,14 @@ Plotting selection, answer, and `x` coordinate for highest point against lambda:
 
 ```{r}
 task1_df %>% ggplot(aes(y = data.select.x - data.ans.x, x = param.lambda)) + 
-  geom_point(alpha = 0.5) # + 
+  geom_point(alpha = 0.5) # + ylim(-1, 1)# + 
   geom_point(aes(y = data.ans.x - param.mu, x = param.lambda), color = "red", alpha = 0.5)
   
 task1_df %>% ggplot(aes(y = data.select.left_area - 0.5, x = param.lambda)) + 
-geom_point(alpha = 0.5)
+  geom_point(alpha = 0.5)
+
+task1_df %>% ggplot(aes(y = va.select.x - va.med.x, x = param.lambda)) + 
+  geom_point(alpha = 0.5)
 ```
 
 Plotting other relations: 
@@ -347,9 +376,12 @@ Relationship between distance from the y-axes and the signed distribution:
 ```{r}
 task3_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
   geom_point(alpha = 0.5) +
-  geom_hline(yintercept = 0, linetype="dashed", color="black") +
+  geom_hline(yintercept = 0, linetype="dashed", color="black") # +
   labs(title="Task 3 -- CDF Median") # + 
   # ylim(-1, 1)
+  
+task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
+  geom_dots()
 ```
 
 
@@ -520,7 +552,8 @@ task5_df %>% ggplot(aes(x = phy.select.y - phy.ans.y)) +
   geom_dots() 
 
 task5_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + 
-  ggdist::geom_swarm()
+  #ggdist::geom_swarm()
+  geom_dots()
 
 task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) + 
   geom_dots()  
@@ -556,19 +589,26 @@ Relationship between signed error (in visual angle space) and distance to X-axes
 task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) + 
   geom_point(alpha = 0.5) +
   geom_vline(xintercept = 0, linetype="dashed", color="gray") + 
-  labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle") + 
-  xlim(-1, 1)
+  labs(title="Task 5 - Project from Dot to X-Axes") #+ 
+  # xlim(-1, 1)
 ```
 
 ```{r}
 #| code-fold: true
 
-task5_df %>% ggplot(aes(y = va.ans.x, x = va.select.y - va.ans.y)) + 
+task5_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) + 
   geom_point(alpha = 0.5) +
   geom_vline(xintercept = 0, linetype="dashed", color="gray") + 
-  labs(title="Task 5 - Project from Dot to Y-Axes - Vis Angle") + 
-  xlim(-1, 1)
+  labs(title="Task 5 - Project from Dot to Y-Axes") # + 
+  xlim(-0.2, 0.6)
 ```
 
-UGH so much outlier ... 
+```{r}
+task5_df %>% filter(va.select.y - va.ans.y > 1) %>% 
+  ggplot(aes(x = data.ans.x, y = data.ans.y, color = "answer")) + 
+  geom_point() + 
+  geom_point(aes(x = data.select.x, y = data.select.y, color = "select")) + 
+  xlim(-5, 5) + ylim(0, 1)
+```
 
+Have reason to suspect that this participant really isn't answering the questions nicely ... 

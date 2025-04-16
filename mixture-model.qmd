@@ -133,6 +133,11 @@ task1_df <- single_pid_df %>% filter(task == "task1") %>% # task_df
 
 **Note that unless specifically mentioned, all estimations are done in visual angle measures.** 
 
+```{r}
+task1_df %>% ggplot(aes(x = param.lambda, y = va.select.x - va.med.x)) + 
+  geom_point(alpha = 0.5)
+```
+
 # Single participant 
 
 Math model: 
