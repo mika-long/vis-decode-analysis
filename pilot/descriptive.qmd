@@ -35,9 +35,10 @@ read in data and write functions for processing:
 #| label: read-in-data
 #| code-fold: true
 
-df <- read.csv("pilot-01.csv") %>% as_tibble(.)
+df <- read.csv("pilot-02.csv") %>% as_tibble(.)
 
-task_df <- df %>% select(participantId, trialId, responseId, answer) %>%
+task_df <- df %>% filter(status == "completed") %>% 
+  select(participantId, trialId, responseId, answer) %>%
   filter(str_detect(trialId, "task")) %>%
   mutate(answer = as.numeric(answer)) %>% 
   pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
@@ -104,7 +105,6 @@ prolific_demographic <- read.csv("pilot-01-demographic.csv") %>% as_tibble(.)
 
 prolific_demographic %>% t(.) %>% view(.)
 ```
-
 
 
 # Task 1 -- Split area into equal halves
@@ -558,3 +558,11 @@ task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) +
   labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
 ```
 
+```{r}
+#| code-fold: true
+
+task5_df %>% ggplot(aes(y = va.ans.x, x = va.select.y - va.ans.y)) + 
+  geom_point(alpha = 0.5) +
+  geom_vline(xintercept = 0, linetype="dashed", color="gray") + 
+  labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
+```
