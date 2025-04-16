@@ -70,6 +70,8 @@ tolerance <- 1e-10
 
 # Task 5 --- Project from dot to axes 
 
+Get the data: 
+
 ```{r}
 #| label: task 5 load data
 #| code-fold: true 
@@ -99,9 +101,132 @@ task5_df <- task_df %>% filter(task == "task5") %>% # or use task_df for full
 
 ## Project to X-Axis 
 
+Math: 
+
+$$\begin{align*}
+\texttt{error}_i &\sim \mathcal{N}(0, \sigma_{i, \text{PID}[i]}) \\ 
+\log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.y}_i) \\ 
+\alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
+\mu_\alpha &\sim N(0, 1) \\ 
+\sigma_\alpha &\sim \text{Half-Cauchy}(0, 1)
+\end{align*}$$
+
+Formula and prior: 
+
+```{r}
+f <- bf(error_va ~ 0, 
+        sigma ~ (1 | participantId) + offset(log(va.ans.y)))
+ 
+p <- c(
+  prior(normal(0, 1), class = Intercept, dpar = "sigma"), 
+  prior(cauchy(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
+)
+```
+
+```{r}
+#| echo: false 
+#| output: false 
+#| eval: false
+
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  get_prior(formula = f,
+            data = .)
+
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  make_stancode(f, data = ., prior = p, family = gaussian())
+
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  make_standata(f, data = ., prior = p, family = gaussian())
+```
+
+Fit model: 
+
+```{r}
+#| output: false 
+m.5.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  # account for numerical precision 
+  # mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  # account for bugs in task 5 
+  filter(va.ans.y != 0) %>% 
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p,
+    chains = 4, 
+    # cores = 4,
+    control = list(adapt_delta = 0.99),
+    # iter = 6000, 
+    # file = "models/s.5.va", 
+    save_pars = save_pars(all = TRUE)
+)
+```
+
+Check fit and posterior: 
+
+```{r}
+summary(m.5.va)
+plot(m.5.va)
+pp_check(m.5.va, ndraws = 100)
+```
+
+Average effect: 
+
+```{r}
+m.5.va %>% get_variables(.)
+
+# Extract posterior samples using spread_draws
+m.5.va %>%
+  spread_draws(b_sigma_Intercept) %>% 
+  mutate(b_sigma = exp(b_sigma_Intercept)) %>% 
+  ggplot(aes(x = b_sigma)) + 
+  stat_halfeye()
+```
+
 ## Project to Y-Axis 
 
+Math: 
+
+$$\begin{align*}
+\texttt{error}_i &\sim \mathcal{N}(0, \sigma_{i, \text{PID}[i]}) \\ 
+\log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.x}_i) \\ 
+\alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
+\mu_\alpha &\sim N(0, 1) \\ 
+\sigma_\alpha &\sim \text{Half-Cauchy}(0, 1)
+\end{align*}$$
+
+Formula and prior: 
+
+```{r}
+f <- bf(error_va ~ 0, 
+        sigma ~ (1|participantId) + offset(log(va.ans.x)))
+
+p <- c(
+  prior(normal(0, 1), class = Intercept, dpar = "sigma"), 
+  prior(cauchy(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
+)
+```
+
+```{r}
+#| echo: false 
+#| output: false 
+#| eval: false
+
+task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
+  get_prior(formula = f,
+            data = .)
+
+task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
+  make_stancode(f, data = ., prior = p, family = gaussian())
+
+task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
+  make_standata(f, data = ., prior = p, family = gaussian())
+```
+
+
 # Task 3 --- Find where y == 0.5 
+
+Get data: 
 
 ```{r}
 task3_df <- task_df %>% filter(task == "task3") %>% 
@@ -123,5 +248,27 @@ task3_df <- task_df %>% filter(task == "task3") %>%
          phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM), 
          va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
+```
+
+Math: 
+
+$$\begin{align*}
+\texttt{error}_i &\sim \mathcal{N}(0, \sigma_{i, \text{PID}[i]}) \\ 
+\log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.x}_i) \\ 
+\alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
+\mu_\alpha &\sim N(0, 1) \\ 
+\sigma_\alpha &\sim \text{Half-Cauchy}(0, 1)
+\end{align*}$$
+
+Formula and prior: 
+
+```{r}
+f <- bf(error_va ~ 0, 
+        sigma ~ (1|participantId) + offset(log(va.ans.x)))
+
+p <- c(
+  prior(normal(0, 1), class = Intercept, dpar = "sigma"), 
+  prior(cauchy(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
+)
 ```
 
