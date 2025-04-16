@@ -601,6 +601,8 @@ task5_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
   geom_vline(xintercept = 0, linetype="dashed", color="gray") + 
   labs(title="Task 5 - Project from Dot to Y-Axes") # + 
   xlim(-0.2, 0.6)
+  
+  task5_df %>% filter(va.select.y - va.ans.y > 1)
 ```
 
 ```{r}
