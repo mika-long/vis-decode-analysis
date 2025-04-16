@@ -775,6 +775,30 @@ task1_df %>% mutate(mix_paramter = as_draws_rvars(fit)$lambda) %>%
 m2$code()
 ```
 
+```{r}
+
+as_draws_rvars(fit)$lambda
+
+m5 <- readRDS("mix_models/sheng.mix.2.5.rds") # abs diff
+summary <- m5$summary()
+
+summary %>% filter(str_detect(variable, "^lambda")) %>%
+  arrange(median) %>% 
+  ggplot(aes(y = reorder(variable, median))) +
+  geom_segment(aes(x = q5, xend = q95, yend = variable)) +
+  geom_point(aes(x = median))
+
+
+task1_df %>% mutate(mix_paramter = as_draws_rvars(fit)$lambda) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = mix_paramter)) + 
+  stat_ribbon()
+
+m5$code()
+```
+
+
+
 # Different participants 
 
 Math model: 
