@@ -411,7 +411,8 @@ ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) +
     .width = c(.95, .80, .50),
     alpha = 0.5
   ) + scale_fill_brewer(palette = "Blues") + 
-  geom_point(data = task3_df, aes(y = va.ans.y - va.select.y, x = va.ans.x), alpha = 0.8)
+  geom_point(data = task3_df, aes(y = va.ans.y - va.select.y, x = va.ans.x), alpha = 0.8) +
+  labs(title = "Task 3", y = "Signed error", x = "Distance to Y-Axis")
 
 ```
 
