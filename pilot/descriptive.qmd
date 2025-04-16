@@ -35,7 +35,10 @@ read in data and write functions for processing:
 #| label: read-in-data
 #| code-fold: true
 
-df <- read.csv("pilot-02.csv") %>% as_tibble(.)
+df1 <- read.csv("pilot-01.csv") %>% as_tibble(.)
+
+df <- read.csv("pilot-02.csv") %>% as_tibble(.) %>% 
+  bind_rows(df1)
 
 task_df <- df %>% filter(status == "completed") %>% 
   select(participantId, trialId, responseId, answer) %>%
@@ -83,12 +86,14 @@ tolerance <- 1e-10
 #| label: define-special-dfs
 #| code-fold: true
 
-p <- df %>% select(participantId, trialId, responseId, answer) %>% 
+p <- df %>% filter(status == "completed") %>% 
+  select(participantId, trialId, responseId, answer) %>% 
   filter(grepl("calibration", trialId))
 
 # potential todo: we might want to change things ... with how the distance is calculated ... 
 
-demographics <- df %>% select(participantId, trialId, responseId, answer) %>% 
+demographics <- df %>% filter(status == "completed") %>% 
+  select(participantId, trialId, responseId, answer) %>% 
   filter(grepl("gender|age|feedback|strategy", responseId))
 
 participants <- p %>% filter(grepl("pixelsPerMM|dist-calibration-MM", responseId)) %>% 
@@ -142,18 +147,6 @@ task1_df %>% ggplot(aes(y = data.select.x - data.ans.x, x = param.lambda)) +
   
 task1_df %>% ggplot(aes(y = data.select.left_area - 0.5, x = param.lambda)) + 
 geom_point(alpha = 0.5)
-```
-
-As can be seen here, there is a clear difference in trend ... As skewness $\lambda$ changes, the difference between the median `data.ans.x` and the mode `param.mu` increases. This provides some evidence that we're not purely using the highest point as a proxy. 
-
-Plotting left area, answer, as well as `answer^0.7`: 
-
-```{r}
-task1_df %>% ggplot(aes(x = param.lambda, y = data.select.left_area)) + 
-  geom_point(alpha = 0.5) + 
-  geom_hline(yintercept = 0.5, linetype="dashed", color = "gray") + 
-  geom_hline(yintercept = 0.5^0.7, linetype = "dashed", color = "darkgray") + 
-  ylim(0, 1)
 ```
 
 Plotting other relations: 
@@ -224,11 +217,11 @@ Checking relations, focusing on the **y** axes:
 #| layout-ncol: 2
 #| code-fold: true
 
-task2_df %>% ggplot(aes(y = phy.ans.y - phy.select.y, x = dist_to_screen)) + 
-  geom_point()
-
-task2_df %>% ggplot(aes(y = va.ans.y - va.select.y, x = dist_to_screen)) + 
-  geom_point()
+# task2_df %>% ggplot(aes(y = phy.ans.y - phy.select.y, x = dist_to_screen)) + 
+#   geom_point()
+# 
+# task2_df %>% ggplot(aes(y = va.ans.y - va.select.y, x = dist_to_screen)) + 
+#   geom_point()
 
 
 task2_df %>% ggplot(aes(x = data.ans.y - data.select.y)) + geom_dots()
@@ -236,6 +229,13 @@ task2_df %>% ggplot(aes(x = va.ans.y - va.select.y)) + geom_dots()
 task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
 task2_df %>% ggplot(aes(x = (phy.ans.y - phy.select.y) / dist_to_screen)) + geom_dots()
 ```
+
+```{r}
+task2_df %>% mutate(error = va.ans.y - va.select.y) %>% 
+  group_by(participantId) %>% 
+  summarise(m = min(error))
+```
+
 
 Checking relations, focusing on the **x** axes: 
 
@@ -326,7 +326,7 @@ task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
 It is not very normal that we have a bunch of selections that have this big of a variation on y ... 
 
 ```{r}
-task3_df %>% filter(data.select.y - data.ans.y > 0.4)
+task3_df %>% filter(abs(data.select.y - data.ans.y) > 0.2)
 ```
 
 Hmm it is very clear that this participant only selected values very close to 1 ... which is NOT what we wanted ... 
@@ -348,7 +348,8 @@ Relationship between distance from the y-axes and the signed distribution:
 task3_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
   geom_point(alpha = 0.5) +
   geom_hline(yintercept = 0, linetype="dashed", color="black") +
-  labs(title="Task 3 -- CDF Median")
+  labs(title="Task 3 -- CDF Median") # + 
+  # ylim(-1, 1)
 ```
 
 
@@ -555,7 +556,8 @@ Relationship between signed error (in visual angle space) and distance to X-axes
 task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) + 
   geom_point(alpha = 0.5) +
   geom_vline(xintercept = 0, linetype="dashed", color="gray") + 
-  labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
+  labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle") + 
+  xlim(-1, 1)
 ```
 
 ```{r}
@@ -564,5 +566,9 @@ task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) +
 task5_df %>% ggplot(aes(y = va.ans.x, x = va.select.y - va.ans.y)) + 
   geom_point(alpha = 0.5) +
   geom_vline(xintercept = 0, linetype="dashed", color="gray") + 
-  labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
+  labs(title="Task 5 - Project from Dot to Y-Axes - Vis Angle") + 
+  xlim(-1, 1)
 ```
+
+UGH so much outlier ... 
+
