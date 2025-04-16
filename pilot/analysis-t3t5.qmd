@@ -25,6 +25,7 @@ theme_set(theme_minimal())
 library(brms)
 # plot results 
 library(tidybayes)
+library(modelr)
 ```
 
 # Set up
@@ -385,5 +386,21 @@ m3 %>% spread_draws(b_sigma_Intercept) %>%
   mutate(b_sigma = exp(b_sigma_Intercept)) %>% 
   ggplot(aes(x = b_sigma)) + 
   stat_halfeye()
+```
+
+Let's plot the ribbon plots: 
+
+```{r}
+# for an average participant 
+task3_df %>%
+  mutate(error_va = va.select.y - va.ans.y) %>% 
+  # group_by(participantId) %>% 
+  data_grid(va.ans.x = seq_range(va.ans.x, n = 101)) %>% 
+  mutate(error_va = 0) %>% 
+  add_epred_draws(m3, dpar = "sigma", re_formula = NA)
+
+
+task3_df %>% add_epred_draws(m3) %>% 
+  ggplot(aes(x = .epred)) + stat_halfeye()
 ```
 
