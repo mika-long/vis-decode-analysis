@@ -111,6 +111,8 @@ participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participant
 
 # Task 5 --- Project from dot to axes 
 
+## Descriptive 
+
 Get data: 
 
 ```{r}
@@ -167,7 +169,7 @@ task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
 
 ```
 
-## Project from dot to X axes
+### Project from dot to X axes
 
 Distribution of signed error: 
 
@@ -192,7 +194,8 @@ task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) +
 ```
 
 ## Model fitting Overview 
-- Models can be fitted in visual angle space, as well as physical space 
+
+- Models can be fitted in visual angle space, as well as physical space. We will focus on fitting in visual angle space, for it is more uniform.  
 - Within each space, the effect of "distance to the other axis" could be *multiplicative* or *additive*. 
 - We could start with a single participant, before extending to multiple participants 
 
@@ -200,28 +203,36 @@ task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) +
 
 ### Model 1 --- Vis Angle 
 
-The data looks kind of skewed ... but for now let's fit a normal model 
-
 $$\begin{align*}
-\texttt{error_va}_i &\sim \mathcal{N}(\mu, \sigma_i) \\ 
-\sigma_i = \alpha \cdot \texttt{va.ans.y}_i &\leftrightarrow \log(\sigma_i) = \log(\alpha) + \log(\texttt{va.ans.y}_i)
+\texttt{error_va}_i &\sim \mathcal{N}(0, \sigma_i) \\ 
+\log(\sigma_i) &= \alpha + \log(\texttt{va.ans.y}_i) \\ 
+\implies \sigma_i &= \exp(\alpha) \times \texttt{va.ans.y}_i \\ 
+\alpha \sim N(0, 1)
 \end{align*}$$
 
 ```{r}
-f <- bf(error_va ~ 1, 
+f <- bf(error_va ~ 0, 
         sigma ~ 1 + offset(log(va.ans.y)))
 
-# task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-# get_prior(formula = f, 
-#           data = .)
-
 p <- c(
-  prior(normal(0, 0.5), class = Intercept), 
   prior(normal(0, 1), class = Intercept, dpar = "sigma")
 )
+```
 
-# task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-# make_stancode(f, data = ., prior = p, family = gaussian())
+```{r}
+#| echo: false 
+#| output: false 
+#| eval: false
+
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  get_prior(formula = f,
+            data = .)
+
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  make_stancode(f, data = ., prior = p, family = gaussian())
+
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  make_standata(f, data = ., prior = p, family = gaussian())
 ```
 
 Fit model: 
@@ -230,7 +241,7 @@ Fit model:
 #| output: false 
 s.5.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   # account for numerical precision 
-  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  # mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
   # account for bugs in task 5 
   filter(va.ans.y != 0) %>% 
   brm(
@@ -242,10 +253,12 @@ s.5.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     # cores = 4,
     # control = list(adapt_delta = 0.99),
     # iter = 6000, 
-    file = "models/s.5.va", 
+    # file = "models/s.5.va", 
     save_pars = save_pars(all = TRUE)
 )
 ```
+
+Check fit and posterior: 
 
 ```{r}
 summary(s.5.va)
@@ -253,69 +266,126 @@ plot(s.5.va)
 pp_check(s.5.va, ndraws = 100)
 ```
 
-:::{.callout-note collapsed="true"}
-I also tried a skewed normal distribution with the same prior and compare the two using `loo`; the normal actually is better 
-:::
+Posterior of `exp(alpha)`: 
 
 ```{r}
-s.5.va %>% spread_draws(b_Intercept, b_sigma_Intercept) %>% 
+# s.5.va %>% get_variables()
+
+s.5.va %>% spread_draws(b_sigma_Intercept) %>% 
   mutate(b_sigma = exp(b_sigma_Intercept)) %>% 
-  pivot_longer(cols = c(b_Intercept, b_sigma)) %>% 
-  ggplot(aes(x = value, y = name)) + 
-  stat_halfeye() + xlim(0, NA)
+  #pivot_longer(cols = c(b_Intercept, b_sigma)) %>% 
+  ggplot(aes(x = b_sigma)) + 
+  stat_halfeye() # + xlim(0, NA)
 ```
 
-### Model 2 --- Physical 
+### Multiple participants 
 
-Math model: 
+Math: 
 
-$$\begin{aligned}
-\text{error_phy}_i / \texttt{dist_to_screen}  &\sim \mathcal{N}(\mu, \sigma_{i}) \\ 
-\mu &\sim \mathcal{N}(0, 1) \\ 
-\sigma_{i} &= \beta \cdot (\texttt{phy.ans.y}_i) \cdot \hat{\sigma}, & j \in [13] \\ 
-\hat{\sigma} &\sim \mathcal{N}(0, 1) & j \in [13]
-\end{aligned}$$
-
-`brms` formula: 
+$$\begin{align*}
+\texttt{error_va}_i &\sim \mathcal{N}(0, \sigma_{i, \text{PID}[i]}) \\ 
+\log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.y}_i) \\ 
+\alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
+\mu_\alpha &\sim N(0, 1) \\ 
+\sigma_\alpha &\sim \text{Half-Cauchy}(0, 1)
+\end{align*}$$
 
 ```{r}
-f <- bf(error_phy.adj ~ 1, 
-        sigma ~ 1 + offset(log(phy.ans.y)))
-
-# task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>% 
-#   get_prior(f, data = .)
+f <- bf(error_va ~ 0, 
+        sigma ~ (1|participantId) + offset(log(va.ans.y)))
 
 p <- c(
-  prior(normal(0, 1), class = Intercept), 
-  prior(normal(0, 1), class = Intercept, dpar = sigma)
+  prior(normal(0, 1), class = Intercept, dpar = "sigma"), 
+  prior(cauchy(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
 )
-
-# task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>% 
-#   mutate(error_phy.adj = error_phy / dist_to_screen) %>% 
-#   make_stancode(f, data = ., prior = p)
 ```
 
-Fit the model: 
+```{r}
+#| echo: false 
+#| output: false 
+#| eval: false
+
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  get_prior(formula = f,
+            data = .)
+
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  make_stancode(f, data = ., prior = p, family = gaussian())
+
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  make_standata(f, data = ., prior = p, family = gaussian())
+```
+
+Fit model: 
 
 ```{r}
-s.5.phy <- task5_df %>% 
-  mutate(error_phy = phy.select.x - phy.ans.x) %>% 
-  mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% 
-  filter(va.ans.y != 0) %>% # account for weird bugs
-  mutate(error_phy.adj = error_phy / dist_to_screen) %>% 
+#| output: false 
+m.5.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  # account for numerical precision 
+  # mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  # account for bugs in task 5 
+  filter(va.ans.y != 0) %>% 
   brm(
-    formula = f, 
-    prior = p, 
-    chains = 4
-  )
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p,
+    chains = 4, 
+    # cores = 4,
+    control = list(adapt_delta = 0.99),
+    # iter = 6000, 
+    # file = "models/s.5.va", 
+    save_pars = save_pars(all = TRUE)
+)
 ```
 
-Check model fit and posterior: 
+Check fit and posterior: 
 
 ```{r}
-summary(s.5.phy)
-plot(s.5.phy)
-pp_check(s.5.phy, ndraws = 100)
+summary(m.5.va)
+plot(m.5.va)
+pp_check(m.5.va, ndraws = 100)
+```
+
+Average effect: 
+
+```{r}
+m.5.va %>% get_variables(.)
+
+# Extract posterior samples using spread_draws
+m.5.va %>%
+  spread_draws(b_sigma_Intercept) %>% 
+  mutate(b_sigma = exp(b_sigma_Intercept)) %>% 
+  ggplot(aes(x = b_sigma)) + 
+  stat_halfeye()
+```
+
+```{r}
+model_draws <- m.5.va %>%
+  spread_draws(b_sigma_Intercept) %>%
+  # Create a sequence of va.ans.y values to plot across
+  mutate(va_ans_y = list(seq(2.40, 10.51, length.out = 100))) %>%
+  unnest(va_ans_y) %>%
+  # Calculate sigma for the average participant (using the log-linear model)
+  mutate(
+    log_sigma = b_sigma_Intercept + log(va_ans_y),
+    sigma = exp(log_sigma)
+  )
+
+# Create the plot for the average participant
+model_draws %>%
+  ggplot(aes(x = va_ans_y, y = sigma)) +
+  # Show individual posterior draws with transparency
+  geom_line(aes(group = .draw), alpha = 0.05, color = "gray70") +
+  # Add summary statistics
+  stat_lineribbon(aes(y = sigma), .width = c(0.50, 0.80, 0.95), alpha = 0.3) +
+  scale_fill_brewer(palette = "Blues") +
+  labs(
+    title = "Posterior distribution of sigma for an average participant",
+    x = "Visual angle (va.ans.y)",
+    y = "Sigma (standard deviation of error)",
+    fill = "Credible interval"
+  )
 ```
 
 ## Project from dot to Y Axes
@@ -344,11 +414,19 @@ task5_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
 
 We apply the same approach, fit two models, and compare them. 
 
-### Model 1 -- Vis Angle 
+### Model 1 -- Single Participant
 
 ```{r}
-f <- bf(error_va ~ 1 , 
-        sigma ~ 0 + log(va.ans.x)) # what's the difference between this and 0 + offset(log(va.ans.x)) ??? 
+f <- bf(error_va ~ 0 , 
+        sigma ~ 1 + offset(log(va.ans.x))) # what's the difference between this and 0 + offset(log(va.ans.x)) ??? 
+
+p <- prior(normal(0, 1), class = Intercept, dpar = "sigma")
+```
+
+```{r}
+#| echo: false 
+#| eval: false 
+
 
 # get prior 
 task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
@@ -357,8 +435,10 @@ get_prior(formula = f,
 
 task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
 make_stancode(formula = f, 
+              prior = p,
               data = .)
 ```
+
 
 
 
