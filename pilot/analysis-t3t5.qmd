@@ -402,5 +402,16 @@ task3_df %>%
 
 task3_df %>% add_epred_draws(m3) %>% 
   ggplot(aes(x = .epred)) + stat_halfeye()
+
+prediction_grid <- task3_df %>% data_grid(va.ans.x = seq_range(va.ans.x, n = 50)) %>% 
+  add_predicted_draws(m3, re_formula = NA, ndraws = 100)
+
+ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) + 
+  stat_lineribbon(
+    .width = c(.95, .80, .50),
+    alpha = 0.5
+  ) + scale_fill_brewer(palette = "Blues") + 
+  geom_point(data = task3_df, aes(y = va.ans.y - va.select.y, x = va.ans.x), alpha = 0.8)
+
 ```
 

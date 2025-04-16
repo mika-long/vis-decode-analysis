@@ -829,7 +829,7 @@ task1_df %>% mutate(mix_paramter = as_draws_rvars(fit)$lambda) %>%
 m5$code()
 ```
 
-
+# What if we don't model `mu_med` and `mu_mod` ...? 
 
 # Different participants 
 
