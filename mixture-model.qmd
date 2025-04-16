@@ -491,6 +491,8 @@ One thing about the above model is that `lambda` is constrained to be >= 0.5. Th
 
 ## lambda = inv-logit (alpha + beta * (x.med - x.mod))
 
+Note that we will be placing a negative prior on alpha. 
+
 Read stan model: 
 
 ```{r}

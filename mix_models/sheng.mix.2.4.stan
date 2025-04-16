@@ -38,8 +38,8 @@ model {
   mu_med ~ normal(0, 0.05);
   sigma_med ~ normal(0.15, 0.6);
 
-  beta ~ normal(0, 2);
-  alpha ~ normal(0, 2);
+  beta ~ normal(0, 1);
+  alpha ~ normal(-1, 1);
   
   // likelihood
   for (n in 1:N) {
