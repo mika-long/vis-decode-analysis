@@ -39,7 +39,7 @@ model {
   sigma_med ~ normal(0.15, 0.6);
 
   beta ~ normal(0, 1);
-  alpha ~ normal(-5, 1);
+  alpha ~ normal(-10, 1);
   
   // likelihood
   for (n in 1:N) {
