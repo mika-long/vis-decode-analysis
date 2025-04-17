@@ -725,7 +725,7 @@ summary %>% filter(str_detect(variable, "^lambda")) %>%
   arrange(median) %>% 
   ggplot(aes(y = reorder(variable, median))) +
   geom_segment(aes(x = q5, xend = q95, yend = variable)) +
-  geom_point(aes(x = median))
+  geom_point(aes(x = median)) + xlim(0, 1)
 ```
 
 ```{r}

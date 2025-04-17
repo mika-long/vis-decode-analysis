@@ -259,6 +259,85 @@ task2_df %>% mutate(error.y = va.ans.y - va.select.y, error.x = va.ans.x - va.se
   filter(error.x != 0)
 ```
 
+## Pareto Type II (Lomax) Distribution 
+
+Math model: 
+
+$$\begin{align*}\text{error}_i &\sim \text{Lorax}(\lambda, \alpha) \\ 
+\lambda &\sim \text{Half-Cauchy}(0, 1) \\ 
+\alpha &\sim \text{Half-Cauchy}(0, 1)
+\end{align*}$$
+
+```{r}
+# Define the Pareto custom family
+lomax_family <- custom_family(
+  "custom_lomax",
+  dpars = c("mu", "lambda", "alpha"),  # parameters: lambda = scale, alpha = shape
+  links = c("identity", "log", "log"),   # log links ensure parameters are positive
+  lb = c(-Inf, 0, 0),              # lower bounds for both parameters
+  type = "real"
+)
+
+# The Stan code for the Pareto log-likelihood function
+# Note: Stan already has a built-in pareto_lpdf function
+stan_funs <- "
+  // Use the built-in pareto_type_2_lpdf function
+  real custom_lomax_lpdf(real y, real mu, real lambda, real alpha) {
+    return pareto_type_2_lpdf(y | 0, lambda, alpha);
+  }
+  
+  real custom_pareto_rng(real mu, real lambda, real alpha) {
+    return pareto_type_2_rng(0, lambda, alpha);
+  }
+"
+```
+
+```{r}
+f <- bf(error.y ~ 0, 
+        family = lomax_family)
+
+# mu has log-link, so we don't pose any bounds on it 
+p <- c(
+  prior(normal(0, 1), class = alpha), 
+  prior(normal(0, 1), class = lambda)
+)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+  get_prior(f, data = .)
+
+task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+  make_stancode(f, data = ., prior = p)
+```
+
+Fit the model: 
+
+```{r}
+#| output: false 
+s.2.va.y.2 <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  brm(
+    formula = f,
+    data = .,
+    family = lomax_family,
+    prior = p,
+    stanvars = stanvar(scode = stan_funs, block = "functions"),
+    chains = 4,
+    # file = "models/s.2.va.y.2", 
+    # init = list()
+    # control = list(adapt_delta = 0.95)
+  )
+```
+
+Check fit and posterior check: 
+
+```{r}
+summary(s.2.va.y.2)
+```
+
+
 ### Exponential Distribution
 
 Math model: 
@@ -266,18 +345,7 @@ Math model:
 $$\text{error}_i \sim \text{Exponential}(\lambda)$$
 $$\log(\lambda) \sim \mathcal{N}(0, 1)$$
 
-```{r}
-task2_df %>% mutate(phy.error.x = phy.select.x - phy.ans.x, 
-                    phy.error.y = phy.select.y - phy.ans.y) %>% 
-  ggplot(aes(x = phy.error.y)) + geom_dots()
 
-task2_df %>% mutate(phy.error.x = phy.select.x - phy.ans.x, 
-                    phy.error.y = phy.select.y - phy.ans.y, 
-                    pixel.error.y = pixel.select.y - pixel.ans.y) %>% 
-  select(pixel.error.y) %>% 
-  # ggplot(aes(x = pixel.error.y)) + geom_swarm()
-  filter(pixel.error.y == 0)
-```
 
 ```{r}
 f <- bf(error.y ~ 1, 
