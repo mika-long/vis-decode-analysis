@@ -29,6 +29,8 @@ library(tidybayes)
 
 # Set up 
 
+Filter out participant whose selection's correlation to the actual answer has correlation < 0.5. 
+
 read in data and write functions for processing: 
 
 ```{r}
@@ -40,7 +42,7 @@ df1 <- read.csv("pilot-01.csv") %>% as_tibble(.)
 df <- read.csv("pilot-02.csv") %>% as_tibble(.) %>% 
   bind_rows(df1)
 
-exclude_participants <- c("67fd4f955123c6d79ae66a3a", "67eedf7be13ffb77c677d4dd")
+exclude_participants <- c("67fd4f955123c6d79ae66a3a", "67eedf7be13ffb77c677d4dd", "6443ebb84fc33e703937a6f9")
 
 task_df <- df %>% filter(status == "completed") %>% 
   select(participantId, trialId, responseId, answer) %>%
@@ -168,8 +170,19 @@ task1_df <- task_df %>% filter(task == "task1") %>% # task_df
 # calculate correlation 
 
 task1_df %>% group_by(participantId) %>% 
-  summarise(correlation.x = cor(data.select.x, data.ans.x))
+  summarise(correlation.x = cor(data.select.x, data.ans.x)) %>% 
+  mutate(mean = mean(correlation.x), sd = sd(correlation.x), 
+         lb = mean - 2 * sd, ub = mean + 2 * sd) %>% 
+  filter(correlation.x  < lb)
 ```
+
+```{r}
+task1_df %>% filter(participantId == "67f44a0314ad081a761de62c") %>% 
+  ggplot(aes(x = data.select.x, y = data.select.y)) + 
+  geom_point() + xlim(-5, 5) + ylim(0, 1) + 
+  geom_point(data = filter(task1_df, participantId == "67f44a0314ad081a761de62c"), aes(x = data.ans.x, color = "answer"))
+```
+
 
 
 Plotting selection, answer, and `x` coordinate for highest point against lambda: 
@@ -336,10 +349,7 @@ task3_df <- task_df %>% filter(task == "task3") %>%
 ```
 
 ```{r}
-task3_df %>% group_by(participantId) %>% 
-  summarise(correlation.y = cor(data.select.y, data.ans.y, method = "pearson"))
-
-# standard deviation is zero lol 
+task3_df %>% filter(abs(data.select.y - 0.5) > 0.1)
 ```
 
 
@@ -568,6 +578,14 @@ task5_df %>% group_by(participantId) %>%
   summarise(correlation.x = cor(data.select.x, data.ans.x), 
             correlation.y = cor(data.select.y, data.ans.y))
 ```
+
+```{r}
+task5_df %>% filter(participantId == "6443ebb84fc33e703937a6f9") %>% 
+  ggplot(aes(x = data.ans.x, y = data.ans.y, color = "answer")) + 
+  geom_point() + 
+  geom_point(data = filter(task5_df, participantId == "6443ebb84fc33e703937a6f9"), aes(x = data.select.x, y = data.select.y, color = "select"))
+```
+
 
 
 Verify that the results are in the right scale: 

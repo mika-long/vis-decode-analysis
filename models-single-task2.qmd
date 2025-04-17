@@ -174,7 +174,9 @@ Checking relations, focusing on the **y** axes:
 task2_df %>% ggplot(aes(y = phy.ans.y - phy.select.y, x = dist_to_screen)) + 
   geom_point()
 
-task2_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + 
+task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>% 
+  mutate(error_va = ifelse(error_va < tolerance, 0, error_va)) %>% 
+  ggplot(aes(x = error_va)) + 
   geom_dots()
 
 task2_df %>% ggplot(aes(y = va.ans.y - va.select.y, x = dist_to_screen)) + 
@@ -294,12 +296,14 @@ stan_funs <- "
 
 ```{r}
 f <- bf(error.y ~ 0, 
+        lambda ~ 1, 
+        alpha ~ 1, 
         family = lomax_family)
 
 # mu has log-link, so we don't pose any bounds on it 
 p <- c(
-  prior(normal(0, 1), class = alpha), 
-  prior(normal(0, 1), class = lambda)
+  prior(normal(0, 1), class = Intercept, dpar = alpha), 
+  prior(normal(0, 1), class = Intercept, dpar = lambda)
 )
 ```
 
@@ -318,6 +322,7 @@ Fit the model:
 ```{r}
 #| output: false 
 s.2.va.y.2 <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  mutate(error.y = ifelse(error.y < 1e-10, 0, error.y)) %>% 
   brm(
     formula = f,
     data = .,
@@ -358,8 +363,21 @@ posterior_predict_custom_lomax <- function(i, draws, ...) {
   custom_lomax_rng(0, 1, alpha)
 }
 
-pp_check(s.2.va.y.2, ndraws = 100) + xlim(0, 0.01)
+pp_check(s.2.va.y.2, ndraws = 100) + xlim(0, 0.5) # hmm can't really tell which one is better ... 
 ```
+
+```{r}
+s.2.va.y.2 %>% get_variables(.)
+
+s.2.va.y.2 %>% spread_draws(b_lambda_Intercept, b_alpha_Intercept) %>% 
+  mutate(lambda = exp(b_lambda_Intercept)) %>% 
+  pivot_longer(cols = lambda) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+```
+
+Some very small number ... 
+
 
 
 ### Exponential Distribution
