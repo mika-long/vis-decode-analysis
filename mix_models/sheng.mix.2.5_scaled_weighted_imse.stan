@@ -39,7 +39,7 @@ model {
     target += normal_lpdf(
       x[n] |
       lambda[n] * (x_med[n] + mu_med) + (1 - lambda[n]) * (x_mod[n] + mu_mod),
-      lambda[n] * sigma_med + (1 - lambda[n]) * sigma_mod
+      sqrt((lambda[n] * sigma_med)^2 + ((1 - lambda[n]) * sigma_mod)^2)
     );
   }
 }
@@ -52,13 +52,13 @@ generated quantities {
     log_lik[n] = normal_lpdf(
       x[n] |
       lambda[n] * (x_med[n] + mu_med) + (1 - lambda[n]) * (x_mod[n] + mu_mod),
-      lambda[n] * sigma_med + (1 - lambda[n]) * sigma_mod
+      sqrt(lambda[n] * sigma_med^2 + (1 - lambda[n]) * sigma_mod^2)
     );
 
     // Generate posterior predictive samples
     y_rep[n] = normal_rng(
       lambda[n] * (x_med[n] + mu_med) + (1 - lambda[n]) * (x_mod[n] + mu_mod),
-      lambda[n] * sigma_med + (1 - lambda[n]) * sigma_mod
+      sqrt(lambda[n] * sigma_med^2 + (1 - lambda[n]) * sigma_mod^2)
     );
   }
 }
