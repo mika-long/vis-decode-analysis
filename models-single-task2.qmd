@@ -378,7 +378,60 @@ s.2.va.y.2 %>% spread_draws(b_lambda_Intercept, b_alpha_Intercept) %>%
 
 Some very small number ... 
 
+### Multiple participants 
 
+```{r}
+f <- bf(error.y ~ 0, 
+        lambda ~ (1 | participantId), 
+        alpha ~ (1 | participantId), 
+        family = lomax_family)
+
+p <- c(
+  prior(normal(0, 1), class = Intercept, dpar = alpha), 
+  prior(normal(0, 1), class = Intercept, dpar = lambda), 
+  prior(normal(0, 1), class = sd, group = participantId, dpar = alpha, lb = 0), 
+  prior(normal(0, 1), class = sd, group = participantId, dpar = lambda, lb = 0)
+)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+  get_prior(f, data = .)
+
+task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+  make_stancode(f, data = ., prior = p)
+```
+
+Fit the model: 
+
+```{r}
+#| output: false 
+m.2.va.y.2 <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  mutate(error.y = ifelse(error.y < 1e-10, 0, error.y)) %>% 
+  brm(
+    formula = f,
+    data = .,
+    family = lomax_family,
+    prior = p,
+    stanvars = stanvar(scode = stan_funs, block = "functions"),
+    chains = 4,
+    control = list(adapt_delta = 0.99), 
+    iter = 4000,
+  )
+```
+
+Check fit and posteiror: 
+
+```{r}
+summary(m.2.va.y.2)
+plot(m.2.va.y.2)
+pp_check(m.2.va.y.2, ndraws = 200) + xlim(0, 0.5)
+```
+
+
+---
 
 ### Exponential Distribution
 
