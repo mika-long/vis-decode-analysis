@@ -163,6 +163,8 @@ task5_df <- task_df %>% filter(task == "task5") %>% # or use task_df for full
 
 Math: 
 
+TODO --- we probably need an intercept ... 
+
 $$\begin{align*}
 \texttt{error}_i &\sim \mathcal{N}(0, \sigma_{i, \text{PID}[i]}) \\ 
 \log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.y}_i) \\ 
@@ -174,10 +176,11 @@ $$\begin{align*}
 Formula and prior: 
 
 ```{r}
-f <- bf(error_va ~ 0, 
+f <- bf(error_va ~ 1, 
         sigma ~ (1 | participantId) + offset(log(va.ans.y)))
  
 p <- c(
+  prior(normal(0, 1), class = Intercept),
   prior(normal(0, 1), class = Intercept, dpar = "sigma"), 
   prior(cauchy(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
 )
@@ -205,9 +208,7 @@ Fit model:
 #| output: false 
 m.5.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   # account for numerical precision 
-  # mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
-  # account for bugs in task 5 
-  filter(va.ans.y != 0) %>% 
+  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
   brm(
     formula = f,
     data = .,
@@ -216,7 +217,7 @@ m.5.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     chains = 4, 
     # cores = 4,
     control = list(adapt_delta = 0.99),
-    # iter = 6000, 
+    iter = 6000, 
     # file = "models/s.5.va", 
     save_pars = save_pars(all = TRUE)
 )
@@ -242,6 +243,38 @@ m.5.va %>%
   ggplot(aes(x = b_sigma)) + 
   stat_halfeye()
 ```
+
+Plot existing data on top of prediction: 
+
+TODO --- Fix the following part 
+
+```{r}
+# for an average participant 
+task3_df %>%
+  mutate(error_va = va.select.y - va.ans.y) %>% 
+  # group_by(participantId) %>% 
+  data_grid(va.ans.x = seq_range(va.ans.x, n = 101)) %>% 
+  mutate(error_va = 0) %>% 
+  add_epred_draws(m3, dpar = "sigma", re_formula = NA)
+
+
+task3_df %>% add_epred_draws(m3) %>% 
+  ggplot(aes(x = .epred)) + stat_halfeye()
+
+prediction_grid <- task3_df %>% data_grid(va.ans.x = seq_range(va.ans.x, n = 50)) %>% 
+  add_predicted_draws(m3, re_formula = NA, ndraws = 100)
+
+ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) + 
+  stat_lineribbon(
+    .width = c(.95, .80, .50),
+    alpha = 0.5
+  ) + scale_fill_brewer(palette = "Blues") + 
+  geom_point(data = task3_df, aes(y = va.ans.y - va.select.y, x = va.ans.x), alpha = 0.8) +
+  labs(title = "Task 3", y = "Signed error", x = "Distance to Y-Axis")
+
+```
+
+---
 
 ## Project to Y-Axis 
 

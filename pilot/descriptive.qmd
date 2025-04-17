@@ -53,7 +53,7 @@ task_df <- df %>% filter(status == "completed") %>%
   rename(data.select.x = location.x, 
          data.select.y = location.y,
          pixel.select.x = pixel.x, 
-         pixel.select.y = pixel.y) # %>% 
+         pixel.select.y = pixel.y) %>% 
   filter(!participantId %in% exclude_participants)
 ```
 
