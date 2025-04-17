@@ -28,7 +28,7 @@ transformed parameters {
     real diff = x_med[n] - x_mod[n];
     real sum_var = sqrt(sigma_med * sigma_med + 2 * sigma_mod * sigma_mod);
 
-    lambda[n] = inv_logit(beta * (abs(diff) / sum_var + alpha));
+    lambda[n] = inv_logit(beta * (abs(diff) / sum_var - alpha));
   }
 }
 

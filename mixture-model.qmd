@@ -743,7 +743,7 @@ Save the stan model:
 fit$save_object(file = "mix_models/sheng.mix.2.5.rds")
 ```
 
-## lambda = inv-logit(beta * (abs(x.med - x.mod) / var + alpha))
+## lambda = inv-logit(beta * (abs(x.med - x.mod) / var - alpha))
 
 ```{r}
 #| eval: false 
@@ -758,7 +758,8 @@ Fit the model:
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
-  parallel_chains = 4)
+  parallel_chains = 4, 
+  adapt_delta = 0.95)
 ```
 
 ```{r}
