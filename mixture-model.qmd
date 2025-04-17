@@ -20,6 +20,7 @@ theme_set(theme_minimal())
 # model
 library(brms)
 # plot results 
+library(posterior)
 library(tidybayes)
 library(cmdstanr)
 library(sgt)
@@ -207,13 +208,28 @@ Posterior predictive checks:
 #| column: margin 
 summary <- fit$summary()
 
-custom_pp_check <- function(fitted_model) {
-  y_rep <- fitted_model$draws("y_rep", format = "matrix")
-  y <- fitted_model$draws("x_org", format = "matrix")[1, ] %>% as.vector(.)
-  bayesplot::ppc_dens_overlay(y, y_rep[1:100, ])
+custom_pp_check <- function(
+  fitted_model, 
+  fun = bayesplot::ppc_dens_overlay, 
+  ndraws = 100, 
+  transform = identity,
+  ...
+) {
+  y_rep <- as_draws_rvars(fitted_model)$y_rep |> 
+    transform() |>
+    as_draws_matrix()
+  if (!is.null(ndraws)) {
+    y_rep = y_rep |>
+      merge_chains() |>
+      resample_draws(ndraws = ndraws) 
+  }
+  y <- fitted_model$draws("x_org", format = "matrix")[1, ] |>
+    as.vector() |>
+    transform()
+  fun(y, y_rep, ...)
 }
 
-custom_pp_check(fit)
+custom_pp_check(fit, transform = \(x) x - task1_df$va.med.x)
 ```
 
 Checking the posterior results: 
@@ -527,8 +543,6 @@ Posterior predictive checks:
 ```{r}
 #| column: margin 
 summary <- fit$summary()
-
-custom_pp_check(fit)
 ```
 
 Checking the posterior results: 
@@ -568,18 +582,18 @@ fit$save_object(file = "mix_models/sheng.mix.2.4.rds")
 Math model: 
 
 $$\begin{align*}
-p_X(x_i) & =  \theta \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \theta) \cdot \Pr(\hat{x}^{\text{mod}}_i) \\
+\hat{x}_i & =  w_i \cdot \hat{x}^{\text{med}}_i + (1 - w_i) \cdot \hat{x}^{\text{mod}}_i \\
 \hat{x}^{\text{med}}_i &\sim \mathcal{N}(x^\text{med}_i, (\sigma^\text{med})^2) \\ 
-\hat{x}^{\text{mod}}_i &\sim \text{Laplace}(x^\text{mod}_i, (\sigma^{\text{mod}})^2) \\ 
-\theta &= \text{logit}^{-1}(\alpha + \beta \times |x^{\text{med}}_i - x^{\text{mod}}_i| ) \\ 
-\beta &\sim \mathcal{N}(0, 1), \alpha \sim ...
+\hat{x}^{\text{mod}}_i &\sim \mathcal{N}(x^\text{mod}_i, (\sigma^{\text{mod}})^2) \\ 
+w_i &= \frac{\frac{1}{\operatorname{MSE}(\hat{x}^{\text{med}}_i)}}{\frac{1}{\operatorname{MSE}(\hat{x}^{\text{med}}_i)} + \frac{1}{\operatorname{MSE}(\hat{x}^{\text{mod}}_i)}}\\
+&= \frac{\frac{1}{(\sigma^\text{med})^2}}{\frac{1}{(\sigma^\text{med})^2} + \frac{1}{(x^{\text{med}}_i - x^{\text{mod}}_i)^2 + (\sigma^\text{mod})^2}}
 \end{align*}$$
 
 Read stan model: 
 
 ```{r}
 #| eval: false 
-model <- cmdstan_model("mix_models/sheng.mix.2.5.stan")
+model <- cmdstan_model("mix_models/sheng.mix.2.5_scaled_weighted_imse.stan")
 ``` 
 
 Fit the model: 
@@ -593,43 +607,54 @@ fit <- model$sample(
   parallel_chains = 4)
 ```
 
-```{r}
-#| echo: false
-#| output: false 
-fit <- readRDS("mix_models/sheng.mix.2.5.rds")
-```
-
 Posterior predictive checks: 
 
 ```{r}
 #| column: margin 
 summary <- fit$summary()
+```
 
+```{r}
 custom_pp_check(fit)
 ```
+
+```{r}
+custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+```
+
+```{r}
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.med.x, ndraws = NULL)
+```
+
+
+```{r}
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+```
+
 
 Checking the posterior results: 
 
 ```{r}
 #| column: margin 
 
-fit$draws() %>% 
-  spread_draws(`alpha`, `beta`) %>%
-  pivot_longer(4:5) %>%
-  ggplot(aes(x = value, y = name)) + 
+if ("alpha" %in% get_variables(fit)) {
+  fit$draws() %>% 
+    spread_draws(`alpha`, `beta`) %>%
+    pivot_longer(4:5) %>%
+    ggplot(aes(x = value, y = name)) + 
+    stat_halfeye()
+}
+
+fit %>% 
+  gather_draws(`mu_med`, `mu_mod`) %>% 
+  ggplot(aes(x = .value, y = .variable)) + 
   stat_halfeye()
 
-fit$draws() %>% 
-  spread_draws(`mu_med`, `mu_mod`) %>% 
-  pivot_longer(4:5) %>% 
-  ggplot(aes(x = value, y = name)) + 
-  stat_halfeye()
-
-fit$draws() %>% 
-  spread_draws(`sigma_med`, `sigma_mod`) %>% 
-  pivot_longer(4:5) %>% 
-  ggplot(aes(x = value, y = name)) + 
-  stat_halfeye()
+fit %>% 
+  gather_draws(`sigma_med`, `sigma_mod`) %>% 
+  ggplot(aes(x = .value, y = .variable)) + 
+  stat_halfeye() +
+  expand_limits(x = 0)
 
 fit$code()
 ```
@@ -647,10 +672,31 @@ summary %>% filter(str_detect(variable, "^lambda")) %>%
 ```{r}
 task1_df %>% mutate(mix_paramter = as_draws_rvars(fit)$lambda) %>% 
   unnest_rvars() %>% 
-  ggplot(aes(x = param.lambda, y = mix_paramter)) + 
+  ggplot(aes(x = va.med.x - va.mod.x, y = mix_paramter)) + 
   stat_ribbon() + ylim(0, 1)
 ```
 
+```{r}
+task1_df %>% 
+  mutate(
+    inverse_mse_med = as_draws_rvars(fit)$inverse_mse_med, 
+    inverse_mse_mod = as_draws_rvars(fit)$inverse_mse_mod
+  ) |>
+  pivot_longer(starts_with("inverse_mse_")) |>
+  unnest_rvars() |>
+  ggplot(aes(x = va.med.x - va.mod.x)) + 
+  stat_ribbon(aes(y = sqrt(1/value), fill = name, fill_ramp = after_stat(level))) 
+```
+
+
+```{r}
+task1_df %>% mutate(pred = as_draws_rvars(fit)$y_rep) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = va.med.x - va.mod.x, y = pred - va.med.x)) + 
+  stat_lineribbon() +
+  geom_point(aes(y = va.select.x - va.med.x)) +
+  scale_fill_brewer()
+```
 
 
 Save the stan model: 
