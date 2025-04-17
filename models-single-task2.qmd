@@ -286,7 +286,7 @@ stan_funs <- "
     return pareto_type_2_lpdf(y | 0, lambda, alpha);
   }
   
-  real custom_pareto_rng(real mu, real lambda, real alpha) {
+  real custom_lomax_rng(real mu, real lambda, real alpha) {
     return pareto_type_2_rng(0, lambda, alpha);
   }
 "
@@ -335,6 +335,30 @@ Check fit and posterior check:
 
 ```{r}
 summary(s.2.va.y.2)
+```
+
+```{r}
+plot(s.2.va.y.2)
+```
+
+```{r}
+expose_functions(s.2.va.y.2, vectorize = TRUE)
+
+# Define the posterior_predict function in R as per vignette
+posterior_predict_custom_lomax <- function(i, draws, ...) {
+  lambda <- draws$dpars$lambda[i]
+  alpha <- draws$dpars$alpha[i]
+  # Use Stan's rng function indirectly via brms
+  if (is.na(lambda)){
+    lambda <- 1e-10
+  }
+  if (is.na(alpha)){
+    alpha <- 0.12
+  }
+  custom_lomax_rng(0, 1, alpha)
+}
+
+pp_check(s.2.va.y.2, ndraws = 100) + xlim(0, 0.01)
 ```
 
 
