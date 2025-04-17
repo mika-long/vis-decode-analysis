@@ -20,12 +20,13 @@ library(sgt)
 library(numDeriv)
 library(ggdist)
 # setting the theme 
-theme_set(theme_minimal())
+theme_set(theme_minimal() + theme(text = element_text(size = 8)))
 # model
 library(brms)
 # plot results 
 library(tidybayes)
 library(modelr)
+library(patchwork)
 ```
 
 # Set up
@@ -163,24 +164,23 @@ task5_df <- task_df %>% filter(task == "task5") %>% # or use task_df for full
 
 Math: 
 
-TODO --- we probably need an intercept ... 
-
 $$\begin{align*}
-\texttt{error}_i &\sim \mathcal{N}(0, \sigma_{i, \text{PID}[i]}) \\ 
+\texttt{error}_i &\sim \mathcal{N}(\mu_\text{PID}[i], \sigma_{i, \text{PID}[i]}) \\ 
+\mu_j &\sim \mathcal{N}{\overline{\mu}, \overline{\sigma}^2)\\ 
 \log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.y}_i) \\ 
 \alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
-\mu_\alpha &\sim N(0, 1) \\ 
-\sigma_\alpha &\sim \text{Half-Cauchy}(0, 1)
+\mu_\alpha, \bar{\mu} &\sim N(0, 1) \\ 
+\sigma_\alpha, \bar{\sigma} &\sim \text{Half-Cauchy}(0, 1)
 \end{align*}$$
 
 Formula and prior: 
 
 ```{r}
-f <- bf(error_va ~ 1, 
+f <- bf(error_va ~ 0,  # could also be error_va ~ 1 or error_va ~ (1 | participantId)
         sigma ~ (1 | participantId) + offset(log(va.ans.y)))
  
 p <- c(
-  prior(normal(0, 1), class = Intercept),
+  # prior(normal(0, 1), class = Intercept),
   prior(normal(0, 1), class = Intercept, dpar = "sigma"), 
   prior(cauchy(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
 )
@@ -216,8 +216,8 @@ m.5.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     prior = p,
     chains = 4, 
     # cores = 4,
-    control = list(adapt_delta = 0.99),
-    iter = 6000, 
+    control = list(adapt_delta = 0.95),
+    # iter = 6000, 
     # file = "models/s.5.va", 
     save_pars = save_pars(all = TRUE)
 )
@@ -246,31 +246,31 @@ m.5.va %>%
 
 Plot existing data on top of prediction: 
 
-TODO --- Fix the following part 
-
 ```{r}
 # for an average participant 
-task3_df %>%
-  mutate(error_va = va.select.y - va.ans.y) %>% 
-  # group_by(participantId) %>% 
-  data_grid(va.ans.x = seq_range(va.ans.x, n = 101)) %>% 
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  # account for numerical precision 
+  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  data_grid(va.ans.y = seq_range(va.ans.y, n = 101)) %>% 
   mutate(error_va = 0) %>% 
-  add_epred_draws(m3, dpar = "sigma", re_formula = NA)
+  add_epred_draws(m.5.va, dpar = "sigma", re_formula = NA)
 
+prediction_grid <- task5_df %>% data_grid(va.ans.y = seq_range(va.ans.y, n = 50)) %>% 
+  add_predicted_draws(m.5.va, re_formula = NA, ndraws = 100)
 
-task3_df %>% add_epred_draws(m3) %>% 
-  ggplot(aes(x = .epred)) + stat_halfeye()
-
-prediction_grid <- task3_df %>% data_grid(va.ans.x = seq_range(va.ans.x, n = 50)) %>% 
-  add_predicted_draws(m3, re_formula = NA, ndraws = 100)
-
-ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) + 
+ggplot(prediction_grid, aes(x = va.ans.y, y = .prediction)) + 
   stat_lineribbon(
     .width = c(.95, .80, .50),
     alpha = 0.5
   ) + scale_fill_brewer(palette = "Blues") + 
-  geom_point(data = task3_df, aes(y = va.ans.y - va.select.y, x = va.ans.x), alpha = 0.8) +
-  labs(title = "Task 3", y = "Signed error", x = "Distance to Y-Axis")
+  geom_point(data = task5_df, aes(y = va.select.x - va.ans.x, x = va.ans.y), alpha = 0.8) +
+  labs(title = "Task 5 (Project to X)", y = "Signed Error", x = "Distance to X-Axis") -> p1 # + 
+  # theme(text = element_text(family = "Helvetica Neue")) -> p
+
+p1
+
+# save 
+ggsave("task5-project-x.svg", p1, height = 5, width = 10, units = "cm", dpi = 300)
 
 ```
 
@@ -314,6 +314,66 @@ task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
 
 task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
   make_standata(f, data = ., prior = p, family = gaussian())
+```
+
+Fit model: 
+
+```{r}
+#| output: false 
+m.5.y.va <- task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
+  # account for numerical precision 
+  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p,
+    chains = 4, 
+    # cores = 4,
+    control = list(adapt_delta = 0.95),
+    # iter = 6000, 
+    # file = "models/s.5.va", 
+    save_pars = save_pars(all = TRUE)
+)
+```
+
+Check fit and posterior: 
+
+```{r}
+summary(m.5.y.va)
+plot(m.5.y.va)
+pp_check(m.5.y.va, ndraws = 100)
+```
+
+Plot results: 
+
+```{r}
+prediction_grid <- task5_df %>% data_grid(va.ans.x = seq_range(va.ans.x, n = 50)) %>% 
+  add_predicted_draws(m.5.y.va, re_formula = NA, ndraws = 100)
+
+ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) + 
+  stat_lineribbon(
+    .width = c(.95, .80, .50),
+    alpha = 0.5
+  ) + scale_fill_brewer(palette = "Blues") + 
+  geom_point(data = task5_df, aes(y = va.select.y - va.ans.y, x = va.ans.x), alpha = 0.8) + 
+  ylim(-0.5, 0.5) + 
+  labs(title = "Task 5 (Project to Y)", y = "Signed Error", x = "Distance to Y-Axis") -> p2 # + 
+  # theme(text = element_text(family = "Helvetica Neue")) -> p
+
+p2
+
+ggsave("task5-project-y.svg", p2, height = 5, width = 10, units = "cm", dpi = 300)
+```
+
+Combine and save: 
+
+```{r}
+combined <- p1 / p2
+
+combined <- (p1 + theme(legend.position = "top")) + (p2 + theme(legend.position = "top"))
+
+ggsave("task5-combined.svg", combined, height = 8, width = 10, units = "cm", dpi = 300)
 ```
 
 
@@ -389,16 +449,16 @@ Fit model:
 m3 <- task3_df %>%
   mutate(error_va = va.select.y - va.ans.y, 
          log.va.ans.x = log(va.ans.x)) %>%
-  # mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>%
+  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>%
   brm(
     formula = f,
     data = .,
     family = gaussian(),
     prior = p,
     chains = 4,
-    file="models/m3",
+    # file="models/m3",
     save_pars = save_pars(all=TRUE), 
-    control = list(adapt_delta = 0.99)
+    control = list(adapt_delta = 0.95)
 )
 ```
 
@@ -406,6 +466,7 @@ Check fit and posterior:
 
 ```{r}
 summary(m3)
+plot(m3)
 pp_check(m3, ndraws = 100)
 ```
 
@@ -445,7 +506,15 @@ ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) +
     alpha = 0.5
   ) + scale_fill_brewer(palette = "Blues") + 
   geom_point(data = task3_df, aes(y = va.ans.y - va.select.y, x = va.ans.x), alpha = 0.8) +
-  labs(title = "Task 3", y = "Signed error", x = "Distance to Y-Axis")
+  labs(title = "Task 3", y = "Signed error", x = "Distance to Y-Axis") -> p3
 
+
+p1 / p2 / p3 -> combined 
+```
+
+save: 
+
+```{r}
+ggsave("t3t5-combined.svg", plot = combined, height = 10, width = 10, units = "cm")
 ```
 
