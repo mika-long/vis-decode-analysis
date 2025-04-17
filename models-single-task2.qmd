@@ -244,6 +244,13 @@ task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = flat)) +
 ```
 :::
 
+# Overview 
+
+- First we model the error measured on the Y-Axis 
+  - Single participant, multiple participants, Lomax distribution 
+- Then we model the error measured on the X-Axis 
+- Then we try to go from the error measured on the Y-Axis to the error measured on the X-Axis 
+
 ## Task 2 - Vis Angle - error on Y 
 
 Recall the trends: 
@@ -430,194 +437,6 @@ plot(m.2.va.y.2)
 pp_check(m.2.va.y.2, ndraws = 200) + xlim(0, 0.5)
 ```
 
-
----
-
-### Exponential Distribution
-
-Math model: 
-
-$$\text{error}_i \sim \text{Exponential}(\lambda)$$
-$$\log(\lambda) \sim \mathcal{N}(0, 1)$$
-
-
-
-```{r}
-f <- bf(error.y ~ 1, 
-        family = exponential())
-
-# mu has log-link, so we don't pose any bounds on it 
-p <- prior(normal(0, 1), class = Intercept)
-```
-
-```{r}
-#| eval: false 
-#| echo: false 
-task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
-  get_prior(f, data = .)
-
-task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
-  make_stancode(f, data = ., prior = p)
-```
-
-Fit the model:
-
-```{r}
-#| output: false 
-s.2.va.y <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
-  brm(formula = f, 
-      prior = prior(normal(0, 1), class = Intercept), 
-      cores = 4, 
-      file = "models/s.2.va.y"
-      )
-```
-
-Check fit and posterior: 
-
-```{r}
-summary(s.2.va.y)
-```
-
-```{r}
-plot(s.2.va.y)
-```
-
-```{r}
-#| code-fold: true 
-#| warning: false 
-pp_check(s.2.va.y, ndraws = 100)
-```
-
-check the posterior: 
-
-```{r}
-s.2.va.y %>% spread_draws(b_Intercept) %>% 
-  mutate(rate = exp(b_Intercept)) %>% 
-  ggplot(aes(x = rate)) + stat_halfeye()
-```
-
-### Pareto Distribution
-
-```{r}
-# Define the Pareto custom family
-pareto_family <- custom_family(
-  "custom_pareto",
-  dpars = c("mu", "shape"),  # parameters: mu = scale, shape = alpha
-  links = c("log", "log"),   # log links ensure parameters are positive
-  lb = c(0, 0),              # lower bounds for both parameters
-  type = "real"
-)
-
-# The Stan code for the Pareto log-likelihood function
-# Note: Stan already has a built-in pareto_lpdf function
-stan_funs <- "
-  // Use the built-in pareto_lpdf function
-  real custom_pareto_lpdf(real y, real mu, real shape) {
-    return pareto_lpdf(y | mu, shape);
-  }
-  
-  real custom_pareto_rng(real mu, real shape) {
-    return mu * pow(1 - uniform_rng(0, 1), -1/shape);
-  }
-"
-```
-
-```{r}
-# Define the formula for the model
-# Here we're modeling both parameters as constants
-f <- bf(
-  error.y ~ 1,  # Intercept-only model for mu (scale parameter)
-  shape ~ 1  # Intercept-only model for shape parameter
-)
-
-p <- c(
-    # Prior for the scale parameter (on log scale)
-    prior(constant(log(7.028422e-11)), class = "Intercept"),
-    # Prior for the shape parameter (on log scale)
-    prior(normal(0, 1), class = "Intercept", dpar = "shape")
-  )
-```
-
-```{r}
-#| eval: false 
-#| echo: false 
-
-task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
-  get_prior(formula = f, family = pareto_family)
-
-task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
-  make_stancode(formula = f, family = pareto_family, prior = p)
-```
-
-Fit the model: 
-
-```{r}
-#| output: false 
-s.2.va.y.2 <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
-  brm(
-    formula = f,
-    data = .,
-    family = pareto_family,
-    prior = p,
-    stanvars = stanvar(scode = stan_funs, block = "functions"),
-    chains = 4,
-    file = "models/s.2.va.y.2", 
-    # init = list()
-    # control = list(adapt_delta = 0.95)
-  )
-```
-
-Check fit and posterior check: 
-
-```{r}
-summary(s.2.va.y.2)
-```
-
-Define custom functions for `pp_check`: 
-
-```{r}
-
-expose_functions(s.2.va.y.2, vectorize = TRUE)
-
-# Define the posterior_predict function in R as per vignette
-posterior_predict_custom_pareto <- function(i, draws, ...) {
-  mu <- draws$dpars$mu[i]
-  shape <- draws$dpars$shape[i]
-  # Use Stan's rng function indirectly via brms
-  custom_pareto_rng(mu, shape)
-}
-
-pp_check(s.2.va.y.2, ndraws = 100) # + xlim(0, 1)
-```
-
-```{r}
-log_lik_custom_pareto <- function(i, prep){
-  mu <- brms::get_dpar(prep, "mu", i = i)
-  shape <- brms::get_dpar(prep, "shape", i = i)
-  y <- prep$data$Y[i]
-  custom_pareto_lpdf(y, mu, shape)
-}
-```
-
-Let's check the posterior of alpha: 
-
-```{r}
-s.2.va.y.2 %>% spread_draws(b_shape_Intercept) %>% 
-  mutate(alpha = exp(b_shape_Intercept)) %>% 
-  ggplot(aes(x = alpha)) + 
-  stat_halfeye()
-```
-
-
-### Model Comparison 
-
-```{r}
-loo(s.2.va.y, s.2.va.y.2)
-```
-
-Hmm so the pareto distribution does actually fit better. 
-
-
 --- 
 
 ## Go from error on Y to error on X
@@ -719,8 +538,6 @@ d %>% as.data.frame(.) %>%
   ggplot(aes(x = va.x)) + geom_dots()
 ```
 
----
-
 Let's try to generalize this to the original dataset: 
 
 ```{r}
@@ -778,8 +595,6 @@ find_all_x_for_y(0.246, temp_x, temp_y, n_segments = 10)
 # STUCK HERE BECAUSE WE CAN"T FIND IT UGH >>> 
 ```
 
-
-
 Compare this to the actual error on x: 
 
 ```{r}
@@ -793,17 +608,15 @@ task2_df %>% mutate(error.va.x = va.select.x - va.ans.x) %>%
 
 ## Task 2 - Vis Angle - error on X 
 
+### Single Participant 
+
 Math model: 
 
 $$\begin{align}
-\text{error_va}_{i} &\sim \text{Some Distribution}(\mu, \sigma) \\
-\mu &\sim \mathcal{N}(\alpha, \sigma_\mu^2) \\ 
-\sigma &\sim \text{Half-Cauchy}(\beta, \sigma_b^2)
+\text{error_va}_{i} &\sim \text{Laplace}(\mu, b) \\
+\mu &\sim \mathcal{N}(0, 1) \\ 
+b &\sim \text{Half-Cauchy}(0, 1)
 \end{align}$$
-
-We have at least two choices for the "Some Distribution" --- Normal and Laplace. 
-
-### Task 2 - Vis Angle - Laplace distribution 
 
 To fit a laplace distribution, we need to define our own custom distribution, since `brms` does not provide a default defined Laplace distributino. 
 
@@ -823,7 +636,7 @@ real laplace_lpdf(real y, real mu, real sigma) {
 c_family = custom_family(
   "laplace", 
   dpars = c("mu", "sigma"), 
-  links = c("identity", "log"), 
+  links = c("identity", "identity"), 
   lb = c(NA, 0), 
   type = "real"
 )
@@ -831,18 +644,15 @@ c_family = custom_family(
 
 ```{r}
 # single participant 
-f <- bf(error_va ~ 1, 
+f <- bf(error_va ~ 0, 
+        mu ~ 1, 
+        sigma ~ 1, 
         family = c_family)
 
 # define prior 
-p1 <- c(
-  prior(normal(0, 0.5), class = "Intercept"), 
-  prior(cauchy(0, 0.5), class = "sigma", lb = 0)
-)
-
-p2 <- c(
-  prior(lognormal(0, 0.25), class = "Intercept", lb=0), 
-  prior(cauchy(0, 0.5), class = "sigma", lb = 0)
+p <- c(
+  prior(normal(0, 1), class = "Intercept"), 
+  prior(cauchy(0, 1), class = "Intercept", dpar ="sigma", lb = 0)
 )
 ```
 
@@ -859,7 +669,7 @@ get_prior(formula = f,
 task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   make_stancode(formula = f, 
                 data = .,
-                prior = p2, 
+                prior = p, 
                 # stanvars = stanvar(scode = laplace_lpdf, block = "functions")
                 )
 ```
@@ -874,10 +684,10 @@ s.2.va.1 <- task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     formula = f, 
     family = c_family, 
     stanvars = stanvar(scode = laplace_lpdf, block = "functions"), 
-    prior = p1, 
+    prior = p, 
     data = ., 
     chains = 4, 
-    file = "models/s.2.va.1"
+    # file = "models/s.2.va.1"
   )
 ```
 
@@ -914,6 +724,18 @@ posterior_predict_laplace <- function(i, prep, ...) {
 ```{r}
 pp_check(s.2.va.1, ndraws = 100)
 ```
+
+Plot posterior distribution: 
+
+```{r}
+# s.2.va.1 %>% get_variables(.) 
+
+s.2.va.1 %>% spread_draws(b_Intercept, b_sigma_Intercept) %>% 
+  pivot_longer(4:5) %>% 
+  ggplot(aes(x = value, y = name)) + stat_halfeye()
+```
+
+
 
 ### Task 2 - Vis Angle - Normal distribution 
 
@@ -1162,12 +984,3 @@ loo(s.2.va.1, s.2.va.4)
 
 Yes it is! 
 
-
-
-## Task 2 - Physical Model 
-
-TODO? Should this be the right approach or no? 
-
-## Compare Vis Angle Models Against Physical Models 
-
-TODO 
