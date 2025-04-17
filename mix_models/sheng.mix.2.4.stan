@@ -27,7 +27,7 @@ transformed parameters {
     // Calculate difference between mode and median
     real diff = x_med[n] - x_mod[n];
 
-    lambda[n] = inv_logit(alpha + beta * diff);
+    lambda[n] = inv_logit(alpha + beta * abs(diff));
   }
 }
 
@@ -39,7 +39,7 @@ model {
   sigma_med ~ normal(0.15, 0.6);
 
   beta ~ normal(0, 1);
-  alpha ~ normal(-1, 1);
+  alpha ~ normal(0, 1);
   
   // likelihood
   for (n in 1:N) {

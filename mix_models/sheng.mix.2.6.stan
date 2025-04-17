@@ -26,8 +26,9 @@ transformed parameters {
   for (n in 1:N) {
     // Calculate difference between mode and median
     real diff = x_med[n] - x_mod[n];
+    real sum_var = sqrt(sigma_med * sigma_med + 2 * sigma_mod * sigma_mod);
 
-    lambda[n] = inv_logit(alpha + beta * square(diff));
+    lambda[n] = inv_logit(beta * (abs(diff) / sum_var + alpha));
   }
 }
 
@@ -38,8 +39,8 @@ model {
   mu_med ~ normal(0, 0.05);
   sigma_med ~ normal(0.15, 0.6);
 
-  beta ~ normal(0, 2);
-  alpha ~ normal(0, 2);
+  beta ~ normal(0, 1);
+  alpha ~ normal(0, 1);
   
   // likelihood
   for (n in 1:N) {
