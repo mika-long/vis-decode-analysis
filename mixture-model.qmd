@@ -823,9 +823,20 @@ summary %>% filter(str_detect(variable, "^lambda")) %>%
 ```{r}
 task1_df %>% mutate(mix_paramter = as_draws_rvars(fit)$lambda) %>% 
   unnest_rvars() %>% 
-  ggplot(aes(x = param.lambda, y = mix_paramter)) + 
+  ggplot(aes(x = param.lambda, y = )) + 
   ggdist::stat_ribbon() + ylim(0, 1)
 ```
+
+```{r}
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = y_rep)) + 
+  ggdist::stat_lineribbon() +
+  geom_point(aes(y = va.select.x - va.med.x), data = task1_df)
+```
+
+
+
 
 ## Compare all six models 
 
