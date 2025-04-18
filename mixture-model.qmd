@@ -835,6 +835,10 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
   geom_point(aes(y = va.select.x - va.med.x), data = task1_df)
 ```
 
+### Weighted average model 
+
+After talking to Matt, Matt said that the process is more similar to anchor then adjust, instead of choosing to anchor or adjust, so the model might be better with weighted average. 
+
 
 
 
