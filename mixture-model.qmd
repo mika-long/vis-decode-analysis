@@ -856,6 +856,55 @@ fit <- model$sample(
   adapt_delta = 0.95)
 ```
 
+```{r}
+#| echo: false
+#| output: false 
+fit <- readRDS("mix_models/sheng.mix.2.7.rds")
+```
+
+Posterior predictive checks: 
+
+```{r}
+#| column: margin 
+summary <- fit$summary()
+
+custom_pp_check(fit)
+```
+
+Save the stan model: 
+
+```{r}
+#| eval: false 
+
+fit$save_object(file = "mix_models/sheng.mix.2.7.rds")
+```
+
+```{r}
+as_draws_rvars(fit)$w
+```
+
+
+```{r}
+task1_df %>% mutate(weight = as_draws_rvars(fit)$w) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = weight)) + 
+  ggdist::stat_ribbon() + ylim(0, 1)
+```
+
+```{r}
+
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = y_rep)) + 
+  ggdist::stat_ribbon()
+
+
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = y_rep)) + 
+  ggdist::stat_lineribbon() +
+  geom_point(aes(y = va.select.x - va.med.x), data = task1_df)
+```
 
 
 ## Compare all six models 

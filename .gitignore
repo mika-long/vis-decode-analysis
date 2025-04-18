@@ -1,3 +1,4 @@
 models/*
 mix_models/*
 pilot/models/*
+stan_files/*.exe
