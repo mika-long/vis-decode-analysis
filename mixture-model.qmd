@@ -839,6 +839,22 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
 
 After talking to Matt, Matt said that the process is more similar to anchor then adjust, instead of choosing to anchor or adjust, so the model might be better with weighted average. 
 
+```{r}
+#| eval: false 
+model <- cmdstan_model("stan_files//sheng.mix.2.7.stan")
+``` 
+
+Fit the model: 
+
+```{r}
+#| output: false 
+#| eval: false 
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  parallel_chains = 4, 
+  adapt_delta = 0.95)
+```
 
 
 
