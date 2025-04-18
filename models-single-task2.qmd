@@ -735,6 +735,40 @@ s.2.va.1 %>% spread_draws(b_Intercept, b_sigma_Intercept) %>%
   ggplot(aes(x = value, y = name)) + stat_halfeye()
 ```
 
+### Multiple participants 
+
+```{r}
+# single participant 
+f <- bf(error_va ~ 0, 
+        mu ~ (1|participantId), 
+        sigma ~ (1|participantId), 
+        family = c_family)
+
+# define prior 
+p <- c(
+  prior(normal(0, 1), class = "Intercept"), 
+  prior(cauchy(0, 1), class = "Intercept", dpar ="sigma", lb = 0), 
+  prior(normal(0, 1), class = sd, coef = Intercept, group = participantId), 
+  prior()
+)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+
+# get prior
+task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+get_prior(formula = f,
+          data = .)
+
+# get stan code 
+task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  make_stancode(formula = f, 
+                data = .,
+                prior = p, 
+                )
+```
 
 
 ### Task 2 - Vis Angle - Normal distribution 
