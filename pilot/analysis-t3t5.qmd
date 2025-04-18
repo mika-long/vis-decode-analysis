@@ -42,7 +42,7 @@ df1 <- read.csv("pilot-01.csv") %>% as_tibble(.)
 df <- read.csv("pilot-02.csv") %>% as_tibble(.) %>% 
   bind_rows(df1)
 
-exclude_participants <- c("67fd4f955123c6d79ae66a3a", "67eedf7be13ffb77c677d4dd")
+exclude_participants <- c("67fd4f955123c6d79ae66a3a", "67eedf7be13ffb77c677d4dd", "6443ebb84fc33e703937a6f9")
 
 task_df <- df %>% filter(status == "completed") %>% 
   select(participantId, trialId, responseId, answer) %>%
@@ -206,7 +206,7 @@ Fit model:
 
 ```{r}
 #| output: false 
-m.5.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+m.5.x.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   # account for numerical precision 
   mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
   brm(
@@ -217,7 +217,7 @@ m.5.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     chains = 4, 
     # cores = 4,
     control = list(adapt_delta = 0.95),
-    # iter = 6000, 
+    iter = 6000, 
     # file = "models/s.5.va", 
     save_pars = save_pars(all = TRUE)
 )
@@ -226,9 +226,9 @@ m.5.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
 Check fit and posterior: 
 
 ```{r}
-summary(m.5.va)
-plot(m.5.va)
-pp_check(m.5.va, ndraws = 100)
+summary(m.5.x.va)
+plot(m.5.x.va)
+pp_check(m.5.x.va, ndraws = 100)
 ```
 
 Average effect: 
@@ -237,8 +237,7 @@ Average effect:
 m.5.va %>% get_variables(.)
 
 # Extract posterior samples using spread_draws
-m.5.va %>%
-  spread_draws(b_sigma_Intercept) %>% 
+m.5.va %>% spread_draws(b_sigma_Intercept) %>% 
   mutate(b_sigma = exp(b_sigma_Intercept)) %>% 
   ggplot(aes(x = b_sigma)) + 
   stat_halfeye()
@@ -256,7 +255,7 @@ task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   add_epred_draws(m.5.va, dpar = "sigma", re_formula = NA)
 
 prediction_grid <- task5_df %>% data_grid(va.ans.y = seq_range(va.ans.y, n = 50)) %>% 
-  add_predicted_draws(m.5.va, re_formula = NA, ndraws = 100)
+  add_predicted_draws(m.5.x.va, re_formula = NA, ndraws = 100)
 
 ggplot(prediction_grid, aes(x = va.ans.y, y = .prediction)) + 
   stat_lineribbon(
