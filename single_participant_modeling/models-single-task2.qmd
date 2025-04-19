@@ -165,7 +165,7 @@ task2_df <- single_pid_df %>% filter(task == "task2") %>%
   mutate(flat = (abs(data.left.grad) + abs(data.right.grad))/2)
 ```
 
-Checking relations, focusing on the **y** axes: 
+Checking relations, focusing on the **Y** Axis: 
 
 ```{r}
 #| layout-ncol: 2
@@ -187,7 +187,7 @@ task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
 task2_df %>% ggplot(aes(x = (phy.ans.y - phy.select.y) / dist_to_screen)) + geom_dots()
 ```
 
-Checking relations, ocusing on the **x** axes: 
+Checking relations, ocusing on the **X** Axis: 
 
 ```{r}
 #| layout-ncol: 2
@@ -247,32 +247,18 @@ task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = flat)) +
 # Overview 
 
 - First we model the error measured on the Y-Axis 
-  - Single participant, multiple participants, Lomax distribution 
+  - Lomax^[Pareto Type II] distribution, Exponential Distribution  
 - Then we model the error measured on the X-Axis 
+  - Laplace distribution, Normal Distribution
 - Then we try to go from the error measured on the Y-Axis to the error measured on the X-Axis 
 
 ## Task 2 - Vis Angle - error on Y 
 
-Recall the trends: 
-
-```{r}
-#| code-fold: true 
-
-task2_df %>% mutate(error.y = va.ans.y - va.select.y, error.x = va.ans.x - va.select.x) %>% 
-  ggplot(aes(y = error.y, x = error.x)) + # geom_dots()
-  geom_point(alpha = 0.5)
-
-task2_df %>% mutate(error.y = va.ans.y - va.select.y, error.x = va.ans.x - va.select.x) %>% 
-  filter(error.y < 0) %>% 
-  select(error.y, data.ans.y, data.select.y, error.x) %>% 
-  filter(error.x != 0)
-```
-
-## Pareto Type II (Lomax) Distribution 
+### Lomax Distribution 
 
 Math model: 
 
-$$\begin{align*}\text{error}_i &\sim \text{Lorax}(\lambda, \alpha) \\ 
+$$\begin{align*}\text{error}_i &\sim \text{Lomax}(\lambda, \alpha) \\ 
 \lambda &\sim \text{Half-Cauchy}(0, 1) \\ 
 \alpha &\sim \text{Half-Cauchy}(0, 1)
 \end{align*}$$
@@ -281,9 +267,9 @@ $$\begin{align*}\text{error}_i &\sim \text{Lorax}(\lambda, \alpha) \\
 # Define the Pareto custom family
 lomax_family <- custom_family(
   "custom_lomax",
-  dpars = c("mu", "lambda", "alpha"),  # parameters: lambda = scale, alpha = shape
+  dpars = c("mu", "lambda", "alpha"),    # parameters: lambda = scale, alpha = shape
   links = c("identity", "log", "log"),   # log links ensure parameters are positive
-  lb = c(-Inf, 0, 0),              # lower bounds for both parameters
+  lb = c(-Inf, 0, 0),                    # lower bounds for both parameters
   type = "real"
 )
 
@@ -328,7 +314,7 @@ Fit the model:
 
 ```{r}
 #| output: false 
-s.2.va.y.2 <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+model.lomax <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
   mutate(error.y = ifelse(error.y < 1e-10, 0, error.y)) %>% 
   brm(
     formula = f,
@@ -337,7 +323,7 @@ s.2.va.y.2 <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
     prior = p,
     stanvars = stanvar(scode = stan_funs, block = "functions"),
     chains = 4,
-    # file = "models/s.2.va.y.2", 
+    file = "models/task2.y.lomax", 
     # init = list()
     # control = list(adapt_delta = 0.95)
   )
@@ -346,15 +332,15 @@ s.2.va.y.2 <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
 Check fit and posterior check: 
 
 ```{r}
-summary(s.2.va.y.2)
+summary(model.lomax)
 ```
 
 ```{r}
-plot(s.2.va.y.2)
+plot(model.lomax)
 ```
 
 ```{r}
-expose_functions(s.2.va.y.2, vectorize = TRUE)
+expose_functions(model.lomax, vectorize = TRUE)
 
 # Define the posterior_predict function in R as per vignette
 posterior_predict_custom_lomax <- function(i, draws, ...) {
@@ -370,13 +356,13 @@ posterior_predict_custom_lomax <- function(i, draws, ...) {
   custom_lomax_rng(0, 1, alpha)
 }
 
-pp_check(s.2.va.y.2, ndraws = 100) + xlim(0, 0.5) # hmm can't really tell which one is better ... 
+pp_check(model.lomax, ndraws = 100) # + xlim(0, 0.5) # hmm can't really tell which one is better ... 
 ```
 
 ```{r}
-s.2.va.y.2 %>% get_variables(.)
+model.lomax %>% get_variables(.)
 
-s.2.va.y.2 %>% spread_draws(b_lambda_Intercept, b_alpha_Intercept) %>% 
+model.lomax %>% spread_draws(b_lambda_Intercept, b_alpha_Intercept) %>% 
   mutate(lambda = exp(b_lambda_Intercept)) %>% 
   pivot_longer(cols = lambda) %>% 
   ggplot(aes(x = value, y = name)) + 
@@ -385,226 +371,13 @@ s.2.va.y.2 %>% spread_draws(b_lambda_Intercept, b_alpha_Intercept) %>%
 
 Some very small number ... 
 
-### Multiple participants 
+### Exponential Distribution 
 
-```{r}
-f <- bf(error.y ~ 0, 
-        lambda ~ (1 | participantId), 
-        alpha ~ (1 | participantId), 
-        family = lomax_family)
+TODO 
 
-p <- c(
-  prior(normal(0, 1), class = Intercept, dpar = alpha), 
-  prior(normal(0, 1), class = Intercept, dpar = lambda), 
-  prior(normal(0, 1), class = sd, group = participantId, dpar = alpha, lb = 0), 
-  prior(normal(0, 1), class = sd, group = participantId, dpar = lambda, lb = 0)
-)
-```
+### Compare between the two 
 
-```{r}
-#| eval: false 
-#| echo: false 
-task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
-  get_prior(f, data = .)
-
-task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
-  make_stancode(f, data = ., prior = p)
-```
-
-Fit the model: 
-
-```{r}
-#| output: false 
-m.2.va.y.2 <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
-  mutate(error.y = ifelse(error.y < 1e-10, 0, error.y)) %>% 
-  brm(
-    formula = f,
-    data = .,
-    family = lomax_family,
-    prior = p,
-    stanvars = stanvar(scode = stan_funs, block = "functions"),
-    chains = 4,
-    control = list(adapt_delta = 0.99), 
-    iter = 4000,
-  )
-```
-
-Check fit and posteiror: 
-
-```{r}
-summary(m.2.va.y.2)
-plot(m.2.va.y.2)
-pp_check(m.2.va.y.2, ndraws = 200) + xlim(0, 0.5)
-```
-
---- 
-
-## Go from error on Y to error on X
-
-Let's start with a random row. 
-
-```{r}
-set.seed(51)
-task2_df %>% sample_n(1) %>% 
-  select(contains("param"))
-
-task2_df %>% sample_n(1) %>% left_join(participants)
-```
-
-This is what the plot looks like: 
-
-```{r}
-#| code-fold: true 
-x_vals <- seq(-5, 5, 0.01)
-y_vals <- dsgt(x, mu = -1.3, sigma = 1.3, lambda = 0.3, p = 2.9, q = 46.8, mean.cent = FALSE)
-
-# plot
-data.frame(x = x_vals, y = y_vals) %>% 
-  ggplot(aes(x = x_vals, y = y_vals)) + 
-  geom_line() + 
-  xlim(-5, 5) + 
-  ylim(0, 1) + 
-  geom_vline(xintercept = -1.3, linetype = "dashed", color = "gray") + 
-  geom_hline(yintercept = 0.21, linetype = "dashed", color = "gray") 
-```
-
-Create a function that uses `approxfunc` and `uniroot` to find value of `x` given `y`: 
--- Matt's suggestion --- use the actual density function `dsgt` and not the `approx` 
-
-- Suppose we have only access to discrete values of `x` and `y`
-
-```{r}
-#| code-fold: true 
-
-# Find an x value corresponding to a target y using uniroot
-find_x_for_y_uniroot <- function(y_target, x_values, y_values, x_interval) {
-  # Create interpolation function
-  interp_func <- approxfun(x_values, y_values)
-  
-  # Define the function whose root we want to find: f(x) - y_target = 0
-  root_func <- function(x) interp_func(x) - y_target
-  
-  # Find the root (where function equals zero)
-  result <- try(uniroot(root_func, interval = x_interval, extendInt = "yes", tol = 1e-10), silent = FALSE)
-  
-  if (inherits(result, "try-error")) {
-    return(NULL)  # No root found in this interval
-  } else {
-    return(result$root)
-  }
-}
-
-# Find all x values for a given y by searching in different intervals
-find_all_x_for_y <- function(y_target, x_values, y_values, n_segments = 5) {
-  x_values <- unlist(x_values)
-  y_values <- unlist(y_values)
-  x_min <- min(x_values)
-  x_max <- max(x_values)
-  segment_width <- (x_max - x_min) / n_segments
-
-  results <- numeric(0)
-  for (i in 1:n_segments) {
-    segment_start <- x_min + (i-1) * segment_width
-    segment_end <- x_min + i * segment_width
-    
-    root <- find_x_for_y_uniroot(y_target, x_values, y_values, 
-                                 c(segment_start, segment_end))
-    
-    if (!is.null(root)) {
-      results <- c(results, root)
-    }
-  }
-  return(results)
-}
-```
-
-```{r}
-data.true_y <- dsgt(-1.3, mu = -1.3, sigma = 1.3, lambda = 0.3, p = 2.9, q = 46.8, mean.cent = FALSE)
-va.y_pred <- 2.648185 - sample(as.vector(posterior_predict(s.2.va.y)), 100) # this is in visual angle space 
-phy.y_pred <- size(va.y_pred, 449)
-pixel.y_pred <- phy_to_pixel_y(phy.y_pred, 5.14)
-data.y_pred <- pixel_to_data_y(pixel.y_pred)
-
-y_vals[y_vals > min(data.y_pred)]
-y_vals[y_vals > max(data.y_pred)]
-
-sapply(data.y_pred, function(x) find_all_x_for_y(x, x_vals, y_vals)) %>% 
-  unlist(.) -> d
-
-d %>% as.data.frame(.) %>% 
-  mutate(pixel.x = data_to_pixel_x(`.`), 
-         phy.x = pixel_to_phy_x(pixel.x, 5.14), 
-         va.x = vis_angle(phy.x, 449) - 4.91137) %>% 
-  ggplot(aes(x = va.x)) + geom_dots()
-```
-
-Let's try to generalize this to the original dataset: 
-
-```{r}
-task2_df %>% add_predicted_draws(s.2.va.y) %>% 
-  nest(.) %>% 
-  # create x_vals and y_vals 
-  mutate(x_vals = rep(tibble(seq(-5, 5, 0.01)), n())) %>% 
-  mutate(y_vals = list(tibble(unlist(x_vals), mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE))) # %>% 
-  unnest(data) %>% 
-  mutate(va.pred.y = va.ans.y + .prediction, 
-         phy.pred.y = size(va.pred.y, dist_to_screen), 
-         pixel.pred.y = phy_to_pixel_y(phy.pred.y, pixelToMM), 
-         data.pred.y = pixel_to_data_y(pixel.pred.y)) -> temp 
-
-
-temp %>% ungroup(.) %>% select(contains("data")) %>% 
-  mutate(data.error = data.select.y - data.pred.y) %>% 
-  ggplot(aes(x = data.error)) + geom_dots()
-  
-# TODO --- can't translate from `data.pred.y` to `data.pred.x` at the moment ....... 
-```
-
-Hmm why is this not working ...? 
-
-```{r}
-set.seed(51)
-task2_df %>% add_predicted_draws(s.2.va.y) %>% 
-  nest(.) %>% 
-  # create x_vals and y_vals 
-  mutate(x_vals = rep(list(seq(-5, 5, 0.01)), n())) %>% 
-  mutate(y_vals = list(dsgt(unlist(x_vals), mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE))) %>% 
-  ungroup(.) %>% 
-  slice(1) %>% 
-  unnest(data) %>% 
-  mutate(va.pred.y = va.ans.y + .prediction, 
-         phy.pred.y = size(va.pred.y, dist_to_screen), 
-         pixel.pred.y = phy_to_pixel_y(phy.pred.y, pixelToMM), 
-         data.pred.y = pixel_to_data_y(pixel.pred.y)) -> temp 
-
-temp %>% select(data.pred.y, x_vals, y_vals) %>% 
-  slice(1) %>% unnest(c(x_vals, y_vals)) %>% 
-  mutate(data.pred.x = list(find_all_x_for_y(data.pred.y, x_vals, y_vals)))
-
-temp_y <- temp %>% slice(1) %>% pull(y_vals) %>% unlist(.)
-temp_x <- seq(-5, 5, 0.01) 
-find_all_x_for_y(0.2466129, temp_x, temp_y)
-
-data.frame(x = temp_x, y = temp_y) %>% 
-  ggplot(aes(x = x, y = y)) + geom_line() + xlim(-5, 5) + ylim(0, 1) + 
-  geom_hline(yintercept = 0.246) + 
-  geom_vline(xintercept = c(0.5230175,2.0922857))
-
-find_all_x_for_y(0.246, temp_x, temp_y, n_segments = 10)
-
-# STUCK HERE BECAUSE WE CAN"T FIND IT UGH >>> 
-```
-
-Compare this to the actual error on x: 
-
-```{r}
-task2_df %>% mutate(error.va.x = va.select.x - va.ans.x) %>% 
-  ggplot(aes(x = error.va.x)) + geom_dots()
-```
-
-
-
-
+TODO 
 
 ## Task 2 - Vis Angle - error on X 
 
@@ -1017,4 +790,226 @@ loo(s.2.va.1, s.2.va.4)
 ```
 
 Yes it is! 
+
+### Multiple participants 
+
+```{r}
+f <- bf(error.y ~ 0, 
+        lambda ~ (1 | participantId), 
+        alpha ~ (1 | participantId), 
+        family = lomax_family)
+
+p <- c(
+  prior(normal(0, 1), class = Intercept, dpar = alpha), 
+  prior(normal(0, 1), class = Intercept, dpar = lambda), 
+  prior(normal(0, 1), class = sd, group = participantId, dpar = alpha, lb = 0), 
+  prior(normal(0, 1), class = sd, group = participantId, dpar = lambda, lb = 0)
+)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+  get_prior(f, data = .)
+
+task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+  make_stancode(f, data = ., prior = p)
+```
+
+Fit the model: 
+
+```{r}
+#| output: false 
+m.2.va.y.2 <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  mutate(error.y = ifelse(error.y < 1e-10, 0, error.y)) %>% 
+  brm(
+    formula = f,
+    data = .,
+    family = lomax_family,
+    prior = p,
+    stanvars = stanvar(scode = stan_funs, block = "functions"),
+    chains = 4,
+    control = list(adapt_delta = 0.99), 
+    iter = 4000,
+  )
+```
+
+Check fit and posteiror: 
+
+```{r}
+summary(m.2.va.y.2)
+plot(m.2.va.y.2)
+pp_check(m.2.va.y.2, ndraws = 200) + xlim(0, 0.5)
+```
+
+--- 
+
+## Go from error on Y to error on X
+
+Let's start with a random row. 
+
+```{r}
+set.seed(51)
+task2_df %>% sample_n(1) %>% 
+  select(contains("param"))
+
+task2_df %>% sample_n(1) %>% left_join(participants)
+```
+
+This is what the plot looks like: 
+
+```{r}
+#| code-fold: true 
+x_vals <- seq(-5, 5, 0.01)
+y_vals <- dsgt(x, mu = -1.3, sigma = 1.3, lambda = 0.3, p = 2.9, q = 46.8, mean.cent = FALSE)
+
+# plot
+data.frame(x = x_vals, y = y_vals) %>% 
+  ggplot(aes(x = x_vals, y = y_vals)) + 
+  geom_line() + 
+  xlim(-5, 5) + 
+  ylim(0, 1) + 
+  geom_vline(xintercept = -1.3, linetype = "dashed", color = "gray") + 
+  geom_hline(yintercept = 0.21, linetype = "dashed", color = "gray") 
+```
+
+Create a function that uses `approxfunc` and `uniroot` to find value of `x` given `y`: 
+-- Matt's suggestion --- use the actual density function `dsgt` and not the `approx` 
+
+- Suppose we have only access to discrete values of `x` and `y`
+
+```{r}
+#| code-fold: true 
+
+# Find an x value corresponding to a target y using uniroot
+find_x_for_y_uniroot <- function(y_target, x_values, y_values, x_interval) {
+  # Create interpolation function
+  interp_func <- approxfun(x_values, y_values)
+  
+  # Define the function whose root we want to find: f(x) - y_target = 0
+  root_func <- function(x) interp_func(x) - y_target
+  
+  # Find the root (where function equals zero)
+  result <- try(uniroot(root_func, interval = x_interval, extendInt = "yes", tol = 1e-10), silent = FALSE)
+  
+  if (inherits(result, "try-error")) {
+    return(NULL)  # No root found in this interval
+  } else {
+    return(result$root)
+  }
+}
+
+# Find all x values for a given y by searching in different intervals
+find_all_x_for_y <- function(y_target, x_values, y_values, n_segments = 5) {
+  x_values <- unlist(x_values)
+  y_values <- unlist(y_values)
+  x_min <- min(x_values)
+  x_max <- max(x_values)
+  segment_width <- (x_max - x_min) / n_segments
+
+  results <- numeric(0)
+  for (i in 1:n_segments) {
+    segment_start <- x_min + (i-1) * segment_width
+    segment_end <- x_min + i * segment_width
+    
+    root <- find_x_for_y_uniroot(y_target, x_values, y_values, 
+                                 c(segment_start, segment_end))
+    
+    if (!is.null(root)) {
+      results <- c(results, root)
+    }
+  }
+  return(results)
+}
+```
+
+```{r}
+data.true_y <- dsgt(-1.3, mu = -1.3, sigma = 1.3, lambda = 0.3, p = 2.9, q = 46.8, mean.cent = FALSE)
+va.y_pred <- 2.648185 - sample(as.vector(posterior_predict(s.2.va.y)), 100) # this is in visual angle space 
+phy.y_pred <- size(va.y_pred, 449)
+pixel.y_pred <- phy_to_pixel_y(phy.y_pred, 5.14)
+data.y_pred <- pixel_to_data_y(pixel.y_pred)
+
+y_vals[y_vals > min(data.y_pred)]
+y_vals[y_vals > max(data.y_pred)]
+
+sapply(data.y_pred, function(x) find_all_x_for_y(x, x_vals, y_vals)) %>% 
+  unlist(.) -> d
+
+d %>% as.data.frame(.) %>% 
+  mutate(pixel.x = data_to_pixel_x(`.`), 
+         phy.x = pixel_to_phy_x(pixel.x, 5.14), 
+         va.x = vis_angle(phy.x, 449) - 4.91137) %>% 
+  ggplot(aes(x = va.x)) + geom_dots()
+```
+
+Let's try to generalize this to the original dataset: 
+
+```{r}
+task2_df %>% add_predicted_draws(s.2.va.y) %>% 
+  nest(.) %>% 
+  # create x_vals and y_vals 
+  mutate(x_vals = rep(tibble(seq(-5, 5, 0.01)), n())) %>% 
+  mutate(y_vals = list(tibble(unlist(x_vals), mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE))) # %>% 
+  unnest(data) %>% 
+  mutate(va.pred.y = va.ans.y + .prediction, 
+         phy.pred.y = size(va.pred.y, dist_to_screen), 
+         pixel.pred.y = phy_to_pixel_y(phy.pred.y, pixelToMM), 
+         data.pred.y = pixel_to_data_y(pixel.pred.y)) -> temp 
+
+
+temp %>% ungroup(.) %>% select(contains("data")) %>% 
+  mutate(data.error = data.select.y - data.pred.y) %>% 
+  ggplot(aes(x = data.error)) + geom_dots()
+  
+# TODO --- can't translate from `data.pred.y` to `data.pred.x` at the moment ....... 
+```
+
+Hmm why is this not working ...? 
+
+```{r}
+set.seed(51)
+task2_df %>% add_predicted_draws(s.2.va.y) %>% 
+  nest(.) %>% 
+  # create x_vals and y_vals 
+  mutate(x_vals = rep(list(seq(-5, 5, 0.01)), n())) %>% 
+  mutate(y_vals = list(dsgt(unlist(x_vals), mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE))) %>% 
+  ungroup(.) %>% 
+  slice(1) %>% 
+  unnest(data) %>% 
+  mutate(va.pred.y = va.ans.y + .prediction, 
+         phy.pred.y = size(va.pred.y, dist_to_screen), 
+         pixel.pred.y = phy_to_pixel_y(phy.pred.y, pixelToMM), 
+         data.pred.y = pixel_to_data_y(pixel.pred.y)) -> temp 
+
+temp %>% select(data.pred.y, x_vals, y_vals) %>% 
+  slice(1) %>% unnest(c(x_vals, y_vals)) %>% 
+  mutate(data.pred.x = list(find_all_x_for_y(data.pred.y, x_vals, y_vals)))
+
+temp_y <- temp %>% slice(1) %>% pull(y_vals) %>% unlist(.)
+temp_x <- seq(-5, 5, 0.01) 
+find_all_x_for_y(0.2466129, temp_x, temp_y)
+
+data.frame(x = temp_x, y = temp_y) %>% 
+  ggplot(aes(x = x, y = y)) + geom_line() + xlim(-5, 5) + ylim(0, 1) + 
+  geom_hline(yintercept = 0.246) + 
+  geom_vline(xintercept = c(0.5230175,2.0922857))
+
+find_all_x_for_y(0.246, temp_x, temp_y, n_segments = 10)
+
+# STUCK HERE BECAUSE WE CAN"T FIND IT UGH >>> 
+```
+
+Compare this to the actual error on x: 
+
+```{r}
+task2_df %>% mutate(error.va.x = va.select.x - va.ans.x) %>% 
+  ggplot(aes(x = error.va.x)) + geom_dots()
+```
+
+
+
+
+
 
