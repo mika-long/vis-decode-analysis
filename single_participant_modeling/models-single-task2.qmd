@@ -381,7 +381,84 @@ TODO
 
 ## Task 2 - Vis Angle - error on X 
 
-### Single Participant 
+### Normal distribution 
+
+Math model: 
+
+$$\begin{align}
+\text{error_va}_{i} &\sim \text{Normal}(\mu, \sigma^2) \\
+\mu &\sim \mathcal{N}(0, 1) \\ 
+\sigma &\sim \text{Half-Cauchy}(0, 1)
+\end{align}$$
+
+`brms` formula:
+
+```{r}
+f <- bf(error.x ~ 1,
+        sigma ~ 1, 
+        family = gaussian)
+
+# sigma has log-link, so we don't pose any bounds on it 
+p <- c(
+  prior(normal(0, 1), class = Intercept), 
+  prior(normal(0, 1), class = Intercept, dpar = sigma)
+)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+#| 
+task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>% 
+  get_prior(f, data = .)
+
+task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>% 
+  make_stancode(f, data = ., prior = p)
+```
+
+Fit the model: 
+
+```{r}
+#| output: false
+
+model.x.normal <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
+  mutate(error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)) %>% 
+  brm(
+    formula = f,
+    data = .,
+    prior = p,
+    chains = 4,
+    file = "models/task2.x.normal", 
+    file_refit = "on_change"
+    # control = list(adapt_delta = 0.95)
+  )
+```
+
+Check fit and posterior:
+
+```{r}
+summary(model.x.normal)
+plot(model.x.normal)
+pp_check(model.x.normal, ndraws= 100)
+```
+
+```{r}
+model.x.normal %>% get_variables(.)
+
+model.x.normal %>% spread_draws(b_Intercept, b_sigma_Intercept) %>% 
+  mutate(b_sigma = exp(b_sigma_Intercept)) %>% 
+  pivot_longer(cols = c(b_Intercept, b_sigma)) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+```
+
+Plot ribbonplot: 
+
+```{r}
+# TODO
+```
+
+### Laplace distribution 
 
 Math model: 
 
@@ -401,12 +478,12 @@ There is a [wiki](https://en.wikipedia.org/wiki/Laplace_distribution) about Lapl
 # log of the laplace pdf 
 laplace_lpdf <- "
 real laplace_lpdf(real y, real mu, real sigma) {
-  return -log(2 * sigma) - abs(y - mu) / sigma;
+  return double_exponential_lpdf(y | mu, sigma);
 }
 "
 
 # define custom family 
-c_family = custom_family(
+laplace_family = custom_family(
   "laplace", 
   dpars = c("mu", "sigma"), 
   links = c("identity", "identity"), 
@@ -416,11 +493,10 @@ c_family = custom_family(
 ```
 
 ```{r}
-# single participant 
-f <- bf(error_va ~ 0, 
+f <- bf(error.x ~ 0, 
         mu ~ 1, 
         sigma ~ 1, 
-        family = c_family)
+        family = laplace_family)
 
 # define prior 
 p <- c(
@@ -434,12 +510,12 @@ p <- c(
 #| echo: false 
 
 # get prior
-task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-get_prior(formula = f,
-          data = .)
+task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
+  get_prior(formula = f,
+            data = .)
 
 # get stan code 
-task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
   make_stancode(formula = f, 
                 data = .,
                 prior = p, 
@@ -452,23 +528,25 @@ Fit the model:
 ```{r}
 #| output: false 
 
-s.2.va.1 <- task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+model.x.laplace <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
+  mutate(error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)) %>% 
   brm(
     formula = f, 
-    family = c_family, 
+    family = laplace_family, 
     stanvars = stanvar(scode = laplace_lpdf, block = "functions"), 
     prior = p, 
     data = ., 
     chains = 4, 
-    # file = "models/s.2.va.1"
+    file = "models/model.x.laplace", 
+    file_refit = "on_change"
   )
 ```
 
 Check the fitted model:
 
 ```{r}
-summary(s.2.va.1)
-plot(s.2.va.1)
+summary(model.x.laplace)
+plot(model.x.laplace)
 ```
 
 Given that we are using custom families, we also need to define our custom function to perform posterior predictive checks: 
@@ -477,7 +555,7 @@ Define custom functions for posterior predictive check:
 
 ```{r}
 #| code-fold: true 
-expose_functions(s.2.va.1, vectorize = TRUE)
+expose_functions(model.x.laplace, vectorize = TRUE)
 
 # Define a random number generator for Laplace distribution
 laplace_rng <- function(mu, sigma) {
@@ -494,118 +572,55 @@ posterior_predict_laplace <- function(i, prep, ...) {
 }
 ```
 
+Posterior predictive check: 
+
 ```{r}
-pp_check(s.2.va.1, ndraws = 100)
+pp_check(model.x.laplace, ndraws = 100)
 ```
 
 Plot posterior distribution: 
 
 ```{r}
-# s.2.va.1 %>% get_variables(.) 
+model.x.laplace %>% get_variables(.) 
 
-s.2.va.1 %>% spread_draws(b_Intercept, b_sigma_Intercept) %>% 
+model.x.laplace %>% spread_draws(b_Intercept, b_sigma_Intercept) %>% 
   pivot_longer(4:5) %>% 
   ggplot(aes(x = value, y = name)) + stat_halfeye()
 ```
 
-### Multiple participants 
+Plot lineribbon: 
 
 ```{r}
-# single participant 
-f <- bf(error_va ~ 0, 
-        mu ~ (1|participantId), 
-        sigma ~ (1|participantId), 
-        family = c_family)
-
-# define prior 
-p <- c(
-  prior(normal(0, 1), class = "Intercept"), 
-  prior(cauchy(0, 1), class = "Intercept", dpar ="sigma", lb = 0), 
-  prior(normal(0, 1), class = sd, coef = Intercept, group = participantId), 
-  prior()
-)
-```
-
-```{r}
-#| eval: false 
-#| echo: false 
-
-# get prior
-task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-get_prior(formula = f,
-          data = .)
-
-# get stan code 
-task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-  make_stancode(formula = f, 
-                data = .,
-                prior = p, 
-                )
-```
+prediction <- task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
+                    error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)) %>%
+  add_predicted_draws(model.x.laplace, ndraws = 100)
 
 
-### Task 2 - Vis Angle - Normal distribution 
-
-Same math model, except we now have $\texttt{error_va}_i \sim \mathcal{N}(\mu, \sigma^2)$, instead of a Laplace distribution. 
-
-Formula: 
-
-```{r}
-f <- bf(error_va ~ 1,
-        family = gaussian())
-
-# define prior 
-p <- c(
-  prior(normal(0, 0.5), class = "Intercept"), 
-  prior(cauchy(0, 0.5), class = "sigma")
-)
-```
-
-```{r}
-#| echo: false 
-#| eval: false 
-
-# get prior
-task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-get_prior(formula = f,
-          data = .)
-
-task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-make_stancode(formula = f,
-              data = ., 
-              prior = p)
-```
-
-Fit the model: 
-
-```{r}
-#| output: false
-#| label: task2-fit-model-3
-
-s.2.va.2 <- task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-  brm(
-    formula = f,
-    data = .,
-    prior = p,
-    chains = 4,
-    file="models/s.2.va.2",
-    save_pars = save_pars(all=TRUE)
+task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
+                    error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)) %>% 
+  ggplot(aes(x = error.x)) + geom_dots() + 
+  stat_slab(data = prediction, aes(x = .prediction), 
+            fill = "skyblue", alpha = 0.6) +
+  labs(
+    title = "Posterior Predictive Distribution vs. Observed Data",
+    x = "error.x",
+    y = NULL
   )
 ```
 
-Check fitted results and posterior 
+### Cauchy distribution 
 
-```{r}
-summary(s.2.va.2)
-plot(s.2.va.2)
-pp_check(s.2.va.2, ndraws = 100)
-```
+Stan: https://mc-stan.org/docs/functions-reference/unbounded_continuous_distributions.html#cauchy-distribution
 
-Compared to the fit of the Laplace this one doesn't look as good ... 
+Math model: 
 
-### Task 2 - Vis Angle - Cauchy 
+$$\begin{align}
+\text{error_va}_{i} &\sim \text{Cauchy}(\mu, \sigma^2) \\
+\mu &\sim \mathcal{N}(0, 1) \\ 
+b &\sim \text{Half-Cauchy}(0, 1)
+\end{align}$$
 
-Note that a cauchy distribution is a student t distribution with degrees of freedom, `nu`, fixed to be 1. 
+`brms` formula: 
 
 ```{r}
 f <- bf(error_va ~ 1,
@@ -657,6 +672,8 @@ summary(s.2.va.3)
 plot(s.2.va.3)
 pp_check(s.2.va.3, ndraws = 100)
 ```
+
+
 
 ### LOO comparisons 
 
@@ -1008,6 +1025,42 @@ task2_df %>% mutate(error.va.x = va.select.x - va.ans.x) %>%
   ggplot(aes(x = error.va.x)) + geom_dots()
 ```
 
+---
+
+### Multiple participants 
+
+```{r}
+# single participant 
+f <- bf(error_va ~ 0, 
+        mu ~ (1|participantId), 
+        sigma ~ (1|participantId), 
+        family = c_family)
+
+# define prior 
+p <- c(
+  prior(normal(0, 1), class = "Intercept"), 
+  prior(cauchy(0, 1), class = "Intercept", dpar ="sigma", lb = 0), 
+  prior(normal(0, 1), class = sd, coef = Intercept, group = participantId), 
+  prior()
+)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+
+# get prior
+task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+get_prior(formula = f,
+          data = .)
+
+# get stan code 
+task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  make_stancode(formula = f, 
+                data = .,
+                prior = p, 
+                )
+```
 
 
 
