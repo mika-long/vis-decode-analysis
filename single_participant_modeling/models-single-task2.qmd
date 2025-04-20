@@ -452,10 +452,25 @@ model.x.normal %>% spread_draws(b_Intercept, b_sigma_Intercept) %>%
   stat_halfeye()
 ```
 
-Plot ribbonplot: 
+Plot lineribbon: 
 
 ```{r}
-# TODO
+prediction <- task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
+                                  error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)) %>%
+  add_predicted_draws(model.x.normal, ndraws = 100)
+
+
+task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
+                    error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)) %>% 
+  ggplot() + 
+  stat_slab(data = prediction, aes(x = .prediction), 
+            fill = "skyblue", alpha = 0.6) +
+  geom_dots(aes(x = error.x)) + 
+  labs(
+    title = "Posterior Predictive Distribution vs. Observed Data",
+    x = "error.x",
+    y = NULL
+  )
 ```
 
 ### Laplace distribution 
@@ -588,7 +603,7 @@ model.x.laplace %>% spread_draws(b_Intercept, b_sigma_Intercept) %>%
   ggplot(aes(x = value, y = name)) + stat_halfeye()
 ```
 
-Plot lineribbon: 
+Plot posterior predictive distribution on top: 
 
 ```{r}
 prediction <- task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
@@ -598,9 +613,10 @@ prediction <- task2_df %>% mutate(error.x = va.select.x - va.ans.x,
 
 task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
                     error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)) %>% 
-  ggplot(aes(x = error.x)) + geom_dots() + 
+  ggplot() + 
   stat_slab(data = prediction, aes(x = .prediction), 
             fill = "skyblue", alpha = 0.6) +
+  geom_dots(aes(x = error.x)) +
   labs(
     title = "Posterior Predictive Distribution vs. Observed Data",
     x = "error.x",
@@ -608,9 +624,9 @@ task2_df %>% mutate(error.x = va.select.x - va.ans.x,
   )
 ```
 
-### Cauchy distribution 
+### Student-t distribution 
 
-Stan: https://mc-stan.org/docs/functions-reference/unbounded_continuous_distributions.html#cauchy-distribution
+The Cauchy distribution puts too much weight on its tails; we'll go for studente-t, which is more robust. 
 
 Math model: 
 
@@ -623,14 +639,17 @@ b &\sim \text{Half-Cauchy}(0, 1)
 `brms` formula: 
 
 ```{r}
-f <- bf(error_va ~ 1,
-        family = student())
+f <- bf(
+  error.x ~ 0,           # No intercept in main formula
+  mu ~ 1,                # Location parameter with intercept
+  sigma ~ 1,             # Scale parameter with intercept
+  nu ~ 1,                # Degrees of freedom with intercept
+  family = student()
+)
 
 p <- c(
-  # constant prior for nu to make it cauchy 
-  prior(constant(1), class = "nu"),
-  prior(normal(0, 0.5), class = "Intercept"), 
-  prior(cauchy(0, 0.5), class = "sigma")
+  prior(normal(0, 1), class = "Intercept"), 
+  prior(normal(0, 1), class = "Intercept", dpar = "sigma")
 )
 ```
 
@@ -639,12 +658,12 @@ p <- c(
 #| eval: false
 
 # get prior
-task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
 get_prior(formula = f,
           data = .)
 
 # check stan code 
-task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
 make_stancode(formula = f,
               data = ., 
               prior = p)
@@ -655,32 +674,64 @@ Fit the model:
 ```{r}
 #| output: false 
 
-s.2.va.3 <- task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+model.x.student <- task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
+                                       error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)) %>%
   brm(
     formula = f, 
     prior = p, 
     data = ., 
     chains = 4, 
-    file = "models/s.2.va.3"
+    file = "models/task2.x.student"
   )
 ```
 
 Check the fitted results: 
 
 ```{r}
-summary(s.2.va.3)
-plot(s.2.va.3)
-pp_check(s.2.va.3, ndraws = 100)
+summary(model.x.student)
+plot(model.x.student)
+pp_check(model.x.student, ndraws = 100)
 ```
 
+The default `student` function has `student(link = "identity", link_sigma = "log", link_nu = "logm1")`. Which means that we need to transform the fitted `sigma` and `nu`. 
 
+```{r}
+model.x.student %>% get_variables(.)
+
+model.x.student %>% spread_draws(b_Intercept, b_sigma_Intercept, b_nu_Intercept) %>% 
+  mutate(b_mu = b_Intercept, 
+         b_sigma = exp(b_sigma_Intercept), 
+         b_nu = exp(b_nu_Intercept) + 1) %>% 
+  pivot_longer(7:9) %>% 
+  ggplot(aes(x = value, y = name)) + stat_halfeye() + 
+  facet_wrap(~ name, scales = "free")
+```
+
+```{r}
+prediction <- task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
+                    error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)) %>%
+  add_predicted_draws(model.x.student, ndraws = 100)
+
+
+task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
+                    error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)) %>% 
+  ggplot() + 
+  stat_slab(data = prediction, aes(x = .prediction), 
+            fill = "skyblue", alpha = 0.6) +
+  geom_dots(aes(x = error.x)) +
+  labs(
+    title = "Posterior Predictive Distribution vs. Observed Data",
+    x = "error.x",
+    y = NULL
+  )
+```
 
 ### LOO comparisons 
 
 Recall that the when using a custom `brms` family, we need to define our own funtions. First define the `log_lik` (log likelihood) related functions: 
 
 ```{r}
-expose_functions(s.2.va.1, vectorize = TRUE)
+expose_functions(model.x.laplace, vectorize = TRUE)
 
 # Define log-likelihood function for Laplace distribution
 laplace_lpdf <- function(y, mu, sigma) {
@@ -695,18 +746,20 @@ log_lik_laplace <- function(i, prep) {
   laplace_lpdf(y, mu, sigma)
 }
 
-loo(s.2.va.1)
+loo(model.x.laplace)
 ```
 
-Loo comparison between all visual angle related models: 
+Loo comparison between all models for **error on the X-axis in visual angle**: 
 
 ```{r}
-loo(s.2.va.1, s.2.va.2, s.2.va.3)
+loo(model.x.normal, model.x.laplace, model.x.student)
 ```
 
-So the results are: **Laplace** > **Cauchy** > **Normal**. 
+So the results are: **Laplace** ~ **Student-t** > **Normal**. 
 
-## Task 2 - Vis Angle - error on X - Varying variance 
+## Task 2 - Vis Angle - error on X - with predictor 
+
+**Note**: technically this model is subsumed by the error on Y -> flatness -> error on X route. 
 
 Let's stick with the Laplace distribution for now. Let's check the posterior for the parameters: 
 
@@ -808,59 +861,7 @@ loo(s.2.va.1, s.2.va.4)
 
 Yes it is! 
 
-### Multiple participants 
-
-```{r}
-f <- bf(error.y ~ 0, 
-        lambda ~ (1 | participantId), 
-        alpha ~ (1 | participantId), 
-        family = lomax_family)
-
-p <- c(
-  prior(normal(0, 1), class = Intercept, dpar = alpha), 
-  prior(normal(0, 1), class = Intercept, dpar = lambda), 
-  prior(normal(0, 1), class = sd, group = participantId, dpar = alpha, lb = 0), 
-  prior(normal(0, 1), class = sd, group = participantId, dpar = lambda, lb = 0)
-)
-```
-
-```{r}
-#| eval: false 
-#| echo: false 
-task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
-  get_prior(f, data = .)
-
-task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
-  make_stancode(f, data = ., prior = p)
-```
-
-Fit the model: 
-
-```{r}
-#| output: false 
-m.2.va.y.2 <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
-  mutate(error.y = ifelse(error.y < 1e-10, 0, error.y)) %>% 
-  brm(
-    formula = f,
-    data = .,
-    family = lomax_family,
-    prior = p,
-    stanvars = stanvar(scode = stan_funs, block = "functions"),
-    chains = 4,
-    control = list(adapt_delta = 0.99), 
-    iter = 4000,
-  )
-```
-
-Check fit and posteiror: 
-
-```{r}
-summary(m.2.va.y.2)
-plot(m.2.va.y.2)
-pp_check(m.2.va.y.2, ndraws = 200) + xlim(0, 0.5)
-```
-
---- 
+---
 
 ## Go from error on Y to error on X
 
@@ -1062,6 +1063,59 @@ task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
                 )
 ```
 
+### Multiple participants 
+
+```{r}
+f <- bf(error.y ~ 0, 
+        lambda ~ (1 | participantId), 
+        alpha ~ (1 | participantId), 
+        family = lomax_family)
+
+p <- c(
+  prior(normal(0, 1), class = Intercept, dpar = alpha), 
+  prior(normal(0, 1), class = Intercept, dpar = lambda), 
+  prior(normal(0, 1), class = sd, group = participantId, dpar = alpha, lb = 0), 
+  prior(normal(0, 1), class = sd, group = participantId, dpar = lambda, lb = 0)
+)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+  get_prior(f, data = .)
+
+task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+  make_stancode(f, data = ., prior = p)
+```
+
+Fit the model: 
+
+```{r}
+#| output: false 
+m.2.va.y.2 <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  mutate(error.y = ifelse(error.y < 1e-10, 0, error.y)) %>% 
+  brm(
+    formula = f,
+    data = .,
+    family = lomax_family,
+    prior = p,
+    stanvars = stanvar(scode = stan_funs, block = "functions"),
+    chains = 4,
+    control = list(adapt_delta = 0.99), 
+    iter = 4000,
+  )
+```
+
+Check fit and posteiror: 
+
+```{r}
+summary(m.2.va.y.2)
+plot(m.2.va.y.2)
+pp_check(m.2.va.y.2, ndraws = 200) + xlim(0, 0.5)
+```
+
+--- 
 
 
 
