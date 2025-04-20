@@ -323,7 +323,7 @@ Fit the model:
 
 ```{r}
 model5.x.bias <- task5_df %>% mutate(error_va = va.select.x - va.ans.x, 
-                                    log.va.ans.y = log(va.ans.y)) %>%
+                                     log.va.ans.y = log(va.ans.y)) %>%
   # account for numerical precision 
   mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
   # account for bugs in task 5 
