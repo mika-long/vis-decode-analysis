@@ -398,30 +398,39 @@ expose_functions(model4.lomax, vectorize = TRUE)
 
 # Define the posterior_predict function in R as per vignette
 posterior_predict_lomax <- function(i, draws, ...) {
-  mu <- draws$dpars$mu[i]
-  shape <- draws$dpars$shape[i]
+  alpha <- draws$dpars$alpha[i]
+  lambda <- draws$dpars$lambda[i]
   # Use Stan's rng function indirectly via brms
-  custom_pareto_rng(mu, shape)
+  lomax_rng(0, lambda, alpha)
 }
 
 log_lik_lomax <- function(i, prep){
-  mu <- brms::get_dpar(prep, "mu", i = i)
-  shape <- brms::get_dpar(prep, "shape", i = i)
+  alpha <- brms::get_dpar(prep, "alpha", i = i)
+  lambda <- brms::get_dpar(prep, "lambda", i = i)
   y <- prep$data$Y[i]
-  custom_pareto_lpdf(y, mu, shape)
+  lomax_lpdf(y, 0, lambda, alpha)
 }
 
 pp_check(model4.lomax, ndraws = 100) # + xlim(0, 1)
 ```
 
+Overlay plot: 
 
+```{r}
+prediction <- task4_df %>% 
+  mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
+  add_predicted_draws(model4.lomax, ndraws = 100)
+
+prediction %>% ggplot() + 
+  stat_slab(aes(x = .prediction), 
+            fill = "blue", alpha = 1) + 
+  geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope)))
+```
 
 ## Model Comparison
 
 ```{r}
-loo(s.4.1, s.4.2)
+loo(model4.exponential, model4.lomax)
 ```
 
-
-
-# Compare 
+The Lomax distribution is much better ... 
