@@ -259,8 +259,8 @@ task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = flat)) +
 Math model: 
 
 $$\begin{align*}\text{error}_i &\sim \text{Lomax}(\lambda, \alpha) \\ 
-\lambda &\sim \text{Half-Cauchy}(0, 1) \\ 
-\alpha &\sim \text{Half-Cauchy}(0, 1)
+\log(\lambda) &\sim \text{Normal}(0, 1) \\ 
+\log(\alpha) &\sim \text{Normal}(0, 1)
 \end{align*}$$
 
 ```{r}
@@ -314,7 +314,7 @@ Fit the model:
 
 ```{r}
 #| output: false 
-model.lomax <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+model.y.lomax <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
   mutate(error.y = ifelse(error.y < 1e-10, 0, error.y)) %>% 
   brm(
     formula = f,
@@ -323,7 +323,8 @@ model.lomax <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
     prior = p,
     stanvars = stanvar(scode = stan_funs, block = "functions"),
     chains = 4,
-    file = "models/task2.y.lomax", 
+    file = "models/task2.y.lomax",
+    file_refit = "on_change"
     # init = list()
     # control = list(adapt_delta = 0.95)
   )
@@ -332,15 +333,15 @@ model.lomax <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
 Check fit and posterior check: 
 
 ```{r}
-summary(model.lomax)
+summary(model.y.lomax)
 ```
 
 ```{r}
-plot(model.lomax)
+plot(model.y.lomax)
 ```
 
 ```{r}
-expose_functions(model.lomax, vectorize = TRUE)
+expose_functions(model.y.lomax, vectorize = TRUE)
 
 # Define the posterior_predict function in R as per vignette
 posterior_predict_custom_lomax <- function(i, draws, ...) {
@@ -356,30 +357,123 @@ posterior_predict_custom_lomax <- function(i, draws, ...) {
   custom_lomax_rng(0, 1, alpha)
 }
 
-pp_check(model.lomax, ndraws = 100) # + xlim(0, 0.5) # hmm can't really tell which one is better ... 
+pp_check(model.y.lomax, ndraws = 100) # + xlim(0, 0.5) # hmm can't really tell which one is better ... 
 ```
 
 ```{r}
-model.lomax %>% get_variables(.)
+model.y.lomax %>% get_variables(.)
 
-model.lomax %>% spread_draws(b_lambda_Intercept, b_alpha_Intercept) %>% 
-  mutate(lambda = exp(b_lambda_Intercept)) %>% 
-  pivot_longer(cols = lambda) %>% 
+model.y.lomax %>% spread_draws(b_lambda_Intercept, b_alpha_Intercept) %>% 
+  mutate(b_lambda = exp(b_lambda_Intercept), b_alpha = exp(b_alpha_Intercept)) %>% 
+  pivot_longer(cols = 6:7) %>% 
   ggplot(aes(x = value, y = name)) + 
-  stat_halfeye()
+  stat_halfeye() + facet_wrap(~name, scales = "free")
 ```
 
-Some very small number ... 
+```{r}
+prediction <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  mutate(error.y = ifelse(error.y < 1e-10, 0, error.y)) %>% 
+  add_predicted_draws(model.y.lomax, ndraws = 100)
+
+ task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+   mutate(error.y = ifelse(error.y < 1e-10, 0, error.y)) %>% 
+   ggplot(aes(x = error.y)) + geom_dots() + 
+   stat_slab(data = prediction, aes(x = .prediction), 
+            fill = "skyblue", alpha = 0.6) + 
+   xlim(0, 0.2)
+```
+
+Huh this does not look good lol 
 
 ### Exponential Distribution 
 
-**TODO** 
+Math model: 
+
+$$\begin{align*}\text{error}_i &\sim \text{Exponential}(\lambda) \\ 
+\log(\lambda) &\sim \text{Normal}(0, 1) 
+\end{align*}$$
+
+```{r}
+f <- bf(error.y ~ 0, 
+        mu ~ 1, # technically this is lambda but we call it mu nonetheless 
+        family = exponential)
+
+# mu has log-link, so we don't pose any bounds on it 
+p <- c(
+  prior(normal(0, 1), class = Intercept)
+)
+
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+  get_prior(f, data = .)
+
+task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+  make_stancode(f, data = ., prior = p)
+```
+
+Fit the model: 
+
+```{r}
+model.y.exponential <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  mutate(error.y = ifelse(error.y < 1e-10, 1e-10, error.y)) %>% 
+  brm(
+    formula = f,
+    data = .,
+    prior = p,
+    chains = 4,
+    file = "models/task2.y.exponential",
+    file_refit = "on_change"
+    # init = list()
+    # control = list(adapt_delta = 0.95)
+  )
+```
+
+Check fit and posterior: 
+
+```{r}
+summary(model.y.exponential)
+plot(model.y.exponential)
+pp_check(model.y.exponential, ndraws = 100)
+```
+
+Plot posterior: 
+
+```{r}
+model.y.exponential %>% get_variables(.)
+
+model.y.exponential %>% spread_draws(b_Intercept) %>% 
+  mutate(mu = exp(b_Intercept)) %>% 
+  ggplot(aes(x = 1/mu)) + stat_halfeye()
+```
 
 ### Compare between the two 
+
+Define custom functions for the Lomax distribution: 
+
+```{r}
+expose_functions(model.y.lomax, vectorize = TRUE)
+
+# Define log-likelihood function for brms
+log_lik_custom_lomax <- function(i, prep) {
+  mu <- brms::get_dpar(prep, "mu", i = i)
+  lambda <- brms::get_dpar(prep, "lambda", i = i)
+  alpha <- brms::get_dpar(prep, "alpha", i = i)
+  y <- prep$data$Y[i]
+  custom_lomax_lpdf(y, mu, lambda, alpha)
+}
+```
+
+Loo comparison 
 
 ```{r}
 loo(model.y.lomax, model.y.exponential) 
 ```
+
+Lomax is clearly better than exponential. 
 
 
 ## Task 2 - Vis Angle - error on X 
