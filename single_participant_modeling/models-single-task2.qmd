@@ -377,13 +377,14 @@ prediction <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
 
  task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
    mutate(error.y = ifelse(error.y < 1e-10, 0, error.y)) %>% 
-   ggplot(aes(x = error.y)) + geom_dots() + 
-   stat_slab(data = prediction, aes(x = .prediction), 
-            fill = "skyblue", alpha = 0.6) + 
-   xlim(0, 0.2)
+   ggplot() + 
+   geom_dots(aes(x = error.y)) # + 
+   # stat_slab(data = prediction, aes(x = .prediction), 
+   #          fill = "skyblue", alpha = 0.6)  + 
+   # xlim(NA, 100)
 ```
 
-Huh this does not look good lol 
+TODO --- maybe there is something wrong with the lomax distribution ...? 
 
 ### Exponential Distribution 
 

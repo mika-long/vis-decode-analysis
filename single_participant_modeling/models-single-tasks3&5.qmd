@@ -738,16 +738,17 @@ task3_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
   labs(title="Task 3 -- CDF Median")
 ```
 
+---- 
+
+## Option 1 --- no bias + `sigma_i = beta * d_i` 
+
 Math model:
 
 $$\begin{align*}
 \text{error_va}_{i} &\sim \mathcal{N}(0, \sigma) \\
-\sigma &= f(d_i) \,\, \text{where} \,\, d_i = \texttt{va.ans.x}_i
+\sigma &= f(d_i) = \beta \cdot d_i \,\, \text{where} \,\, d_i = \texttt{va.ans.x}_i
 \end{align*}$$
 
-### Task 3 --- Visual Angle Model
-
-**Option 1**: $\log(\sigma_i) = f(d_i) \to \sigma_i = \exp(f(d_i)) = \exp(\alpha) \times d_i$
 
 ```{r}
 f <- bf(error_va ~ 0,
@@ -764,14 +765,14 @@ p <- c(
 
 task3_df %>% mutate(error_va = va.select.y - va.ans.y, 
                     log.va.ans.x = log(va.ans.x)) %>%
-get_prior(formula = f,
-          data = .)
+  get_prior(formula = f,
+            data = .)
 
 task3_df %>% mutate(error_va = va.select.y - va.ans.y, 
                     log.va.ans.x = log(va.ans.x)) %>%
-make_stancode(formula = f,
-              data = ., 
-              prior = p)
+  make_stancode(formula = f,
+                data = ., 
+                prior = p)
 ```
 
 Fit the model:
@@ -779,7 +780,7 @@ Fit the model:
 ```{r}
 #| output: false
 
-s.3.va.1 <- task3_df %>%
+model.3.no.bias.no.alpha <- task3_df %>%
   mutate(error_va = va.select.y - va.ans.y, 
          log.va.ans.x = log(va.ans.x)) %>%
   mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>%
@@ -789,61 +790,87 @@ s.3.va.1 <- task3_df %>%
     family = gaussian(),
     prior = p,
     chains = 4,
-    file="models/s.3.va.1",
+    file = "models/task3.no.bias.no.alpha",
+    file_refit = "on_change", 
     save_pars = save_pars(all=TRUE)
 )
 ```
 
 ```{r}
-summary(s.3.va.1)
+summary(model.3.no.bias.no.alpha)
 ```
 
 ```{r}
 #| layout-ncol: 2
-plot(s.3.va.1)
-pp_check(s.3.va.1, ndraws = 100)
+plot(model.3.no.bias.no.alpha)
+pp_check(model.3.no.bias.no.alpha, ndraws = 100)
 ```
 
 Check posterior of alpha: 
 
 ```{r}
-s.3.va.1 %>% spread_draws(b_sigma_Intercept) %>% 
+model.3.no.bias.no.alpha %>% spread_draws(b_sigma_Intercept) %>% 
   mutate(alpha = exp(b_sigma_Intercept)) %>% 
   ggplot(aes(x = alpha)) + 
   stat_halfeye() + 
   xlim(0.01, 0.02)
 ```
 
-
----
-
-**Option 2**: $\sigma_i = f(d_i) = \exp(\beta \cdot d_i)$
+Posterior predictive check + prediction 
 
 ```{r}
-f <- bf(error_va ~ 0, 
-        sigma ~ 0 + va.ans.x)
+prediction <- task3_df %>% 
+  mutate(error_va = va.select.y - va.ans.y, 
+         log.va.ans.x = log(va.ans.x)) %>% 
+  add_predicted_draws(model.3.no.bias.no.alpha, ndraws = 100) 
+
+task3_df %>% 
+  mutate(error_va = va.select.y - va.ans.y, 
+         log.va.ans.x = log(va.ans.x)) %>%
+  ggplot() +  
+  stat_lineribbon(data = prediction, aes(x = va.ans.x, y = .prediction), alpha = 0.6) +
+  scale_fill_brewer(palette = "Blues") +
+  geom_point(aes(x = va.ans.x, y = error_va), color = "#333333")
+```
+
+## Option 2 --- bias + `sigma_i = beta * d_i` 
+
+```{r}
+f <- bf(error_va ~ 1, 
+        sigma ~ 1 + offset(log.va.ans.x))
 
 p <- c(
-  # prior(normal(0, 1), class = Intercept, dpar = sigma), 
-  prior(normal(0, 1), class = b, dpar = sigma)
+  prior(normal(0, 1), class = Intercept), 
+  prior(normal(0, 1), class = Intercept, dpar = sigma)
 )
 ```
+
+```{r}
+#| echo: false 
+#| eval: false 
+
+task3_df %>% mutate(error_va = va.select.y - va.ans.y, 
+                    log.va.ans.x = log(va.ans.x)) %>% 
+  get_prior(f, data = .)
+```
+
 
 Fit the model:
 
 ```{r}
 #| output: false
 
-s.3.va.2 <- task3_df %>%
-  mutate(error_va = va.select.y - va.ans.y) %>%
-  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>%
+model.3.bias.no.alpha <- task3_df %>%
+  mutate(error_va = va.select.y - va.ans.y, 
+         log.va.ans.x = log(va.ans.x)) %>%
   brm(
     formula = f,
     data = .,
     family = gaussian(),
     prior = p,
     chains = 4,
-    file="models/s.3.va.2",
+    file = "models/task3.bias.no.alpha",
+    file_refit = "on_change", 
     save_pars = save_pars(all=TRUE)
 )
 ```
@@ -851,39 +878,55 @@ s.3.va.2 <- task3_df %>%
 Check fit and posterior: 
 
 ```{r}
-summary(s.3.va.2)
+summary(model.3.bias.no.alpha)
 ```
 
 ```{r}
 #| layout-ncol: 2
 
-plot(s.3.va.2)
-pp_check(s.3.va.2, ndraws = 100)
+plot(model.3.bias.no.alpha)
+pp_check(model.3.bias.no.alpha, ndraws = 100)
 ```
 
-Lets see the posterior of beta: 
+Lets see the posterior: 
 
 ```{r}
-s.3.va.2 %>% spread_draws(`^b_.*`, regex = TRUE) %>% 
-  mutate(beta = exp(b_sigma_va.ans.x)) %>% 
-  ggplot(aes(x = beta)) + 
+model.3.bias.no.alpha %>% get_variables(.)
+
+model.3.bias.no.alpha %>% spread_draws(`^b_.*`, regex = TRUE) %>% 
+  mutate(beta = exp(b_sigma_Intercept), mu = b_Intercept) %>% 
+  pivot_longer(c(mu, beta)) %>% 
+  ggplot(aes(x = value, y = name)) + 
   stat_halfeye()
 ```
 
-This is similar to the results we obtained for the other stuff. 
+Overlay plot: 
 
----
+```{r}
+prediction <- task3_df %>% 
+  mutate(error_va = va.select.y - va.ans.y, 
+         log.va.ans.x = log(va.ans.x)) %>% 
+  add_predicted_draws(model.3.bias.no.alpha, ndraws = 100) 
 
-**Option 3**: $\sigma_i = \alpha_i + d_i$ 
+task3_df %>% 
+  mutate(error_va = va.select.y - va.ans.y, 
+         log.va.ans.x = log(va.ans.x)) %>%
+  ggplot() +  
+  stat_lineribbon(data = prediction, aes(x = va.ans.x, y = .prediction), alpha = 0.6) +
+  scale_fill_brewer(palette = "Blues") +
+  geom_point(aes(x = va.ans.x, y = error_va), color = "#333333")
+```
+
+## Option 3 --- no bias + `sigma_i = alpha + beta * d_i` 
 
 ```{r}
 f <- bf(error_va ~ 0,
-        sigma ~ 1 + offset(va.ans.x), 
+        sigma ~ 1 + va.ans.x, 
         family = brmsfamily("gaussian", link_sigma = "identity"))
 
 p <- c(
-  prior(normal(1, 1), class = Intercept, dpar = sigma, lb=0) # , 
-  # prior(normal(1, 1), class = b, dpar = sigma, lb = 0)
+  prior(lognormal(0, 1), class = Intercept, dpar = sigma), 
+  prior(lognormal(0, 1), class = b, dpar = sigma)
 )
 ```
 
@@ -891,17 +934,15 @@ p <- c(
 #| eval: false 
 #| echo: false 
 
-task3_df %>% mutate(error_va = va.select.y - va.ans.y, 
-                    log.va.ans.x = log(va.ans.x)) %>%
-get_prior(formula = f,
-          data = .)
+task3_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
+  get_prior(formula = f,
+            data = .)
 
-task3_df %>% mutate(error_va = va.select.y - va.ans.y, 
-                    log.va.ans.x = log(va.ans.x)) %>%
-make_stancode(formula = f,
-              data = ., 
-              prior = p
-              )
+task3_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
+  make_stancode(formula = f,
+                data = ., 
+                prior = p
+                )
 ```
 
 Fit the model: 
@@ -909,95 +950,135 @@ Fit the model:
 ```{r}
 #| output: false
 
-s.3.va.3 <- task3_df %>%
+model.3.no.bias.alpha <- task3_df %>%
   mutate(error_va = va.select.y - va.ans.y) %>%
-  mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>%
   brm(
     formula = f,
     data = .,
     family = gaussian(),
     prior = p,
     chains = 4,
-    file="models/s.3.va.3",
+    file = "models/task3.no.bias.alpha",
+    file_refit = "on_change", 
     save_pars = save_pars(all=TRUE), 
-    control = list(adapt_delta = 0.99)
-)
+    control = list(adapt_delta = 0.99) # model runs into divergent transitions without this 
+  )
 ```
 
 Check fit and posterior: 
 
 ```{r}
-summary(s.3.va.3)
+summary(model.3.no.bias.alpha)
 ```
 
 ```{r}
 #| layout-ncol: 2
 
-plot(s.3.va.3)
-pp_check(s.3.va.3, ndraws = 100)
+plot(model.3.no.bias.alpha)
+pp_check(model.3.no.bias.alpha, ndraws = 100)
 ```
 
 ```{r}
-s.3.va.3 %>% get_variables(.)
+model.3.no.bias.alpha %>% get_variables(.)
+
+model.3.no.bias.alpha %>% spread_draws(b_sigma_Intercept, b_sigma_va.ans.x) %>% 
+  pivot_longer(4:5) %>% 
+  ggplot(aes(x = value, y = name)) + stat_halfeye()
 ```
 
-
----
-
-Compare across models: 
+Overlay plot: 
 
 ```{r}
-loo(s.3.va.1, s.3.va.2, s.3.va.3)
+prediction <- task3_df %>% 
+  mutate(error_va = va.select.y - va.ans.y) %>% 
+  add_predicted_draws(model.3.no.bias.alpha, ndraws = 100) 
+
+task3_df %>% 
+  mutate(error_va = va.select.y - va.ans.y, 
+         log.va.ans.x = log(va.ans.x)) %>%
+  ggplot() +  
+  stat_lineribbon(data = prediction, aes(x = va.ans.x, y = .prediction), alpha = 0.6) +
+  scale_fill_brewer(palette = "Blues") +
+  geom_point(aes(x = va.ans.x, y = error_va), color = "#333333")
 ```
 
-Ok from this we see that this relationship is definitely NOT additive. 
+## Option 4 --- bias + `sigma_i = alpha + beta * d_i` 
+
+```{r}
+f <- bf(error_va ~ 1,
+        sigma ~ 1 + va.ans.x, 
+        family = brmsfamily("gaussian", link_sigma = "identity"))
+
+p <- c(
+  prior(normal(0, 1), class = Intercept),
+  prior(lognormal(0, 1), class = Intercept, dpar = sigma), 
+  prior(lognormal(0, 1), class = b, dpar = sigma)
+)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+
+task3_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
+  get_prior(formula = f,
+            data = .)
+
+task3_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
+  make_stancode(formula = f,
+                data = ., 
+                prior = p
+                )
+```
+
+```{r}
+#| output: false
+
+model.3.bias.alpha <- task3_df %>%
+  mutate(error_va = va.select.y - va.ans.y) %>%
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p,
+    chains = 4,
+    file = "models/task3.bias.alpha",
+    file_refit = "on_change", 
+    save_pars = save_pars(all=TRUE), 
+    iter = 4000, # increased because even with adapt_delta its still running into divergent transitions 
+    control = list(adapt_delta = 0.99) # model runs into divergent transitions without this 
+  )
+```
+
+Check fit and poseterior: 
+
+```{r}
+summary(model.3.bias.alpha)
+plot(model.3.bias.alpha)
+pp_check(model.3.bias.alpha, ndraws = 100)
+```
+
+Overlay plot: 
+
+```{r}
+prediction <- task3_df %>% 
+  mutate(error_va = va.select.y - va.ans.y) %>% 
+  add_predicted_draws(model.3.bias.alpha, ndraws = 100) 
+
+task3_df %>% 
+  mutate(error_va = va.select.y - va.ans.y, 
+         log.va.ans.x = log(va.ans.x)) %>%
+  ggplot() +  
+  stat_lineribbon(data = prediction, aes(x = va.ans.x, y = .prediction), alpha = 0.6) +
+  scale_fill_brewer(palette = "Blues") +
+  geom_point(aes(x = va.ans.x, y = error_va), color = "#333333")
+```
 
 
-### Task 3 Physical Model
+## Compare across models: 
 
-**TODO** 
+```{r}
+loo(model.3.no.bias.no.alpha, model.3.no.bias.alpha, model.3.bias.no.alpha, model.3.bias.alpha)
+```
 
-<!-- ```{r} -->
-<!-- f <- bf(error_phy ~ 0,  -->
-<!--         sigma ~ 0 + offset(log(phy.ans.x + dist_to_screen))) -->
-<!-- p <- prior(constant(1), class = "sd", group = "participantId", dpar="sigma") -->
-<!-- ``` -->
-
-<!-- Fit the model:  -->
-
-<!-- ```{r} -->
-<!-- #| label: task3-fit-model-2 -->
-<!-- #| output: false  -->
-
-<!-- m3.2 <- task3_df %>%  -->
-<!--   mutate(error_phy = phy.select.y - phy.ans.y) %>%  -->
-<!--   mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>% -->
-<!--   brm(  -->
-<!--     formula = f,  -->
-<!--     data = .,  -->
-<!--     family = gaussian(), -->
-<!--     prior = p, -->
-<!--     control = list(adapt_delta = 0.95), -->
-<!--     chains = 4,  -->
-<!--     iter = 6000,  -->
-<!--     file="models/m3.2", -->
-<!--     save_pars = save_pars(all = TRUE) -->
-<!-- ) -->
-<!-- ``` -->
-
-<!-- Plot the results:  -->
-
-<!-- ```{r} -->
-<!-- summary(m3.2) -->
-<!-- plot(m3.2) -->
-<!-- pp_check(m3.2, ndraws = 100) -->
-<!-- ``` -->
-
-# Compare the models 
-
-- across the difference spaces 
-
-**TODO** 
-
-
-
+Hmm the standard deviations are almost the same size as the actual one ... well still it's good to know that bias + no alpha is the best option. 
