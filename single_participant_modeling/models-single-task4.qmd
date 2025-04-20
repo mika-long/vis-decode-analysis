@@ -305,45 +305,40 @@ prediction %>% ggplot() +
 
 # Lomax model 
 
-Lomax is Pareto Type II distirbution. We had similar models for task 2. 
+Lomax is Pareto Type II distribution. We had similar models for task 2. 
 
 ```{r}
-# Define the Pareto custom family
-pareto_family <- custom_family(
-  "custom_pareto",
-  dpars = c("mu", "shape"),  # parameters: mu = scale, shape = alpha
-  links = c("log", "log"),   # log links ensure parameters are positive
-  lb = c(0, 0),              # lower bounds for both parameters
+lomax_family <- custom_family(
+  "lomax",
+  dpars = c("mu", "lambda", "alpha"),    # includes mu as required
+  links = c("identity", "log", "log"),   # appropriate links
+  lb = c(-Inf, 0, 0),                    # appropriate bounds
   type = "real"
 )
 
-# The Stan code for the Pareto log-likelihood function
-# Note: Stan already has a built-in pareto_lpdf function
 stan_funs <- "
-  // Use the built-in pareto_lpdf function
-  real custom_pareto_lpdf(real y, real mu, real shape) {
-    return pareto_lpdf(y | mu, shape);
+  real lomax_lpdf(real y, real mu, real lambda, real alpha) {
+    return pareto_type_2_lpdf(y | 0, lambda, alpha);  # mu is ignored
   }
   
-  real custom_pareto_rng(real mu, real shape) {
-    return mu * pow(1 - uniform_rng(0, 1), -1/shape);
+  real lomax_rng(real mu, real lambda, real alpha) {
+    return pareto_type_2_rng(0, lambda, alpha);  # mu is ignored
   }
 "
 ```
 
 ```{r}
 # Define the formula for the model
-# Here we're modeling both parameters as constants
 f <- bf(
-  error ~ 1,  # Intercept-only model for mu (scale parameter)
-  shape ~ 1  # Intercept-only model for shape parameter
+  error ~ 0,  
+  mu ~ 0, 
+  alpha ~ 1, 
+  lambda ~ 1  
 )
 
 p <- c(
-    # Prior for the scale parameter (on log scale)
-    prior(constant(log(1e-10)), class = "Intercept"),
-    # Prior for the shape parameter (on log scale)
-    prior(normal(0, 1), class = "Intercept", dpar = "shape")
+    prior(normal(0, 1), class = Intercept, dpar = alpha),
+    prior(normal(0, 1), class = Intercept, dpar = lambda)
   )
 ```
 
@@ -351,71 +346,75 @@ p <- c(
 #| eval: false 
 #| echo: false 
 
-task4_df %>%  mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>% 
-  get_prior(formula = f, family = pareto_family)
+task4_df %>%  mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) %>%
+  mutate(error = ifelse(error < 1e-10, 1e-10, error)) %>% 
+  get_prior(formula = f, family = lomax_family)
 
 task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>% 
-  make_stancode(formula = f, family = pareto_family, prior = p)
+  make_stancode(formula = f, family = lomax_family, prior = p)
 ```
 
 
 ```{r}
 #| output: false 
 # Fit the model with brms
-s.4.2 <- task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>%  brm(
-  formula = f,
-  data = .,
-  family = pareto_family,
-  prior = p,
-  stanvars = stanvar(scode = stan_funs, block = "functions"),
-  chains = 4,
-  file = "models/s.4.2", 
-  # init = list()
-  # control = list(adapt_delta = 0.95)
-)
+model4.lomax <- task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) %>% 
+  mutate(error = ifelse(error < 1e-10, 0, error)) %>% 
+  brm(
+    formula = f,
+    data = .,
+    family = lomax_family,
+    prior = p,
+    stanvars = stanvar(scode = stan_funs, block = "functions"),
+    chains = 4,
+    file = "models/task4.lomax", 
+    # init = list()
+    # control = list(adapt_delta = 0.95)
+  )
 ```
 
 Check fit: 
 
 ```{r}
 # Examine model results
-summary(s.4.2)
+summary(model4.lomax)
 ```
 
-Define custom functions for pp_check: 
+Let's check the posterior of alpha and lambda: 
 
 ```{r}
+model4.lomax %>% spread_draws(`^b_.*`, regex = TRUE) %>% 
+  mutate(b_alpha = exp(b_alpha_Intercept), b_lambda = exp(b_lambda_Intercept)) %>% 
+  pivot_longer(6:7) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye() + 
+  facet_wrap(~name, scales = "free")
+```
 
-expose_functions(s.4.2, vectorize = TRUE)
+Define custom functions for `pp_check` and `loo`: 
+
+```{r}
+expose_functions(model4.lomax, vectorize = TRUE)
 
 # Define the posterior_predict function in R as per vignette
-posterior_predict_custom_pareto <- function(i, draws, ...) {
+posterior_predict_lomax <- function(i, draws, ...) {
   mu <- draws$dpars$mu[i]
   shape <- draws$dpars$shape[i]
   # Use Stan's rng function indirectly via brms
   custom_pareto_rng(mu, shape)
 }
 
-pp_check(s.4.2, ndraws = 100) + xlim(0, 1)
-```
-
-```{r}
-log_lik_custom_pareto <- function(i, prep){
+log_lik_lomax <- function(i, prep){
   mu <- brms::get_dpar(prep, "mu", i = i)
   shape <- brms::get_dpar(prep, "shape", i = i)
   y <- prep$data$Y[i]
   custom_pareto_lpdf(y, mu, shape)
 }
+
+pp_check(model4.lomax, ndraws = 100) # + xlim(0, 1)
 ```
 
-Let's check the posterior of alpha: 
 
-```{r}
-s.4.2 %>% spread_draws(b_shape_Intercept) %>% 
-  mutate(alpha = exp(b_shape_Intercept)) %>% 
-  ggplot(aes(x = alpha)) + 
-  stat_halfeye()
-```
 
 ## Model Comparison
 
