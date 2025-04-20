@@ -182,16 +182,14 @@ If we map the mathematical slope to the actual slope, this is what we get:
 - x axis range [-5, 5] correspond to 535 px -> 53.5 px / unit 
 
 ```{r}
-
-
-task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope), y = data_to_screen_slope(data.ans.slope))) + 
+task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope), 
+                        y = data_to_screen_slope(data.ans.slope))) + 
   geom_point(alpha = 0.5) + 
   coord_equal()
 
 task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) + 
   geom_dots()
 ```
-
 
 Let's first see the distribution of signed error: 
 
@@ -202,8 +200,6 @@ task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) +
 task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = dist_to_screen)) + 
   geom_point(alpha = 0.5)
 ```
-
-It seems that the selected slope is consistently smaller than the actual slope of the answer. 
 
 Let's see if there's any obvious relation between signed error and parameters of the distribution: 
 
@@ -234,32 +230,6 @@ task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) +
   geom_dots()
 ```
 
---- 
-
-```{r}
-
-```
-
-I don't get it. why is it producing these values ...? Let's debug it. 
-
-```{r}
-#| output: false 
-debug(psgt)
-psgt(-1, -1, 0.6, 0.2, 2.9, 5.2, mean.cent = FALSE)
-undebug(psgt)
-```
-
-
-
-
-```{r}
-x_vals <- seq(-5, 5, 0.01)
-task4_df %>% select(contains("param")) %>% 
-  mutate(y_vals = list(psgt(x_vals, mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE)), 
-         id = 1:110) %>% 
-  unnest(y_vals) %>% 
-  ggplot(aes(x = y_vals)) + geom_dots()
-```
 
 # Exponential Model 
 
@@ -286,36 +256,56 @@ Fit the model:
 
 ```{r}
 #| output: false 
-s.4.1 <- task4_df %>% 
-  mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>% 
+model4.exponential <- task4_df %>% 
+  mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
+  mutate(error = ifelse(abs(error) < tolerance, tolerance, error)) %>% 
   brm(formula = f, 
-      prior = prior(normal(0, 1), class = Intercept), 
-      cores = 4, 
-      file = "models/s.4.1"
-      )
+      data = ., 
+      prior = p, 
+      chains = 4, 
+      file = "models/task4.exponential", 
+      file_refit = "on_change",
+      save_pars = save_pars(all = TRUE)
+  )
 ```
 
 Check fit: 
 
 ```{r}
-summary(s.4.1)
+summary(model4.exponential)
 ```
 
 ```{r}
-plot(s.4.1)
-pp_check(s.4.1, ndraws = 100, type = "pit_ecdf")
-pp_check(s.4.1, ndraws = 100)
+plot(model4.exponential)
+pp_check(model4.exponential, ndraws = 100)
+pp_check(model4.exponential, ndraws = 100, type = "pit_ecdf") # pet Matt's suggestion 
+# we want the dark line to be bounded by the light blue lines, so this is definitely not a good fit ... 
 ```
 
 ```{r}
-s.4.1 %>% spread_draws(b_Intercept) %>% 
+model4.exponential %>% spread_draws(b_Intercept) %>% 
   mutate(lambda = exp(b_Intercept)) %>% 
-  ggplot(aes(x = lambda)) + stat_halfeye()
+  ggplot(aes(x = lambda)) + 
+  stat_halfeye()
 ```
 
-# Pareto model 
+Overlay plot: 
 
-- [pareto distribution](https://en.wikipedia.org/wiki/Pareto_distribution) and its [stan implementation](https://mc-stan.org/docs/functions-reference/positive_lower-bounded_distributions.html#pareto-distribution)
+```{r}
+prediction <- task4_df %>% 
+  mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
+  mutate(error = ifelse(abs(error) < tolerance, tolerance, error)) %>% 
+  add_predicted_draws(model4.exponential, ndraws = 100)
+
+prediction %>% ggplot() + 
+  stat_slab(aes(x = .prediction), 
+            fill = "skyblue", alpha = 0.6) + 
+  geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope)))
+```
+
+# Lomax model 
+
+Lomax is Pareto Type II distirbution. We had similar models for task 2. 
 
 ```{r}
 # Define the Pareto custom family
@@ -433,3 +423,6 @@ s.4.2 %>% spread_draws(b_shape_Intercept) %>%
 loo(s.4.1, s.4.2)
 ```
 
+
+
+# Compare 
