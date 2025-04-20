@@ -27,9 +27,13 @@ library(brms)
 library(tidybayes)
 ```
 
+
+
 # Set up 
 
 read in data and write functions for processing: 
+
+
 
 ```{r}
 #| label: read-in-data
@@ -109,9 +113,13 @@ vis_distance <- data.frame(participantId = p,
 participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participantId))
 ```
 
+
+
 # Task 5 --- Project from dot to axes 
 
 Get data: 
+
+
 
 ```{r}
 #| label: task 5 load data
@@ -140,7 +148,11 @@ task5_df <- single_pid_df %>% filter(task == "task5") %>%
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
 
+
+
 Verify that the results are in the right scale: 
+
+
 
 ```{r}
 #| output: false 
@@ -167,6 +179,8 @@ task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
 
 ```
 
+
+
 ## Model Fitting Overview 
 
 - Models can be fitted in visual angle space, as well as physical space 
@@ -175,6 +189,8 @@ task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
 ## Task 5.X --- Project from dot to X axes
 
 Distribution of signed error: 
+
+
 
 ```{r}
 #| code-fold: true
@@ -185,10 +201,14 @@ task5_df %>% ggplot(aes(x = va.select.x - va.ans.x)) +
   labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle") 
 ```
 
+
+
 <!-- - This doesn't quite look normal, but more like a _skewed_ normal distribution ...  -->
 <!-- - But to what extent does modelling skewness matter? Probably not. Better to model this with a normal distribution.  -->
 
 Relationship between signed error (in visual angle space) and distance to X-axes: 
+
+
 
 ```{r}
 #| code-fold: true
@@ -198,6 +218,8 @@ task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) +
   geom_vline(xintercept = 0, linetype="dashed", color="gray") + 
   labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
 ```
+
+
 
 ## Task 5.X  
 
@@ -209,6 +231,8 @@ $$\begin{aligned}
 Note that since the default in `brms` is a log link function, i.e., $\log(\sigma) = f(d_i) \to \sigma = \exp(f(d_i))$
 
 **Option 1**: $\sigma_i = \exp(f(d_i)) = \exp(\alpha + \texttt{va.ans.y}_i) = \exp(\alpha) \times \exp(\log(\texttt{va.ans.y}_i)) = \exp(\alpha) \times \texttt{va.ans.y}_i$
+
+
 
 ```{r}
 f <- bf(error_va ~ 0, 
@@ -234,12 +258,16 @@ task5_df %>% mutate(error_va = va.select.x - va.ans.x,
                 prior = p)
 ```
 
+
+
 Fit model: 
+
+
 
 ```{r}
 #| output: false 
 
-model5.x.no.bias <- task5_df %>% mutate(error_va = va.select.x - va.ans.x, 
+task5.x.no.bias <- task5_df %>% mutate(error_va = va.select.x - va.ans.x, 
                                  log.va.ans.y = log(va.ans.y)) %>%
   # account for numerical precision 
   mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
@@ -257,31 +285,39 @@ model5.x.no.bias <- task5_df %>% mutate(error_va = va.select.x - va.ans.x,
 ```
 
 ```{r}
-summary(model5.x.no.bias)
+summary(task5.x.no.bias)
 ```
 
 ```{r}
 #| layout-ncol: 2
-plot(model5.x.no.bias)
-pp_check(model5.x.no.bias, ndraws = 100)
+plot(task5.x.no.bias)
+pp_check(task5.x.no.bias, ndraws = 100)
 ```
+
+
 
 Check the posterior estimations of `alpha`: 
 
+
+
 ```{r}
-model5.x.no.bias %>% spread_draws(`b_sigma_.*`, regex=TRUE) %>% 
+task5.x.no.bias %>% spread_draws(`b_sigma_.*`, regex=TRUE) %>% 
   mutate(alpha = exp(b_sigma_Intercept)) %>% 
   ggplot(aes(x = alpha)) + 
   stat_halfeye() 
 ```
 
+
+
 Plot overlay: 
+
+
 
 ```{r}
 prediction <- task5_df %>% mutate(error_va = va.select.x - va.ans.x, 
                                  log.va.ans.y = log(va.ans.y)) %>% 
   filter(va.ans.y != 0) %>% # account for bug 
-  add_predicted_draws(model5.x.no.bias, ndraws = 100)
+  add_predicted_draws(task5.x.no.bias, ndraws = 100)
 
 task5_df %>%  mutate(error_va = va.select.x - va.ans.x, 
                                  log.va.ans.y = log(va.ans.y)) %>% 
@@ -292,7 +328,11 @@ task5_df %>%  mutate(error_va = va.select.x - va.ans.x,
   geom_point(aes(x = va.ans.y, y = error_va), color = "#333333")
 ```
 
+
+
 ### Option 2 --- bias + `sigma = beta * d_i` 
+
+
 
 ```{r}
 f <- bf(error_va ~ 1, 
@@ -319,7 +359,11 @@ task5_df %>% mutate(error_va = va.select.x - va.ans.x,
                 prior = p)
 ```
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| output: false 
@@ -340,7 +384,11 @@ model5.x.bias <- task5_df %>% mutate(error_va = va.select.x - va.ans.x,
 )
 ```
 
+
+
 Check fit and posterior: 
+
+
 
 ```{r}
 summary(model5.x.bias)
@@ -348,7 +396,11 @@ plot(model5.x.bias)
 pp_check(model5.x.bias, ndraws = 100)
 ```
 
+
+
 Check posterior: 
+
+
 
 ```{r}
 model5.x.bias %>% spread_draws(`^b_.*`, regex = TRUE) %>% 
@@ -358,7 +410,11 @@ model5.x.bias %>% spread_draws(`^b_.*`, regex = TRUE) %>%
   stat_halfeye()
 ```
 
+
+
 Plot overlay: 
+
+
 
 ```{r}
 prediction <- task5_df %>% mutate(error_va = va.select.x - va.ans.x, 
@@ -375,17 +431,25 @@ task5_df %>%  mutate(error_va = va.select.x - va.ans.x,
   geom_point(aes(x = va.ans.y, y = error_va), color = "#333333")
 ```
 
+
+
 ### LOO Comparison 
 
+
+
 ```{r}
-loo(model5.x.no.bias, model5.x.bias)
+loo(task5.x.no.bias, model5.x.bias)
 ```
+
+
 
 The one with the bias does a much better job ... 
 
 ## Task 5.Y --- Project from dot to Y Axes
 
 Distribution of signed error:
+
+
 
 ```{r}
 #| code-fold: true
@@ -396,7 +460,11 @@ task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
   labs(title = "Task 5 - Project from dot to Y-Axes - Visual Angle")
 ```
 
+
+
 Relationship between signed error and distance to x-axes (in visual angle space):
+
+
 
 ```{r}
 #| code-fold: true
@@ -407,11 +475,15 @@ task5_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
   labs(title = "Task 5 - Project from dot to Y-Axes - Visual Angle")
 ```
 
+
+
 We apply the same approach, fit two models, and compare them.
 
 ### Task 5.Y --- No bias 
 
 **Option 1**: $\sigma_i = \exp(f(d_i)) = \exp(\alpha) \times \exp(\log(d_i))$
+
+
 
 ```{r}
 f <- bf(error_va ~ 0,
@@ -440,7 +512,11 @@ make_stancode(formula = f,
               )
 ```
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| output: false 
@@ -461,7 +537,11 @@ model5.y.no.bias <- task5_df %>% mutate(error_va = va.select.y - va.ans.y,
 )
 ```
 
+
+
 Check fit and posterior: 
+
+
 
 ```{r}
 summary(model5.y.no.bias)
@@ -473,7 +553,6 @@ summary(model5.y.no.bias)
 plot(model5.y.no.bias)
 pp_check(model5.y.no.bias, ndraws = 100)
 ```
-
 
 ```{r}
 #| code-fold: true 
@@ -499,7 +578,11 @@ task5_df %>% mutate(error_va = va.select.y - va.ans.y,
   geom_point(aes(x = va.ans.x, y = error_va), color = "#333333")
 ```
 
+
+
 ### Option 2: Biased version 
+
+
 
 ```{r}
 f <- bf(error_va ~ 1,
@@ -526,7 +609,11 @@ make_stancode(formula = f,
               prior = p)
 ```
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| output: false 
@@ -550,7 +637,11 @@ model5.y.bias <- task5_df %>% mutate(error_va = va.select.y - va.ans.y,
 )
 ```
 
+
+
 Check fit and posterior: 
+
+
 
 ```{r}
 summary(model5.y.bias)
@@ -562,7 +653,6 @@ summary(model5.y.bias)
 plot(model5.y.bias)
 pp_check(model5.y.bias, ndraws = 100)
 ```
-
 
 ```{r}
 model5.y.bias %>% spread_draws(`^b.*`, regex = TRUE) %>% 
@@ -587,17 +677,25 @@ task5_df %>% mutate(error_va = va.select.y - va.ans.y,
   geom_point(aes(x = va.ans.x, y = error_va), color = "#333333")
 ```
 
+
+
 ### LOO Comparison 
+
+
 
 ```{r}
 loo(model5.y.bias, model5.y.no.bias)
 ```
+
+
 
 There is not much difference between the one with bias and the one without bias ... 
 
 # Task 3 -- Find point on curve where `y == 0.5`
 
 First we get the data:
+
+
 
 ```{r}
 task3_df <- single_pid_df %>% filter(task == "task3") %>%
@@ -621,7 +719,11 @@ task3_df <- single_pid_df %>% filter(task == "task3") %>%
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
 
+
+
 Verify that the scales are correct:
+
+
 
 ```{r}
 #| output: false
@@ -654,7 +756,11 @@ task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
   geom_dots()
 ```
 
+
+
 Distribution of signed error:
+
+
 
 ```{r}
 #| code-fold: true
@@ -665,7 +771,11 @@ task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
   labs(title="Task 3 -- Find dot on curve where y == 0.5")
 ```
 
+
+
 Relationship between distance from the y-axes and the signed distribution:
+
+
 
 ```{r}
 task3_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
@@ -673,6 +783,8 @@ task3_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
   geom_hline(yintercept = 0, linetype="dashed", color="black") +
   labs(title="Task 3 -- CDF Median")
 ```
+
+
 
 ---- 
 
@@ -684,6 +796,8 @@ $$\begin{align*}
 \text{error_va}_{i} &\sim \mathcal{N}(0, \sigma) \\
 \sigma &= f(d_i) = \beta \cdot d_i \,\, \text{where} \,\, d_i = \texttt{va.ans.x}_i
 \end{align*}$$
+
+
 
 
 ```{r}
@@ -711,7 +825,11 @@ task3_df %>% mutate(error_va = va.select.y - va.ans.y,
                 prior = p)
 ```
 
+
+
 Fit the model:
+
+
 
 ```{r}
 #| output: false
@@ -742,7 +860,11 @@ plot(model.3.no.bias.no.alpha)
 pp_check(model.3.no.bias.no.alpha, ndraws = 100)
 ```
 
+
+
 Check posterior of alpha: 
+
+
 
 ```{r}
 model.3.no.bias.no.alpha %>% spread_draws(b_sigma_Intercept) %>% 
@@ -752,7 +874,11 @@ model.3.no.bias.no.alpha %>% spread_draws(b_sigma_Intercept) %>%
   xlim(0.01, 0.02)
 ```
 
+
+
 Posterior predictive check + prediction 
+
+
 
 ```{r}
 prediction <- task3_df %>% 
@@ -769,7 +895,11 @@ task3_df %>%
   geom_point(aes(x = va.ans.x, y = error_va), color = "#333333")
 ```
 
+
+
 ## Option 2 --- bias + `sigma_i = beta * d_i` 
+
+
 
 ```{r}
 f <- bf(error_va ~ 1, 
@@ -791,7 +921,11 @@ task3_df %>% mutate(error_va = va.select.y - va.ans.y,
 ```
 
 
+
+
 Fit the model:
+
+
 
 ```{r}
 #| output: false
@@ -811,7 +945,11 @@ model.3.bias.no.alpha <- task3_df %>%
 )
 ```
 
+
+
 Check fit and posterior: 
+
+
 
 ```{r}
 summary(model.3.bias.no.alpha)
@@ -824,7 +962,11 @@ plot(model.3.bias.no.alpha)
 pp_check(model.3.bias.no.alpha, ndraws = 100)
 ```
 
+
+
 Lets see the posterior: 
+
+
 
 ```{r}
 model.3.bias.no.alpha %>% get_variables(.)
@@ -836,7 +978,11 @@ model.3.bias.no.alpha %>% spread_draws(`^b_.*`, regex = TRUE) %>%
   stat_halfeye()
 ```
 
+
+
 Overlay plot: 
+
+
 
 ```{r}
 prediction <- task3_df %>% 
@@ -853,7 +999,11 @@ task3_df %>%
   geom_point(aes(x = va.ans.x, y = error_va), color = "#333333")
 ```
 
+
+
 ## Option 3 --- no bias + `sigma_i = alpha + beta * d_i` 
+
+
 
 ```{r}
 f <- bf(error_va ~ 0,
@@ -881,7 +1031,11 @@ task3_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
                 )
 ```
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| output: false
@@ -901,7 +1055,11 @@ model.3.no.bias.alpha <- task3_df %>%
   )
 ```
 
+
+
 Check fit and posterior: 
+
+
 
 ```{r}
 summary(model.3.no.bias.alpha)
@@ -922,7 +1080,11 @@ model.3.no.bias.alpha %>% spread_draws(b_sigma_Intercept, b_sigma_va.ans.x) %>%
   ggplot(aes(x = value, y = name)) + stat_halfeye()
 ```
 
+
+
 Overlay plot: 
+
+
 
 ```{r}
 prediction <- task3_df %>% 
@@ -938,7 +1100,11 @@ task3_df %>%
   geom_point(aes(x = va.ans.x, y = error_va), color = "#333333")
 ```
 
+
+
 ## Option 4 --- bias + `sigma_i = alpha + beta * d_i` 
+
+
 
 ```{r}
 f <- bf(error_va ~ 1,
@@ -986,7 +1152,11 @@ model.3.bias.alpha <- task3_df %>%
   )
 ```
 
+
+
 Check fit and poseterior: 
+
+
 
 ```{r}
 summary(model.3.bias.alpha)
@@ -994,7 +1164,11 @@ plot(model.3.bias.alpha)
 pp_check(model.3.bias.alpha, ndraws = 100)
 ```
 
+
+
 Overlay plot: 
+
+
 
 ```{r}
 prediction <- task3_df %>% 
@@ -1011,10 +1185,16 @@ task3_df %>%
 ```
 
 
+
+
 ## Compare across models: 
+
+
 
 ```{r}
 loo(model.3.no.bias.no.alpha, model.3.no.bias.alpha, model.3.bias.no.alpha, model.3.bias.alpha)
 ```
+
+
 
 Hmm the standard deviations are almost the same size as the actual one ... well still it's good to know that bias + no alpha is the best option. 
