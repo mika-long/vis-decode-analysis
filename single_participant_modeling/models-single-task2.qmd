@@ -373,11 +373,14 @@ Some very small number ...
 
 ### Exponential Distribution 
 
-TODO 
+**TODO** 
 
 ### Compare between the two 
 
-TODO 
+```{r}
+loo(model.y.lomax, model.y.exponential) 
+```
+
 
 ## Task 2 - Vis Angle - error on X 
 
