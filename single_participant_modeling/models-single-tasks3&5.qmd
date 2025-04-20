@@ -168,11 +168,11 @@ task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
 ```
 
 ## Model Fitting Overview 
-- Models can be fitted in visual angle space, as well as physical space 
-- Within each space, the effect of "distance to the other axis" could be *multiplicative* or *additive*. [TO BE INVESTIGATED]
-- We could start with a single participant, before extending to multiple participants 
 
-## Task 5.1 --- Project from dot to X axes
+- Models can be fitted in visual angle space, as well as physical space 
+- Within each space, the effect of "distance to the other axis" could be *multiplicative* or *additive*. This is thoroughly investigated using task 3. The model performing model is one where we assume `error ~ N(mu, sigma)` where `mu` is non-zero (i.e., biased), and `log(sigma) = beta + d_i` or in other words, `sigma = exp(beta) * d_i` 
+
+## Task 5.X --- Project from dot to X axes
 
 Distribution of signed error: 
 
@@ -185,8 +185,8 @@ task5_df %>% ggplot(aes(x = va.select.x - va.ans.x)) +
   labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle") 
 ```
 
-- This doesn't quite look normal, but more like a _skewed_ normal distribution ... 
-- But to what extent does modelling skewness matter? Probably not. Better to model this with a normal distribution. 
+<!-- - This doesn't quite look normal, but more like a _skewed_ normal distribution ...  -->
+<!-- - But to what extent does modelling skewness matter? Probably not. Better to model this with a normal distribution.  -->
 
 Relationship between signed error (in visual angle space) and distance to X-axes: 
 
@@ -199,7 +199,7 @@ task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) +
   labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle")
 ```
 
-### Task 5.1 --- Vis Angle Model
+## Task 5.X  
 
 $$\begin{aligned}
 \texttt{error_va}_i &\sim \mathcal{N}(0, \sigma_i) \\ 
@@ -215,8 +215,7 @@ f <- bf(error_va ~ 0,
         sigma ~ 1 + offset(log.va.ans.y)) 
 
 p <- c(
-  prior(normal(0, 1), class = Intercept, dpar = sigma) # ,           
-  # prior(normal(0, 1), class = b, coef = "va.ans.y", dpar = sigma, lb = 0) # this is beta 
+  prior(normal(0, 1), class = Intercept, dpar = sigma)
 )
 ```
 
@@ -226,24 +225,21 @@ p <- c(
 
 task5_df %>% mutate(error_va = va.select.x - va.ans.x, 
                     log.va.ans.y = log(va.ans.y)) %>%
-get_prior(formula = f,
-          data = ., 
-          # familiy = brmsfamily("gaussian", link_sigma = "identity")
-          )
+  get_prior(formula = f,
+            data = .)
 
 task5_df %>% mutate(error_va = va.select.x - va.ans.x, 
                     log.va.ans.y = log(va.ans.y)) %>%
-  make_stancode(f, data = ., # family = brmsfamily(family = "gaussian", link_sigma = "identity"), 
+  make_stancode(f, data = ., 
                 prior = p)
 ```
-
 
 Fit model: 
 
 ```{r}
 #| output: false 
 
-s.5x.va.1 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x, 
+task5.x.no.bias <- task5_df %>% mutate(error_va = va.select.x - va.ans.x, 
                                  log.va.ans.y = log(va.ans.y)) %>%
   # account for numerical precision 
   mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
@@ -253,46 +249,58 @@ s.5x.va.1 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x,
     formula = f,
     prior = p,
     data = .,
-    # family = brmsfamily(family = "gaussian", link_sigma = "identity"),
     chains = 4, 
-    # file = "models/s.5x.va.1", 
+    file = "models/model5.x.no.bias", 
+    file_refit = "on_change", 
     save_pars = save_pars(all = TRUE)
 )
 ```
 
 ```{r}
-summary(s.5x.va.1)
+summary(task5.x.no.bias)
 ```
 
 ```{r}
 #| layout-ncol: 2
-plot(s.5x.va.1)
-pp_check(s.5x.va.1, ndraws = 100)
+plot(task5.x.no.bias)
+pp_check(task5.x.no.bias, ndraws = 100)
 ```
 
 Check the posterior estimations of `alpha`: 
 
 ```{r}
-s.5x.va.1 %>% spread_draws(`b_sigma_.*`, regex=TRUE) %>% 
+task5.x.no.bias %>% spread_draws(`b_sigma_.*`, regex=TRUE) %>% 
   mutate(alpha = exp(b_sigma_Intercept)) %>% 
   ggplot(aes(x = alpha)) + 
-  stat_halfeye() + 
-  xlim(0.01, 0.02)
+  stat_halfeye() 
 ```
 
-
-
----
-
-**Option 2**: $\sigma_i = \exp(f(d_i)) = \exp(\alpha + \beta \times \texttt{va.ans.y}_i)$
+Plot overlay: 
 
 ```{r}
-f <- bf(error_va ~ 0, 
-        sigma ~ 0 + va.ans.y) # offset(log(va.ans.y))
+prediction <- task5_df %>% mutate(error_va = va.select.x - va.ans.x, 
+                                 log.va.ans.y = log(va.ans.y)) %>% 
+  filter(va.ans.y != 0) %>% # account for bug 
+  add_predicted_draws(task5.x.no.bias, ndraws = 100)
+
+task5_df %>%  mutate(error_va = va.select.x - va.ans.x, 
+                                 log.va.ans.y = log(va.ans.y)) %>% 
+  filter(va.ans.y != 0) %>% # account for bug 
+  ggplot() + 
+  stat_lineribbon(data = prediction, aes(y = .prediction, x = va.ans.y), alpha = 0.6) + 
+  scale_fill_brewer(palette = "Blues") + 
+  geom_point(aes(x = va.ans.y, y = error_va), color = "#333333")
+```
+
+### Option 2 --- bias + `sigma = beta * d_i` 
+
+```{r}
+f <- bf(error_va ~ 1, 
+        sigma ~ 1 + offset(log.va.ans.y)) 
 
 p <- c(
-  # prior(normal(0, 1), class = Intercept, dpar = sigma),           # this is alpha 
-  prior(normal(0, 1), class = b, coef = "va.ans.y", dpar = sigma) # this is beta 
+  prior(normal(0, 1), class = Intercept), 
+  prior(normal(0, 1), class = Intercept, dpar = sigma)
 )
 ```
 
@@ -300,20 +308,22 @@ p <- c(
 #| eval: false 
 #| echo: false 
 
-task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-get_prior(formula = f,
-          data = .)
+task5_df %>% mutate(error_va = va.select.x - va.ans.x, 
+                    log.va.ans.y = log(va.ans.y)) %>%
+  get_prior(formula = f,
+            data = .)
 
-task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-make_stancode(f, data = ., prior = p, family = gaussian())
+task5_df %>% mutate(error_va = va.select.x - va.ans.x, 
+                    log.va.ans.y = log(va.ans.y)) %>%
+  make_stancode(f, data = ., 
+                prior = p)
 ```
 
-Fit model: 
+Fit the model: 
 
 ```{r}
-#| output: false 
-
-s.5x.va.2 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+model5.x.bias <- task5_df %>% mutate(error_va = va.select.x - va.ans.x, 
+                                    log.va.ans.y = log(va.ans.y)) %>%
   # account for numerical precision 
   mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
   # account for bugs in task 5 
@@ -322,162 +332,57 @@ s.5x.va.2 <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     formula = f,
     prior = p,
     data = .,
-    family = gaussian(),
     chains = 4, 
-    file = "models/s.5x.va.2", 
+    file = "models/task5.x.bias", 
+    file_refit = "on_change", 
     save_pars = save_pars(all = TRUE)
 )
 ```
 
-```{r}
-summary(s.5x.va.2)
-```
-
-```{r}
-#| layout-ncol: 2
-plot(s.5x.va.2)
-pp_check(s.5x.va.2, ndraws = 100)
-```
-
-Huh somehow this is really bad? 
-
-```{r}
-s.5x.va.2 %>% spread_draws(`^b.*`, regex = TRUE) %>% 
-  mutate(beta = exp(b_sigma_va.ans.y)) %>% 
-  ggplot(aes(x = beta)) +
-  stat_halfeye()
-```
-
---- 
-
-Is there a way to make sigma not a log link??? 
-
-`# TODO` 
-
-### Task 5.1 --- Physical Model
-
-Math model:
-
-$$\begin{aligned}
-\text{error_phy}_i / \texttt{dist_to_screen}  &\sim \mathcal{N}(0, \sigma_{i}) \\
-\sigma_i &= f(d_i) \,\, \text{where} \,\, d_i = \texttt{phy.ans.y}_i / \texttt{dist_to_screen}
-\end{aligned}$$
-
-**Option 1**: $\sigma_i = f(d_i) = \exp(\alpha + \beta d_i)$
-
-```{r}
-f <- bf(error_phy.adj ~ 0,
-        sigma ~ 1 + phy.ans.y.adj)
-
-p <- c(
-  prior(normal(0, 1), class = Intercept, dpar = sigma),
-  prior(normal(0, 1), class = b, coef = phy.ans.y.adj, dpar = sigma)
-)
-```
-
-```{r}
-#| eval: false 
-#| echo: false 
-
-task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
-  mutate(error_phy.adj = error_phy / dist_to_screen, 
-         phy.ans.y.adj = phy.ans.y / dist_to_screen) %>% 
-  get_prior(f, data = .)
-
-task5_df %>% mutate(error_phy = phy.select.x - phy.ans.x) %>%
-  mutate(error_phy.adj = error_phy / dist_to_screen, 
-         phy.ans.y.adj = phy.ans.y / dist_to_screen) %>% 
-  make_stancode(f, data = ., prior = p)
-```
-
-Fit the model:
-
-```{r}
-s.5x.phy.1 <- task5_df %>%
-  mutate(error_phy = phy.select.x - phy.ans.x) %>%
-  mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>%
-  filter(va.ans.y != 0) %>% # account for weird bugs
-  mutate(error_phy = phy.select.x - phy.ans.x) %>%
-  mutate(error_phy.adj = error_phy / dist_to_screen, 
-         phy.ans.y.adj = phy.ans.y / dist_to_screen) %>% 
-  brm(
-    formula = f,
-    prior = p,
-    chains = 4, 
-    file = "models/s.5x.phy.1"
-  )
-```
-
 Check fit and posterior: 
 
 ```{r}
-summary(s.5x.phy.1)
-```
-
-```{r}
-#| layout-ncol: 2
-plot(s.5x.phy.1)
-pp_check(s.5x.phy.1, ndraws = 100)
-```
-
----
-
-**Option 2**: $\sigma_i = f(d_i) = \exp(\beta d_i)$
-
-```{r}
-f <- bf(error_phy.adj ~ 0,
-        sigma ~ 0 + phy.ans.y.adj)
-
-p <- c(
-  # prior(normal(0, 1), class = Intercept, dpar = sigma),
-  prior(normal(0, 1), class = b, coef = phy.ans.y.adj, dpar = sigma)
-)
-```
-
-Fit the model:
-
-```{r}
-#| output: false 
-s.5x.phy.2 <- task5_df %>%
-  mutate(error_phy = phy.select.x - phy.ans.x) %>%
-  mutate(error_phy = ifelse(abs(error_phy) < tolerance, 0, error_phy)) %>%
-  filter(va.ans.y != 0) %>% # account for weird bugs
-  mutate(error_phy = phy.select.x - phy.ans.x) %>%
-  mutate(error_phy.adj = error_phy / dist_to_screen, 
-         phy.ans.y.adj = phy.ans.y / dist_to_screen) %>% 
-  brm(
-    formula = f,
-    prior = p,
-    chains = 4, 
-    file = "models/s.5x.phy.2"
-  )
-```
-
-Check fit and posterior: 
-
-```{r}
-summary(s.5x.phy.2)
-```
-
-```{r}
-#| layout-ncol: 2
-
-plot(s.5x.phy.2)
-pp_check(s.5x.phy.2, ndraws = 100)
+summary(model5.x.bias)
+plot(model5.x.bias)
+pp_check(model5.x.bias, ndraws = 100)
 ```
 
 Check posterior: 
 
 ```{r}
-s.5x.phy.2 %>% spread_draws(`b_.*`, regex=TRUE) %>% 
-  mutate(beta = exp(b_sigma_phy.ans.y.adj)) %>% 
-  ggplot(aes(beta)) + 
+model5.x.bias %>% spread_draws(`^b_.*`, regex = TRUE) %>% 
+  mutate(b_sigma = exp(b_sigma_Intercept)) %>% 
+  pivot_longer(c(b_Intercept, b_sigma)) %>% 
+  ggplot(aes(x = value, y = name)) + 
   stat_halfeye()
 ```
 
-I really don't think the physical model is the right one ... 
+Plot overlay: 
 
-## Task 5.2 --- Project from dot to Y Axes
+```{r}
+prediction <- task5_df %>% mutate(error_va = va.select.x - va.ans.x, 
+                                 log.va.ans.y = log(va.ans.y)) %>% 
+  filter(va.ans.y != 0) %>% # account for bug 
+  add_predicted_draws(model5.x.bias, ndraws = 100)
+
+task5_df %>%  mutate(error_va = va.select.x - va.ans.x, 
+                                 log.va.ans.y = log(va.ans.y)) %>% 
+  filter(va.ans.y != 0) %>% # account for bug 
+  ggplot() + 
+  stat_lineribbon(data = prediction, aes(y = .prediction, x = va.ans.y), alpha = 0.6) + 
+  scale_fill_brewer(palette = "Blues") + 
+  geom_point(aes(x = va.ans.y, y = error_va), color = "#333333")
+```
+
+### LOO Comparison 
+
+```{r}
+loo(task5.x.no.bias, task5.x.bias)
+```
+
+The one with the bias does a much better job ... 
+
+## Task 5.Y --- Project from dot to Y Axes
 
 Distribution of signed error:
 
@@ -503,7 +408,7 @@ task5_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
 
 We apply the same approach, fit two models, and compare them.
 
-### Task 5.2 --- Vis Angle Model
+### Task 5.Y --- No bias 
 
 **Option 1**: $\sigma_i = \exp(f(d_i)) = \exp(\alpha) \times \exp(\log(d_i))$
 
@@ -512,8 +417,7 @@ f <- bf(error_va ~ 0,
         sigma ~ 1 + offset(log.va.ans.x)) 
 
 p <- c(
-  prior(normal(0, 1), class = "Intercept", dpar = "sigma") # , 
-  # prior(normal(0, 1), class = "b", dpar = "sigma", lb = 0)
+  prior(normal(0, 1), class = "Intercept", dpar = "sigma")
 )
 ```
 
@@ -525,7 +429,6 @@ task5_df %>% mutate(error_va = va.select.y - va.ans.y,
                     log.va.ans.x = log(va.ans.x)) %>%
 get_prior(formula = f,
           data = ., 
-          # family = brmsfamily("gaussian", link_sigma = "identity")
           )
 
 task5_df %>% mutate(error_va = va.select.y - va.ans.y, 
@@ -533,7 +436,6 @@ task5_df %>% mutate(error_va = va.select.y - va.ans.y,
 make_stancode(formula = f,
               data = ., 
               prior = p, 
-              # family = brmsfamily("gaussian", link_sigma = "identity")
               )
 ```
 
@@ -541,7 +443,7 @@ Fit the model:
 
 ```{r}
 #| output: false 
-s.5y.va.1 <- task5_df %>% mutate(error_va = va.select.y - va.ans.y, 
+model5.y.no.bias <- task5_df %>% mutate(error_va = va.select.y - va.ans.y, 
                                  log.va.ans.x = log(va.ans.x)) %>%
   # account for numerical precision 
   mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
@@ -551,9 +453,9 @@ s.5y.va.1 <- task5_df %>% mutate(error_va = va.select.y - va.ans.y,
     formula = f,
     prior = p,
     data = .,
-    # family = brmsfamily("gaussian", link_sigma = "identity"),
     chains = 4, 
-    # file = "models/s.5y.va.1", 
+    file = "models/task5.y.no.bias", 
+    file_refit = "on_change",
     save_pars = save_pars(all = TRUE)
 )
 ```
@@ -561,39 +463,50 @@ s.5y.va.1 <- task5_df %>% mutate(error_va = va.select.y - va.ans.y,
 Check fit and posterior: 
 
 ```{r}
-summary(s.5y.va.1)
+summary(model5.y.no.bias)
 ```
 
 ```{r}
 #| layout-ncol: 2
 
-plot(s.5y.va.1)
-pp_check(s.5y.va.1, ndraws = 100)
+plot(model5.y.no.bias)
+pp_check(model5.y.no.bias, ndraws = 100)
 ```
 
-Let's check the posterior of alpha: 
 
 ```{r}
 #| code-fold: true 
 
-s.5y.va.1 %>% spread_draws(b_sigma_Intercept) %>% 
-  mutate(alpha = exp(b_sigma_Intercept)) %>% 
-  ggplot(aes(x = alpha)) + 
-  stat_halfeye() + 
-  xlim(0.01, 0.02)
+model5.y.no.bias %>% spread_draws(b_sigma_Intercept) %>% 
+  mutate(b_sigma = exp(b_sigma_Intercept)) %>% 
+  ggplot(aes(x = b_sigma)) + 
+  stat_halfeye()
 ```
 
----
+```{r}
+prediction <- task5_df %>% mutate(error_va = va.select.y - va.ans.y, 
+                                  log.va.ans.x = log(va.ans.x)) %>% 
+  filter(va.ans.y != 0) %>% # account for bug 
+  add_predicted_draws(model5.y.no.bias, ndraws = 100)
 
-**Option 2**: $\sigma_i = f(d_i) = \exp(\beta d_i)$
+task5_df %>% mutate(error_va = va.select.y - va.ans.y, 
+                    log.va.ans.x = log(va.ans.x)) %>% 
+  filter(va.ans.y != 0) %>% # account for bug 
+  ggplot() + 
+  stat_lineribbon(data = prediction, aes(y = .prediction, x = va.ans.x), alpha = 0.6) + 
+  scale_fill_brewer(palette = "Blues") + 
+  geom_point(aes(x = va.ans.x, y = error_va), color = "#333333")
+```
+
+### Option 2: Biased version 
 
 ```{r}
-f <- bf(error_va ~ 0,
-        sigma ~ 0 + va.ans.x) # what's the difference between this and 0 + offset(log(va.ans.x)) ???
+f <- bf(error_va ~ 1,
+        sigma ~ 1 + offset(log.va.ans.x)) # what's the difference between this and 0 + offset(log(va.ans.x)) ???
 
 p <- c(
-  # prior(normal(0, 1), class = Intercept, dpar = sigma), 
-  prior(normal(0, 1), class = b, coef = va.ans.x, dpar = sigma)
+  prior(normal(0, 1), class = Intercept), 
+  prior(normal(0, 1), class = Intercept, dpar = sigma)
 )
 ```
 
@@ -601,9 +514,10 @@ p <- c(
 #| eval: false 
 #| echo: false 
 
-task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
-get_prior(formula = f,
-          data = .)
+task5_df %>% mutate(error_va = va.select.y - va.ans.y, 
+                    log.va.ans.x = log(va.ans.x)) %>%
+  get_prior(formula = f,
+            data = .)
 
 task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
 make_stancode(formula = f,
@@ -615,7 +529,10 @@ Fit the model:
 
 ```{r}
 #| output: false 
-s.5y.va.2 <- task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
+
+
+model5.y.bias <- task5_df %>% mutate(error_va = va.select.y - va.ans.y, 
+                                     log.va.ans.x = log(va.ans.x)) %>%
   # account for numerical precision 
   mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
   # account for bugs in task 5 
@@ -626,7 +543,8 @@ s.5y.va.2 <- task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
     data = .,
     family = gaussian(),
     chains = 4, 
-    file = "models/s.5y.va.2", 
+    file = "models/task5.y.bias", 
+    file_refit = "on_change",
     save_pars = save_pars(all = TRUE)
 )
 ```
@@ -634,30 +552,47 @@ s.5y.va.2 <- task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
 Check fit and posterior: 
 
 ```{r}
-summary(s.5y.va.2)
+summary(model5.y.bias)
 ```
 
 ```{r}
 #| layout-ncol: 2
 
-plot(s.5y.va.2)
-pp_check(s.5y.va.2, ndraws = 100)
+plot(model5.y.bias)
+pp_check(model5.y.bias, ndraws = 100)
 ```
 
-Again, without the intercept the posterior check looks weird. Let's check beta: 
 
 ```{r}
-s.5y.va.2 %>% spread_draws(`^b.*`, regex = TRUE) %>% 
-  mutate(beta = exp(b_sigma_va.ans.x)) %>% 
-  ggplot(aes(x = beta)) + 
+model5.y.bias %>% spread_draws(`^b.*`, regex = TRUE) %>% 
+  mutate(b_sigma = exp(b_sigma_Intercept)) %>% 
+  pivot_longer(c(b_Intercept, b_sigma)) %>%
+  ggplot(aes(x = value, y = name)) + 
   stat_halfeye()
 ```
 
-Hmm this seems to be a bit larger than the one before ... 
+```{r}
+prediction <- task5_df %>% mutate(error_va = va.select.y - va.ans.y, 
+                                  log.va.ans.x = log(va.ans.x)) %>% 
+  filter(va.ans.y != 0) %>% # account for bug 
+  add_predicted_draws(model5.y.bias, ndraws = 100)
 
-### Task 5.2 --- Physical Model
+task5_df %>% mutate(error_va = va.select.y - va.ans.y, 
+                    log.va.ans.x = log(va.ans.x)) %>% 
+  filter(va.ans.y != 0) %>% # account for bug 
+  ggplot() + 
+  stat_lineribbon(data = prediction, aes(y = .prediction, x = va.ans.x), alpha = 0.6) + 
+  scale_fill_brewer(palette = "Blues") + 
+  geom_point(aes(x = va.ans.x, y = error_va), color = "#333333")
+```
 
-`#TODO` 
+### LOO Comparison 
+
+```{r}
+loo(model5.y.bias, model5.y.no.bias)
+```
+
+There is not much difference between the one with bias and the one without bias ... 
 
 # Task 3 -- Find point on curve where `y == 0.5`
 
