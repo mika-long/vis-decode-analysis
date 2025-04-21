@@ -193,7 +193,9 @@ fit <- model$sample(
 ```{r}
 #| echo: false
 #| output: false 
-fit <- readRDS("mix_models/sheng.mix.1.rds")
+
+
+fit <- readRDS("models/task1.beta.rds")
 ```
 
 Posterior predictive checks: 
@@ -239,7 +241,7 @@ Save the stan model:
 ```{r}
 #| eval: false 
 
-fit$save_object(file = "models/task1.same.lambda")
+fit$save_object(file = "models/task1.beta.rds")
 ```
 
 ## Different lambda --- varies by row 
@@ -250,7 +252,7 @@ Everything about the previous math model is the same, except for the part relate
 
 ```{r}
 #| eval: false 
-model <- cmdstan_model("mix_models/sheng.mix.2.1.stan")
+model <- cmdstan_model("stan_files/sheng.mix.2.1.stan")
 model
 ``` 
 
@@ -263,14 +265,15 @@ Fit the stan model:
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
-  parallel_chains = 4
+  # parallel_chains = 4
 )
 ```
 
 ```{r}
 #| echo: false
 #| output: false 
-fit <- readRDS("mix_models/sheng.mix.2.1.rds")
+
+fit <- readRDS("models/task1.diff.rds")
 ```
 
 Posterior predictive checks: 
@@ -305,25 +308,21 @@ fit$draws() %>%
   stat_halfeye()
 ```
 
-
 Save the stan model: 
 
 ```{r}
 #| eval: false 
 
-fit$save_object(file = "mix_models/sheng.mix.2.1.rds")
+fit$save_object(file = "models/task1.diff.rds")
 ```
 
 ### lambda = inv-logit(beta * abs(med - mod))
 
-We will compare two variations of this --- one where we model a non-zero intercept for `hat(x)^med` and `hat(x)^mod`, the other where we model a zero intercept of the two. 
-
-The following model as a non-zero intercept. 
-
 ```{r}
 #| eval: false 
-model <- cmdstan_model("mix_models/sheng.mix.2.2.1.stan")
-# model
+
+model <- cmdstan_model("stan_files/sheng.mix.2.2.1.stan")
+model
 ``` 
 
 Fit the stan model: 
@@ -335,14 +334,14 @@ Fit the stan model:
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
-  parallel_chains = 4
+  # parallel_chains = 4
 )
 ```
 
 ```{r}
 #| echo: false
 #| output: false 
-fit <- readRDS("mix_models/sheng.mix.2.2.1.rds")
+fit <- readRDS("models/task1.abs.diff.rds")
 ```
 
 Posterior predictive checks: 
@@ -377,96 +376,20 @@ fit$draws() %>%
   stat_halfeye()
 ```
 
-
 Save the stan model: 
 
 ```{r}
 #| eval: false 
 
-fit$save_object(file = "mix_models/sheng.mix.2.2.1.rds")
+fit$save_object(file = "models/task1.abs.diff.rds")
 ```
-
----
-
-The following model as zero intercept. 
-
-```{r}
-#| eval: false 
-model <- cmdstan_model("mix_models/sheng.mix.2.2.2.stan")
-# model
-``` 
-
-Fit the stan model: 
-
-```{r}
-#| output: false 
-#| eval: false 
-
-fit <- model$sample(
-  data = stan_data, 
-  chains = 4, 
-  parallel_chains = 4
-)
-```
-
-```{r}
-#| echo: false
-#| output: false 
-fit <- readRDS("mix_models/sheng.mix.2.2.2.rds")
-```
-
-Posterior predictive checks: 
-
-```{r}
-#| column: margin 
-summary <- fit$summary()
-
-custom_pp_check(fit)
-```
-
-Checking the posterior results: 
-
-```{r}
-#| column: margin 
-
-fit$draws() %>% 
-  spread_draws(`beta`) %>%
-  ggplot(aes(x = beta)) + 
-  stat_halfeye()
-
-fit$draws() %>% 
-  spread_draws(`sigma_med`, `sigma_mod`) %>% 
-  pivot_longer(4:5) %>% 
-  ggplot(aes(x = value, y = name)) + 
-  stat_halfeye()
-```
-
-```{r}
-# save the model 
-fit$save_object(file = "mix_models/sheng.mix.2.2.2.rds")
-```
-
----
-
-Compare the two: 
-
-```{r}
-m1 <- readRDS("mix_models/sheng.mix.2.2.1.rds") # non-zero intercept 
-m1_loo <- m1$loo()
-m2 <- readRDS("mix_models/sheng.mix.2.2.2.rds") # zero-intercept 
-m2_loo <- m2$loo()
-
-brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo),
-                  method = c("stacking"))
-```
-
-It appears that the model with the non-zero intercept is better. 
 
 ### lambda = inv-logit(beta * (med - mod)^2)
 
 ```{r}
 #| eval: false 
-model <- cmdstan_model("mix_models/sheng.mix.2.3.stan")
+model <- cmdstan_model("stan_files/sheng.mix.2.3.stan")
+model
 ``` 
 
 Fit the stan model: 
@@ -478,14 +401,14 @@ Fit the stan model:
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
-  parallel_chains = 4
+  # parallel_chains = 4
 )
 ```
 
 ```{r}
 #| echo: false
 #| output: false 
-fit <- readRDS("mix_models/sheng.mix.2.3.rds")
+fit <- readRDS("models/task1.sq.diff.rds")
 ```
 
 Posterior predictive checks: 
@@ -520,16 +443,15 @@ fit$draws() %>%
   stat_halfeye()
 ```
 
-
 Save the stan model: 
 
 ```{r}
 #| eval: false 
 
-fit$save_object(file = "mix_models/sheng.mix.2.3.rds")
+fit$save_object(file = "models/task1.sq.diff.rds")
 ```
 
-### Compare all models 
+### Compare the above models so far 
 
 ```{r}
 m1 <- readRDS("mix_models/sheng.mix.2.1.rds") # diff
@@ -569,7 +491,7 @@ summary %>% filter(str_detect(variable, "^lambda")) %>%
 
 One thing about the above model is that the mixing parameter `theta` is constrained to be >= 0.5. This is because of how we defined the function. We could also fit models that have an intercept, allowing the full range to be something more broad. 
 
-## lambda = inv-logit (alpha + beta * abs(x.med - x.mod))
+### lambda = inv-logit (alpha + beta * abs(x.med - x.mod))
 
 Math model: 
 
@@ -578,7 +500,7 @@ p_X(x_i) & =  \theta \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \theta) \cdot \Pr(
 \hat{x}^{\text{med}}_i &\sim \mathcal{N}(x^\text{med}_i, (\sigma^\text{med})^2) \\ 
 \hat{x}^{\text{mod}}_i &\sim \text{Laplace}(x^\text{mod}_i, (\sigma^{\text{mod}})^2) \\ 
 \theta &= \text{logit}^{-1}(\alpha + \beta \times |x^{\text{med}}_i - x^{\text{mod}}_i| ) \\ 
-\beta &\sim \mathcal{N}(0, 1), \alpha \sim ...
+\beta &\sim \mathcal{N}(0, 1), \alpha \sim \mathcal{N}^+(0, 1)
 \end{align*}$$
 
 Note: 
@@ -651,7 +573,7 @@ Save the stan model:
 fit$save_object(file = "mix_models/sheng.mix.2.4.rds")
 ```
 
-## lambda = inv-logit(alpha + beta * abs(x.med - x.mod) / var)
+### lambda = inv-logit(alpha + beta * abs(x.med - x.mod) / var)
 
 ... where `var` is defined as $\sqrt{(\sigma^\text{med})^2 + 2 \times \sigma^\text{mod}^2}$. 
 
@@ -737,7 +659,7 @@ Save the stan model:
 fit$save_object(file = "mix_models/sheng.mix.2.5.rds")
 ```
 
-## lambda = inv-logit(beta * (abs(x.med - x.mod) / var - alpha))
+### lambda = inv-logit(alpha + beta * (abs(x.med - x.mod) / var))
 
 ```{r}
 #| eval: false 
@@ -829,7 +751,10 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
   geom_point(aes(y = va.select.x - va.med.x), data = task1_df)
 ```
 
-### Weighted average model 
+
+---
+
+## Weighted average model 
 
 After talking to Matt, Matt said that the process is more similar to anchor then adjust, instead of choosing to anchor or adjust, so the model might be better with weighted average. 
 
@@ -1000,13 +925,4 @@ m5$code()
 
 # What if we don't model `mu_med` and `mu_mod` ...? 
 
-# Different participants 
 
-Math model: 
-
-$$\begin{align*}
-p_X(x_i) & =  \lambda \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \lambda) \cdot \Pr(\hat{x}^{\text{mod}}_i) \\
-\hat{x}^{\text{med}}_i &\sim \mathcal{N}(x^\text{med}_i, (\sigma^\text{med}_{\text{PID}[i]})^2) \\ 
-\hat{y}^{\text{mod}}_i &\sim \text{Laplace}(x^\text{mod}_i, (\sigma^{\text{mod}}_{\text{PID}[i]})^2) \\ 
-(*) \,\, \lambda &\sim \text{Beta}(2, 2) 
-\end{align*}$$
