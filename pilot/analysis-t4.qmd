@@ -384,6 +384,7 @@ task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_t
 
 ```{r}
 #| output: false 
+
 # Fit the model with brms
 model4.lomax <- task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) %>% 
   mutate(error = ifelse(error < 1e-10, 0, error)) %>% 
@@ -396,7 +397,8 @@ model4.lomax <- task4_df %>% mutate(error = abs(data_to_screen_slope(data.select
     chains = 4,
     file = "models/task4.lomax", 
     # init = list()
-    # control = list(adapt_delta = 0.95)
+    control = list(adapt_delta = 0.99), 
+    iter = 8000, 
   )
 ```
 
