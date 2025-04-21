@@ -185,7 +185,6 @@ custom_pp_check <- function(fitted_model) {
   y <- fitted_model$draws("x_org", format = "matrix")[1, ] %>% as.vector(.)
   bayesplot::ppc_dens_overlay(y, y_rep[1:100, ])
 }
-
 ```
 
 
