@@ -460,13 +460,48 @@ prediction %>% ggplot() +
   xlim(0, 5)
 ```
 
+
+## Weibull distribution 
+
+- [wikipedia](https://en.wikipedia.org/wiki/Weibull_distribution) 
+- [stan](https://mc-stan.org/docs/functions-reference/positive_continuous_distributions.html#weibull-distribution) 
+- it's also implemented in brms! So no need for a custom function. 
+
+```{r}
+f <- bf(
+  error ~ 0,  
+  mu ~ (1 | participantId), 
+  shape ~ (1 | participantId)
+  family = weibull
+)
+
+p <- c(
+    prior(normal(0, 1), class = Intercept, dpar = alpha),
+    prior(cauchy(0, 1), class = sd, group = participantId, dpar = alpha, lb = 0),
+    prior(normal(0, 1), class = Intercept, dpar = lambda), 
+    prior(cauchy(0, 1), class = sd, group = participantId, dpar = lambda, lb = 0)
+  )
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+
+task4_df %>%  mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) %>%
+  mutate(error = ifelse(error < 1e-10, 0, error)) %>% 
+  get_prior(formula = f)
+
+task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>% 
+  make_stancode(formula = f, prior = p)
+```
+
 ## Model Comparison
 
 ```{r}
 loo(model4.exponential, model4.lomax)
 ```
 
-
+Here's the thing --- I think with the type II pareto distribution, it assigns too much of a heavy tail to errors ... 
 
 
 
