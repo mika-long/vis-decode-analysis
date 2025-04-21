@@ -138,7 +138,7 @@ data_to_screen_slope <- function(k){
   return(k * 395 / 53.5)
 }
 
-task4_df <- single_pid_df %>% filter(task == "task4") %>% 
+task4_df <- task_df %>% filter(task == "task4") %>% 
   select(-slider.x, -slider.y) %>% 
   mutate(data.select.slope = dsgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE), 
          data.ans.slope = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE)) %>% 
@@ -241,6 +241,87 @@ task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) +
 
 ## Exponential Model 
 
-TODO 
+Math model: 
+
+$$\begin{align*}
+\text{error_i} &\sim \text{Exponential}(\lambda_{\text{PID}[i]}) \\ 
+\log(\lambda_j) &\sim \mathcal{N}(\mu_\lambda, \sigma_\lambda) \\ 
+\mu_\lambda &\sim \mathcal{N}(0, 1) \\ 
+\sigma_\lambda &\sim \text{Half-Cauchy}(0, 1) 
+\end{align*}$$
+
+Formula: 
+
+```{r}
+f <- bf(error ~ 0,
+        mu ~ (1 | participantId),  # this is actually lambda 
+        family = exponential())
+
+# mu has log-link, so we don't pose any bounds on it 
+p <- c(
+  prior(normal(0, 1), class = Intercept), 
+  prior(cauchy(0, 1), class = sd, group = participantId, lb = 0)
+)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+
+task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) %>% 
+  get_prior(f, data = .)
+
+task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>% 
+  make_stancode(f, data = ., prior = p)
+```
+
+Fir the model: 
+
+```{r}
+model.exponential <- task4_df %>% 
+  mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
+  mutate(error = ifelse(abs(error) < tolerance, tolerance, error)) %>% # exponent need rsp > 0 
+  brm(formula = f, 
+      data = ., 
+      prior = p, 
+      chains = 4, 
+      file = "models/task4.exponential", 
+      file_refit = "on_change",
+      save_pars = save_pars(all = TRUE)
+  )
+```
+
+Check fit: 
+
+```{r}
+summary(model4.exponential)
+```
+
+```{r}
+plot(model4.exponential)
+pp_check(model4.exponential, ndraws = 100)
+pp_check(model4.exponential, ndraws = 100, type = "pit_ecdf") # pet Matt's suggestion 
+```
+
+```{r}
+model4.exponential %>% spread_draws(b_Intercept) %>% 
+  mutate(lambda = exp(b_Intercept)) %>% 
+  ggplot(aes(x = lambda)) + 
+  stat_halfeye()
+```
+
+Overlay plot: 
+
+```{r}
+prediction <- task4_df %>% 
+  mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
+  mutate(error = ifelse(abs(error) < tolerance, tolerance, error)) %>% 
+  add_predicted_draws(model4.exponential, ndraws = 100)
+
+prediction %>% ggplot() + 
+  stat_slab(aes(x = .prediction), 
+            fill = "skyblue", alpha = 0.6) + 
+  geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope)))
+```
 
 ## Lomax Model 

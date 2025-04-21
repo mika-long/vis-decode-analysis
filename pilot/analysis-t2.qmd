@@ -481,7 +481,7 @@ p <- c(
 ```{r}
 #| eval: false 
 #| echo: false 
-#| 
+
 task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>% 
   get_prior(f, data = .)
 
