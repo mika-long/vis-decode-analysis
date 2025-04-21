@@ -17,6 +17,7 @@ library(tidyverse)
 library(ggplot2)
 # setting the theme 
 theme_set(theme_minimal())
+options(ggplot2.discrete.fill = function() scale_fill_brewer(palette = "Blues"))
 # model
 library(brms)
 # plot results 
