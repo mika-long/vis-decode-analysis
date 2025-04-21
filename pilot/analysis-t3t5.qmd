@@ -20,7 +20,7 @@ library(sgt)
 library(numDeriv)
 library(ggdist)
 # setting the theme 
-theme_set(theme_minimal() + theme(text = element_text(size = 8)))
+theme_set(theme_minimal() + theme(base_size = 6)
 # model
 library(brms)
 # plot results 
@@ -248,6 +248,7 @@ Plot existing data on top of prediction:
 
 ```{r}
 # for an average participant 
+
 task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   # account for numerical precision 
   mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
@@ -504,20 +505,47 @@ m3 %>% spread_draws(b_sigma_Intercept) %>%
   stat_halfeye()
 ```
 
-Let's plot the ribbon plots: 
+Let's plot the ribbon plots, but first, let's see the difference between `add_predicted_draws` and `add_epred_draws`: 
 
 ```{r}
-# for an average participant 
 task3_df %>%
   mutate(error_va = va.select.y - va.ans.y) %>% 
-  # group_by(participantId) %>% 
-  data_grid(va.ans.x = seq_range(va.ans.x, n = 101)) %>% 
-  mutate(error_va = 0) %>% 
-  add_epred_draws(m3, dpar = "sigma", re_formula = NA)
+  add_predicted_draws(m3, ndraws = 100) %>% 
+  ggplot(aes(x = va.ans.x, y = .prediction)) + 
+  stat_lineribbon(
+    .width = c(.95, .80, .50),
+    alpha = 0.5, 
+    size = 0.5
+  ) + scale_fill_brewer(palette = "Blues")
+
+task3_df %>%
+  mutate(error_va = va.select.y - va.ans.y) %>% 
+  add_predicted_draws(m3, re_formula = NA, ndraws = 100) %>% 
+  ggplot(aes(x = va.ans.x, y = .prediction)) + 
+  stat_lineribbon(
+    .width = c(.95, .80, .50),
+    alpha = 0.5, 
+    size = 0.5
+  ) + scale_fill_brewer(palette = "Blues")
+
+task3_df %>%
+  mutate(error_va = va.select.y - va.ans.y) %>% 
+  group_by(participantId) %>%
+  data_grid(va.ans.x = seq_range(va.ans.x, n = 101)) %>%
+  add_epred_draws(m3, ndraws = 100) %>% 
+  ggplot(aes(x = va.ans.x, y = .epred)) + 
+  stat_lineribbon(
+    .width = c(.95, .80, .50),
+    alpha = 0.5, 
+    size = 0.5
+  ) + scale_fill_brewer(palette = "Blues")
+```
 
 
-task3_df %>% add_epred_draws(m3) %>% 
-  ggplot(aes(x = .epred)) + stat_halfeye()
+
+```{r}
+# task3_df %>% add_epred_draws(m3) %>% 
+#   ggplot(aes(x = .epred)) + stat_halfeye()
 
 prediction_grid <- task3_df %>% data_grid(va.ans.x = seq_range(va.ans.x, n = 50)) %>% 
   add_predicted_draws(m3, re_formula = NA, ndraws = 100)
@@ -549,6 +577,6 @@ ggsave("plots/t3.pdf", plot = p3, height = 5, width = 10, units = "cm")
 #| eval: false 
 (p1 + guides(color = "none", fill = "none", size = "none")) / (p2 + guides(color = "none", fill = "none", size = "none")) / (p3 + guides(color = "none", fill = "none", size = "none")) -> combined 
 ggsave("plots/t3t5-combined.svg", plot = combined, height = 10, width = 10, units = "cm")
-ggsave("plots/t3t5-combined.pdf", plot = combined, height = 10, width = 10, units = "cm")
+ggsave("plots/t3t5-combined.pdf", plot = combined, height = 9, width = 10, units = "cm")
 ```
 
