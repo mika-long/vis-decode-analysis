@@ -68,60 +68,6 @@ tolerance <- 1e-10
 
 ```
 
-# Task 5 --- Project from dot to axes 
+# Task 4 --- find highest slope 
 
-```{r}
-#| label: task 5 load data
-#| code-fold: true 
-
-task5_df <- task_df %>% filter(task == "task5") %>% # or use task_df for full 
-  select(participantId, task, id, data.select.x, data.select.y, slider.x, slider.y) %>% 
-  rename(data.ans.x = data.select.x, 
-         data.ans.y = data.select.y, 
-         data.select.x = slider.x, 
-         data.select.y = slider.y) %>% 
-  left_join(participants, by = join_by(participantId)) %>% 
-  # do all the calculations for user's selected 
-  mutate(pixel.select.x = data_to_pixel_x(data.select.x), 
-         pixel.select.y = data_to_pixel_y(data.select.y), 
-         phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM),
-         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM), 
-         va.select.x = vis_angle(phy.select.x, dist_to_screen),
-         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>% 
-  # do all the calculations for the actual answer
-  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x),
-         pixel.ans.y = data_to_pixel_y(data.ans.y),
-         phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM),
-         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM), 
-         va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
-         va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
-```
-
-## Project to X-Axis 
-
-## Project to Y-Axis 
-
-# Task 3 --- Find where y == 0.5 
-
-```{r}
-task3_df <- task_df %>% filter(task == "task3") %>% 
-  select(-slider.x, -slider.y) %>% 
-  left_join(participants, by = join_by(participantId)) %>% 
-  # do all the calculations for user's selected 
-  mutate(pixel.select.x = data_to_pixel_x(data.select.x), 
-         pixel.select.y = data_to_pixel_y(data.select.y), 
-         phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM),
-         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM), 
-         va.select.x = vis_angle(phy.select.x, dist_to_screen),
-         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>% 
-  mutate(data.ans.y = 0.5, 
-         data.ans.x = qsgt(0.5, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)) %>% 
-  # do all the calculations for the actual answer
-  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x),
-         pixel.ans.y = data_to_pixel_y(data.ans.y),
-         phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM),
-         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM), 
-         va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
-         va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
-```
-
+TODO 
