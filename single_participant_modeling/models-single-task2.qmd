@@ -393,7 +393,6 @@ f <- bf(error.y ~ 0,
 p <- c(
   prior(normal(0, 1), class = Intercept)
 )
-
 ```
 
 ```{r}
