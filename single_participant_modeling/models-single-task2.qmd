@@ -532,6 +532,14 @@ pp_check(model.x.normal, ndraws= 100)
 ```
 
 ```{r}
+model.x.normal %>% spread_draws(b_sigma_Intercept) %>% 
+  mutate(b_sigma = exp(b_sigma_Intercept)) %>%
+  summarise(mean = mean(b_sigma), sd = sd(b_sigma))
+```
+
+
+
+```{r}
 model.x.normal %>% get_variables(.)
 
 model.x.normal %>% spread_draws(b_Intercept, b_sigma_Intercept) %>% 

@@ -30,8 +30,12 @@ transformed parameters {
 
 model {
   // priors
-  mu_mod ~ normal(0.01, 0.01);
-  sigma_mod ~ normal(0.15, 0.01);
+  // mu_mod ~ normal(0.01, 0.01);
+  // sigma_mod ~ normal(0.15, 0.01);
+  // Note that the above are fitted using Laplace
+  // We have the following when fitting using Normal
+  mu_mod ~ normal(-0.02, 0.02);
+  sigma_mod ~ normal(0.23, 0.02);
   mu_med ~ normal(0, 0.05);
   sigma_med ~ normal(0.15, 0.6);
   
