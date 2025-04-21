@@ -454,32 +454,23 @@ fit$save_object(file = "models/task1.sq.diff.rds")
 ### Compare the above models so far 
 
 ```{r}
-m1 <- readRDS("mix_models/sheng.mix.2.1.rds") # diff
+m1 <- readRDS("models/task1.diff.rds") # diff
 m1_loo <- m1$loo()
-m2 <- readRDS("mix_models/sheng.mix.2.2.1.rds") # abs diff
+m2 <- readRDS("models/task1.abs.diff.rds") # abs diff
 m2_loo <- m2$loo()
-m3 <- readRDS("mix_models/sheng.mix.2.3.rds") # diff^2
+m3 <- readRDS("models/task1.sq.diff.rds") # diff^2
 m3_loo <- m3$loo()
+m4 <- readRDS("models/task1.beta.rds") # beta 
+m4_loo <- m4$loo()
 
-brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo, "Model 3" = m3_loo),
+brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo, "Model 3" = m3_loo, "Model 4" = m4_loo),
                   method = c("stacking"))
 ```
 
-The second model (absolute difference) seems to be fitting well. 
+Let's zoom in on what the lambdas have: 
 
 ```{r}
-m4 <- readRDS("mix_models/sheng.mix.1.rds")
-m4_loo <- m4$loo()
-
-brms::loo_model_weights(list("Model 4" = m4_loo, "Model 2" = m2_loo), method = c("stacking"))
-```
-
-It also performs better than the first one where we had a single lambda. 
-
-Let's look at all of the other lambdas: 
-
-```{r}
-m2 <- readRDS("mix_models/sheng.mix.2.2.rds") # abs diff
+m2 <- readRDS("models/task1.abs.diff.rds") # abs diff
 summary <- m2$summary()
 
 summary %>% filter(str_detect(variable, "^lambda")) %>%
@@ -500,7 +491,7 @@ p_X(x_i) & =  \theta \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \theta) \cdot \Pr(
 \hat{x}^{\text{med}}_i &\sim \mathcal{N}(x^\text{med}_i, (\sigma^\text{med})^2) \\ 
 \hat{x}^{\text{mod}}_i &\sim \text{Laplace}(x^\text{mod}_i, (\sigma^{\text{mod}})^2) \\ 
 \theta &= \text{logit}^{-1}(\alpha + \beta \times |x^{\text{med}}_i - x^{\text{mod}}_i| ) \\ 
-\beta &\sim \mathcal{N}(0, 1), \alpha \sim \mathcal{N}^+(0, 1)
+\beta &\sim \mathcal{N}(0, 1), \alpha \sim \mathcal{N}(0, 1)
 \end{align*}$$
 
 Note: 
@@ -512,7 +503,8 @@ Read stan model:
 
 ```{r}
 #| eval: false 
-model <- cmdstan_model("mix_models/sheng.mix.2.4.stan")
+model <- cmdstan_model("stan_files/sheng.mix.2.4.stan")
+model
 ``` 
 
 Fit the model: 
@@ -523,13 +515,14 @@ Fit the model:
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
-  parallel_chains = 4)
+  # parallel_chains = 4
+  )
 ```
 
 ```{r}
 #| echo: false
 #| output: false 
-fit <- readRDS("mix_models/sheng.mix.2.4.rds")
+fit <- readRDS("models/task1.alpha.abs.diff.rds")
 ```
 
 Posterior predictive checks: 
@@ -570,8 +563,10 @@ Save the stan model:
 ```{r}
 #| eval: false 
 
-fit$save_object(file = "mix_models/sheng.mix.2.4.rds")
+fit$save_object(file = "models/task1.alpha.abs.diff.rds")
 ```
+
+**If we put a standard prior on alpha, it is usually positive, meaning that we still can't go all the way to negative with alpha + beta * abs(diff).**
 
 ### lambda = inv-logit(alpha + beta * abs(x.med - x.mod) / var)
 
@@ -581,7 +576,8 @@ Read stan model:
 
 ```{r}
 #| eval: false 
-model <- cmdstan_model("mix_models/sheng.mix.2.5.stan")
+model <- cmdstan_model("stan_files/sheng.mix.2.5.stan")
+model 
 ``` 
 
 Fit the model: 
@@ -592,13 +588,14 @@ Fit the model:
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
-  parallel_chains = 4)
+  # parallel_chains = 4
+  )
 ```
 
 ```{r}
 #| echo: false
 #| output: false 
-fit <- readRDS("mix_models/sheng.mix.2.5.rds")
+fit <- readRDS("models/task1.alpha.abs.adj.diff.rds")
 ```
 
 Posterior predictive checks: 
@@ -648,7 +645,8 @@ summary %>% filter(str_detect(variable, "^lambda")) %>%
 task1_df %>% mutate(mix_paramter = as_draws_rvars(fit)$lambda) %>% 
   unnest_rvars() %>% 
   ggplot(aes(x = param.lambda, y = mix_paramter)) + 
-  ggdist::stat_ribbon() + ylim(0, 1)
+  ggdist::stat_ribbon() + 
+  ylim(0, 1)
 ```
 
 Save the stan model: 
@@ -656,14 +654,14 @@ Save the stan model:
 ```{r}
 #| eval: false 
 
-fit$save_object(file = "mix_models/sheng.mix.2.5.rds")
+fit$save_object(file = "models/task1.alpha.abs.adj.diff.rds")
 ```
 
-### lambda = inv-logit(alpha + beta * (abs(x.med - x.mod) / var))
+### lambda = inv-logit(beta * (alpha + abs(x.med - x.mod) / var))
 
 ```{r}
 #| eval: false 
-model <- cmdstan_model("mix_models/sheng.mix.2.6.stan")
+model <- cmdstan_model("stan_files/sheng.mix.2.6.stan")
 ``` 
 
 Fit the model: 
@@ -674,14 +672,14 @@ Fit the model:
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
-  parallel_chains = 4, 
+  # parallel_chains = 4, 
   adapt_delta = 0.95)
 ```
 
 ```{r}
 #| echo: false
 #| output: false 
-fit <- readRDS("mix_models/sheng.mix.2.6.rds")
+fit <- readRDS("mix_models/task1.beta.abs.adj.diff.alpha.rds")
 ```
 
 Posterior predictive checks: 
@@ -722,7 +720,7 @@ Save the stan model:
 ```{r}
 #| eval: false 
 
-fit$save_object(file = "mix_models/sheng.mix.2.6.rds")
+fit$save_object(file = "models/task1.beta.abs.adj.diff.alpha.rds")
 ```
 
 
@@ -739,7 +737,7 @@ summary %>% filter(str_detect(variable, "^lambda")) %>%
 ```{r}
 task1_df %>% mutate(mix_paramter = as_draws_rvars(fit)$lambda) %>% 
   unnest_rvars() %>% 
-  ggplot(aes(x = param.lambda, y = )) + 
+  ggplot(aes(x = param.lambda, y = y_rep)) + 
   ggdist::stat_ribbon() + ylim(0, 1)
 ```
 
@@ -751,8 +749,9 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
   geom_point(aes(y = va.select.x - va.med.x), data = task1_df)
 ```
 
-
 ---
+
+**The following are new model**
 
 ## Weighted average model 
 
@@ -760,7 +759,7 @@ After talking to Matt, Matt said that the process is more similar to anchor then
 
 ```{r}
 #| eval: false 
-model <- cmdstan_model("stan_files//sheng.mix.2.7.stan")
+model <- cmdstan_model("stan_files/sheng.mix.2.7.stan")
 ``` 
 
 Fit the model: 
