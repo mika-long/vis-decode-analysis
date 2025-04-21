@@ -294,19 +294,24 @@ model.exponential <- task4_df %>%
 Check fit: 
 
 ```{r}
-summary(model4.exponential)
+summary(model.exponential)
 ```
 
 ```{r}
-plot(model4.exponential)
-pp_check(model4.exponential, ndraws = 100)
-pp_check(model4.exponential, ndraws = 100, type = "pit_ecdf") # pet Matt's suggestion 
+plot(model.exponential)
+pp_check(model.exponential, ndraws = 100)
+pp_check(model.exponential, ndraws = 100, type = "pit_ecdf") # pet Matt's suggestion 
 ```
 
+See is actually not bad at all ... 
+
 ```{r}
-model4.exponential %>% spread_draws(b_Intercept) %>% 
-  mutate(lambda = exp(b_Intercept)) %>% 
-  ggplot(aes(x = lambda)) + 
+model.exponential %>% get_variables()
+
+model.exponential %>% spread_draws(b_Intercept, sd_participantId__Intercept) %>% 
+  mutate(lambda = exp(b_Intercept))  %>% 
+  pivot_longer(5:6)  %>% 
+  ggplot(aes(x = value, y = name)) + 
   stat_halfeye()
 ```
 
@@ -316,12 +321,13 @@ Overlay plot:
 prediction <- task4_df %>% 
   mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
   mutate(error = ifelse(abs(error) < tolerance, tolerance, error)) %>% 
-  add_predicted_draws(model4.exponential, ndraws = 100)
+  add_predicted_draws(model.exponential, ndraws = 100)
 
 prediction %>% ggplot() + 
   stat_slab(aes(x = .prediction), 
-            fill = "skyblue", alpha = 0.6) + 
+            fill = "skyblue", alpha = 0.6)  + 
   geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope)))
 ```
 
 ## Lomax Model 
+
