@@ -25,10 +25,14 @@ library(cmdstanr)
 library(sgt)
 ```
 
+
+
 # Read in data and all processing 
 
 - All the things selected by the participants will be named `xxx.select.xxx` 
 - All the things related to the actual answer will be named `xxx.ans.xxx`
+
+
 
 ```{r}
 #| code-fold: true
@@ -106,9 +110,13 @@ vis_distance <- data.frame(participantId = p,
 participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participantId))
 ```
 
+
+
 # Task 1 --- split area into equal halves 
 
 Load data: 
+
+
 
 ```{r}
 #| code-fold: true 
@@ -131,12 +139,18 @@ task1_df <- single_pid_df %>% filter(task == "task1") %>% # task_df
          va.mod.x = vis_angle(phy.mod.x, dist_to_screen))
 ```
 
+
+
 **Note that unless specifically mentioned, all estimations are done in visual angle measures.** 
+
+
 
 ```{r}
 task1_df %>% ggplot(aes(x = param.lambda, y = va.select.x - va.med.x)) + 
   geom_point(alpha = 0.5)
 ```
+
+
 
 # Mixture models 
 
@@ -153,6 +167,8 @@ f_X(x_i) & =  \theta \cdot f_{\hat{X}}(\hat{x}^{\text{med}}_i) + (1 - \theta) \c
 
 If we set $\lambda \sim \text{Beta}(5, 5)$ then the sampling is more concentrated around 0.5, and if we set $\lambda \sim \text{Beta}(2, 2)$ then the sampling is closer to a uniform distribution over [0, 1]. 
 
+
+
 ```{r}
 #| eval: false 
 model <- cmdstan_model("stan_files/sheng.mix.1.stan")
@@ -160,7 +176,11 @@ model <- cmdstan_model("stan_files/sheng.mix.1.stan")
 model 
 ```
 
+
+
 Prepare data for stan: 
+
+
 
 ```{r}
 #| eval: false 
@@ -177,7 +197,11 @@ stan_data <- list(
 )
 ```
 
+
+
 Define custom posterior predictive check function: 
+
+
 
 ```{r}
 custom_pp_check <- function(fitted_model) {
@@ -188,7 +212,11 @@ custom_pp_check <- function(fitted_model) {
 ```
 
 
+
+
 Fit the stan model: 
+
+
 
 ```{r}
 #| output: false 
@@ -208,7 +236,11 @@ fit <- model$sample(
 fit <- readRDS("models/task1.beta.rds")
 ```
 
+
+
 Posterior predictive checks: 
+
+
 
 ```{r}
 #| column: margin 
@@ -216,7 +248,11 @@ summary <- fit$summary()
 custom_pp_check(fit)
 ```
 
+
+
 Checking the posterior results: 
+
+
 
 ```{r}
 #| column: margin 
@@ -239,7 +275,11 @@ fit$draws() %>%
   stat_halfeye()
 ```
 
+
+
 Save the stan model: 
+
+
 
 ```{r}
 #| eval: false 
@@ -247,11 +287,15 @@ Save the stan model:
 fit$save_object(file = "models/task1.beta.rds")
 ```
 
+
+
 ## Different lambda --- varies by row 
 
 Everything about the previous math model is the same, except for the part related to $\lambda$. 
 
 ### lambda = inv-logit(beta * (med - mod))
+
+
 
 ```{r}
 #| eval: false 
@@ -259,7 +303,11 @@ model <- cmdstan_model("stan_files/sheng.mix.2.1.stan")
 model
 ``` 
 
+
+
 Fit the stan model: 
+
+
 
 ```{r}
 #| output: false 
@@ -279,7 +327,11 @@ fit <- model$sample(
 fit <- readRDS("models/task1.diff.rds")
 ```
 
+
+
 Posterior predictive checks: 
+
+
 
 ```{r}
 #| column: margin 
@@ -288,7 +340,11 @@ summary <- fit$summary()
 custom_pp_check(fit)
 ```
 
+
+
 Checking the posterior results: 
+
+
 
 ```{r}
 #| column: margin 
@@ -311,7 +367,11 @@ fit$draws() %>%
   stat_halfeye()
 ```
 
+
+
 Save the stan model: 
+
+
 
 ```{r}
 #| eval: false 
@@ -319,7 +379,11 @@ Save the stan model:
 fit$save_object(file = "models/task1.diff.rds")
 ```
 
+
+
 ### lambda = inv-logit(beta * abs(med - mod))
+
+
 
 ```{r}
 #| eval: false 
@@ -328,7 +392,11 @@ model <- cmdstan_model("stan_files/sheng.mix.2.2.1.stan")
 model
 ``` 
 
+
+
 Fit the stan model: 
+
+
 
 ```{r}
 #| output: false 
@@ -347,7 +415,11 @@ fit <- model$sample(
 fit <- readRDS("models/task1.abs.diff.rds")
 ```
 
+
+
 Posterior predictive checks: 
+
+
 
 ```{r}
 #| column: margin 
@@ -356,7 +428,11 @@ summary <- fit$summary()
 custom_pp_check(fit)
 ```
 
+
+
 Checking the posterior results: 
+
+
 
 ```{r}
 #| column: margin 
@@ -379,7 +455,11 @@ fit$draws() %>%
   stat_halfeye()
 ```
 
+
+
 Save the stan model: 
+
+
 
 ```{r}
 #| eval: false 
@@ -387,7 +467,11 @@ Save the stan model:
 fit$save_object(file = "models/task1.abs.diff.rds")
 ```
 
+
+
 ### lambda = inv-logit(beta * (med - mod)^2)
+
+
 
 ```{r}
 #| eval: false 
@@ -395,7 +479,11 @@ model <- cmdstan_model("stan_files/sheng.mix.2.3.stan")
 model
 ``` 
 
+
+
 Fit the stan model: 
+
+
 
 ```{r}
 #| output: false 
@@ -414,7 +502,11 @@ fit <- model$sample(
 fit <- readRDS("models/task1.sq.diff.rds")
 ```
 
+
+
 Posterior predictive checks: 
+
+
 
 ```{r}
 #| column: margin 
@@ -423,7 +515,11 @@ summary <- fit$summary()
 custom_pp_check(fit)
 ```
 
+
+
 Checking the posterior results: 
+
+
 
 ```{r}
 #| column: margin 
@@ -446,7 +542,11 @@ fit$draws() %>%
   stat_halfeye()
 ```
 
+
+
 Save the stan model: 
+
+
 
 ```{r}
 #| eval: false 
@@ -454,7 +554,11 @@ Save the stan model:
 fit$save_object(file = "models/task1.sq.diff.rds")
 ```
 
+
+
 ### LOO Compare the above models so far 
+
+
 
 ```{r}
 m1 <- readRDS("models/task1.diff.rds") # diff
@@ -470,7 +574,11 @@ brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo, "Model 3" =
                   method = c("stacking"))
 ```
 
+
+
 Let's zoom in on what the lambdas have: 
+
+
 
 ```{r}
 m2 <- readRDS("models/task1.abs.diff.rds") # abs diff
@@ -482,6 +590,8 @@ summary %>% filter(str_detect(variable, "^lambda")) %>%
   geom_segment(aes(x = q5, xend = q95, yend = variable)) +
   geom_point(aes(x = median))
 ```
+
+
 
 One thing about the above model is that the mixing parameter `theta` is constrained to be >= 0.5. This is because of how we defined the function. We could also fit models that have an intercept, allowing the full range to be something more broad. 
 
@@ -504,13 +614,19 @@ Note:
 
 Read stan model: 
 
+
+
 ```{r}
 #| eval: false 
 model <- cmdstan_model("stan_files/sheng.mix.2.4.stan")
 model
 ``` 
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| output: false 
@@ -528,7 +644,11 @@ fit <- model$sample(
 fit <- readRDS("models/task1.alpha.abs.diff.rds")
 ```
 
+
+
 Posterior predictive checks: 
+
+
 
 ```{r}
 #| column: margin 
@@ -537,7 +657,11 @@ summary <- fit$summary()
 custom_pp_check(fit)
 ```
 
+
+
 Checking the posterior results: 
+
+
 
 ```{r}
 #| column: margin 
@@ -561,13 +685,19 @@ fit$draws() %>%
   stat_halfeye()
 ```
 
+
+
 Save the stan model: 
+
+
 
 ```{r}
 #| eval: false 
 
 fit$save_object(file = "models/task1.alpha.abs.diff.rds")
 ```
+
+
 
 **If we put a standard prior on alpha, it is usually positive, meaning that we still can't go all the way to negative with alpha + beta * abs(diff).**
 
@@ -577,13 +707,19 @@ fit$save_object(file = "models/task1.alpha.abs.diff.rds")
 
 Read stan model: 
 
+
+
 ```{r}
 #| eval: false 
 model <- cmdstan_model("stan_files/sheng.mix.2.5.stan")
 model 
 ``` 
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| output: false 
@@ -601,7 +737,11 @@ fit <- model$sample(
 fit <- readRDS("models/task1.alpha.abs.adj.diff.rds")
 ```
 
+
+
 Posterior predictive checks: 
+
+
 
 ```{r}
 #| column: margin 
@@ -610,7 +750,11 @@ summary <- fit$summary()
 custom_pp_check(fit)
 ```
 
+
+
 Checking the posterior results: 
+
+
 
 ```{r}
 #| column: margin 
@@ -652,7 +796,11 @@ task1_df %>% mutate(mix_paramter = as_draws_rvars(fit)$lambda) %>%
   ylim(0, 1)
 ```
 
+
+
 Save the stan model: 
+
+
 
 ```{r}
 #| eval: false 
@@ -660,14 +808,22 @@ Save the stan model:
 fit$save_object(file = "models/task1.alpha.abs.adj.diff.rds")
 ```
 
+
+
 ### lambda = inv-logit(beta * (alpha + abs(x.med - x.mod) / var))
+
+
 
 ```{r}
 #| eval: false 
 model <- cmdstan_model("stan_files/sheng.mix.2.6.stan")
 ``` 
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| output: false 
@@ -685,7 +841,11 @@ fit <- model$sample(
 fit <- readRDS("models/task1.beta.abs.adj.diff.alpha.rds")
 ```
 
+
+
 Posterior predictive checks: 
+
+
 
 ```{r}
 #| column: margin 
@@ -694,7 +854,11 @@ summary <- fit$summary()
 custom_pp_check(fit)
 ```
 
+
+
 Checking the posterior results: 
+
+
 
 ```{r}
 #| column: margin 
@@ -718,14 +882,17 @@ fit$draws() %>%
   stat_halfeye()
 ```
 
+
+
 Save the stan model: 
+
+
 
 ```{r}
 #| eval: false 
 
 fit$save_object(file = "models/task1.beta.abs.adj.diff.alpha.rds")
 ```
-
 
 ```{r}
 summary <- fit$summary()
@@ -752,7 +919,11 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
   geom_point(aes(y = va.select.x - va.med.x), data = task1_df)
 ```
 
+
+
 ### LOO Comparison 
+
+
 
 ```{r}
 m1 <- readRDS("models/task1.abs.diff.rds") 
@@ -767,6 +938,8 @@ m4_loo <- m4$loo()
 brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo, "Model 3" = m3_loo, "Model 4" = m4_loo),
                   method = c("stacking"))
 ```
+
+
 
 Model 3 is the best one. 
 
@@ -787,13 +960,19 @@ $$\begin{align*}
     w_i &= \frac{\text{MSE}^{-1}(\hat{x}_i^\text{med})}{\text{MSE}^{-1}(\hat{x}_i^\text{med}) + \text{MSE}^{-1}(\hat{x}_i^\text{mod})}
 \end{align*}$$
 
+
+
 ```{r}
 #| eval: false 
 model <- cmdstan_model("stan_files/sheng.mix.2.8.stan")
 model
 ``` 
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| output: false 
@@ -812,7 +991,11 @@ fit <- model$sample(
 fit <- readRDS("models/task1.weighted.rds")
 ```
 
+
+
 Posterior predictive checks: 
+
+
 
 ```{r}
 #| column: margin 
@@ -821,7 +1004,11 @@ summary <- fit$summary()
 custom_pp_check(fit)
 ```
 
+
+
 Save the stan model: 
+
+
 
 ```{r}
 #| eval: false 
@@ -832,7 +1019,6 @@ fit$save_object(file = "models/task1.weighted.rds")
 ```{r}
 as_draws_rvars(fit)$w
 ```
-
 
 ```{r}
 task1_df %>% mutate(weight = as_draws_rvars(fit)$w) %>% 
@@ -856,14 +1042,22 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
   scale_fill_brewer(palette = "Blues")
 ```
 
+
+
 Matt's suggestion: 
+
+
 
 ```{r}
 # custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = with(task1_df, case_when(param.lambda < 0 ~ "neg", param.lambda == 0 ~ "zero", param.lambda > 0 ~ "pos")))
 ```
 
 
+
+
 ## Compare all six models 
+
+
 
 ```{r}
 # TODO 
@@ -885,3 +1079,4 @@ Matt's suggestion:
 #                              "Model 4" = m4_loo, "Model 5" = m5_loo, "Model 6" = m6_loo),
 #                   method = c("stacking"))
 ```
+
