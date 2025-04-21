@@ -27,9 +27,13 @@ library(brms)
 library(tidybayes)
 ```
 
+
+
 # Set up 
 
 read in data and write functions for processing: 
+
+
 
 ```{r}
 #| label: read-in-data
@@ -131,9 +135,13 @@ participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participant
 ```
 
 
+
+
 # Task 2 -- Find highest point on curve 
 
 First we get the data: 
+
+
 
 ```{r}
 #| label: get task 2 data
@@ -165,7 +173,11 @@ task2_df <- single_pid_df %>% filter(task == "task2") %>%
   mutate(flat = (abs(data.left.grad) + abs(data.right.grad))/2)
 ```
 
+
+
 Checking relations, focusing on the **Y** Axis: 
+
+
 
 ```{r}
 #| layout-ncol: 2
@@ -187,7 +199,11 @@ task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
 task2_df %>% ggplot(aes(x = (phy.ans.y - phy.select.y) / dist_to_screen)) + geom_dots()
 ```
 
+
+
 Checking relations, ocusing on the **X** Axis: 
+
+
 
 ```{r}
 #| layout-ncol: 2
@@ -216,8 +232,12 @@ task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = param.lambda)) +
   labs(title = "Signed error on x-axes against skewness")
 ```
 
+
+
 :::{.callout-note collapsed="true"}
 Here's one way to approximate `param.p`: 
+
+
 
 ```{r}
 #| code-fold: true 
@@ -242,6 +262,8 @@ task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = flat)) +
     midpoint = 0
   )
 ```
+
+
 :::
 
 # Overview 
@@ -262,6 +284,8 @@ $$\begin{align*}\text{error}_i &\sim \text{Lomax}(\lambda, \alpha) \\
 \log(\lambda) &\sim \text{Normal}(0, 1) \\ 
 \log(\alpha) &\sim \text{Normal}(0, 1)
 \end{align*}$$
+
+
 
 ```{r}
 # Define the Pareto custom family
@@ -310,7 +334,11 @@ task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
   make_stancode(f, data = ., prior = p)
 ```
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| output: false 
@@ -329,7 +357,11 @@ model.y.lomax <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
   )
 ```
 
+
+
 Check fit and posterior check: 
+
+
 
 ```{r}
 summary(model.y.lomax)
@@ -375,6 +407,8 @@ prediction <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
             fill = "skyblue", alpha = 1) 
 ```
 
+
+
 TODO --- maybe there is something wrong with the lomax distribution ...? 
 
 ### Exponential Distribution 
@@ -384,6 +418,8 @@ Math model:
 $$\begin{align*}\text{error}_i &\sim \text{Exponential}(\lambda) \\ 
 \log(\lambda) &\sim \text{Normal}(0, 1) 
 \end{align*}$$
+
+
 
 ```{r}
 f <- bf(error.y ~ 0, 
@@ -407,7 +443,11 @@ task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
   make_stancode(f, data = ., prior = p)
 ```
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 model.y.exponential <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
@@ -424,7 +464,11 @@ model.y.exponential <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)
   )
 ```
 
+
+
 Check fit and posterior: 
+
+
 
 ```{r}
 summary(model.y.exponential)
@@ -432,7 +476,11 @@ plot(model.y.exponential)
 pp_check(model.y.exponential, ndraws = 100)
 ```
 
+
+
 Plot posterior: 
+
+
 
 ```{r}
 model.y.exponential %>% get_variables(.)
@@ -442,9 +490,13 @@ model.y.exponential %>% spread_draws(b_Intercept) %>%
   ggplot(aes(x = 1/mu)) + stat_halfeye()
 ```
 
+
+
 ### Compare between the two 
 
 Define custom functions for the Lomax distribution: 
+
+
 
 ```{r}
 expose_functions(model.y.lomax, vectorize = TRUE)
@@ -459,11 +511,17 @@ log_lik_custom_lomax <- function(i, prep) {
 }
 ```
 
+
+
 Loo comparison 
+
+
 
 ```{r}
 loo(model.y.lomax, model.y.exponential) 
 ```
+
+
 
 Lomax is clearly better than exponential. 
 
@@ -481,6 +539,8 @@ $$\begin{align}
 \end{align}$$
 
 `brms` formula:
+
+
 
 ```{r}
 f <- bf(error.x ~ 1,
@@ -505,7 +565,11 @@ task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
   make_stancode(f, data = ., prior = p)
 ```
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| output: false
@@ -523,7 +587,11 @@ model.x.normal <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
   )
 ```
 
+
+
 Check fit and posterior:
+
+
 
 ```{r}
 summary(model.x.normal)
@@ -541,7 +609,11 @@ model.x.normal %>% spread_draws(b_Intercept, b_sigma_Intercept) %>%
   stat_halfeye()
 ```
 
+
+
 Plot lineribbon: 
+
+
 
 ```{r}
 prediction <- task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
@@ -562,6 +634,8 @@ task2_df %>% mutate(error.x = va.select.x - va.ans.x,
   )
 ```
 
+
+
 ### Laplace distribution 
 
 Math model: 
@@ -577,6 +651,8 @@ To fit a laplace distribution, we need to define our own custom distribution, si
 :::{.callout-note collapsed="true"}
 There is a [wiki](https://en.wikipedia.org/wiki/Laplace_distribution) about Laplace distribution, which defines the pdf of a Laplace distribution to be $f(x | \mu, b) = \frac{1}{2b} \exp(-\frac{|x - \mu|}{b})$, where $\mu$ is a location parameter, and $b > 0$ is a scale parameter. And this is what the [stan manual](https://en.wikipedia.org/wiki/Laplace_distribution) defines the pdf of the **double exponential** distribution  --- $f(y|\mu, \sigma) = \frac{1}{2\sigma} \exp(- \frac{|y - \mu|}{\sigma})$, basically everything is the same except they're using different notations for the scale parameter ...  
 :::
+
+
 
 ```{r}
 # log of the laplace pdf 
@@ -627,7 +703,11 @@ task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
                 )
 ```
 
+
+
 Fit the model:
+
+
 
 ```{r}
 #| output: false 
@@ -646,16 +726,24 @@ model.x.laplace <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
   )
 ```
 
+
+
 Check the fitted model:
+
+
 
 ```{r}
 summary(model.x.laplace)
 plot(model.x.laplace)
 ```
 
+
+
 Given that we are using custom families, we also need to define our custom function to perform posterior predictive checks: 
 
 Define custom functions for posterior predictive check: 
+
+
 
 ```{r}
 #| code-fold: true 
@@ -676,13 +764,21 @@ posterior_predict_laplace <- function(i, prep, ...) {
 }
 ```
 
+
+
 Posterior predictive check: 
+
+
 
 ```{r}
 pp_check(model.x.laplace, ndraws = 100)
 ```
 
+
+
 Plot posterior distribution: 
+
+
 
 ```{r}
 model.x.laplace %>% get_variables(.) 
@@ -692,7 +788,11 @@ model.x.laplace %>% spread_draws(b_Intercept, b_sigma_Intercept) %>%
   ggplot(aes(x = value, y = name)) + stat_halfeye()
 ```
 
+
+
 Plot posterior predictive distribution on top: 
+
+
 
 ```{r}
 prediction <- task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
@@ -713,6 +813,8 @@ task2_df %>% mutate(error.x = va.select.x - va.ans.x,
   )
 ```
 
+
+
 ### Student-t distribution 
 
 The Cauchy distribution puts too much weight on its tails; we'll go for studente-t, which is more robust. 
@@ -726,6 +828,8 @@ b &\sim \text{Half-Cauchy}(0, 1)
 \end{align}$$
 
 `brms` formula: 
+
+
 
 ```{r}
 f <- bf(
@@ -758,7 +862,11 @@ make_stancode(formula = f,
               prior = p)
 ```
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| output: false 
@@ -774,7 +882,11 @@ model.x.student <- task2_df %>% mutate(error.x = va.select.x - va.ans.x,
   )
 ```
 
+
+
 Check the fitted results: 
+
+
 
 ```{r}
 summary(model.x.student)
@@ -782,7 +894,11 @@ plot(model.x.student)
 pp_check(model.x.student, ndraws = 100)
 ```
 
+
+
 The default `student` function has `student(link = "identity", link_sigma = "log", link_nu = "logm1")`. Which means that we need to transform the fitted `sigma` and `nu`. 
+
+
 
 ```{r}
 model.x.student %>% get_variables(.)
@@ -815,9 +931,13 @@ task2_df %>% mutate(error.x = va.select.x - va.ans.x,
   )
 ```
 
+
+
 ### LOO comparisons 
 
 Recall that the when using a custom `brms` family, we need to define our own funtions. First define the `log_lik` (log likelihood) related functions: 
+
+
 
 ```{r}
 expose_functions(model.x.laplace, vectorize = TRUE)
@@ -838,11 +958,17 @@ log_lik_laplace <- function(i, prep) {
 loo(model.x.laplace)
 ```
 
+
+
 Loo comparison between all models for **error on the X-axis in visual angle**: 
+
+
 
 ```{r}
 loo(model.x.normal, model.x.laplace, model.x.student)
 ```
+
+
 
 So the results are: **Laplace** ~ **Student-t** > **Normal**. 
 
@@ -852,6 +978,8 @@ So the results are: **Laplace** ~ **Student-t** > **Normal**.
 
 Let's stick with the Laplace distribution for now. Let's check the posterior for the parameters: 
 
+
+
 ```{r}
 s.2.va.1 %>% spread_draws(Intercept, sigma) %>% 
   pivot_longer(4:5) %>% 
@@ -859,12 +987,16 @@ s.2.va.1 %>% spread_draws(Intercept, sigma) %>%
   stat_halfeye()
 ```
 
+
+
 New math model: 
 $$\begin{align*}
 \text{error_va}_{i} &\sim \text{Laplace}(\mu, \sigma) \\
 \mu &\sim \mathcal{N}(\bar{\mu}, \sigma_\mu^2) \\ 
 \sigma_i &= f(\text{flat}_i) = \exp(\alpha + \beta \text{flat}_i)
 \end{align*}$$
+
+
 
 ```{r}
 #| column: margin 
@@ -874,7 +1006,11 @@ s.2.va.1 %>% spread_draws(sigma) %>%
   labs(x = "log(sigma)")
 ```
 
+
+
 Formula: 
+
+
 
 ```{r}
 # single participant 
@@ -913,7 +1049,11 @@ task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
                 )
 ```
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 s.2.va.4 <- task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
@@ -926,7 +1066,11 @@ s.2.va.4 <- task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     file = "models/s.2.va.4")
 ```
 
+
+
 Check fit and posterior: 
+
+
 
 ```{r}
 expose_functions(s.2.va.4, vectorize = TRUE)
@@ -935,7 +1079,11 @@ plot(s.2.va.4)
 pp_check(s.2.va.4, ndraws = 100)
 ```
 
+
+
 Is this a better fit?
+
+
 
 ```{r}
 expose_functions(s.2.va.4, vectorize = TRUE)
@@ -948,6 +1096,8 @@ laplace_lpdf <- function(y, mu, sigma) {
 loo(s.2.va.1, s.2.va.4)
 ```
 
+
+
 Yes it is! 
 
 ---
@@ -955,6 +1105,8 @@ Yes it is!
 ## Go from error on Y to error on X
 
 Let's start with a random row. 
+
+
 
 ```{r}
 set.seed(51)
@@ -964,7 +1116,11 @@ task2_df %>% sample_n(1) %>%
 task2_df %>% sample_n(1) %>% left_join(participants)
 ```
 
+
+
 This is what the plot looks like: 
+
+
 
 ```{r}
 #| code-fold: true 
@@ -981,10 +1137,14 @@ data.frame(x = x_vals, y = y_vals) %>%
   geom_hline(yintercept = 0.21, linetype = "dashed", color = "gray") 
 ```
 
+
+
 Create a function that uses `approxfunc` and `uniroot` to find value of `x` given `y`: 
 -- Matt's suggestion --- use the actual density function `dsgt` and not the `approx` 
 
 - Suppose we have only access to discrete values of `x` and `y`
+
+
 
 ```{r}
 #| code-fold: true 
@@ -1051,7 +1211,11 @@ d %>% as.data.frame(.) %>%
   ggplot(aes(x = va.x)) + geom_dots()
 ```
 
+
+
 Let's try to generalize this to the original dataset: 
+
+
 
 ```{r}
 task2_df %>% add_predicted_draws(s.2.va.y) %>% 
@@ -1073,7 +1237,11 @@ temp %>% ungroup(.) %>% select(contains("data")) %>%
 # TODO --- can't translate from `data.pred.y` to `data.pred.x` at the moment ....... 
 ```
 
+
+
 Hmm why is this not working ...? 
+
+
 
 ```{r}
 set.seed(51)
@@ -1108,16 +1276,24 @@ find_all_x_for_y(0.246, temp_x, temp_y, n_segments = 10)
 # STUCK HERE BECAUSE WE CAN"T FIND IT UGH >>> 
 ```
 
+
+
 Compare this to the actual error on x: 
+
+
 
 ```{r}
 task2_df %>% mutate(error.va.x = va.select.x - va.ans.x) %>% 
   ggplot(aes(x = error.va.x)) + geom_dots()
 ```
 
+
+
 ---
 
 ### Multiple participants 
+
+
 
 ```{r}
 # single participant 
@@ -1152,7 +1328,11 @@ task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
                 )
 ```
 
+
+
 ### Multiple participants 
+
+
 
 ```{r}
 f <- bf(error.y ~ 0, 
@@ -1178,7 +1358,11 @@ task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
   make_stancode(f, data = ., prior = p)
 ```
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 #| output: false 
@@ -1196,7 +1380,11 @@ m.2.va.y.2 <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
   )
 ```
 
+
+
 Check fit and posteiror: 
+
+
 
 ```{r}
 summary(m.2.va.y.2)
@@ -1204,7 +1392,10 @@ plot(m.2.va.y.2)
 pp_check(m.2.va.y.2, ndraws = 200) + xlim(0, 0.5)
 ```
 
+
+
 --- 
+
 
 
 
