@@ -315,7 +315,6 @@ Fit the model:
 ```{r}
 #| output: false 
 model.y.lomax <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
-  mutate(error.y = ifelse(error.y < 1e-10, 0, error.y)) %>% 
   brm(
     formula = f,
     data = .,
@@ -344,20 +343,14 @@ plot(model.y.lomax)
 expose_functions(model.y.lomax, vectorize = TRUE)
 
 # Define the posterior_predict function in R as per vignette
-posterior_predict_custom_lomax <- function(i, draws, ...) {
+posterior_predict_lomax <- function(i, draws, ...) {
   lambda <- draws$dpars$lambda[i]
   alpha <- draws$dpars$alpha[i]
-  # Use Stan's rng function indirectly via brms
-  if (is.na(lambda)){
-    lambda <- 1e-10
-  }
-  if (is.na(alpha)){
-    alpha <- 0.12
-  }
-  custom_lomax_rng(0, 1, alpha)
+  lomax_rng(0, lambda, alpha)
 }
 
-pp_check(model.y.lomax, ndraws = 100) # + xlim(0, 0.5) # hmm can't really tell which one is better ... 
+pp_check(model.y.lomax, ndraws = 100)
+pp_check(model4.lomax, ndraws = 100, type = "pit_ecdf")
 ```
 
 ```{r}
@@ -367,21 +360,19 @@ model.y.lomax %>% spread_draws(b_lambda_Intercept, b_alpha_Intercept) %>%
   mutate(b_lambda = exp(b_lambda_Intercept), b_alpha = exp(b_alpha_Intercept)) %>% 
   pivot_longer(cols = 6:7) %>% 
   ggplot(aes(x = value, y = name)) + 
-  stat_halfeye() + facet_wrap(~name, scales = "free")
+  stat_halfeye() + facet_wrap(~name, scales = "free") + 
+  geom_vline(xintercept = 1e-10, linetype = "dashed", color = "gray")
 ```
 
 ```{r}
 prediction <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
-  mutate(error.y = ifelse(error.y < 1e-10, 0, error.y)) %>% 
   add_predicted_draws(model.y.lomax, ndraws = 100)
 
  task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
-   mutate(error.y = ifelse(error.y < 1e-10, 0, error.y)) %>% 
    ggplot() + 
-   geom_dots(aes(x = error.y)) # + 
-   # stat_slab(data = prediction, aes(x = .prediction), 
-   #          fill = "skyblue", alpha = 0.6)  + 
-   # xlim(NA, 100)
+   geom_dots(aes(x = error.y)) + 
+   stat_slab(data = prediction, aes(x = .prediction),
+            fill = "skyblue", alpha = 1) 
 ```
 
 TODO --- maybe there is something wrong with the lomax distribution ...? 
