@@ -798,14 +798,15 @@ Fit the model:
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
-  parallel_chains = 4, 
-  adapt_delta = 0.95)
+  # parallel_chains = 4, 
+  adapt_delta = 0.95
+  )
 ```
 
 ```{r}
 #| echo: false
 #| output: false 
-fit <- readRDS("mix_models/sheng.mix.2.7.rds")
+fit <- readRDS("models/task1.weighted.rds")
 ```
 
 Posterior predictive checks: 
@@ -822,7 +823,7 @@ Save the stan model:
 ```{r}
 #| eval: false 
 
-fit$save_object(file = "mix_models/sheng.mix.2.7.rds")
+fit$save_object(file = "models/task1.weighted.rds")
 ```
 
 ```{r}
@@ -838,7 +839,6 @@ task1_df %>% mutate(weight = as_draws_rvars(fit)$w) %>%
 ```
 
 ```{r}
-
 task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
   unnest_rvars() %>% 
   ggplot(aes(x = param.lambda, y = y_rep)) + 
@@ -852,6 +852,7 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
   geom_point(aes(y = va.select.x - va.med.x), data = task1_df)
 ```
 
+NOTE --- we are looking for small variance when lambda = 0. The above plot does not give us this fact. 
 
 ## Compare all six models 
 

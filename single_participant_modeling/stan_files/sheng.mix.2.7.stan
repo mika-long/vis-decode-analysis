@@ -22,7 +22,7 @@ transformed parameters {
 
   for (n in 1:N) {
     // Calculate difference between mode and median
-    real inv_MSE_mod = 1 / (square(x_mod[n] - x_med[n] + mu_mod) + 2 * square(sigma_mod)); 
+    real inv_MSE_mod = 1 / (square(x_mod[n] - x_med[n] + mu_mod) + square(sigma_mod));
 
     w[n] = inv_MSE_med / (inv_MSE_med + inv_MSE_mod); 
   }
@@ -43,11 +43,11 @@ model {
   for (n in 1:N) {
     // Weighted average of two models 
     // target += w[n] * normal_lpdf(x[n] | x_med[n] + mu_med, sigma_med) +
-    //          (1 - w[n]) * double_exponential_lpdf(x[n] | x_mod[n] + mu_mod, sigma_mod);
+    //          (1 - w[n]) * normal_lpdf(x[n] | x_mod[n] + mu_mod, sigma_mod);
     // I don't think we can do simple weighted averages because things are no log scale and the weights are not in log scale ...
     target += log_mix(w[n],
                   normal_lpdf(x[n] | x_med[n] + mu_med, sigma_med),
-                  double_exponential_lpdf(x[n] | x_mod[n] + mu_mod, sigma_mod));
+                  normal_lpdf(x[n] | x_mod[n] + mu_mod, sigma_mod));
   }
 }
 
@@ -58,14 +58,14 @@ generated quantities {
   
   for (n in 1:N) {
     //log_lik[n] = w[n] * normal_lpdf(x[n] | x_med[n] + mu_med, sigma_med) +
-    //          (1 - w[n]) * double_exponential_lpdf(x[n] | x_mod[n] + mu_mod, sigma_mod);
+    //          (1 - w[n]) * normal_lpdf(x[n] | x_mod[n] + mu_mod, sigma_mod);
     log_lik[n] = log_mix(w[n],
                   normal_lpdf(x[n] | x_med[n] + mu_med, sigma_med),
-                  double_exponential_lpdf(x[n] | x_mod[n] + mu_mod, sigma_mod));
+                  normal_lpdf(x[n] | x_mod[n] + mu_mod, sigma_mod));
 
     // Generate posterior predictive samples
     real normal_sample = normal_rng(x_med[n] + mu_med, sigma_med);
-    real laplace_sample = double_exponential_rng(x_mod[n] + mu_mod, sigma_mod);
+    real laplace_sample = normal_rng(x_mod[n] + mu_mod, sigma_mod);
 
     // Weighted average using the observation-specific weight w[n]
     y_rep[n] = w[n] * normal_sample + (1 - w[n]) * laplace_sample;
@@ -75,7 +75,7 @@ generated quantities {
     //   // Sample from normal component
     //   y_rep[n] = normal_rng(x_med[n] + mu_med, sigma_med);
     // } else {
-    //   y_rep[n] = double_exponential_rng(x_mod[n] + mu_mod, sigma_mod);
+    //   y_rep[n] = normal_rng(x_mod[n] + mu_mod, sigma_mod);
     // }
   }
 }
