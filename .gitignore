@@ -4,3 +4,4 @@ pilot/models/*
 stan_files/*.exe
 single_participant_modeling/models/*
 single_participant_modeling/stan_files/*.exe
+single_participant_modeling/*.DS_STORE

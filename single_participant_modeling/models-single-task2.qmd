@@ -314,6 +314,7 @@ Fit the model:
 
 ```{r}
 #| output: false 
+
 model.y.lomax <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
   brm(
     formula = f,
@@ -333,9 +334,6 @@ Check fit and posterior check:
 
 ```{r}
 summary(model.y.lomax)
-```
-
-```{r}
 plot(model.y.lomax)
 ```
 
@@ -375,7 +373,7 @@ prediction <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
             fill = "skyblue", alpha = 1) 
 ```
 
-TODO --- maybe there is something wrong with the lomax distribution ...? 
+<!-- TODO --- maybe there is something wrong with the lomax distribution ...?  -->
 
 ### Exponential Distribution 
 
