@@ -971,7 +971,8 @@ task3_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
 #| output: false
 
 model.3.bias.alpha <- task3_df %>%
-  mutate(error_va = va.select.y - va.ans.y) %>%
+  mutate(error_va = va.select.y - va.ans.y, 
+         log.va.ans.x = log(va.ans.x)) %>%
   brm(
     formula = f,
     data = .,
@@ -998,7 +999,8 @@ Overlay plot:
 
 ```{r}
 prediction <- task3_df %>% 
-  mutate(error_va = va.select.y - va.ans.y) %>% 
+  mutate(error_va = va.select.y - va.ans.y, 
+         log.va.ans.x = log(va.ans.x)) %>% 
   add_predicted_draws(model.3.bias.alpha, ndraws = 100) 
 
 task3_df %>% 
