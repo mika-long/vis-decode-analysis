@@ -451,7 +451,7 @@ Save the stan model:
 fit$save_object(file = "models/task1.sq.diff.rds")
 ```
 
-### Compare the above models so far 
+### LOO Compare the above models so far 
 
 ```{r}
 m1 <- readRDS("models/task1.diff.rds") # diff
@@ -748,6 +748,24 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
   ggdist::stat_lineribbon() +
   geom_point(aes(y = va.select.x - va.med.x), data = task1_df)
 ```
+
+### LOO Comparison 
+
+```{r}
+m1 <- readRDS("models/task1.abs.diff.rds") 
+m1_loo <- m1$loo()
+m2 <- readRDS("models/task1.alpha.abs.diff.rds") 
+m2_loo <- m2$loo()
+m3 <- readRDS("models/task1.alpha.abs.adj.diff.rds") 
+m3_loo <- m3$loo()
+m4 <- readRDS("models/task1.beta.abs.adj.diff.alpha.rds") 
+m4_loo <- m4$loo()
+
+brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo, "Model 3" = m3_loo, "Model 4" = m4_loo),
+                  method = c("stacking"))
+```
+
+Model 3 is the best one. 
 
 ---
 
