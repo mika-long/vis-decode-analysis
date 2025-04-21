@@ -266,7 +266,7 @@ $$\begin{align*}\text{error}_i &\sim \text{Lomax}(\lambda, \alpha) \\
 ```{r}
 # Define the Pareto custom family
 lomax_family <- custom_family(
-  "custom_lomax",
+  "lomax",
   dpars = c("mu", "lambda", "alpha"),    # parameters: lambda = scale, alpha = shape
   links = c("identity", "log", "log"),   # log links ensure parameters are positive
   lb = c(-Inf, 0, 0),                    # lower bounds for both parameters
@@ -277,11 +277,11 @@ lomax_family <- custom_family(
 # Note: Stan already has a built-in pareto_lpdf function
 stan_funs <- "
   // Use the built-in pareto_type_2_lpdf function
-  real custom_lomax_lpdf(real y, real mu, real lambda, real alpha) {
+  real lomax_lpdf(real y, real mu, real lambda, real alpha) {
     return pareto_type_2_lpdf(y | 0, lambda, alpha);
   }
   
-  real custom_lomax_rng(real mu, real lambda, real alpha) {
+  real lomax_rng(real mu, real lambda, real alpha) {
     return pareto_type_2_rng(0, lambda, alpha);
   }
 "
@@ -289,11 +289,11 @@ stan_funs <- "
 
 ```{r}
 f <- bf(error.y ~ 0, 
+        mu ~ 0, 
         lambda ~ 1, 
         alpha ~ 1, 
         family = lomax_family)
 
-# mu has log-link, so we don't pose any bounds on it 
 p <- c(
   prior(normal(0, 1), class = Intercept, dpar = alpha), 
   prior(normal(0, 1), class = Intercept, dpar = lambda)

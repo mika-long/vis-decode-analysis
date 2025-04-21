@@ -359,7 +359,6 @@ task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_t
 #| output: false 
 # Fit the model with brms
 model4.lomax <- task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) %>% 
-  mutate(error = ifelse(error < 1e-10, 0, error)) %>% 
   brm(
     formula = f,
     data = .,
@@ -388,7 +387,8 @@ model4.lomax %>% spread_draws(`^b_.*`, regex = TRUE) %>%
   pivot_longer(6:7) %>% 
   ggplot(aes(x = value, y = name)) + 
   stat_halfeye() + 
-  facet_wrap(~name, scales = "free")
+  facet_wrap(~name, scales = "free") + 
+  geom_vline(xintercept = 1e-10, linetype = "dashed", color = "gray")
 ```
 
 Define custom functions for `pp_check` and `loo`: 
@@ -425,7 +425,8 @@ prediction <- task4_df %>%
 prediction %>% ggplot() + 
   stat_slab(aes(x = .prediction), 
             fill = "blue", alpha = 1) + 
-  geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope)))
+  geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) + 
+  xlim(0, 5)
 ```
 
 ## Model Comparison
