@@ -152,6 +152,8 @@ task4_df <- single_pid_df %>% filter(task == "task4") %>%
 
 ```
 
+Check relations 
+
 ```{r}
 task4_df %>% ggplot(aes(x = va.ans.x - va.select.x)) + geom_dots()
 task4_df %>% ggplot(aes(x = va.ans.y - va.select.y)) + geom_dots()
