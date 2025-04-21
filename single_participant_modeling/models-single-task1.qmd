@@ -138,33 +138,27 @@ task1_df %>% ggplot(aes(x = param.lambda, y = va.select.x - va.med.x)) +
   geom_point(alpha = 0.5)
 ```
 
-# Single participant 
+# Mixture models 
+
+## Same lambda for all rows 
 
 Math model: 
 
 $$\begin{align*}
-p_X(x_i) & =  \theta \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \theta) \cdot \Pr(\hat{x}^{\text{mod}}_i) \\
+f_X(x_i) & =  \theta \cdot f_{\hat{X}}(\hat{x}^{\text{med}}_i) + (1 - \theta) \cdot f_{\hat{X}}(\hat{x}^{\text{mod}}_i) \\
 \hat{x}^{\text{med}}_i &\sim \mathcal{N}(x^\text{med}, (\sigma^\text{med})^2) \\ 
 \hat{x}^{\text{mod}}_i &\sim \text{Laplace}(x^\text{mod}, (\sigma^{\text{mod}})^2) \\ 
-(1) \,\, \theta &\sim \text{Beta}(5, 5) 
+\theta &\sim \text{Beta}(5, 5) 
 \end{align*}$$
-
-## Same lambda 
 
 If we set $\lambda \sim \text{Beta}(5, 5)$ then the sampling is more concentrated around 0.5, and if we set $\lambda \sim \text{Beta}(2, 2)$ then the sampling is closer to a uniform distribution over [0, 1]. 
 
 ```{r}
 #| eval: false 
-model <- cmdstan_model("mix_models/sheng.mix.1.stan")
+model <- cmdstan_model("stan_files/sheng.mix.1.stan")
 # model$print()
 model 
 ```
-
-```{r}
-task1_df %>% ggplot(aes(x = abs(va.med.x - va.mod.x))) + geom_dots() -> p
-p
-```
-
 
 Prepare data for stan: 
 
@@ -192,7 +186,7 @@ Fit the stan model:
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
-  parallel_chains = 4
+  # parallel_chains = 4
 )
 ```
 
@@ -245,7 +239,7 @@ Save the stan model:
 ```{r}
 #| eval: false 
 
-fit$save_object(file = "mix_models/sheng.mix.1.rds")
+fit$save_object(file = "models/task1.same.lambda")
 ```
 
 ## Different lambda --- varies by row 
