@@ -471,15 +471,15 @@ prediction %>% ggplot() +
 f <- bf(
   error ~ 0,  
   mu ~ (1 | participantId), 
-  shape ~ (1 | participantId)
+  shape ~ (1 | participantId),
   family = weibull
 )
 
 p <- c(
-    prior(normal(0, 1), class = Intercept, dpar = alpha),
-    prior(cauchy(0, 1), class = sd, group = participantId, dpar = alpha, lb = 0),
-    prior(normal(0, 1), class = Intercept, dpar = lambda), 
-    prior(cauchy(0, 1), class = sd, group = participantId, dpar = lambda, lb = 0)
+    prior(normal(0, 1), class = Intercept),
+    prior(cauchy(0, 1), class = sd, group = participantId, lb = 0),
+    prior(normal(0, 1), class = Intercept, dpar = shape), 
+    prior(cauchy(0, 1), class = sd, group = participantId, dpar = shape, lb = 0)
   )
 ```
 
@@ -494,6 +494,23 @@ task4_df %>%  mutate(error = abs(data_to_screen_slope(data.select.slope) - data_
 task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>% 
   make_stancode(formula = f, prior = p)
 ```
+
+Fit the model: 
+
+```{r}
+model.weibull <- task4_df %>% 
+  mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
+  mutate(error = ifelse(abs(error) < tolerance, tolerance, error)) %>% # how come weibull also requires resposne > 0 ...? 
+  brm(formula = f, 
+      data = ., 
+      prior = p, 
+      chains = 4, 
+      file = "models/task4.weibull", 
+      file_refit = "on_change",
+      save_pars = save_pars(all = TRUE)
+  )
+```
+
 
 ## Model Comparison
 
