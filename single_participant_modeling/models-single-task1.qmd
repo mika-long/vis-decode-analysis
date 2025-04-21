@@ -177,6 +177,18 @@ stan_data <- list(
 )
 ```
 
+Define custom posterior predictive check function: 
+
+```{r}
+custom_pp_check <- function(fitted_model) {
+  y_rep <- fitted_model$draws("y_rep", format = "matrix")
+  y <- fitted_model$draws("x_org", format = "matrix")[1, ] %>% as.vector(.)
+  bayesplot::ppc_dens_overlay(y, y_rep[1:100, ])
+}
+
+```
+
+
 Fit the stan model: 
 
 ```{r}
@@ -203,13 +215,6 @@ Posterior predictive checks:
 ```{r}
 #| column: margin 
 summary <- fit$summary()
-
-custom_pp_check <- function(fitted_model) {
-  y_rep <- fitted_model$draws("y_rep", format = "matrix")
-  y <- fitted_model$draws("x_org", format = "matrix")[1, ] %>% as.vector(.)
-  bayesplot::ppc_dens_overlay(y, y_rep[1:100, ])
-}
-
 custom_pp_check(fit)
 ```
 
@@ -780,13 +785,13 @@ As of now, we don't know what a weighted average^[or convolution integration?] b
 $$\begin{align*}
     \hat{x}_i &\sim w_i \cdot \hat{x}^\text{med}_i + (1 - w_i) \cdot \hat{x}^\text{mod}_i \\ 
     \hat{x}^\text{med}_i &\sim \mathcal{N}(x^\text{med}_i + \mu^\text{med}, (\sigma^\text{med})^2) \\ 
-    \hat{x}^\text{mod}_i &\sim \text{Normal}(x^\text{mod}_i + \mu^\text{mod}, b^\text{mod}) \\ 
+    \hat{x}^\text{mod}_i &\sim \mathcal{N}(x^\text{mod}_i + \mu^\text{mod}, \sigma^\text{mod}^2) \\ 
     w_i &= \frac{\text{MSE}^{-1}(\hat{x}_i^\text{med})}{\text{MSE}^{-1}(\hat{x}_i^\text{med}) + \text{MSE}^{-1}(\hat{x}_i^\text{mod})}
 \end{align*}$$
 
 ```{r}
 #| eval: false 
-model <- cmdstan_model("stan_files/sheng.mix.2.7.stan")
+model <- cmdstan_model("stan_files/sheng.mix.2.8.stan")
 model
 ``` 
 
@@ -799,7 +804,7 @@ fit <- model$sample(
   data = stan_data, 
   chains = 4, 
   # parallel_chains = 4, 
-  adapt_delta = 0.95
+  # adapt_delta = 0.95
   )
 ```
 
@@ -839,17 +844,18 @@ task1_df %>% mutate(weight = as_draws_rvars(fit)$w) %>%
 ```
 
 ```{r}
-task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
-  unnest_rvars() %>% 
-  ggplot(aes(x = param.lambda, y = y_rep)) + 
-  ggdist::stat_ribbon()
-
+# task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+#   unnest_rvars() %>% 
+#   ggplot(aes(x = param.lambda, y = y_rep)) + 
+#   ggdist::stat_ribbon() + 
+#   scale_fill_brewer(palette = "Blues")
 
 task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
   unnest_rvars() %>% 
   ggplot(aes(x = param.lambda, y = y_rep)) + 
   ggdist::stat_lineribbon() +
-  geom_point(aes(y = va.select.x - va.med.x), data = task1_df)
+  geom_point(aes(y = va.select.x - va.med.x), data = task1_df, alpha = 0.8) + 
+  scale_fill_brewer(palette = "Blues")
 ```
 
 NOTE --- we are looking for small variance when lambda = 0. The above plot does not give us this fact. 
