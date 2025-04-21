@@ -401,6 +401,7 @@ Check fit and posterior:
 summary(model.y.exponential)
 plot(model.y.exponential)
 pp_check(model.y.exponential, ndraws = 100)
+pp_check(model.y.exponential, ndraws = 100, type = "pit_ecdf")
 ```
 
 Plot posterior: 
