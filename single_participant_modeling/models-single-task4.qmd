@@ -356,7 +356,6 @@ task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_t
   make_stancode(formula = f, family = lomax_family, prior = p)
 ```
 
-
 ```{r}
 #| output: false 
 # Fit the model with brms

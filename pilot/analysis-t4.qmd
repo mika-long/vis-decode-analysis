@@ -331,3 +331,141 @@ prediction %>% ggplot() +
 
 ## Lomax Model 
 
+Lomax is Pareto Type II distribution. We had similar models for task 2. 
+
+```{r}
+lomax_family <- custom_family(
+  "lomax",
+  dpars = c("mu", "lambda", "alpha"),    # includes mu as required
+  links = c("identity", "log", "log"),   # appropriate links
+  lb = c(-Inf, 0, 0),                    # appropriate bounds
+  type = "real"
+)
+
+stan_funs <- "
+  real lomax_lpdf(real y, real mu, real lambda, real alpha) {
+    return pareto_type_2_lpdf(y | 0, lambda, alpha);  # mu is ignored
+  }
+  
+  real lomax_rng(real mu, real lambda, real alpha) {
+    return pareto_type_2_rng(0, lambda, alpha);  # mu is ignored
+  }
+"
+```
+
+```{r}
+# Define the formula for the model
+f <- bf(
+  error ~ 0,  
+  mu ~ 0, 
+  alpha ~ (1 | participantId), 
+  lambda ~ (1 | participantId)  
+)
+
+p <- c(
+    prior(normal(0, 1), class = Intercept, dpar = alpha),
+    prior(cauchy(0, 1), class = sd, group = participantId, dpar = alpha, lb = 0),
+    prior(normal(0, 1), class = Intercept, dpar = lambda), 
+    prior(cauchy(0, 1), class = sd, group = participantId, dpar = lambda, lb = 0)
+  )
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+
+task4_df %>%  mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) %>%
+  mutate(error = ifelse(error < 1e-10, 0, error)) %>% 
+  get_prior(formula = f, family = lomax_family)
+
+task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>% 
+  make_stancode(formula = f, family = lomax_family, prior = p)
+```
+
+```{r}
+#| output: false 
+# Fit the model with brms
+model4.lomax <- task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) %>% 
+  mutate(error = ifelse(error < 1e-10, 0, error)) %>% 
+  brm(
+    formula = f,
+    data = .,
+    family = lomax_family,
+    prior = p,
+    stanvars = stanvar(scode = stan_funs, block = "functions"),
+    chains = 4,
+    file = "models/task4.lomax", 
+    # init = list()
+    # control = list(adapt_delta = 0.95)
+  )
+```
+
+Check fit: 
+
+```{r}
+# Examine model results
+summary(model4.lomax)
+plot(model4.lomax)
+```
+
+Let's check the posterior of alpha and lambda: 
+
+```{r}
+model4.lomax %>% spread_draws(`^b_.*`, regex = TRUE) %>% 
+  mutate(b_alpha = exp(b_alpha_Intercept), b_lambda = exp(b_lambda_Intercept)) %>% 
+  pivot_longer(6:7) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye() + 
+  facet_wrap(~name, scales = "free") + 
+  geom_vline(xintercept = 1e-10, linetype = "dashed", color = "gray")
+```
+
+Define custom functions for `pp_check` and `loo`: 
+
+```{r}
+expose_functions(model4.lomax, vectorize = TRUE)
+
+# Define the posterior_predict function in R as per vignette
+posterior_predict_lomax <- function(i, draws, ...) {
+  alpha <- draws$dpars$alpha[i]
+  lambda <- draws$dpars$lambda[i]
+  # Use Stan's rng function indirectly via brms
+  lomax_rng(0, lambda, alpha)
+}
+
+log_lik_lomax <- function(i, prep){
+  alpha <- brms::get_dpar(prep, "alpha", i = i)
+  lambda <- brms::get_dpar(prep, "lambda", i = i)
+  y <- prep$data$Y[i]
+  lomax_lpdf(y, 0, lambda, alpha)
+}
+
+pp_check(model4.lomax, ndraws = 100) 
+pp_check(model4.lomax, ndraws = 100, type = "pit_ecdf")
+```
+
+Overlay plot: 
+
+```{r}
+prediction <- task4_df %>% 
+  mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
+  add_predicted_draws(model4.lomax, ndraws = 100)
+
+prediction %>% ggplot() + 
+  stat_slab(aes(x = .prediction), 
+            fill = "blue", alpha = 1) + 
+  geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) + 
+  xlim(0, 5)
+```
+
+## Model Comparison
+
+```{r}
+loo(model4.exponential, model4.lomax)
+```
+
+
+
+
+
+
