@@ -370,7 +370,8 @@ prediction <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
    ggplot() + 
    geom_dots(aes(x = error.y)) + 
    stat_slab(data = prediction, aes(x = .prediction),
-            fill = "skyblue", alpha = 1) 
+            fill = "skyblue", alpha = 1) + 
+   xlim(0, 0.04)
 ```
 
 <!-- TODO --- maybe there is something wrong with the lomax distribution ...?  -->
