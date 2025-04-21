@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.4.550">
+<meta name="generator" content="quarto-1.6.40">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -33,7 +33,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -63,14 +63,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="models-single-tasks3&amp;5_files/libs/quarto-html/tippy.umd.min.js"></script>
 <script src="models-single-tasks3&amp;5_files/libs/quarto-html/anchor.min.js"></script>
 <link href="models-single-tasks3&amp;5_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="models-single-tasks3&amp;5_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="models-single-tasks3&amp;5_files/libs/quarto-html/quarto-syntax-highlighting-549806ee2085284f45b00abea8c6df48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="models-single-tasks3&amp;5_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="models-single-tasks3&amp;5_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="models-single-tasks3&amp;5_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<link href="models-single-tasks3&amp;5_files/libs/bootstrap/bootstrap-4f863c1579693c9d56bbaaf04c81ce69.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <link href="models-single-tasks3&amp;5_files/libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet">
 <script src="models-single-tasks3&amp;5_files/libs/pagedtable-1.1/js/pagedtable.js"></script>
 
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <script type="text/javascript">
@@ -391,7 +391,7 @@ window.Quarto = {
 <span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">prior =</span> p,</span>
 <span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> .,</span>
 <span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">chains =</span> <span class="dv">4</span>, </span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">file =</span> <span class="st">"models/model5.x.no.bias"</span>, </span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">file =</span> <span class="st">"models/task5.x.no.bias"</span>, </span>
 <span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">file_refit =</span> <span class="st">"on_change"</span>, </span>
 <span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">save_pars =</span> <span class="fu">save_pars</span>(<span class="at">all =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -409,7 +409,7 @@ Formula: error_va ~ 0
 
 Regression Coefficients:
                 Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-sigma_Intercept    -4.25      0.07    -4.38    -4.11 1.00     1442     2049
+sigma_Intercept    -4.25      0.07    -4.38    -4.11 1.00     1536     1998
 
 Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
 and Tail_ESS are effective sample size measures, and Rhat is the potential
@@ -507,8 +507,8 @@ Formula: error_va ~ 1
 
 Regression Coefficients:
                 Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-Intercept           0.03      0.01     0.02     0.05 1.00     3754     2637
-sigma_Intercept    -4.37      0.07    -4.51    -4.23 1.00     2167     2091
+Intercept           0.03      0.01     0.02     0.05 1.00     3697     2600
+sigma_Intercept    -4.37      0.07    -4.50    -4.22 1.00     2742     2626
 
 Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
 and Tail_ESS are effective sample size measures, and Rhat is the potential
@@ -579,12 +579,12 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 Computed from 4000 by 108 log-likelihood matrix.
 
          Estimate   SE
-elpd_loo    120.3  9.2
+elpd_loo    120.3  9.1
 p_loo         1.2  0.4
-looic      -240.5 18.3
+looic      -240.6 18.3
 ------
 MCSE of elpd_loo is 0.0.
-MCSE and ESS estimates assume MCMC draws (r_eff in [0.3, 0.4]).
+MCSE and ESS estimates assume MCMC draws (r_eff in [0.4, 0.4]).
 
 All Pareto k estimates are good (k &lt; 0.7).
 See help('pareto-k-diagnostic') for details.
@@ -594,12 +594,12 @@ Output of model 'model5.x.bias':
 Computed from 4000 by 108 log-likelihood matrix.
 
          Estimate   SE
-elpd_loo    133.1  8.9
-p_loo         2.1  0.6
-looic      -266.1 17.7
+elpd_loo    133.1  8.8
+p_loo         2.1  0.5
+looic      -266.2 17.6
 ------
 MCSE of elpd_loo is 0.0.
-MCSE and ESS estimates assume MCMC draws (r_eff in [0.5, 1.0]).
+MCSE and ESS estimates assume MCMC draws (r_eff in [0.6, 1.0]).
 
 All Pareto k estimates are good (k &lt; 0.7).
 See help('pareto-k-diagnostic') for details.
@@ -693,7 +693,7 @@ Formula: error_va ~ 0
 
 Regression Coefficients:
                 Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-sigma_Intercept    -4.35      0.07    -4.48    -4.22 1.00     1541     2049
+sigma_Intercept    -4.35      0.07    -4.49    -4.21 1.00     1356     1922
 
 Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
 and Tail_ESS are effective sample size measures, and Rhat is the potential
@@ -794,8 +794,8 @@ Formula: error_va ~ 1
 
 Regression Coefficients:
                 Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-Intercept           0.02      0.01     0.01     0.04 1.00     3928     3102
-sigma_Intercept    -4.38      0.07    -4.51    -4.24 1.00     3644     2761
+Intercept           0.02      0.01     0.01     0.04 1.00     3481     2722
+sigma_Intercept    -4.38      0.07    -4.51    -4.24 1.00     3589     2658
 
 Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
 and Tail_ESS are effective sample size measures, and Rhat is the potential
@@ -860,12 +860,12 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 Computed from 4000 by 108 log-likelihood matrix.
 
          Estimate   SE
-elpd_loo     98.5 10.0
-p_loo         2.5  0.9
-looic      -196.9 20.0
+elpd_loo     98.4 10.0
+p_loo         2.6  0.9
+looic      -196.8 20.0
 ------
 MCSE of elpd_loo is 0.0.
-MCSE and ESS estimates assume MCMC draws (r_eff in [0.8, 1.1]).
+MCSE and ESS estimates assume MCMC draws (r_eff in [0.7, 1.0]).
 
 All Pareto k estimates are good (k &lt; 0.7).
 See help('pareto-k-diagnostic') for details.
@@ -875,12 +875,12 @@ Output of model 'model5.y.no.bias':
 Computed from 4000 by 108 log-likelihood matrix.
 
          Estimate   SE
-elpd_loo     96.0  9.3
-p_loo         1.3  0.5
-looic      -192.0 18.7
+elpd_loo     96.0  9.4
+p_loo         1.4  0.5
+looic      -191.9 18.8
 ------
 MCSE of elpd_loo is 0.0.
-MCSE and ESS estimates assume MCMC draws (r_eff in [0.4, 0.4]).
+MCSE and ESS estimates assume MCMC draws (r_eff in [0.3, 0.5]).
 
 All Pareto k estimates are good (k &lt; 0.7).
 See help('pareto-k-diagnostic') for details.
@@ -888,7 +888,7 @@ See help('pareto-k-diagnostic') for details.
 Model comparisons:
                  elpd_diff se_diff
 model5.y.bias     0.0       0.0   
-model5.y.no.bias -2.4       2.8   </code></pre>
+model5.y.no.bias -2.5       2.7   </code></pre>
 </div>
 </div>
 <p>There is not much difference between the one with bias and the one without bias …</p>
@@ -1040,7 +1040,7 @@ Formula: error_va ~ 0
 
 Regression Coefficients:
                 Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-sigma_Intercept    -4.27      0.07    -4.40    -4.13 1.00     1510     1626
+sigma_Intercept    -4.27      0.07    -4.40    -4.13 1.00     1701     2159
 
 Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
 and Tail_ESS are effective sample size measures, and Rhat is the potential
@@ -1138,8 +1138,8 @@ Formula: error_va ~ 1
 
 Regression Coefficients:
                 Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-Intercept          -0.03      0.01    -0.05    -0.01 1.00     3637     2210
-sigma_Intercept    -4.30      0.07    -4.43    -4.16 1.00     3387     2540
+Intercept          -0.03      0.01    -0.05    -0.01 1.00     3306     2811
+sigma_Intercept    -4.30      0.07    -4.43    -4.16 1.00     3048     2694
 
 Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
 and Tail_ESS are effective sample size measures, and Rhat is the potential
@@ -1245,8 +1245,8 @@ Formula: error_va ~ 0
 
 Regression Coefficients:
                 Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-sigma_Intercept     0.00      0.02    -0.04     0.05 1.00     1818     1792
-sigma_va.ans.x      0.01      0.00     0.01     0.02 1.00     1607     1651
+sigma_Intercept     0.00      0.02    -0.04     0.05 1.00     1476     1741
+sigma_va.ans.x      0.01      0.00     0.01     0.02 1.00     1166     1727
 
 Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
 and Tail_ESS are effective sample size measures, and Rhat is the potential
@@ -1321,19 +1321,20 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb87"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb87-1"><a href="#cb87-1" aria-hidden="true" tabindex="-1"></a>model.<span class="fl">3.</span>bias.alpha <span class="ot">&lt;-</span> task3_df <span class="sc">%&gt;%</span></span>
-<span id="cb87-2"><a href="#cb87-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error_va =</span> va.select.y <span class="sc">-</span> va.ans.y) <span class="sc">%&gt;%</span></span>
-<span id="cb87-3"><a href="#cb87-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">brm</span>(</span>
-<span id="cb87-4"><a href="#cb87-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">formula =</span> f,</span>
-<span id="cb87-5"><a href="#cb87-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> .,</span>
-<span id="cb87-6"><a href="#cb87-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">family =</span> <span class="fu">gaussian</span>(),</span>
-<span id="cb87-7"><a href="#cb87-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">prior =</span> p,</span>
-<span id="cb87-8"><a href="#cb87-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">chains =</span> <span class="dv">4</span>,</span>
-<span id="cb87-9"><a href="#cb87-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">file =</span> <span class="st">"models/task3.bias.alpha"</span>,</span>
-<span id="cb87-10"><a href="#cb87-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">file_refit =</span> <span class="st">"on_change"</span>, </span>
-<span id="cb87-11"><a href="#cb87-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">save_pars =</span> <span class="fu">save_pars</span>(<span class="at">all=</span><span class="cn">TRUE</span>), </span>
-<span id="cb87-12"><a href="#cb87-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">iter =</span> <span class="dv">4000</span>, <span class="co"># increased because even with adapt_delta its still running into divergent transitions </span></span>
-<span id="cb87-13"><a href="#cb87-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.99</span>) <span class="co"># model runs into divergent transitions without this </span></span>
-<span id="cb87-14"><a href="#cb87-14" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb87-2"><a href="#cb87-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error_va =</span> va.select.y <span class="sc">-</span> va.ans.y, </span>
+<span id="cb87-3"><a href="#cb87-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">log.va.ans.x =</span> <span class="fu">log</span>(va.ans.x)) <span class="sc">%&gt;%</span></span>
+<span id="cb87-4"><a href="#cb87-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">brm</span>(</span>
+<span id="cb87-5"><a href="#cb87-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">formula =</span> f,</span>
+<span id="cb87-6"><a href="#cb87-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> .,</span>
+<span id="cb87-7"><a href="#cb87-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">family =</span> <span class="fu">gaussian</span>(),</span>
+<span id="cb87-8"><a href="#cb87-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">prior =</span> p,</span>
+<span id="cb87-9"><a href="#cb87-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">chains =</span> <span class="dv">4</span>,</span>
+<span id="cb87-10"><a href="#cb87-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">file =</span> <span class="st">"models/task3.bias.alpha"</span>,</span>
+<span id="cb87-11"><a href="#cb87-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">file_refit =</span> <span class="st">"on_change"</span>, </span>
+<span id="cb87-12"><a href="#cb87-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">save_pars =</span> <span class="fu">save_pars</span>(<span class="at">all=</span><span class="cn">TRUE</span>), </span>
+<span id="cb87-13"><a href="#cb87-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">iter =</span> <span class="dv">4000</span>, <span class="co"># increased because even with adapt_delta its still running into divergent transitions </span></span>
+<span id="cb87-14"><a href="#cb87-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.99</span>) <span class="co"># model runs into divergent transitions without this </span></span>
+<span id="cb87-15"><a href="#cb87-15" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Check fit and poseterior:</p>
 <div class="cell">
@@ -1349,9 +1350,9 @@ Formula: error_va ~ 1
 
 Regression Coefficients:
                 Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-Intercept          -0.03      0.01    -0.05    -0.01 1.00     3643     3965
-sigma_Intercept    -0.02      0.02    -0.07     0.03 1.00     3021     4350
-sigma_va.ans.x      0.02      0.00     0.01     0.02 1.00     2607     3217
+Intercept          -0.03      0.01    -0.05    -0.01 1.00     3478     3372
+sigma_Intercept    -0.02      0.02    -0.06     0.03 1.00     3705     4485
+sigma_va.ans.x      0.02      0.00     0.01     0.02 1.00     3211     3907
 
 Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
 and Tail_ESS are effective sample size measures, and Rhat is the potential
@@ -1377,16 +1378,17 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <p>Overlay plot:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb92"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a>prediction <span class="ot">&lt;-</span> task3_df <span class="sc">%&gt;%</span> </span>
-<span id="cb92-2"><a href="#cb92-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error_va =</span> va.select.y <span class="sc">-</span> va.ans.y) <span class="sc">%&gt;%</span> </span>
-<span id="cb92-3"><a href="#cb92-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_predicted_draws</span>(model.<span class="fl">3.</span>bias.alpha, <span class="at">ndraws =</span> <span class="dv">100</span>) </span>
-<span id="cb92-4"><a href="#cb92-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb92-5"><a href="#cb92-5" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> </span>
-<span id="cb92-6"><a href="#cb92-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error_va =</span> va.select.y <span class="sc">-</span> va.ans.y, </span>
-<span id="cb92-7"><a href="#cb92-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">log.va.ans.x =</span> <span class="fu">log</span>(va.ans.x)) <span class="sc">%&gt;%</span></span>
-<span id="cb92-8"><a href="#cb92-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>() <span class="sc">+</span>  </span>
-<span id="cb92-9"><a href="#cb92-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_lineribbon</span>(<span class="at">data =</span> prediction, <span class="fu">aes</span>(<span class="at">x =</span> va.ans.x, <span class="at">y =</span> .prediction), <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
-<span id="cb92-10"><a href="#cb92-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">palette =</span> <span class="st">"Blues"</span>) <span class="sc">+</span></span>
-<span id="cb92-11"><a href="#cb92-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.ans.x, <span class="at">y =</span> error_va), <span class="at">color =</span> <span class="st">"#333333"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb92-2"><a href="#cb92-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error_va =</span> va.select.y <span class="sc">-</span> va.ans.y, </span>
+<span id="cb92-3"><a href="#cb92-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">log.va.ans.x =</span> <span class="fu">log</span>(va.ans.x)) <span class="sc">%&gt;%</span> </span>
+<span id="cb92-4"><a href="#cb92-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_predicted_draws</span>(model.<span class="fl">3.</span>bias.alpha, <span class="at">ndraws =</span> <span class="dv">100</span>) </span>
+<span id="cb92-5"><a href="#cb92-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb92-6"><a href="#cb92-6" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> </span>
+<span id="cb92-7"><a href="#cb92-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error_va =</span> va.select.y <span class="sc">-</span> va.ans.y, </span>
+<span id="cb92-8"><a href="#cb92-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">log.va.ans.x =</span> <span class="fu">log</span>(va.ans.x)) <span class="sc">%&gt;%</span></span>
+<span id="cb92-9"><a href="#cb92-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>() <span class="sc">+</span>  </span>
+<span id="cb92-10"><a href="#cb92-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_lineribbon</span>(<span class="at">data =</span> prediction, <span class="fu">aes</span>(<span class="at">x =</span> va.ans.x, <span class="at">y =</span> .prediction), <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb92-11"><a href="#cb92-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">palette =</span> <span class="st">"Blues"</span>) <span class="sc">+</span></span>
+<span id="cb92-12"><a href="#cb92-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.ans.x, <span class="at">y =</span> error_va), <span class="at">color =</span> <span class="st">"#333333"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1407,11 +1409,11 @@ Computed from 4000 by 110 log-likelihood matrix.
 
          Estimate   SE
 elpd_loo     82.3  8.1
-p_loo         1.1  0.4
-looic      -164.6 16.2
+p_loo         1.0  0.3
+looic      -164.7 16.1
 ------
 MCSE of elpd_loo is 0.0.
-MCSE and ESS estimates assume MCMC draws (r_eff in [0.3, 0.5]).
+MCSE and ESS estimates assume MCMC draws (r_eff in [0.4, 0.6]).
 
 All Pareto k estimates are good (k &lt; 0.7).
 See help('pareto-k-diagnostic') for details.
@@ -1421,12 +1423,12 @@ Output of model 'model.3.no.bias.alpha':
 Computed from 4000 by 110 log-likelihood matrix.
 
          Estimate   SE
-elpd_loo     81.7  8.0
-p_loo         1.7  0.6
-looic      -163.3 16.0
+elpd_loo     81.4  8.0
+p_loo         1.9  0.6
+looic      -162.9 16.0
 ------
 MCSE of elpd_loo is 0.0.
-MCSE and ESS estimates assume MCMC draws (r_eff in [0.3, 0.6]).
+MCSE and ESS estimates assume MCMC draws (r_eff in [0.2, 0.6]).
 
 All Pareto k estimates are good (k &lt; 0.7).
 See help('pareto-k-diagnostic') for details.
@@ -1438,10 +1440,10 @@ Computed from 4000 by 110 log-likelihood matrix.
          Estimate   SE
 elpd_loo     84.9  7.9
 p_loo         1.9  0.4
-looic      -169.8 15.7
+looic      -169.8 15.8
 ------
 MCSE of elpd_loo is 0.0.
-MCSE and ESS estimates assume MCMC draws (r_eff in [0.8, 0.9]).
+MCSE and ESS estimates assume MCMC draws (r_eff in [0.7, 0.8]).
 
 All Pareto k estimates are good (k &lt; 0.7).
 See help('pareto-k-diagnostic') for details.
@@ -1451,9 +1453,9 @@ Output of model 'model.3.bias.alpha':
 Computed from 8000 by 110 log-likelihood matrix.
 
          Estimate   SE
-elpd_loo     83.8  8.0
+elpd_loo     83.8  8.1
 p_loo         3.0  0.8
-looic      -167.5 16.1
+looic      -167.6 16.1
 ------
 MCSE of elpd_loo is 0.0.
 MCSE and ESS estimates assume MCMC draws (r_eff in [0.3, 0.7]).
@@ -1465,8 +1467,8 @@ Model comparisons:
                          elpd_diff se_diff
 model.3.bias.no.alpha     0.0       0.0   
 model.3.bias.alpha       -1.1       1.1   
-model.3.no.bias.no.alpha -2.6       2.5   
-model.3.no.bias.alpha    -3.2       2.5   </code></pre>
+model.3.no.bias.no.alpha -2.6       2.4   
+model.3.no.bias.alpha    -3.5       2.4   </code></pre>
 </div>
 </div>
 <p>Hmm the standard deviations are almost the same size as the actual one … well still it’s good to know that bias + no alpha is the best option.</p>
@@ -1510,18 +1512,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }
     return false;
   }
-  const clipboard = new window.ClipboardJS('.code-copy-button', {
-    text: function(trigger) {
-      const codeEl = trigger.previousElementSibling.cloneNode(true);
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-    }
-  });
-  clipboard.on('success', function(e) {
+  const onCopySuccess = function(e) {
     // button target
     const button = e.trigger;
     // don't keep focus
@@ -1553,7 +1544,45 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }, 1000);
     // clear code selection
     e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
   });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
   function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
     const config = {
       allowHTML: true,
@@ -1588,7 +1617,11 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       try { href = new URL(href).hash; } catch {}
       const id = href.replace(/^#\/?/, "");
       const note = window.document.getElementById(id);
-      return note.innerHTML;
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
     });
   }
   const xrefs = window.document.querySelectorAll('a.quarto-xref');
@@ -1636,7 +1669,6 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       if (window.Quarto?.typesetMath) {
         window.Quarto.typesetMath(note);
       }
-      // TODO in 1.5, we should make sure this works without a callout special case
       if (note.classList.contains("callout")) {
         return note.outerHTML;
       } else {
