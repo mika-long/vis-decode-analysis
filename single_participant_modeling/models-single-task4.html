@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.6.40">
+<meta name="generator" content="quarto-1.6.42">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -63,10 +63,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="models-single-task4_files/libs/quarto-html/tippy.umd.min.js"></script>
 <script src="models-single-task4_files/libs/quarto-html/anchor.min.js"></script>
 <link href="models-single-task4_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="models-single-task4_files/libs/quarto-html/quarto-syntax-highlighting-549806ee2085284f45b00abea8c6df48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="models-single-task4_files/libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="models-single-task4_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="models-single-task4_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="models-single-task4_files/libs/bootstrap/bootstrap-973236bd072d72a04ee9cd82dcc9cb29.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="models-single-task4_files/libs/bootstrap/bootstrap-1bc8a17f135ab3d594c857e9f48e611b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
@@ -264,6 +264,7 @@ window.Quarto = {
 <span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">va.ans.x =</span> <span class="fu">vis_angle</span>(phy.ans.x, dist_to_screen), </span>
 <span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.ans.y =</span> <span class="fu">vis_angle</span>(phy.ans.y, dist_to_screen)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p>Check relations</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.ans.x <span class="sc">-</span> va.select.x)) <span class="sc">+</span> <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
@@ -421,9 +422,8 @@ window.Quarto = {
 <div class="cell quarto-layout-panel" data-layout-ncol="2">
 
 </div>
-</section>
-<section id="exponential-model" class="level1">
-<h1>Exponential Model</h1>
+<section id="exponential-model" class="level2">
+<h2 class="anchored" data-anchor-id="exponential-model">Exponential Model</h2>
 <p>For now let’s model things as an exponential distribution.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">data_to_screen_slope</span>(data.select.slope) <span class="sc">-</span> <span class="fu">data_to_screen_slope</span>(data.ans.slope))) <span class="sc">+</span> </span>
@@ -471,7 +471,7 @@ Formula: error ~ 1
 
 Regression Coefficients:
           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-Intercept    -2.87      0.09    -3.05    -2.69 1.00     1608     1912
+Intercept    -2.88      0.09    -3.06    -2.69 1.00     1525     1842
 
 Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
 and Tail_ESS are effective sample size measures, and Rhat is the potential
@@ -538,8 +538,8 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 </div>
 </div>
 </section>
-<section id="lomax-model" class="level1">
-<h1>Lomax model</h1>
+<section id="lomax-model" class="level2">
+<h2 class="anchored" data-anchor-id="lomax-model">Lomax model</h2>
 <p>Lomax is Pareto Type II distribution. We had similar models for task 2.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>lomax_family <span class="ot">&lt;-</span> <span class="fu">custom_family</span>(</span>
@@ -606,8 +606,8 @@ Formula: error ~ 0
 
 Regression Coefficients:
                  Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-lambda_Intercept    -8.61      0.49    -9.59    -7.68 1.00     1342     1473
-alpha_Intercept     -0.99      0.16    -1.30    -0.67 1.00     1366     1619
+lambda_Intercept    -8.60      0.48    -9.52    -7.63 1.00     1043     1033
+alpha_Intercept     -0.98      0.15    -1.28    -0.68 1.00     1127      957
 
 Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
 and Tail_ESS are effective sample size measures, and Rhat is the potential
@@ -635,39 +635,51 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">expose_functions</span>(model4.lomax, <span class="at">vectorize =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
+<pre><code>WARNING: Rtools is required to build R packages, but is not currently installed.
+
+Please download and install the appropriate version of Rtools for 4.4.3 from
+https://cran.r-project.org/bin/windows/Rtools/.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
 <pre><code>Trying to compile a simple C file</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Running /Library/Frameworks/R.framework/Resources/bin/R CMD SHLIB foo.c
-using C compiler: ‘Apple clang version 17.0.0 (clang-1700.0.13.3)’
-using SDK: ‘’
-clang -arch arm64 -I"/Library/Frameworks/R.framework/Resources/include" -DNDEBUG   -I"/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/Rcpp/include/"  -I"/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/RcppEigen/include/"  -I"/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/RcppEigen/include/unsupported"  -I"/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/BH/include" -I"/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/StanHeaders/include/src/"  -I"/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/StanHeaders/include/"  -I"/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/RcppParallel/include/"  -I"/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/rstan/include" -DEIGEN_NO_DEBUG  -DBOOST_DISABLE_ASSERTS  -DBOOST_PENDING_INTEGER_LOG2_HPP  -DSTAN_THREADS  -DUSE_STANC3 -DSTRICT_R_HEADERS  -DBOOST_PHOENIX_NO_VARIADIC_EXPRESSION  -D_HAS_AUTO_PTR_ETC=0  -include '/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/StanHeaders/include/stan/math/prim/fun/Eigen.hpp'  -D_REENTRANT -DRCPP_PARALLEL_USE_TBB=1   -I/opt/R/arm64/include    -fPIC  -falign-functions=64 -Wall -g -O2  -c foo.c -o foo.o
-In file included from &lt;built-in&gt;:1:
-In file included from /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/StanHeaders/include/stan/math/prim/fun/Eigen.hpp:22:
-In file included from /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/RcppEigen/include/Eigen/Dense:1:
-In file included from /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/RcppEigen/include/Eigen/Core:19:
-/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/RcppEigen/include/Eigen/src/Core/util/Macros.h:679:10: fatal error: 'cmath' file not found
+<pre><code>Running "C:/PROGRA~1/R/R-4.4.3/bin/x64/Rcmd.exe" SHLIB foo.c
+using C compiler: 'gcc.exe (GCC) 13.3.0'
+gcc  -I"C:/PROGRA~1/R/R-4.4.3/include" -DNDEBUG   -I"C:/Users/slong/AppData/Local/R/win-library/4.4/Rcpp/include/"  -I"C:/Users/slong/AppData/Local/R/win-library/4.4/RcppEigen/include/"  -I"C:/Users/slong/AppData/Local/R/win-library/4.4/RcppEigen/include/unsupported"  -I"C:/Users/slong/AppData/Local/R/win-library/4.4/BH/include" -I"C:/Users/slong/AppData/Local/R/win-library/4.4/StanHeaders/include/src/"  -I"C:/Users/slong/AppData/Local/R/win-library/4.4/StanHeaders/include/"  -I"C:/Users/slong/AppData/Local/R/win-library/4.4/RcppParallel/include/" -DRCPP_PARALLEL_USE_TBB=1 -I"C:/Users/slong/AppData/Local/R/win-library/4.4/rstan/include" -DEIGEN_NO_DEBUG  -DBOOST_DISABLE_ASSERTS  -DBOOST_PENDING_INTEGER_LOG2_HPP  -DSTAN_THREADS  -DUSE_STANC3 -DSTRICT_R_HEADERS  -DBOOST_PHOENIX_NO_VARIADIC_EXPRESSION  -D_HAS_AUTO_PTR_ETC=0  -include "C:/Users/slong/AppData/Local/R/win-library/4.4/StanHeaders/include/stan/math/prim/fun/Eigen.hpp"  -std=c++1y    -I"C:/rtools44/x86_64-w64-mingw32.static.posix/include"     -O2 -Wall  -mfpmath=sse -msse2 -mstackrealign  -c foo.c -o foo.o
+cc1.exe: warning: command-line option '-std=c++14' is valid for C++/ObjC++ but not for C
+In file included from C:/Users/slong/AppData/Local/R/win-library/4.4/RcppEigen/include/Eigen/Core:19,
+                 from C:/Users/slong/AppData/Local/R/win-library/4.4/RcppEigen/include/Eigen/Dense:1,
+                 from C:/Users/slong/AppData/Local/R/win-library/4.4/StanHeaders/include/stan/math/prim/fun/Eigen.hpp:22,
+                 from &lt;command-line&gt;:
+C:/Users/slong/AppData/Local/R/win-library/4.4/RcppEigen/include/Eigen/src/Core/util/Macros.h:679:10: fatal error: cmath: No such file or directory
   679 | #include &lt;cmath&gt;
       |          ^~~~~~~
-1 error generated.
-make: *** [foo.o] Error 1</code></pre>
+compilation terminated.
+make: *** [C:/PROGRA~1/R/R-4.4.3/etc/x64/Makeconf:289: foo.o] Error 1</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the posterior_predict function in R as per vignette</span></span>
-<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>posterior_predict_lomax <span class="ot">&lt;-</span> <span class="cf">function</span>(i, draws, ...) {</span>
-<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  alpha <span class="ot">&lt;-</span> draws<span class="sc">$</span>dpars<span class="sc">$</span>alpha[i]</span>
-<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>  lambda <span class="ot">&lt;-</span> draws<span class="sc">$</span>dpars<span class="sc">$</span>lambda[i]</span>
-<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Use Stan's rng function indirectly via brms</span></span>
-<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lomax_rng</span>(<span class="dv">0</span>, lambda, alpha)</span>
-<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a>log_lik_lomax <span class="ot">&lt;-</span> <span class="cf">function</span>(i, prep){</span>
-<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>  alpha <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">get_dpar</span>(prep, <span class="st">"alpha"</span>, <span class="at">i =</span> i)</span>
-<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a>  lambda <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">get_dpar</span>(prep, <span class="st">"lambda"</span>, <span class="at">i =</span> i)</span>
-<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> prep<span class="sc">$</span>data<span class="sc">$</span>Y[i]</span>
-<span id="cb43-13"><a href="#cb43-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lomax_lpdf</span>(y, <span class="dv">0</span>, lambda, alpha)</span>
-<span id="cb43-14"><a href="#cb43-14" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb43-15"><a href="#cb43-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb43-16"><a href="#cb43-16" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(model4.lomax, <span class="at">ndraws =</span> <span class="dv">100</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>WARNING: Rtools is required to build R packages, but is not currently installed.
+
+Please download and install the appropriate version of Rtools for 4.4.3 from
+https://cran.r-project.org/bin/windows/Rtools/.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the posterior_predict function in R as per vignette</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>posterior_predict_lomax <span class="ot">&lt;-</span> <span class="cf">function</span>(i, draws, ...) {</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  alpha <span class="ot">&lt;-</span> draws<span class="sc">$</span>dpars<span class="sc">$</span>alpha[i]</span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>  lambda <span class="ot">&lt;-</span> draws<span class="sc">$</span>dpars<span class="sc">$</span>lambda[i]</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Use Stan's rng function indirectly via brms</span></span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lomax_rng</span>(<span class="dv">0</span>, lambda, alpha)</span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>log_lik_lomax <span class="ot">&lt;-</span> <span class="cf">function</span>(i, prep){</span>
+<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>  alpha <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">get_dpar</span>(prep, <span class="st">"alpha"</span>, <span class="at">i =</span> i)</span>
+<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>  lambda <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">get_dpar</span>(prep, <span class="st">"lambda"</span>, <span class="at">i =</span> i)</span>
+<span id="cb45-12"><a href="#cb45-12" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> prep<span class="sc">$</span>data<span class="sc">$</span>Y[i]</span>
+<span id="cb45-13"><a href="#cb45-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lomax_lpdf</span>(y, <span class="dv">0</span>, lambda, alpha)</span>
+<span id="cb45-14"><a href="#cb45-14" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb45-15"><a href="#cb45-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-16"><a href="#cb45-16" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(model4.lomax, <span class="at">ndraws =</span> <span class="dv">100</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -675,7 +687,7 @@ make: *** [foo.o] Error 1</code></pre>
 </figure>
 </div>
 </div>
-<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(model4.lomax, <span class="at">ndraws =</span> <span class="dv">100</span>, <span class="at">type =</span> <span class="st">"pit_ecdf"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(model4.lomax, <span class="at">ndraws =</span> <span class="dv">100</span>, <span class="at">type =</span> <span class="st">"pit_ecdf"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -686,15 +698,15 @@ make: *** [foo.o] Error 1</code></pre>
 </div>
 <p>Overlay plot:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>prediction <span class="ot">&lt;-</span> task4_df <span class="sc">%&gt;%</span> </span>
-<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error =</span> <span class="fu">abs</span>(<span class="fu">data_to_screen_slope</span>(data.ans.slope) <span class="sc">-</span> <span class="fu">data_to_screen_slope</span>(data.select.slope))) <span class="sc">%&gt;%</span> </span>
-<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_predicted_draws</span>(model4.lomax, <span class="at">ndraws =</span> <span class="dv">100</span>)</span>
-<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>prediction <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>() <span class="sc">+</span> </span>
-<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_slab</span>(<span class="fu">aes</span>(<span class="at">x =</span> .prediction), </span>
-<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">fill =</span> <span class="st">"blue"</span>, <span class="at">alpha =</span> <span class="dv">1</span>) <span class="sc">+</span> </span>
-<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>(<span class="at">data =</span> task4_df, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">data_to_screen_slope</span>(data.ans.slope) <span class="sc">-</span> <span class="fu">data_to_screen_slope</span>(data.select.slope))) <span class="sc">+</span> </span>
-<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlim</span>(<span class="dv">0</span>, <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>prediction <span class="ot">&lt;-</span> task4_df <span class="sc">%&gt;%</span> </span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error =</span> <span class="fu">abs</span>(<span class="fu">data_to_screen_slope</span>(data.ans.slope) <span class="sc">-</span> <span class="fu">data_to_screen_slope</span>(data.select.slope))) <span class="sc">%&gt;%</span> </span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_predicted_draws</span>(model4.lomax, <span class="at">ndraws =</span> <span class="dv">100</span>)</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>prediction <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>() <span class="sc">+</span> </span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_slab</span>(<span class="fu">aes</span>(<span class="at">x =</span> .prediction), </span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">fill =</span> <span class="st">"blue"</span>, <span class="at">alpha =</span> <span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>(<span class="at">data =</span> task4_df, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">data_to_screen_slope</span>(data.ans.slope) <span class="sc">-</span> <span class="fu">data_to_screen_slope</span>(data.select.slope))) <span class="sc">+</span> </span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlim</span>(<span class="dv">0</span>, <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: Removed 1 row containing missing values or values outside the scale range
 (`stat_slabinterval()`).</code></pre>
@@ -707,12 +719,130 @@ make: *** [foo.o] Error 1</code></pre>
 </div>
 </div>
 </div>
+</section>
+<section id="weibull-distribution" class="level2">
+<h2 class="anchored" data-anchor-id="weibull-distribution">Weibull distribution</h2>
+<p>Both are log links</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="fu">bf</span>(error <span class="sc">~</span> <span class="dv">0</span>,</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>        mu <span class="sc">~</span> <span class="dv">1</span>, </span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>        shape <span class="sc">~</span> <span class="dv">1</span>, </span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>        <span class="at">family =</span> <span class="fu">weibull</span>())</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">class =</span> Intercept), </span>
+<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">class =</span> Intercept, <span class="at">dpar =</span> shape)</span>
+<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>model4.weibull <span class="ot">&lt;-</span> task4_df <span class="sc">%&gt;%</span> </span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error =</span> <span class="fu">abs</span>(<span class="fu">data_to_screen_slope</span>(data.ans.slope) <span class="sc">-</span> <span class="fu">data_to_screen_slope</span>(data.select.slope))) <span class="sc">%&gt;%</span> </span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error =</span> <span class="fu">ifelse</span>(<span class="fu">abs</span>(error) <span class="sc">&lt;</span> tolerance, tolerance, error)) <span class="sc">%&gt;%</span> <span class="co"># weibull requires response greater than 0 </span></span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">brm</span>(<span class="at">formula =</span> f, </span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">data =</span> ., </span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">prior =</span> p, </span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">chains =</span> <span class="dv">4</span>, </span>
+<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">file =</span> <span class="st">"models/task4.weibull"</span>, </span>
+<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">file_refit =</span> <span class="st">"on_change"</span>,</span>
+<span id="cb50-10"><a href="#cb50-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">save_pars =</span> <span class="fu">save_pars</span>(<span class="at">all =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb50-11"><a href="#cb50-11" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Check fit and posterior:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model4.weibull)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> Family: weibull 
+  Links: mu = log; shape = log 
+Formula: error ~ 0 
+         mu ~ 1
+         shape ~ 1
+   Data: . (Number of observations: 110) 
+  Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
+         total post-warmup draws = 4000
+
+Regression Coefficients:
+                Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept          -2.30      0.48    -3.15    -1.30 1.00     1494     1859
+shape_Intercept    -1.31      0.08    -1.46    -1.16 1.00     1221     1360
+
+Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(model4.weibull)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="models-single-task4_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(model4.weibull, <span class="at">ndraws =</span> <span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="models-single-task4_files/figure-html/unnamed-chunk-23-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(model4.weibull, <span class="at">ndraws =</span> <span class="dv">100</span>, <span class="at">type =</span> <span class="st">"pit_ecdf"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="models-single-task4_files/figure-html/unnamed-chunk-23-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>This <code>pit_ecdf</code> seems quite alright with Weibull …</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>model4.weibull <span class="sc">%&gt;%</span> <span class="fu">get_variables</span>() </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "b_Intercept"       "b_shape_Intercept" "Intercept"        
+ [4] "Intercept_shape"   "lprior"            "lp__"             
+ [7] "accept_stat__"     "stepsize__"        "treedepth__"      
+[10] "n_leapfrog__"      "divergent__"       "energy__"         </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>model4.weibull <span class="sc">%&gt;%</span> <span class="fu">spread_draws</span>(b_Intercept, b_shape_Intercept) <span class="sc">%&gt;%</span> </span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">mu =</span> <span class="fu">exp</span>(b_Intercept), <span class="at">shape =</span> <span class="fu">exp</span>(b_shape_Intercept)) <span class="sc">%&gt;%</span> </span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="fu">c</span>(mu, shape)) <span class="sc">%&gt;%</span> </span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> value, <span class="at">y =</span> name)) <span class="sc">+</span> </span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="models-single-task4_files/figure-html/unnamed-chunk-24-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Overlay plot:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>prediction <span class="ot">&lt;-</span> task4_df <span class="sc">%&gt;%</span> </span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error =</span> <span class="fu">abs</span>(<span class="fu">data_to_screen_slope</span>(data.ans.slope) <span class="sc">-</span> <span class="fu">data_to_screen_slope</span>(data.select.slope))) <span class="sc">%&gt;%</span> </span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error =</span> <span class="fu">ifelse</span>(<span class="fu">abs</span>(error) <span class="sc">&lt;</span> tolerance, tolerance, error)) <span class="sc">%&gt;%</span> </span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_predicted_draws</span>(model4.exponential, <span class="at">ndraws =</span> <span class="dv">100</span>)</span>
+<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb59-6"><a href="#cb59-6" aria-hidden="true" tabindex="-1"></a>prediction <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>() <span class="sc">+</span> </span>
+<span id="cb59-7"><a href="#cb59-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_slab</span>(<span class="fu">aes</span>(<span class="at">x =</span> .prediction), </span>
+<span id="cb59-8"><a href="#cb59-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">fill =</span> <span class="st">"skyblue"</span>, <span class="at">alpha =</span> <span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb59-9"><a href="#cb59-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>(<span class="at">data =</span> task4_df, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">data_to_screen_slope</span>(data.ans.slope) <span class="sc">-</span> <span class="fu">data_to_screen_slope</span>(data.select.slope))) <span class="sc">+</span> </span>
+<span id="cb59-10"><a href="#cb59-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlim</span>(<span class="dv">0</span>, <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="models-single-task4_files/figure-html/unnamed-chunk-25-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
 <section id="model-comparison" class="level2">
 <h2 class="anchored" data-anchor-id="model-comparison">Model Comparison</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">loo</span>(model4.exponential, model4.lomax)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="fu">loo</span>(model4.exponential, model4.lomax, model4.weibull)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Warning: Found 2 observations with a pareto_k &gt; 0.7 in model
+<pre><code>Warning: Found 1 observations with a pareto_k &gt; 0.7 in model
 'model4.exponential'. We recommend to set 'moment_match = TRUE' in order to
 perform moment matching for problematic observations.</code></pre>
 </div>
@@ -722,17 +852,17 @@ perform moment matching for problematic observations.</code></pre>
 Computed from 4000 by 110 log-likelihood matrix.
 
          Estimate   SE
-elpd_loo    199.9 45.2
-p_loo        14.6  8.7
-looic      -399.8 90.3
+elpd_loo    200.8 44.8
+p_loo        13.9  8.1
+looic      -401.6 89.6
 ------
 MCSE of elpd_loo is NA.
 MCSE and ESS estimates assume MCMC draws (r_eff in [0.4, 0.6]).
 
 Pareto k diagnostic values:
                          Count Pct.    Min. ESS
-(-Inf, 0.7]   (good)     108   98.2%   193     
-   (0.7, 1]   (bad)        1    0.9%   &lt;NA&gt;    
+(-Inf, 0.7]   (good)     109   99.1%   44      
+   (0.7, 1]   (bad)        0    0.0%   &lt;NA&gt;    
    (1, Inf)   (very bad)   1    0.9%   &lt;NA&gt;    
 See help('pareto-k-diagnostic') for details.
 
@@ -741,20 +871,36 @@ Output of model 'model4.lomax':
 Computed from 4000 by 110 log-likelihood matrix.
 
          Estimate   SE
-elpd_loo    427.5 34.3
+elpd_loo    427.4 34.3
 p_loo         4.7  0.5
-looic      -855.0 68.7
+looic      -854.8 68.6
 ------
 MCSE of elpd_loo is 0.1.
-MCSE and ESS estimates assume MCMC draws (r_eff in [0.3, 1.0]).
+MCSE and ESS estimates assume MCMC draws (r_eff in [0.2, 1.0]).
+
+All Pareto k estimates are good (k &lt; 0.7).
+See help('pareto-k-diagnostic') for details.
+
+Output of model 'model4.weibull':
+
+Computed from 4000 by 110 log-likelihood matrix.
+
+         Estimate   SE
+elpd_loo    491.9 42.8
+p_loo         1.7  0.3
+looic      -983.8 85.6
+------
+MCSE of elpd_loo is 0.0.
+MCSE and ESS estimates assume MCMC draws (r_eff in [0.3, 0.9]).
 
 All Pareto k estimates are good (k &lt; 0.7).
 See help('pareto-k-diagnostic') for details.
 
 Model comparisons:
                    elpd_diff se_diff
-model4.lomax          0.0       0.0 
-model4.exponential -227.6      39.0 </code></pre>
+model4.weibull        0.0       0.0 
+model4.lomax        -64.5      18.7 
+model4.exponential -291.1      45.6 </code></pre>
 </div>
 </div>
 <p>The Lomax distribution is much better …</p>

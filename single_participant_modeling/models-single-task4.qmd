@@ -516,4 +516,6 @@ prediction %>% ggplot() +
 loo(model4.exponential, model4.lomax, model4.weibull)
 ```
 
-The Lomax distribution is much better ... 
+The Weibull distribution is much better ... 
+
+Technically all three of these distributions' support include 0. However, given that they are implemented in stan, which means they've often transformed to log space, and log(0) is undefined, brms does not allow us to deal with 0 values. 
