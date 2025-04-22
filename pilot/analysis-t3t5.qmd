@@ -12,7 +12,7 @@ format:
 ```{r}
 #| echo: false
 #| output: false
-#| label: setup
+#| label: setup 
 
 library(tidyverse)
 library(ggplot2)
@@ -20,7 +20,7 @@ library(sgt)
 library(numDeriv)
 library(ggdist)
 # setting the theme 
-theme_set(theme_minimal() + theme(base_size = 6)
+theme_set(theme_minimal() + theme(base_size = 6))
 # model
 library(brms)
 # plot results 
