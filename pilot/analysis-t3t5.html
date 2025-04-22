@@ -845,7 +845,6 @@ the element hierarchy.</code></pre>
 </div>
 </div>
 </div>
-<div class="cell">
 <div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="co"># task3_df %&gt;% add_epred_draws(m3) %&gt;% </span></span>
 <span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   ggplot(aes(x = .epred)) + stat_halfeye()</span></span>
 <span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -871,13 +870,6 @@ the element hierarchy.</code></pre>
 <pre><code>Warning in plot_theme(plot): The `base_size` theme element is not defined in
 the element hierarchy.</code></pre>
 </div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="analysis-t3t5_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
 <div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span></span>
 <span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error_va =</span> va.select.y <span class="sc">-</span> va.ans.y) <span class="sc">%&gt;%</span> </span>
 <span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data_grid</span>(<span class="at">va.ans.x =</span> <span class="fu">seq_range</span>(va.ans.x, <span class="at">n =</span> <span class="dv">100</span>)) <span class="sc">%&gt;%</span> </span>
@@ -899,11 +891,13 @@ the element hierarchy.</code></pre>
 <pre><code>Warning in plot_theme(plot): The `base_size` theme element is not defined in
 the element hierarchy.</code></pre>
 </div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="analysis-t3t5_files/figure-html/unnamed-chunk-21-2.png" class="img-fluid figure-img" width="672"></p>
-</figure>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="analysis-t3t5_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="analysis-t3t5_files/figure-html/unnamed-chunk-21-2.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 </div>
