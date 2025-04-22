@@ -894,7 +894,7 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <span id="cb58-8"><a href="#cb58-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>(<span class="at">data =</span> task4_df, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">data_to_screen_slope</span>(data.ans.slope) <span class="sc">-</span> <span class="fu">data_to_screen_slope</span>(data.select.slope))) <span class="sc">+</span> </span>
 <span id="cb58-9"><a href="#cb58-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlim</span>(<span class="dv">0</span>, <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 39 rows containing missing values or values outside the scale range
+<pre><code>Warning: Removed 40 rows containing missing values or values outside the scale range
 (`stat_slabinterval()`).</code></pre>
 </div>
 <div class="cell-output-display">
@@ -979,6 +979,23 @@ Model comparisons:
 model.weibull       0.0       0.0  
 model.lomax       -46.9      14.1  
 model.exponential -51.0      17.6  </code></pre>
+</div>
+</div>
+<p>The weibull model performs the best.</p>
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(model.exponential, <span class="at">ndraws =</span> <span class="dv">100</span>, <span class="at">type =</span> <span class="st">"pit_ecdf"</span>)</span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(model.lomax, <span class="at">ndraws =</span> <span class="dv">100</span>, <span class="at">type =</span> <span class="st">"pit_ecdf"</span>)</span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(model.weibull, <span class="at">ndraws =</span> <span class="dv">100</span>, <span class="at">type =</span> <span class="st">"pit_ecdf"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="3">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="analysis-t4_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="analysis-t4_files/figure-html/unnamed-chunk-26-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 33.3%;justify-content: center;">
+<p><img src="analysis-t4_files/figure-html/unnamed-chunk-26-3.png" class="img-fluid" width="672"></p>
+</div>
 </div>
 </div>
 </section>

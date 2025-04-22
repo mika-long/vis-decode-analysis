@@ -540,14 +540,14 @@ prediction %>% ggplot() +
 loo(model.exponential, model.lomax, model.weibull)
 ```
 
-The weibull model performs the best.  
+The weibull model performs the best.There is also the potential todo of log-normal and gamma ... perhaps we should try them all ...? 
 
 ```{r}
 #| layout-ncol: 3
 
 pp_check(model.exponential, ndraws = 100, type = "pit_ecdf")
 pp_check(model.lomax, ndraws = 100, type = "pit_ecdf")
-pp_check(model4.weibull, ndraws = 100, type = "pit_ecdf")
+pp_check(model.weibull, ndraws = 100, type = "pit_ecdf")
 ```
 
 
