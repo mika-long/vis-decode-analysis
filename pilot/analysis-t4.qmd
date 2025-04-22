@@ -460,7 +460,6 @@ prediction %>% ggplot() +
   # xlim(0, 5)
 ```
 
-
 ## Weibull distribution 
 
 - [wikipedia](https://en.wikipedia.org/wiki/Weibull_distribution) 
@@ -533,6 +532,35 @@ prediction %>% ggplot() +
   geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) + 
   xlim(0, 10)
 ```
+
+## Gamma distribution 
+
+```{r}
+f <- bf(error ~ 0,
+        mu ~ (1 | participantId), 
+        shape ~ (1 | participantId), 
+        family = Gamma())
+
+p <- c(
+  prior(normal(0, 1), class = Intercept), 
+  prior(normal(0, 1), class = Intercept, dpar = shape)
+)
+```
+
+```{r}
+#| echo: false 
+#| eval: false 
+
+task4_df %>% 
+  mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
+  get_prior(data = ., formula = f)
+```
+
+## Log-Normal distribution 
+
+... 
+
+
 
 ## Model Comparison
 

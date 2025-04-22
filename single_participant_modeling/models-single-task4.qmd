@@ -605,7 +605,7 @@ p <- c(
 #| echo: false 
 #| eval: false 
 
- task4_df %>% 
+task4_df %>% 
   mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
   get_prior(data = ., formula = f)
 ```
