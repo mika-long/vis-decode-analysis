@@ -551,7 +551,6 @@ model.weibull %>% spread_draws(b_Intercept, b_shape_Intercept) %>%
   stat_halfeye()
 ```
 
-
 Overlay plot: 
 
 ```{r}

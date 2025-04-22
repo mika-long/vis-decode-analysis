@@ -347,7 +347,7 @@ prediction <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
 
 Hmm there is something a bit wrong with how things are being plotted ... 
 
-### Task 2 -- Error on Y -- Exponential Distribution 
+### Exponential Distribution 
 
 Math model: 
 
@@ -426,7 +426,98 @@ prediction <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
    xlim(0, 0.05)
 ```
 
-### Compare between the two 
+
+### Weibull 
+
+```{r}
+f <- bf(
+  error.y ~ 0,  
+  mu ~ (1 | participantId), # log link 
+  shape ~ (1 | participantId), # log link 
+  family = weibull
+)
+
+p <- c(
+    prior(normal(0, 1), class = Intercept),
+    prior(normal(0, 1), class = sd, group = participantId, lb = 0),
+    prior(normal(0, 1), class = Intercept, dpar = shape), 
+    prior(normal(0, 1), class = sd, group = participantId, dpar = shape, lb = 0)
+  )
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% 
+  get_prior(formula = f, data = . )
+
+# task2_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>% 
+#   make_stancode(formula = f, prior = p)
+```
+
+Fit the model: 
+
+```{r}
+#| output: false 
+#| label: fit weibull 
+
+model.weibull <- task2_df %>% 
+  mutate(error.y = va.ans.y - va.select.y) %>% 
+  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% # brms needs value to be > 0  
+  brm(formula = f, 
+      data = ., 
+      prior = p, 
+      chains = 4, 
+      file = "models/task2.y.weibull", 
+      file_refit = "on_change",
+      save_pars = save_pars(all = TRUE), 
+      control = list(adapt_delta = 0.95), 
+      iter = 4000 
+  )
+```
+
+Check fit and posterior: 
+
+```{r}
+summary(model.weibull)
+plot(model.weibull)
+pp_check(model.weibull, ndraws = 100)
+pp_check(model.weibull, ndraws = 100, type = "pit_ecdf")
+```
+
+Overlay plot: 
+
+```{r}
+task2_df %>% modelr::data_grid(error.y = 0) %>% 
+  add_predicted_draws(model.weibull, ndraws = 100, re_formula = NA) %>% 
+  ggplot() + 
+  stat_slab(aes(x = .prediction), 
+            fill = "lightblue", alpha = 1) + 
+  geom_dots(data = task2_df, aes(x = va.ans.y - va.select.y))) + 
+  labs(y = "Probability", x = "Signed error", title = "Task 4") + 
+  theme_minimal(base_size = 8) -> p 
+
+p
+```
+
+```{r}
+#| echo: false 
+#| eval: false 
+
+ggsave("plots/task2.y.weibull.pdf", plot = p, height = 5, width = 10, unit = "cm", dpi = 300)
+```
+
+### Log-Normal 
+
+TOOD 
+
+### Gamma 
+
+TODO 
+
+### LOO Comparison 
 
 Define custom functions for the Lomax distribution: 
 
