@@ -645,6 +645,7 @@ model.lognormal <- task4_df %>%
       data = ., 
       prior = p, 
       chains = 4, 
+      cores = 4, 
       file = "models/task4.lognormal", 
       file_refit = "on_change",
       save_pars = save_pars(all = TRUE)
