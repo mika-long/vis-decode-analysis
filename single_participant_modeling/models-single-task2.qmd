@@ -374,8 +374,6 @@ prediction <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
    xlim(0, 0.04)
 ```
 
-<!-- TODO --- maybe there is something wrong with the lomax distribution ...?  -->
-
 ### Exponential Distribution 
 
 Math model: 
@@ -448,9 +446,9 @@ f <- bf(error.y ~ 0,
         shape ~ 1, 
         family = weibull())
 
-# mu has log-link, so we don't pose any bounds on it 
 p <- c(
-  prior(normal(0, 1), class = Intercept)
+  prior(normal(0, 1), class = Intercept), 
+  prior(normal(0, 1), class = Intercept, dpar = shape)
 )
 ```
 
@@ -503,6 +501,20 @@ model.y.weibull %>% get_variables(.)
 #   ggplot(aes(x = 1/mu)) + stat_halfeye()
 ```
 
+Overlay plot: 
+
+```{r}
+prediction <- task2_df %>% 
+  mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+  add_predicted_draws(model.y.weibull, ndraws = 100)
+
+prediction %>% ggplot() + 
+  stat_slab(aes(x = .prediction), 
+            fill = "lightblue", alpha = 1) + 
+  geom_dots(data = task2_df, aes(x = abs(va.ans.y - va.select.y))) + 
+  xlim(0, 0.05)
+```
+
 ### Gamma 
 
 ```{r}
@@ -511,9 +523,9 @@ f <- bf(error.y ~ 0,
         shape ~ 1, 
         family = Gamma())
 
-# TODO 
 p <- c(
-  prior(normal(0, 1), class = Intercept)
+  prior(normal(0, 1), class = Intercept), 
+  prior(normal(0, 1), class = Intercept, dpar = shape)
 )
 ```
 
@@ -567,6 +579,20 @@ model.y.gamma %>% get_variables(.)
 #   ggplot(aes(x = 1/mu)) + stat_halfeye()
 ``` 
 
+Overlay plot: 
+
+```{r}
+prediction <- task2_df %>% 
+  mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+  add_predicted_draws(model.y.gamma, ndraws = 100)
+
+prediction %>% ggplot() + 
+  stat_slab(aes(x = .prediction), 
+            fill = "lightblue", alpha = 1) + 
+  geom_dots(data = task2_df, aes(x = abs(va.ans.y - va.select.y))) + 
+  xlim(0, 0.05)
+```
+
 ### Log-Normal 
 
 ```{r}
@@ -575,9 +601,9 @@ f <- bf(error.y ~ 0,
         sigma ~ 1, 
         family = lognormal())
 
-# TODO 
 p <- c(
-  prior(normal(0, 1), class = Intercept)
+  prior(normal(0, 1), class = Intercept), 
+  prior(normal(0, 1), class = Intercept, dpar = sigma)
 )
 ```
 
@@ -630,6 +656,19 @@ model.y.lognormal %>% get_variables(.)
 #   ggplot(aes(x = 1/mu)) + stat_halfeye()
 ```
 
+Overlay plot: 
+
+```{r}
+prediction <- task2_df %>% 
+  mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+  add_predicted_draws(model.y.gamma, ndraws = 100)
+
+prediction %>% ggplot() + 
+  stat_slab(aes(x = .prediction), 
+            fill = "lightblue", alpha = 1) + 
+  geom_dots(data = task2_df, aes(x = abs(va.ans.y - va.select.y))) + 
+  xlim(0, 0.05)
+```
 
 ### Compare between all 
 
