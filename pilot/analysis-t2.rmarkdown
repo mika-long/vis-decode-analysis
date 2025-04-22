@@ -304,6 +304,7 @@ Fit the model:
 
 ```{r}
 #| output: false 
+#| label: fit lomax 
 
 model.y.lomax <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
   # mutate(error.y = ifelse(error.y < 1e-5, 0, error.y)) %>% 
@@ -319,7 +320,8 @@ model.y.lomax <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
     file_refit = "on_change", 
     iter = 8000, 
     # init = list()
-    control = list(adapt_delta = 0.99)
+    control = list(adapt_delta = 0.99), 
+    save_pars = save_pars(all = TRUE)
   )
 ```
 
@@ -421,6 +423,10 @@ Fit the model:
 
 
 ```{r}
+#| output: false 
+#| label: fit exponential 
+
+
 model.y.exponential <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
   mutate(error.y = ifelse(error.y < 1e-10, 1e-10, error.y)) %>% # exponential cannot deal with 0 values 
   brm(
@@ -431,7 +437,8 @@ model.y.exponential <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)
     file = "models/task2.y.exponential",
     file_refit = "on_change", 
     control = list(adapt_delta = 0.99), 
-    iter = 6000
+    iter = 6000, 
+    save_pars = save_pars(all = TRUE)
   )
 ```
 
@@ -752,7 +759,7 @@ Loo comparison
 
 
 ```{r}
-loo(model.y.lomax, model.y.exponential, model.y.lognormal, model.y.gamma) 
+loo(model.y.lomax, model.y.exponential, model.y.lognormal, model.y.gamma, model.y.weibull, moment_match = TRUE) 
 ```
 
 
@@ -1001,11 +1008,11 @@ Define custom functions for posterior predictive check:
 expose_functions(model.x.laplace, vectorize = TRUE)
 
 # # Define a random number generator for Laplace distribution
-# laplace_rng <- function(mu, sigma) {
-#   # Generate from Laplace distribution using uniform transformation
-#   u <- runif(length(mu)) - 0.5
-#   mu + sigma * sign(u) * (-log(1 - 2 * abs(u)))
-# }
+laplace_rng <- function(mu, sigma) {
+  # Generate from Laplace distribution using uniform transformation
+  u <- runif(length(mu)) - 0.5
+  mu + sigma * sign(u) * (-log(1 - 2 * abs(u)))
+}
 
 # Define the posterior predict function for our custom family
 posterior_predict_laplace <- function(i, prep, ...) {
