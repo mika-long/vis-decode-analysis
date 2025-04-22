@@ -1001,6 +1001,20 @@ custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.m
 custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
 ```
 
+### Compare the two weighted average models 
+
+```{r}
+m1 <- readRDS("models/task1.weighted.rds")
+m1_loo <- m1$loo()
+m2 <- readRDS("models/task1.weighted_big.var.rds")
+m2_loo <- m2$loo()
+brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo),
+                  method = c("stacking"))
+```
+
+The one with the bigger variance has slightly better performance. 
+
+
 ## Compare all six models 
 
 ```{r}

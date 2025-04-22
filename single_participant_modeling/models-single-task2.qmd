@@ -407,13 +407,13 @@ Fit the model:
 
 ```{r}
 model.y.exponential <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
-  mutate(error.y = ifelse(error.y < 1e-10, 1e-10, error.y)) %>% 
+  # mutate(error.y = ifelse(error.y < 1e-10, 1e-10, error.y)) %>% 
   brm(
     formula = f,
     data = .,
     prior = p,
     chains = 4,
-    file = "models/task2.y.exponential",
+    # file = "models/task2.y.exponential",
     file_refit = "on_change"
     # init = list()
     # control = list(adapt_delta = 0.95)
@@ -426,6 +426,7 @@ Check fit and posterior:
 summary(model.y.exponential)
 plot(model.y.exponential)
 pp_check(model.y.exponential, ndraws = 100)
+pp_check(model.y.exponential, ndraws = 100, type = "pit_ecdf")
 ```
 
 Plot posterior: 
@@ -469,13 +470,13 @@ Fit the model:
 #| label: Y fit weibull 
 
 model.y.weibull <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
-  mutate(error.y = ifelse(error.y < 1e-10, 1e-10, error.y)) %>% 
+  # mutate(error.y = ifelse(error.y < 1e-10, 1e-10, error.y)) %>% 
   brm(
     formula = f,
     data = .,
     prior = p,
     chains = 4,
-    file = "models/task2.y.weibull",
+    # file = "models/task2.y.weibull",
     file_refit = "on_change"
     # control = list(adapt_delta = 0.95)
   )
@@ -547,13 +548,13 @@ Fit the model:
 #| label: Y fit Gamma  
 
 model.y.gamma <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
-  mutate(error.y = ifelse(error.y < 1e-10, 1e-10, error.y)) %>% 
+  # mutate(error.y = ifelse(error.y < 1e-10, 1e-10, error.y)) %>% 
   brm(
     formula = f,
     data = .,
     prior = p,
     chains = 4,
-    file = "models/task2.y.gamma",
+    # file = "models/task2.y.gamma",
     file_refit = "on_change"
     # control = list(adapt_delta = 0.95)
   )
