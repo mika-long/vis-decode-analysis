@@ -518,8 +518,9 @@ task2_df %>% modelr::data_grid(error.y = 0) %>%
   stat_slab(aes(x = .prediction), 
             fill = "lightblue", alpha = 1) + 
   geom_dots(data = task2_df, aes(x = va.ans.y - va.select.y)) + 
-  labs(y = "Probability", x = "Signed error", title = "Task 2") + 
-  theme_minimal(base_size = 8) -> p 
+  labs(y = "Probability", x = "Signed error") + 
+  theme_minimal(base_size = 8) + 
+  xlim(0, 0.2) -> p 
 
 p
 ```
@@ -528,7 +529,7 @@ p
 #| echo: false 
 #| eval: false 
 
-ggsave("plots/task2.y.weibull.pdf", plot = p, height = 5, width = 10, unit = "cm", dpi = 300)
+ggsave("plots/task2.y.weibull.pdf", plot = p, height = 5, width = 5, unit = "cm", dpi = 300)
 ```
 
 ### Log-Normal 

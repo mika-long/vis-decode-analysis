@@ -597,7 +597,8 @@ task4_df %>% modelr::data_grid(error = 0) %>%
   stat_slab(aes(x = .prediction), 
             fill = "lightblue", alpha = 1) + 
   geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) + 
-  labs(y = "Probability", x = "Signed error", title = "Task 4") + 
+  labs(y = "Probability", x = "Signed error") + 
+  xlim(0, 5) + 
   theme_minimal(base_size = 8) -> p 
 
 p
@@ -607,7 +608,7 @@ p
 #| echo: false 
 #| eval: false 
 
-ggsave("plots/task4.pdf", plot = p, height = 5, width = 10, unit = "cm", dpi = 300)
+ggsave("plots/task4.pdf", plot = p, height = 5, width = 5, unit = "cm", dpi = 300)
 ```
 
 

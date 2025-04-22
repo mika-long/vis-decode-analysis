@@ -24,6 +24,7 @@ library(brms)
 library(tidybayes)
 library(cmdstanr)
 library(sgt)
+library(posterior)
 ```
 
 # Read in data and all processing 
@@ -181,11 +182,32 @@ stan_data <- list(
 Define custom posterior predictive check function: 
 
 ```{r}
-custom_pp_check <- function(fitted_model) {
-  y_rep <- fitted_model$draws("y_rep", format = "matrix")
-  y <- fitted_model$draws("x_org", format = "matrix")[1, ] %>% as.vector(.)
-  bayesplot::ppc_dens_overlay(y, y_rep[1:100, ])
-}
+# custom_pp_check <- function(fitted_model) {
+#   y_rep <- fitted_model$draws("y_rep", format = "matrix")
+#   y <- fitted_model$draws("x_org", format = "matrix")[1, ] %>% as.vector(.)
+#   bayesplot::ppc_dens_overlay(y, y_rep[1:100, ])
+# }
+
+custom_pp_check <- function(
+   fitted_model, 
+   fun = bayesplot::ppc_dens_overlay, 
+   ndraws = 100, 
+   transform = identity,
+   ...
+ ) {
+   y_rep <- as_draws_rvars(fitted_model)$y_rep |> 
+     transform() |>
+     as_draws_matrix()
+   if (!is.null(ndraws)) {
+     y_rep = y_rep |>
+       merge_chains() |>
+       resample_draws(ndraws = ndraws) 
+   }
+   y <- fitted_model$draws("x_org", format = "matrix")[1, ] |>
+     as.vector() |>
+     transform()
+   fun(y, y_rep, ...)
+ }
 ```
 
 
@@ -860,7 +882,13 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
 Matt's suggestion: 
 
 ```{r}
-# custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = with(task1_df, case_when(param.lambda < 0 ~ "neg", param.lambda == 0 ~ "zero", param.lambda > 0 ~ "pos")))
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = with(task1_df, case_when(param.lambda < 0 ~ "neg", param.lambda == 0 ~ "zero", param.lambda > 0 ~ "pos")))
+
+custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.med.x, ndraws = NULL)
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
 ```
 
 
