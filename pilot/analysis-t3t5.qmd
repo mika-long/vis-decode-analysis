@@ -266,7 +266,9 @@ ggplot(prediction_grid, aes(x = va.ans.y, y = .prediction)) +
     size = 0.5
   ) + scale_fill_brewer(palette = "Blues") + 
   geom_point(data = task5_df, aes(y = va.select.x - va.ans.x, x = va.ans.y), alpha = 0.8, size = 0.5) +
-  labs(title = "Task 5 (Project to X)", y = "Signed Error", x = "Distance to X-Axis") -> p1 # + 
+  labs(title = "Task 5 (Project to X)", y = "Signed Error", x = "Distance to X-Axis") + 
+  theme_minimal(base_size = 8) + 
+  theme(legend.position = "none") -> p1 # + 
   # theme(text = element_text(family = "Helvetica Neue")) -> p
 
 p1
@@ -368,7 +370,9 @@ ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) +
              alpha = 0.8, 
              size = 0.5) + 
   # ylim(-0.5, 0.5) + 
-  labs(title = "Task 5 (Project to Y)", y = "Signed Error", x = "Distance to Y-Axis") -> p2 # + 
+  labs(title = "Task 5 (Project to Y)", y = "Signed Error", x = "Distance to Y-Axis") + 
+  theme_minimal(base_size = 8) + 
+  theme(legend.position = "none") -> p2 # + 
   # theme(text = element_text(family = "Helvetica Neue")) -> p
 
 p2
@@ -379,6 +383,11 @@ p2
 #| eval: false 
 
 ggsave("plots/task5-project-y.pdf", p2, height = 5, width = 10, units = "cm", dpi = 300)
+```
+
+```{r}
+p1 + p2 -> combined
+ggsave("plots/task5-combined.pdf", combined, height = 3.5, width = 10, units = "cm")
 ```
 
 

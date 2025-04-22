@@ -182,6 +182,7 @@ stan_data <- list(
 Define custom posterior predictive check function: 
 
 ```{r}
+#| label: custom pp_check 
 # custom_pp_check <- function(fitted_model) {
 #   y_rep <- fitted_model$draws("y_rep", format = "matrix")
 #   y <- fitted_model$draws("x_org", format = "matrix")[1, ] %>% as.vector(.)
@@ -657,7 +658,30 @@ fit$draws() %>%
   stat_halfeye()
 ```
 
+Save the stan model: 
+
 ```{r}
+#| eval: false 
+
+fit$save_object(file = "models/task1.alpha.abs.adj.diff.rds")
+```
+
+### Compare between abs(diff) and abs(diff)/var 
+
+```{r}
+m1 <- read_rds("models/task1.alpha.abs.diff.rds")
+m1_loo <- m1$loo()
+m2 <- read_rds("models/task1.alpha.abs.adj.diff.rds")
+m2_loo <- m2$loo()
+
+brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo),
+                  method = c("stacking"))
+```
+
+The model with scaled variance works better. Let's see in detail what it actually does: 
+
+```{r}
+fit <- m2
 summary <- fit$summary()
 
 summary %>% filter(str_detect(variable, "^lambda")) %>%
@@ -673,7 +697,15 @@ task1_df %>% mutate(mix_paramter = as_draws_rvars(fit)$lambda) %>%
   ggplot(aes(x = param.lambda, y = mix_paramter)) + 
   ggdist::stat_ribbon() + 
   ylim(0, 1)
+
+task1_df %>% mutate(mix_paramter = as_draws_rvars(fit)$lambda) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = 1 - mix_paramter)) + 
+  ggdist::stat_ribbon() + 
+  ylim(0, 1)
 ```
+
+This, however, is still not what we want. When `lambda = 0`, the participant should be selecting mod all the time with little variance, which is not what the above graph is telling us about. 
 
 ```{r}
 task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
@@ -689,19 +721,12 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
   geom_point(aes(y = va.select.x - va.med.x))
 ```
 
-Save the stan model: 
-
-```{r}
-#| eval: false 
-
-fit$save_object(file = "models/task1.alpha.abs.adj.diff.rds")
-```
-
 ### lambda = inv-logit(beta * (alpha + abs(x.med - x.mod) / var))
 
 ```{r}
 #| eval: false 
 model <- cmdstan_model("stan_files/sheng.mix.2.6.stan")
+model 
 ``` 
 
 Fit the model: 
@@ -763,55 +788,23 @@ Save the stan model:
 fit$save_object(file = "models/task1.beta.abs.adj.diff.alpha.rds")
 ```
 
+### Compare between whether alpha should be intercept outside or inside 
 
 ```{r}
-summary <- fit$summary()
-
-summary %>% filter(str_detect(variable, "^lambda")) %>%
-  arrange(median) %>% 
-  ggplot(aes(y = reorder(variable, median))) +
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +
-  geom_point(aes(x = median)) + xlim(0, 1)
-```
-
-```{r}
-task1_df %>% mutate(mix_paramter = as_draws_rvars(fit)$lambda) %>%
-  unnest_rvars() %>%
-  ggplot(aes(x = param.lambda, y = mix_paramter)) +
-  ggdist::stat_lineribbon() + ylim(0, 1)
-```
-
-```{r}
-task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
-  unnest_rvars() %>% 
-  ggplot(aes(x = param.lambda, y = y_rep)) + 
-  ggdist::stat_lineribbon() +
-  geom_point(aes(y = va.select.x - va.med.x), data = task1_df)
-```
-
-### LOO Comparison 
-
-```{r}
-m1 <- readRDS("models/task1.abs.diff.rds") 
+m1 <- read_rds("models/task1.alpha.abs.adj.diff.rds")
 m1_loo <- m1$loo()
-m2 <- readRDS("models/task1.alpha.abs.diff.rds") 
+m2 <- read_rds("models/task1.beta.abs.adj.diff.alpha.rds")
 m2_loo <- m2$loo()
-m3 <- readRDS("models/task1.alpha.abs.adj.diff.rds") 
-m3_loo <- m3$loo()
-m4 <- readRDS("models/task1.beta.abs.adj.diff.alpha.rds") 
-m4_loo <- m4$loo()
 
-brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo, "Model 3" = m3_loo, "Model 4" = m4_loo),
+brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo),
                   method = c("stacking"))
 ```
 
-Model 3 is the best one. 
-
----
-
-**The following are new model**
+So alpha should be outside instead of inside. 
 
 ## Weighted average model 
+
+### The model 
 
 After talking to Matt, Matt said that the process is more similar to anchor then adjust, instead of choosing to anchor or adjust, so the model might be better with weighted average. 
 
@@ -892,7 +885,7 @@ task1_df %>% mutate(weight = as_draws_rvars(fit)$w) %>%
 
 task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
   unnest_rvars() %>% 
-  ggplot(aes(x = param.lambda, y = y_rep)) + 
+  ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) + 
   ggdist::stat_lineribbon(alpha = 0.5) +
   geom_point(aes(y = va.select.x - va.med.x), data = task1_df, alpha = 0.8) + 
   scale_fill_brewer(palette = "Blues")
@@ -912,7 +905,6 @@ task1_df %>% ggplot(aes(x = abs(va.med.x - va.mod.x), y = va.select.x - va.med.x
   # scale_fill_brewer(palette = "Blues")
 ```
 
-
 Matt's suggestion: 
 
 ```{r}
@@ -925,6 +917,89 @@ custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.m
 custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
 ```
 
+### The model with bigger variance 
+
+```{r}
+#| eval: false 
+model <- cmdstan_model("stan_files/sheng.mix.2.8_big.var.stan")
+model
+``` 
+
+Fit the model: 
+
+```{r}
+#| output: false 
+#| eval: false 
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  # parallel_chains = 4, 
+  # adapt_delta = 0.95
+  )
+```
+
+```{r}
+#| echo: false
+#| output: false 
+fit <- readRDS("models/task1.weighted_big.var.rds")
+```
+
+Posterior predictive checks: 
+
+```{r}
+#| column: margin 
+summary <- fit$summary()
+
+custom_pp_check(fit)
+```
+
+Save the stan model: 
+
+```{r}
+#| eval: false 
+
+fit$save_object(file = "models/task1.weighted_big.var.rds")
+```
+
+```{r}
+#| layout-ncol: 2 
+
+task1_df %>% mutate(weight = as_draws_rvars(fit)$w) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = weight)) + 
+  ggdist::stat_ribbon() + ylim(0, 1)
+
+task1_df %>% mutate(weight = as_draws_rvars(fit)$w) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = 1 - weight)) + 
+  ggdist::stat_ribbon() + ylim(0, 1)
+```
+
+```{r}
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) + 
+  ggdist::stat_lineribbon(alpha = 0.5) +
+  geom_point(aes(y = va.select.x - va.med.x), data = task1_df, alpha = 0.8) + 
+  scale_fill_brewer(palette = "Blues")
+
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = y_rep)) + 
+  ggdist::stat_lineribbon(alpha = 0.5) +
+  geom_point(aes(y = va.select.x - va.med.x), data = task1_df, alpha = 0.8) + 
+  scale_fill_brewer(palette = "Blues")
+```
+
+```{r}
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = with(task1_df, case_when(param.lambda < 0 ~ "neg", param.lambda == 0 ~ "zero", param.lambda > 0 ~ "pos")))
+
+custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.med.x, ndraws = NULL)
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+```
 
 ## Compare all six models 
 
