@@ -578,13 +578,16 @@ model.gamma <- task4_df %>%
       data = ., 
       prior = p, 
       chains = 4, 
+      cores = 4, 
       file = "models/task4.gamma", 
       file_refit = "on_change",
       save_pars = save_pars(all = TRUE), 
-      control = list(adapt_delta = 0.99), 
-      iter = 4000
+      control = list(adapt_delta = 0.99, max_treedepth = 15), 
+      iter = 10000
   )
 ```
+
+Alright the above still gives a lot of divergent transitions ... 
 
 Check fit and posterior: 
 
@@ -645,10 +648,12 @@ model.lognormal <- task4_df %>%
       data = ., 
       prior = p, 
       chains = 4, 
-      cores = 4, 
+      # cores = 4, 
       file = "models/task4.lognormal", 
       file_refit = "on_change",
-      save_pars = save_pars(all = TRUE)
+      save_pars = save_pars(all = TRUE), 
+      control = list(adapt_delta = 0.99),
+      iter = 4000 
   )
 ```
 
@@ -689,6 +694,8 @@ The weibull model performs the best.There is also the potential todo of log-norm
 pp_check(model.exponential, ndraws = 100, type = "pit_ecdf")
 pp_check(model.lomax, ndraws = 100, type = "pit_ecdf")
 pp_check(model.weibull, ndraws = 100, type = "pit_ecdf")
+pp_check(model.gamma, ndraws = 100, type = "pit_ecdf")
+pp_check(model.lognormal, ndraws = 100, type = "pit_ecdf")
 ```
 
 

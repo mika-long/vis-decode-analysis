@@ -387,7 +387,7 @@ $$\begin{align*}\text{error}_i &\sim \text{Exponential}(\lambda) \\
 ```{r}
 f <- bf(error.y ~ 0, 
         mu ~ 1, # technically this is lambda but we call it mu nonetheless 
-        family = exponential)
+        family = exponential())
 
 # mu has log-link, so we don't pose any bounds on it 
 p <- c(
@@ -440,7 +440,198 @@ model.y.exponential %>% spread_draws(b_Intercept) %>%
   ggplot(aes(x = 1/mu)) + stat_halfeye()
 ```
 
-### Compare between the two 
+### Weibull 
+
+```{r}
+f <- bf(error.y ~ 0, 
+        mu ~ 1,
+        shape ~ 1, 
+        family = weibull())
+
+# mu has log-link, so we don't pose any bounds on it 
+p <- c(
+  prior(normal(0, 1), class = Intercept)
+)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+  get_prior(f, data = .)
+
+task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+  make_stancode(f, data = ., prior = p)
+```
+
+Fit the model: 
+
+```{r}
+#| output: false 
+#| label: Y fit weibull 
+
+model.y.weibull <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  mutate(error.y = ifelse(error.y < 1e-10, 1e-10, error.y)) %>% 
+  brm(
+    formula = f,
+    data = .,
+    prior = p,
+    chains = 4,
+    file = "models/task2.y.weibull",
+    file_refit = "on_change"
+    # control = list(adapt_delta = 0.95)
+  )
+```
+
+Check fit and posterior: 
+
+```{r}
+summary(model.y.weibull)
+plot(model.y.weibull)
+pp_check(model.y.weibull, ndraws = 100)
+pp_check(model.y.weibull, ndraws = 100, type = "pit_ecdf")
+```
+
+Plot posterior: 
+
+```{r}
+model.y.weibull %>% get_variables(.)
+
+# TODO 
+# model.y.weibull %>% spread_draws(b_Intercept) %>% 
+#   mutate(mu = exp(b_Intercept)) %>% 
+#   ggplot(aes(x = 1/mu)) + stat_halfeye()
+```
+
+### Gamma 
+
+```{r}
+f <- bf(error.y ~ 0, 
+        mu ~ 1,
+        shape ~ 1, 
+        family = Gamma())
+
+# TODO 
+p <- c(
+  prior(normal(0, 1), class = Intercept)
+)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+  get_prior(f, data = .)
+
+task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+  make_stancode(f, data = ., prior = p)
+```
+
+Fit the model: 
+
+```{r}
+#| output: false 
+#| label: Y fit Gamma  
+
+model.y.gamma <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  mutate(error.y = ifelse(error.y < 1e-10, 1e-10, error.y)) %>% 
+  brm(
+    formula = f,
+    data = .,
+    prior = p,
+    chains = 4,
+    file = "models/task2.y.gamma",
+    file_refit = "on_change"
+    # control = list(adapt_delta = 0.95)
+  )
+```
+
+Check fit and posterior: 
+
+```{r}
+summary(model.y.gamma)
+plot(model.y.gamma)
+pp_check(model.y.gamma, ndraws = 100)
+pp_check(model.y.gamma, ndraws = 100, type = "pit_ecdf")
+```
+
+Plot posterior: 
+
+```{r}
+model.y.gamma %>% get_variables(.)
+
+# TODO 
+# model.y.weibull %>% spread_draws(b_Intercept) %>% 
+#   mutate(mu = exp(b_Intercept)) %>% 
+#   ggplot(aes(x = 1/mu)) + stat_halfeye()
+``` 
+
+### Log-Normal 
+
+```{r}
+f <- bf(error.y ~ 0, 
+        mu ~ 1,
+        sigma ~ 1, 
+        family = lognormal())
+
+# TODO 
+p <- c(
+  prior(normal(0, 1), class = Intercept)
+)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+  get_prior(f, data = .)
+
+task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+  make_stancode(f, data = ., prior = p)
+```
+
+Fit the model: 
+
+```{r}
+#| output: false 
+#| label: Y fit weibull 
+
+model.y.lognormal <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  mutate(error.y = ifelse(error.y < 1e-10, 1e-10, error.y)) %>% 
+  brm(
+    formula = f,
+    data = .,
+    prior = p,
+    chains = 4,
+    file = "models/task2.y.lognormal",
+    file_refit = "on_change"
+    # control = list(adapt_delta = 0.95)
+  )
+```
+
+Check fit and posterior: 
+
+```{r}
+summary(model.y.lognormal)
+plot(model.y.lognormal)
+pp_check(model.y.lognormal, ndraws = 100)
+pp_check(model.y.lognormal, ndraws = 100, type = "pit_ecdf")
+```
+
+Plot posterior: 
+
+```{r}
+model.y.lognormal %>% get_variables(.)
+
+# TODO 
+# model.y.weibull %>% spread_draws(b_Intercept) %>% 
+#   mutate(mu = exp(b_Intercept)) %>% 
+#   ggplot(aes(x = 1/mu)) + stat_halfeye()
+```
+
+
+### Compare between all 
 
 Define custom functions for the Lomax distribution: 
 
@@ -460,10 +651,8 @@ log_lik_lomax <- function(i, prep) {
 Loo comparison 
 
 ```{r}
-loo(model.y.lomax, model.y.exponential) 
+loo(model.y.lomax, model.y.exponential, model.y.gamma, model.y.lognormal, model.y.weibull) 
 ```
-
-Lomax is clearly better than exponential. 
 
 
 ## Task 2 - Vis Angle - error on X 
