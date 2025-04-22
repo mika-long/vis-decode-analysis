@@ -540,7 +540,7 @@ prediction %>% ggplot() +
 loo(model.exponential, model.lomax, model.weibull)
 ```
 
- 
+The weibull model performs the best.  
 
 
 
