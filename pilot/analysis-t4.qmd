@@ -278,6 +278,10 @@ task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
 Fir the model: 
 
 ```{r}
+#| output: false 
+#| label: fit exponential 
+
+
 model.exponential <- task4_df %>% 
   mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
   mutate(error = ifelse(abs(error) < tolerance, tolerance, error)) %>% # brms need rsp > 0 
@@ -384,8 +388,8 @@ task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_t
 
 ```{r}
 #| output: false 
+#| label: fit lomax 
 
-# Fit the model with brms
 model.lomax <- task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) %>% 
   mutate(error = ifelse(error < tolerance, tolerance, error)) %>% 
   brm(
@@ -497,6 +501,10 @@ task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_t
 Fit the model: 
 
 ```{r}
+#| output: false 
+#| label: fit weibull 
+
+
 model.weibull <- task4_df %>% 
   mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
   mutate(error = ifelse(error < tolerance, tolerance, error)) %>% # brms needs value to be > 0  
@@ -506,7 +514,8 @@ model.weibull <- task4_df %>%
       chains = 4, 
       file = "models/task4.weibull", 
       file_refit = "on_change",
-      save_pars = save_pars(all = TRUE)
+      save_pars = save_pars(all = TRUE), 
+      
   )
 ```
 
@@ -543,7 +552,9 @@ f <- bf(error ~ 0,
 
 p <- c(
   prior(normal(0, 1), class = Intercept), 
-  prior(normal(0, 1), class = Intercept, dpar = shape)
+  prior(cauchy(0, 1), class = sd, group = participantId, lb = 0), 
+  prior(normal(0, 1), class = Intercept, dpar = shape), 
+  prior(cauchy(0, 1), class = sd, group = participantId, dpar = shape, lb = 0)
 )
 ```
 
@@ -556,16 +567,117 @@ task4_df %>%
   get_prior(data = ., formula = f)
 ```
 
+```{r}
+#| output: false 
+#| label: fit gamma 
+
+model.gamma <- task4_df %>% 
+  mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
+  mutate(error = ifelse(error < tolerance, tolerance, error)) %>% # brms needs value to be > 0  
+  brm(formula = f, 
+      data = ., 
+      prior = p, 
+      chains = 4, 
+      file = "models/task4.gamma", 
+      file_refit = "on_change",
+      save_pars = save_pars(all = TRUE), 
+      control = list(adapt_delta = 0.99), 
+      iter = 4000
+  )
+```
+
+Check fit and posterior: 
+
+```{r}
+summary(model.gamma)
+plot(model.gamma)
+pp_check(model.gamma, ndraws = 100)
+pp_check(model.gamma, ndraws = 100, type = "pit_ecdf")
+```
+
+Overlay plot: 
+
+```{r}
+prediction <- task4_df %>% 
+  mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
+  add_predicted_draws(model.gamma, ndraws = 100)
+
+prediction %>% ggplot() + 
+  stat_slab(aes(x = .prediction), 
+            fill = "lightblue", alpha = 1) + 
+  geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) + 
+  xlim(0, 10)
+```
+
 ## Log-Normal distribution 
 
-... 
+```{r}
+f <- bf(error ~ 0,
+        mu ~ (1 | participantId), 
+        sigma ~ (1 | participantId), 
+        family = lognormal())
 
+p <- c(
+  prior(normal(0, 1), class = Intercept), 
+  prior(cauchy(0, 1), class = sd, group = participantId, lb = 0), 
+  prior(normal(0, 1), class = Intercept, dpar = sigma), 
+  prior(cauchy(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
+)
+``` 
 
+```{r}
+#| echo: false 
+#| eval: false 
+
+task4_df %>% 
+  mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
+  get_prior(data = ., formula = f)
+```
+
+```{r}
+#| output: false 
+#| label: fit lognormal 
+
+model.lognormal <- task4_df %>% 
+  mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
+  mutate(error = ifelse(error < tolerance, tolerance, error)) %>% # brms needs value to be > 0  
+  brm(formula = f, 
+      data = ., 
+      prior = p, 
+      chains = 4, 
+      file = "models/task4.lognormal", 
+      file_refit = "on_change",
+      save_pars = save_pars(all = TRUE)
+  )
+```
+
+Check fit and posterior: 
+
+```{r}
+summary(model.lognormal)
+plot(model.lognormal)
+pp_check(model.lognormal, ndraws = 100)
+pp_check(model.lognormal, ndraws = 100, type = "pit_ecdf")
+```
+
+Overlay plot: 
+
+```{r}
+prediction <- task4_df %>% 
+  mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
+  add_predicted_draws(model.lognormal, ndraws = 100)
+
+prediction %>% ggplot() + 
+  stat_slab(aes(x = .prediction), 
+            fill = "lightblue", alpha = 1) + 
+  geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) + 
+  xlim(0, 10)
+```
 
 ## Model Comparison
 
 ```{r}
-loo(model.exponential, model.lomax, model.weibull)
+loo(model.exponential, model.lomax, model.weibull, model.gamma, model.lognormal)
 ```
 
 The weibull model performs the best.There is also the potential todo of log-normal and gamma ... perhaps we should try them all ...? 
