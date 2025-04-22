@@ -330,6 +330,15 @@ prediction %>% ggplot() +
   geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope)))
 ```
 
+```{r}
+task4_df %>% modelr::data_grid(error = 0) %>% 
+  add_predicted_draws(model.exponential, ndraws = 100, re_formula = NA) %>% 
+  ggplot() + 
+  stat_slab(aes(x = .prediction), 
+            fill = "lightblue", alpha = 1) + 
+  geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) 
+```
+
 ## Lomax Model 
 
 Lomax is Pareto Type II distribution. We had similar models for task 2. 
@@ -417,7 +426,7 @@ plot(model.lomax)
 Let's check the posterior of alpha and lambda: 
 
 ```{r}
-model.lomax %>% spread_draws(`^b_.*`, regex = TRUE) # %>% 
+model.lomax %>% spread_draws(`^b_.*`, regex = TRUE) %>% 
   mutate(b_alpha = exp(b_alpha_Intercept), b_lambda = exp(b_lambda_Intercept)) %>% 
   pivot_longer(6:7) %>% 
   ggplot(aes(x = value, y = name)) + 
@@ -462,6 +471,13 @@ prediction %>% ggplot() +
             fill = "lightblue", alpha = 1) + 
   geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope)))
 ```
+
+```{r}
+# huh something is a bit wrong with its add_predicted_draws ... 
+task4_df %>% modelr::data_grid(error = 0, participantId = unique(participantId)) %>% 
+  add_predicted_draws(model.lomax, ndraws = 100, re_formula = NA)
+```
+
 
 ## Weibull distribution 
 
