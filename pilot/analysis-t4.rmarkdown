@@ -27,9 +27,13 @@ library(brms)
 library(tidybayes)
 ```
 
+
+
 # Set up
 
 Read in data 
+
+
 
 ```{r}
 #| label: read-in-data
@@ -127,7 +131,11 @@ participants %>% left_join(true_ball_pos) %>%
   rename(dist_to_screen = d) -> participants
 ```
 
+
+
 # Task 4 --- find highest slope 
+
+
 
 ```{r}
 #| label: get task 4 data 
@@ -159,7 +167,11 @@ task4_df <- task_df %>% filter(task == "task4") %>%
 
 ```
 
+
+
 Check relations 
+
+
 
 ```{r}
 task4_df %>% ggplot(aes(x = va.ans.x - va.select.x)) + geom_dots()
@@ -185,10 +197,14 @@ task4_df %>% ggplot(aes(x = atan(data_to_screen_slope(data.select.slope)) * 180 
 # maybe try to fit a model here 
 ```
 
+
+
 If we map the mathematical slope to the actual slope, this is what we get: 
 
 - y axis range [0,1] correspond to 395 px -> 395px / unit 
 - x axis range [-5, 5] correspond to 535 px -> 53.5 px / unit 
+
+
 
 ```{r}
 task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope), 
@@ -200,7 +216,11 @@ task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope) - data_to_sc
   geom_dots()
 ```
 
+
+
 Let's first see the distribution of signed error: 
+
+
 
 ```{r}
 task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) + 
@@ -210,7 +230,11 @@ task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = dist_to_scre
   geom_point(alpha = 0.5)
 ```
 
+
+
 Let's see if there's any obvious relation between signed error and parameters of the distribution: 
+
+
 
 ```{r}
 #| layout-ncol: 2
@@ -239,6 +263,8 @@ task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) +
   geom_dots()
 ```
 
+
+
 ## Exponential Model 
 
 Math model: 
@@ -251,6 +277,8 @@ $$\begin{align*}
 \end{align*}$$
 
 Formula: 
+
+
 
 ```{r}
 f <- bf(error ~ 0,
@@ -275,7 +303,11 @@ task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
   make_stancode(f, data = ., prior = p)
 ```
 
+
+
 Fir the model: 
+
+
 
 ```{r}
 model.exponential <- task4_df %>% 
@@ -291,7 +323,11 @@ model.exponential <- task4_df %>%
   )
 ```
 
+
+
 Check fit: 
+
+
 
 ```{r}
 summary(model.exponential)
@@ -303,7 +339,11 @@ pp_check(model.exponential, ndraws = 100)
 pp_check(model.exponential, ndraws = 100, type = "pit_ecdf") # pet Matt's suggestion 
 ```
 
+
+
 See is actually not bad at all ... 
+
+
 
 ```{r}
 model.exponential %>% get_variables()
@@ -315,7 +355,11 @@ model.exponential %>% spread_draws(b_Intercept, sd_participantId__Intercept) %>%
   stat_halfeye()
 ```
 
+
+
 Overlay plot: 
+
+
 
 ```{r}
 prediction <- task4_df %>% 
@@ -329,9 +373,13 @@ prediction %>% ggplot() +
   geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope)))
 ```
 
+
+
 ## Lomax Model 
 
 Lomax is Pareto Type II distribution. We had similar models for task 2. 
+
+
 
 ```{r}
 lomax_family <- custom_family(
@@ -402,7 +450,11 @@ model.lomax <- task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.
   )
 ```
 
+
+
 Check fit: 
+
+
 
 ```{r}
 # Examine model results
@@ -410,7 +462,11 @@ summary(model.lomax)
 plot(model.lomax)
 ```
 
+
+
 Let's check the posterior of alpha and lambda: 
+
+
 
 ```{r}
 model.lomax %>% spread_draws(`^b_.*`, regex = TRUE) %>% 
@@ -422,7 +478,11 @@ model.lomax %>% spread_draws(`^b_.*`, regex = TRUE) %>%
   geom_vline(xintercept = 1e-10, linetype = "dashed", color = "gray")
 ```
 
+
+
 Define custom functions for `pp_check` and `loo`: 
+
+
 
 ```{r}
 expose_functions(model.lomax, vectorize = TRUE)
@@ -446,7 +506,11 @@ pp_check(model.lomax, ndraws = 100)
 pp_check(model.lomax, ndraws = 100, type = "pit_ecdf")
 ```
 
+
+
 Overlay plot: 
+
+
 
 ```{r}
 prediction <- task4_df %>% 
@@ -461,11 +525,15 @@ prediction %>% ggplot() +
 ```
 
 
+
+
 ## Weibull distribution 
 
 - [wikipedia](https://en.wikipedia.org/wiki/Weibull_distribution) 
 - [stan](https://mc-stan.org/docs/functions-reference/positive_continuous_distributions.html#weibull-distribution) 
 - it's also implemented in brms! So no need for a custom function. 
+
+
 
 ```{r}
 f <- bf(
@@ -495,7 +563,11 @@ task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_t
   make_stancode(formula = f, prior = p)
 ```
 
+
+
 Fit the model: 
+
+
 
 ```{r}
 model.weibull <- task4_df %>% 
@@ -511,7 +583,11 @@ model.weibull <- task4_df %>%
   )
 ```
 
+
+
 Check fit and posterior: 
+
+
 
 ```{r}
 summary(model.weibull)
@@ -520,7 +596,11 @@ pp_check(model.weibull, ndraws = 100)
 pp_check(model.weibull, ndraws = 100, type = "pit_ecdf")
 ```
 
+
+
 Overlay plot: 
+
+
 
 ```{r}
 prediction <- task4_df %>% 
@@ -534,13 +614,21 @@ prediction %>% ggplot() +
   xlim(0, 10)
 ```
 
+
+
 ## Model Comparison
+
+
 
 ```{r}
 loo(model.exponential, model.lomax, model.weibull)
 ```
 
+
+
 The weibull model performs the best.  
+
+
 
 ```{r}
 #| layout-ncol: 3
@@ -549,6 +637,4 @@ pp_check(model.exponential, ndraws = 100, type = "pit_ecdf")
 pp_check(model.lomax, ndraws = 100, type = "pit_ecdf")
 pp_check(model4.weibull, ndraws = 100, type = "pit_ecdf")
 ```
-
-
 
