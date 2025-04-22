@@ -21,9 +21,13 @@ library(brms)
 library(tidybayes)
 ```
 
+
+
 # Set up 
 
 read in data and write functions for processing: 
+
+
 
 ```{r}
 #| label: read-in-data
@@ -120,7 +124,11 @@ participants <- pixel_to_mm %>% left_join(vis_distance, by = join_by(participant
 ```
 
 
+
+
 # Task 4 -- Find slope 
+
+
 
 ```{r}
 #| label: get task 4 data 
@@ -152,7 +160,11 @@ task4_df <- single_pid_df %>% filter(task == "task4") %>%
 
 ```
 
+
+
 Check relations 
+
+
 
 ```{r}
 task4_df %>% ggplot(aes(x = va.ans.x - va.select.x)) + geom_dots()
@@ -178,10 +190,14 @@ task4_df %>% ggplot(aes(x = atan(data_to_screen_slope(data.select.slope)) * 180 
 # maybe try to fit a model here 
 ```
 
+
+
 If we map the mathematical slope to the actual slope, this is what we get: 
 
 - y axis range [0,1] correspond to 395 px -> 395px / unit 
 - x axis range [-5, 5] correspond to 535 px -> 53.5 px / unit 
+
+
 
 ```{r}
 task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope), 
@@ -193,7 +209,11 @@ task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope) - data_to_sc
   geom_dots()
 ```
 
+
+
 Let's first see the distribution of signed error: 
+
+
 
 ```{r}
 task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) + 
@@ -203,7 +223,11 @@ task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = dist_to_scre
   geom_point(alpha = 0.5)
 ```
 
+
+
 Let's see if there's any obvious relation between signed error and parameters of the distribution: 
+
+
 
 ```{r}
 #| layout-ncol: 2
@@ -233,18 +257,26 @@ task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) +
 ```
 
 
+
+
 ## Exponential Model 
 
 For now let's model things as an exponential distribution. 
+
+
 
 ```{r}
 task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) + 
   geom_dots()
 ```
 
+
+
 Math model: 
 $$\text{error}_i \sim \text{Exponential}(\lambda)$$
 $$\log(\lambda) \sim \mathcal{N}(0, 1)$$
+
+
 
 ```{r}
 f <- bf(error ~ 1, 
@@ -254,7 +286,11 @@ f <- bf(error ~ 1,
 p <- prior(normal(0, 1), class = Intercept)
 ```
 
+
+
 Fit the model:
+
+
 
 ```{r}
 #| output: false 
@@ -271,7 +307,11 @@ model4.exponential <- task4_df %>%
   )
 ```
 
+
+
 Check fit: 
+
+
 
 ```{r}
 summary(model4.exponential)
@@ -291,7 +331,11 @@ model4.exponential %>% spread_draws(b_Intercept) %>%
   stat_halfeye()
 ```
 
+
+
 Overlay plot: 
+
+
 
 ```{r}
 prediction <- task4_df %>% 
@@ -305,9 +349,13 @@ prediction %>% ggplot() +
   geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope)))
 ```
 
+
+
 ## Lomax model 
 
 Lomax is Pareto Type II distribution. We had similar models for task 2. 
+
+
 
 ```{r}
 lomax_family <- custom_family(
@@ -373,14 +421,22 @@ model4.lomax <- task4_df %>% mutate(error = abs(data_to_screen_slope(data.select
   )
 ```
 
+
+
 Check fit: 
+
+
 
 ```{r}
 # Examine model results
 summary(model4.lomax)
 ```
 
+
+
 Let's check the posterior of alpha and lambda: 
+
+
 
 ```{r}
 model4.lomax %>% spread_draws(`^b_.*`, regex = TRUE) %>% 
@@ -392,7 +448,11 @@ model4.lomax %>% spread_draws(`^b_.*`, regex = TRUE) %>%
   geom_vline(xintercept = 1e-10, linetype = "dashed", color = "gray")
 ```
 
+
+
 Define custom functions for `pp_check` and `loo`: 
+
+
 
 ```{r}
 expose_functions(model4.lomax, vectorize = TRUE)
@@ -416,7 +476,11 @@ pp_check(model4.lomax, ndraws = 100)
 pp_check(model4.lomax, ndraws = 100, type = "pit_ecdf")
 ```
 
+
+
 Overlay plot: 
+
+
 
 ```{r}
 prediction <- task4_df %>% 
@@ -431,9 +495,13 @@ prediction %>% ggplot() +
 ```
 
 
+
+
 ## Weibull distribution 
 
 Both are log links
+
+
 
 ```{r}
 f <- bf(error ~ 0,
@@ -457,7 +525,6 @@ p <- c(
   get_prior(data = ., formula = f)
 ```
 
-
 ```{r}
 #| output: false 
 
@@ -474,7 +541,11 @@ model4.weibull <- task4_df %>%
   )
 ```
 
+
+
 Check fit and posterior: 
+
+
 
 ```{r}
 summary(model4.weibull)
@@ -483,7 +554,11 @@ pp_check(model4.weibull, ndraws = 100)
 pp_check(model4.weibull, ndraws = 100, type = "pit_ecdf")
 ```
 
+
+
 This `pit_ecdf` seems quite alright with Weibull ... 
+
+
 
 ```{r}
 model4.weibull %>% get_variables() 
@@ -495,7 +570,11 @@ model4.weibull %>% spread_draws(b_Intercept, b_shape_Intercept) %>%
   stat_halfeye()
 ```
 
+
+
 Overlay plot: 
+
+
 
 ```{r}
 prediction <- task4_df %>% 
@@ -510,10 +589,16 @@ prediction %>% ggplot() +
   xlim(0, 2)
 ```
 
+
+
 ## Model Comparison
+
+
 
 ```{r}
 loo(model4.exponential, model4.lomax, model4.weibull)
 ```
+
+
 
 The Lomax distribution is much better ... 
