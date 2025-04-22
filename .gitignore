@@ -7,3 +7,4 @@ single_participant_modeling/stan_files/*
 !single_participant_modeling/stan_files/*.stan
 single_participant_modeling/*.DS_Store
 pilot/.DS_Store
+.DS_Store
