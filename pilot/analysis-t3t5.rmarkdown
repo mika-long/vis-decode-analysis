@@ -29,9 +29,13 @@ library(modelr)
 library(patchwork)
 ```
 
+
+
 # Set up
 
 Read in data 
+
+
 
 ```{r}
 #| label: read-in-data
@@ -129,9 +133,13 @@ participants %>% left_join(true_ball_pos) %>%
   rename(dist_to_screen = d) -> participants
 ```
 
+
+
 # Task 5 --- Project from dot to axes 
 
 Get the data: 
+
+
 
 ```{r}
 #| label: task 5 load data
@@ -160,6 +168,8 @@ task5_df <- task_df %>% filter(task == "task5") %>% # or use task_df for full
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
 
+
+
 ## Project to X-Axis 
 
 Math: 
@@ -174,6 +184,8 @@ $$\begin{align*}
 \end{align*}$$
 
 Formula and prior: 
+
+
 
 ```{r}
 f <- bf(error_va ~ (1 | participantId),  
@@ -203,7 +215,11 @@ task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   make_standata(f, data = ., prior = p, family = gaussian())
 ```
 
+
+
 Fit model: 
+
+
 
 ```{r}
 #| output: false 
@@ -224,7 +240,11 @@ m.5.x.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
 )
 ```
 
+
+
 Check fit and posterior: 
+
+
 
 ```{r}
 summary(m.5.x.va)
@@ -232,7 +252,11 @@ plot(m.5.x.va)
 pp_check(m.5.x.va, ndraws = 100)
 ```
 
+
+
 Average effect: 
+
+
 
 ```{r}
 m.5.x.va %>% get_variables(.)
@@ -244,7 +268,11 @@ m.5.x.va %>% spread_draws(b_sigma_Intercept) %>%
   stat_halfeye()
 ```
 
+
+
 Plot existing data on top of prediction: 
+
+
 
 ```{r}
 # for an average participant 
@@ -280,6 +308,8 @@ p1
 ggsave("plots/task5-project-x.pdf", p1, height = 5, width = 10, units = "cm", dpi = 300)
 ```
 
+
+
 ## Task 5 -- Project to Y-Axis 
 
 Math: 
@@ -293,6 +323,8 @@ $$\begin{align*}
 \end{align*}$$
 
 Formula and prior: 
+
+
 
 ```{r}
 f <- bf(error_va ~ (1 | participantId), 
@@ -322,7 +354,11 @@ task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
   make_standata(f, data = ., prior = p, family = gaussian())
 ```
 
+
+
 Fit model: 
+
+
 
 ```{r}
 #| output: false 
@@ -343,7 +379,11 @@ m.5.y.va <- task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
 )
 ```
 
+
+
 Check fit and posterior: 
+
+
 
 ```{r}
 summary(m.5.y.va)
@@ -351,7 +391,11 @@ plot(m.5.y.va)
 pp_check(m.5.y.va, ndraws = 100)
 ```
 
+
+
 Plot results: 
+
+
 
 ```{r}
 prediction_grid <- task5_df %>% data_grid(va.ans.x = seq_range(va.ans.x, n = 50)) %>% 
@@ -382,7 +426,11 @@ ggsave("plots/task5-project-y.pdf", p2, height = 5, width = 10, units = "cm", dp
 ```
 
 
+
+
 Combine and save: 
+
+
 
 ```{r}
 combined <- (p1 + guides(color = "none", fill = "none", size = "none")) / (p2 +
@@ -395,9 +443,13 @@ ggsave("plots/task5-combined.pdf", combined, height = 8, width = 10, units = "cm
 ```
 
 
+
+
 # Task 3 --- Find where y == 0.5 
 
 Get data: 
+
+
 
 ```{r}
 #| label: Get task 3 data
@@ -423,6 +475,8 @@ task3_df <- task_df %>% filter(task == "task3") %>%
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
 
+
+
 Math: 
 
 $$\begin{align*}
@@ -434,6 +488,8 @@ $$\begin{align*}
 \end{align*}$$
 
 Formula and prior: 
+
+
 
 ```{r}
 f <- bf(error_va ~ (1 | participantId), 
@@ -463,7 +519,11 @@ make_stancode(formula = f,
               prior = p)
 ```
 
+
+
 Fit model: 
+
+
 
 ```{r}
 #| output: false
@@ -485,7 +545,11 @@ m3 <- task3_df %>%
 )
 ```
 
+
+
 Check fit and posterior: 
+
+
 
 ```{r}
 summary(m3)
@@ -493,7 +557,11 @@ plot(m3)
 pp_check(m3, ndraws = 100)
 ```
 
+
+
 Average participant behavior: 
+
+
 
 ```{r}
 # m3 %>% get_variables(.)
@@ -505,7 +573,11 @@ m3 %>% spread_draws(b_sigma_Intercept) %>%
   stat_halfeye()
 ```
 
+
+
 Let's plot the ribbon plots, but first, let's see the difference between `add_predicted_draws` and `add_epred_draws`: 
+
+
 
 ```{r}
 #| layout-ncol: 3 
@@ -546,8 +618,6 @@ task3_df %>%
   ) + scale_fill_brewer(palette = "Blues") 
 # this is flat becasue this is just bar(mu)
 ```
-
-
 
 ```{r}
 #| layout-ncol: 2 
