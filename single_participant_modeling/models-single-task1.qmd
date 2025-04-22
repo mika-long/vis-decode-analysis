@@ -675,6 +675,20 @@ task1_df %>% mutate(mix_paramter = as_draws_rvars(fit)$lambda) %>%
   ylim(0, 1)
 ```
 
+```{r}
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = y_rep)) + 
+  ggdist::stat_lineribbon() + 
+  geom_point(aes(y = va.select.x - va.med.x))
+
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = abs(va.med.x - va.mod.x), y = y_rep)) + 
+  ggdist::stat_lineribbon() + 
+  geom_point(aes(y = va.select.x - va.med.x))
+```
+
 Save the stan model: 
 
 ```{r}
@@ -862,6 +876,11 @@ task1_df %>% mutate(weight = as_draws_rvars(fit)$w) %>%
   unnest_rvars() %>% 
   ggplot(aes(x = param.lambda, y = weight)) + 
   ggdist::stat_ribbon() + ylim(0, 1)
+
+task1_df %>% mutate(weight = as_draws_rvars(fit)$w) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = 1 - weight)) + 
+  ggdist::stat_ribbon() + ylim(0, 1)
 ```
 
 ```{r}
@@ -874,10 +893,25 @@ task1_df %>% mutate(weight = as_draws_rvars(fit)$w) %>%
 task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
   unnest_rvars() %>% 
   ggplot(aes(x = param.lambda, y = y_rep)) + 
-  ggdist::stat_lineribbon() +
+  ggdist::stat_lineribbon(alpha = 0.5) +
+  geom_point(aes(y = va.select.x - va.med.x), data = task1_df, alpha = 0.8) + 
+  scale_fill_brewer(palette = "Blues")
+
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = abs(va.med.x - va.mod.x), y = y_rep)) + 
+  ggdist::stat_lineribbon(alpha = 0.5) +
   geom_point(aes(y = va.select.x - va.med.x), data = task1_df, alpha = 0.8) + 
   scale_fill_brewer(palette = "Blues")
 ```
+
+```{r}
+task1_df %>% ggplot(aes(x = abs(va.med.x - va.mod.x), y = va.select.x - va.med.x)) + geom_point()
+  # ggdist::stat_lineribbon(alpha = 0.5) +
+  geom_point(aes(y = va.select.x - va.med.x), data = task1_df, alpha = 0.8) + 
+  # scale_fill_brewer(palette = "Blues")
+```
+
 
 Matt's suggestion: 
 
