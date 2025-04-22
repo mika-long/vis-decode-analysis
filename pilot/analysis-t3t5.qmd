@@ -467,6 +467,7 @@ Fit model:
 
 ```{r}
 #| output: false
+#| label: task 3 fit normal 
 
 m3 <- task3_df %>%
   mutate(error_va = va.select.y - va.ans.y, 
@@ -547,8 +548,6 @@ task3_df %>%
 # this is flat becasue this is just bar(mu)
 ```
 
-
-
 ```{r}
 #| layout-ncol: 2 
 
@@ -581,14 +580,18 @@ task3_df %>%
   ggplot(aes(x = va.ans.x, y = .prediction)) + 
   stat_lineribbon(
     .width = c(.95, .80, .50),
-    alpha = 0.5,
-    size = 0.5
+    # alpha = 0.5,
+    size = 0.5, 
+    
   ) + scale_fill_brewer(palette = "Blues") + 
   geom_point(data = task3_df, 
              aes(y = va.ans.y - va.select.y, x = va.ans.x), 
              alpha = 0.8, 
              size = 0.5) +
-  labs(title = "Task 3 (re_formula = NA)", y = "Signed error", x = "Distance to Y-Axis") -> p4
+  labs(y = "Signed error", x = "Distance to Y-Axis") +
+  theme_minimal(
+    base_size = 8) + 
+  theme(legend.position="none")-> p4
 
 p4
 ```
@@ -599,6 +602,7 @@ p4
 
 ggsave("plots/t3.1.pdf", plot = p3, height = 5, width = 10, units = "cm")
 ggsave("plots/t3.2.pdf", plot = p4, height = 5, width = 10, units = "cm")
+ggsave("plots/task3.pdf", plot = p4, height = 5, width = 5, units = "cm")
 ```
 
 ```{r}
