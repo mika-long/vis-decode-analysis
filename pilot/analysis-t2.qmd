@@ -740,6 +740,7 @@ Check fit and posterior:
 summary(model.x.normal)
 plot(model.x.normal)
 pp_check(model.x.normal, ndraws= 100)
+pp_check(model.x.normal, ndraws= 100, type = "pit_ecdf")
 ```
 
 Get the posterior for fitting another task: 
