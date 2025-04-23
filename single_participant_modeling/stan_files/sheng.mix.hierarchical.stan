@@ -30,66 +30,73 @@ parameters {
 
 transformed parameters {
   // participant-specific paremeters
-  vector<lower=0, upper=1>[N] w; // weight 
+  vector[J] mu_mod; 
+  vector[J] mu_med; 
+  vector<lower=0>[J] sigma_mod; 
+  vector<lower=0>[J] sigma_med; 
 
-  real inv_MSE_med = 1 / (square(mu_med) + square(sigma_med)); 
+  // Non-centered parameterization 
+  mu_mod = mu_mod_pop + sigma_mod_pop * mu_mod_z; 
+  mu_med = mu_med_pop + sigma_med_pop * mu_med_z; 
+
+  for (j in 1:J){
+    sigma_mod[j] = sigma_mod_pop * sigma_mod_raw[j]; 
+    // ensure sigma_med > sigma_mod for each participant 
+    sigma_med[j] = sigma_mod[j] + sigma_med_pop * sigma_med_raw[j]; 
+  }
+
+  // Weighte for each observation 
+  vector<lower=0, upper=1>[N] w; 
 
   for (n in 1:N) {
-    // Calculate difference between mode and median
-    real inv_MSE_mod = 1 / (square(x_mod[n] - x_med[n] + mu_mod) + square(sigma_mod));
+    real inv_MSE_med = 1 / (square(mu_med[j]) + square(sigma_med[j])); 
+    real inv_MSE_mod = 1 / (square(x_mod[n] - x_med[n] + mu_mod[j]) + square(sigma_mod[j]));
 
     w[n] = inv_MSE_med / (inv_MSE_med + inv_MSE_mod); 
   }
 }
 
 model {
-  // priors
-  // mu_mod ~ normal(0.01, 0.01);
-  // sigma_mod ~ normal(0.15, 0.01);
-  // Note that the above are fitted using Laplace
-  // We have the following when fitting using Normal
-  mu_mod ~ normal(-0.02, 0.02);
-  sigma_mod ~ normal(0.23, 0.02);
-  mu_med ~ normal(0, 0.05);
-  sigma_med ~ normal(0.15, 0.6);
+  // Hyper-priors for population-level parameters 
+  // TODO -- change this for the actual fitted data 
+  mu_mod_pop ~ normal(-0.02, 0.02);
+  sigma_mod_pop ~ normal(0.23, 0.02);
+  mu_med_pop ~ normal(0, 0.05);
+  sigma_med_pop ~ normal(0.15, 0.6);
+
+  // Priors for participant-level parameters 
+  mu_mod_z ~ normal(0, 1); 
+  mu_med_z ~ normal(0, 1); 
+  sigma_mod_raw ~ normal(0, 1); 
+  sigma_med_raw ~ normal(0, 1); 
   
   // likelihood
   for (n in 1:N) {
-    // Weighted average of two models 
-    // target += w[n] * normal_lpdf(x[n] | x_med[n] + mu_med, sigma_med) +
-    //          (1 - w[n]) * normal_lpdf(x[n] | x_mod[n] + mu_mod, sigma_mod);
-    // I don't think we can do simple weighted averages because things are no log scale and the weights are not in log scale ...
+    int j = id[n]; 
     target += log_mix(w[n],
-                  normal_lpdf(x[n] | x_med[n] + mu_med, sigma_med),
-                  normal_lpdf(x[n] | x_mod[n] + mu_mod, sigma_mod));
+                  normal_lpdf(x[n] | x_med[n] + mu_med[j], sigma_med[j]),
+                  normal_lpdf(x[n] | x_mod[n] + mu_mod[j], sigma_mod[j]));
   }
 }
 
 generated quantities {
-  vector[N] log_lik; // log likilihood of observed data given the model parameters 
-  vector[N] y_rep; // posterior predictive checks
+  vector[N] log_lik;  // log likilihood of observed data given the model parameters 
+  vector[N] y_rep;    // posterior predictive checks
   vector[N] x_org = x;
   
   for (n in 1:N) {
-    //log_lik[n] = w[n] * normal_lpdf(x[n] | x_med[n] + mu_med, sigma_med) +
-    //          (1 - w[n]) * normal_lpdf(x[n] | x_mod[n] + mu_mod, sigma_mod);
+    int j = id[n]; 
+
     log_lik[n] = log_mix(w[n],
-                  normal_lpdf(x[n] | x_med[n] + mu_med, sigma_med),
-                  normal_lpdf(x[n] | x_mod[n] + mu_mod, sigma_mod));
+                  normal_lpdf(x[n] | x_med[n] + mu_med[j], sigma_med[j]),
+                  normal_lpdf(x[n] | x_mod[n] + mu_mod[j], sigma_mod[j]));
 
     // Generate posterior predictive samples
-    real normal_sample = normal_rng(x_med[n] + mu_med, sigma_med);
-    real laplace_sample = normal_rng(x_mod[n] + mu_mod, sigma_mod);
+    real normal_sample = normal_rng(x_med[n] + mu_med[j], sigma_med[j]);
+    real normal_sample2 = normal_rng(x_mod[n] + mu_mod[j], sigma_mod[j]);
 
     // Weighted average using the observation-specific weight w[n]
-    y_rep[n] = w[n] * normal_sample + (1 - w[n]) * laplace_sample;
+    y_rep[n] = w[n] * normal_sample + (1 - w[n]) * normal_sample2;
 
-    // Generate posterior predictive samples
-    //if (bernoulli_rng(w[n]) == 1) {
-    //   // Sample from normal component
-    //   y_rep[n] = normal_rng(x_med[n] + mu_med, sigma_med);
-    // } else {
-    //   y_rep[n] = normal_rng(x_mod[n] + mu_mod, sigma_mod);
-    // }
   }
 }
