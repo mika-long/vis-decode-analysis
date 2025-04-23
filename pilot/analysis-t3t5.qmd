@@ -501,6 +501,7 @@ Check fit and posterior:
 summary(m3)
 plot(m3)
 pp_check(m3, ndraws = 100)
+pp_check(m3, ndraws = 100, type = "pit_ecdf")
 ```
 
 Average participant behavior: 
@@ -585,7 +586,7 @@ p3
 task3_df %>%
   mutate(error_va = va.select.y - va.ans.y) %>% 
   data_grid(va.ans.x = seq_range(va.ans.x, n = 100)) %>% 
-  add_predicted_draws(m3, re_formula = NA, ndraws = 100) %>% 
+  add_predicted_draws(m3, re_formula = NA) %>% # don't need the ndraws = 100 unless we're doing spaghetti plots 
   ggplot(aes(x = va.ans.x, y = .prediction)) + 
   stat_lineribbon(
     .width = c(.95, .80, .50),
