@@ -7,10 +7,10 @@ data {
   vector[N] x_mod;             // known mode values
   
   // Informative priors from brms fit
-  real mu_pop_mean;            // Mean of participant intercepts (0.01)
-  real<lower=0> mu_pop_sd;     // SD of participant intercepts (0.06)
-  real log_sigma_pop_mean;     // Mean of log(sigma) (-1.30)
-  real<lower=0> log_sigma_pop_sd; // SD of log(sigma) (0.20)
+  real mu_mod_mean;            // Mean of participant intercepts (0.01)
+  real<lower=0> mu_mod_sd;     // SD of participant intercepts (0.06)
+  real log_sigma_mod_mean;     // Mean of log(sigma) (-1.30)
+  real<lower=0> log_sigma_mod_sd; // SD of log(sigma) (0.20)
 }
 
 parameters {
@@ -20,31 +20,22 @@ parameters {
   real log_sigma_mod_pop;
   real log_sigma_med_pop;
   
-  // Participant-level parameters (non-centered parameterization)
-  vector[J] mu_mod_z;
-  vector[J] mu_med_z;
-  vector[J] log_sigma_mod_z;
-  vector[J] log_sigma_med_z; 
-  
-  // Difference between sigma_med and sigma_mod (to ensure sigma_med > sigma_mod)
-  vector<lower=0>[J] sigma_diff; // take this away 
+  // Participant-level parameters (centered parameterization)
+  vector[J] mu_mod;
+  vector[J] mu_med;
+  vector[J] log_sigma_mod;
+  vector[J] log_sigma_med; 
 }
 
 transformed parameters {
   // Participant-specific parameters
-  vector[J] mu_mod;
-  vector[J] mu_med;
   vector<lower=0>[J] sigma_mod;
   vector<lower=0>[J] sigma_med;
   
-  // Non-centered parameterization
-  mu_mod = mu_mod_pop + mu_pop_sd * mu_mod_z;
-  mu_med = mu_med_pop + mu_pop_sd * mu_med_z;
-  
   for (j in 1:J) {
     // Transform log parameters to natural scale
-    sigma_mod[j] = exp(log_sigma_mod_pop + log_sigma_pop_sd * log_sigma_mod_z[j]);
-    sigma_med[j] = sigma_mod[j] + sigma_diff[j]; // Ensuring sigma_med > sigma_mod // change this part to be same as above ... 
+    sigma_mod[j] = exp(log_sigma_mod[j]); 
+    simga_med[j] = exp(log_sigma_med[j]); 
   }
   
   // Weights for each observation
@@ -61,23 +52,17 @@ transformed parameters {
 
 model {
   // Hyper-priors for population-level parameters
-  mu_mod_pop ~ normal(mu_pop_mean, 1);  // Informative prior based on brms fit
-  mu_med_pop ~ normal(mu_pop_mean, 1);  // Informative prior based on brms fit
-  // try bigger variance alongside smaller variance, need to cover reasonable space  
-  // strong priors = strong epistemeological statement ... 
+  mu_mod_pop ~ normal(mu_mod_mean, sigma_mod_sd);  // Informative prior based on brms fit
+  log_sigma_mod_pop ~ normal(log_sigma_mod_mean, log_sigma_mod_sd);  // Informative prior from brms
+
+  mu_med_pop ~ normal(0, 1);  
+  log_sigma_med_pop ~ normal(0, 1);  
   
-  // Log-scale priors for sigma parameters
-  log_sigma_mod_pop ~ normal(log_sigma_pop_mean, 1);  // Informative prior from brms
-  log_sigma_med_pop ~ normal(log_sigma_pop_mean, 1);  // Using same prior for now
-  
-  // Standard normal priors for non-centered parameters
-  mu_mod_z ~ normal(0, 1);
-  mu_med_z ~ normal(0, 1);
-  log_sigma_mod_z ~ normal(0, 1);
-  log_sigma_med_z ~ normal(0, 1); // use std_normal() 
-  
-  // Prior for sigma difference
-  sigma_diff ~ normal(0, 0.1); // TODO -- change 
+  // Centered parameterization - directly model the parameters with their hierarchical priors
+  mu_mod ~ normal(mu_mod_pop, mu_mod_sd);
+  mu_med ~ normal(mu_med_pop, mu_med_sd);  // Assuming you want to use the same SD
+  log_sigma_mod ~ normal(log_sigma_mod_pop, log_sigma_med_sd);
+  log_sigma_med ~ normal(log_sigma_med_pop, log_sigma_med_sd);  // Assuming same SD
   
   // Likelihood
   for (n in 1:N) {
@@ -85,8 +70,6 @@ model {
     target += log_mix(w[n],
                 normal_lpdf(x[n] | x_med[n] + mu_med[j], sigma_med[j]),
                 normal_lpdf(x[n] | x_mod[n] + mu_mod[j], sigma_mod[j]));
-    // AGH this is not the weighted part ... 
-    // ALso do the weighted part ... 
   }
 }
 
@@ -99,21 +82,21 @@ generated quantities {
     int j = id[n];
     
     log_lik[n] = log_mix(w[n],
-                normal_lpdf(x[n] | x_med[n] + mu_med[j], sigma_med[j]),
-                normal_lpdf(x[n] | x_mod[n] + mu_mod[j], sigma_mod[j]));
+                         normal_lpdf(x[n] | x_med[n] + mu_med[j], sigma_med[j]),
+                         normal_lpdf(x[n] | x_mod[n] + mu_mod[j], sigma_mod[j]));
 
-    // Generate posterior predictive samples
-    real normal_sample = normal_rng(x_med[n] + mu_med[j], sigma_med[j]);
-    real normal_sample2 = normal_rng(x_mod[n] + mu_mod[j], sigma_mod[j]);
-
-    // Weighted average using the observation-specific weight w[n]
-    y_rep[n] = w[n] * normal_sample + (1 - w[n]) * normal_sample2;
+    // Sample component indicator using w[n] as the probability
+    int component = bernoulli_rng(w[n]);
+    
+    // Sample from the selected component
+    if (component == 1) {
+      // If component = 1, sample from the first component (median)
+      y_rep[n] = normal_rng(x_med[n] + mu_med[j], sigma_med[j]);
+    } else {
+      // If component = 0, sample from the second component (mode)
+      y_rep[n] = normal_rng(x_mod[n] + mu_mod[j], sigma_mod[j]);
+    }
   }
 }
-
-// Note: weighted average between two normals is conceptuall distinct and outcome distinc than weighted average of two normals 
-// weighted average is normal, but the mixture can be bimodal 
-// say this this is the normal approximation 
-// run more studies! 
 
 
