@@ -24,10 +24,10 @@ parameters {
   vector[J] mu_mod_z;
   vector[J] mu_med_z;
   vector[J] log_sigma_mod_z;
-  vector[J] log_sigma_med_z;
+  vector[J] log_sigma_med_z; 
   
   // Difference between sigma_med and sigma_mod (to ensure sigma_med > sigma_mod)
-  vector<lower=0>[J] sigma_diff;
+  vector<lower=0>[J] sigma_diff; // take this away 
 }
 
 transformed parameters {
@@ -44,7 +44,7 @@ transformed parameters {
   for (j in 1:J) {
     // Transform log parameters to natural scale
     sigma_mod[j] = exp(log_sigma_mod_pop + log_sigma_pop_sd * log_sigma_mod_z[j]);
-    sigma_med[j] = sigma_mod[j] + sigma_diff[j]; // Ensuring sigma_med > sigma_mod
+    sigma_med[j] = sigma_mod[j] + sigma_diff[j]; // Ensuring sigma_med > sigma_mod // change this part to be same as above ... 
   }
   
   // Weights for each observation
@@ -61,21 +61,23 @@ transformed parameters {
 
 model {
   // Hyper-priors for population-level parameters
-  mu_mod_pop ~ normal(mu_pop_mean, 0.1);  // Informative prior based on brms fit
-  mu_med_pop ~ normal(mu_pop_mean, 0.1);  // Informative prior based on brms fit
+  mu_mod_pop ~ normal(mu_pop_mean, 1);  // Informative prior based on brms fit
+  mu_med_pop ~ normal(mu_pop_mean, 1);  // Informative prior based on brms fit
+  // try bigger variance alongside smaller variance, need to cover reasonable space  
+  // strong priors = strong epistemeological statement ... 
   
   // Log-scale priors for sigma parameters
-  log_sigma_mod_pop ~ normal(log_sigma_pop_mean, 0.1);  // Informative prior from brms
-  log_sigma_med_pop ~ normal(log_sigma_pop_mean, 0.1);  // Using same prior for now
+  log_sigma_mod_pop ~ normal(log_sigma_pop_mean, 1);  // Informative prior from brms
+  log_sigma_med_pop ~ normal(log_sigma_pop_mean, 1);  // Using same prior for now
   
   // Standard normal priors for non-centered parameters
   mu_mod_z ~ normal(0, 1);
   mu_med_z ~ normal(0, 1);
   log_sigma_mod_z ~ normal(0, 1);
-  log_sigma_med_z ~ normal(0, 1);
+  log_sigma_med_z ~ normal(0, 1); // use std_normal() 
   
   // Prior for sigma difference
-  sigma_diff ~ normal(0, 0.1);
+  sigma_diff ~ normal(0, 0.1); // TODO -- change 
   
   // Likelihood
   for (n in 1:N) {
@@ -83,6 +85,8 @@ model {
     target += log_mix(w[n],
                 normal_lpdf(x[n] | x_med[n] + mu_med[j], sigma_med[j]),
                 normal_lpdf(x[n] | x_mod[n] + mu_mod[j], sigma_mod[j]));
+    // AGH this is not the weighted part ... 
+    // ALso do the weighted part ... 
   }
 }
 
@@ -106,3 +110,10 @@ generated quantities {
     y_rep[n] = w[n] * normal_sample + (1 - w[n]) * normal_sample2;
   }
 }
+
+// Note: weighted average between two normals is conceptuall distinct and outcome distinc than weighted average of two normals 
+// weighted average is normal, but the mixture can be bimodal 
+// say this this is the normal approximation 
+// run more studies! 
+
+

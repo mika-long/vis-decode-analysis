@@ -25,6 +25,7 @@ theme_set(theme_minimal())
 library(brms)
 # plot results 
 library(tidybayes)
+library(cmdstanr)
 ```
 
 # Set up
@@ -155,6 +156,8 @@ task1_df <- task_df %>% filter(task == "task1") %>% # task_df
 
 ```{r}
 #| eval: false 
+
+# go and delete the installed cmdstanr ... 
 model <- cmdstan_model("stan_files/task1.hierarchical.stan")
 model
 ``` 
@@ -167,12 +170,20 @@ N <- task1_df %>% nrow(.)
 x <- task1_df %>% pull(va.select.x)
 x_med <- task1_df %>% pull(va.med.x)
 x_mod <- task1_df %>% pull(va.mod.x)
+J <- length(unique(task1_df$participant_id))
 
 stan_data <- list(
   N = N, 
+  J = J, 
+  id = task1_df$participant_id, 
   x = x, 
   x_med = x_med, 
-  x_mod = x_mod
+  x_mod = x_mod, 
+  # Informative priors from brms fit
+  mu_pop_mean = 0.01,            # Mean of participant intercepts
+  mu_pop_sd = 0.06,              # SD of participant intercepts
+  log_sigma_pop_mean = -1.30,    # Mean of log(sigma) - KEEPING ON LOG SCALE
+  log_sigma_pop_sd = 0.20    
 )
 ```
 
