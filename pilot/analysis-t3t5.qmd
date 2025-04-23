@@ -181,9 +181,9 @@ f <- bf(error_va ~ (1 | participantId),
  
 p <- c(
   prior(normal(0, 1), class = Intercept),
-  prior(cauchy(0, 1), class = sd, group = participantId, lb = 0), 
+  prior(normal(0, 1), class = sd, group = participantId, lb = 0), 
   prior(normal(0, 1), class = Intercept, dpar = "sigma"), 
-  prior(cauchy(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
+  prior(normal(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
 )
 ```
 
