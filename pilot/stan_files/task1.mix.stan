@@ -61,7 +61,7 @@ model {
   // Centered parameterization - directly model the parameters with their hierarchical priors
   mu_mod ~ normal(mu_mod_pop, mu_mod_sd);
   mu_med ~ normal(mu_med_pop, mu_med_sd);  // Assuming you want to use the same SD
-  log_sigma_mod ~ normal(log_sigma_mod_pop, log_sigma_med_sd);
+  log_sigma_mod ~ normal(log_sigma_mod_pop, log_sigma_mod_sd);
   log_sigma_med ~ normal(log_sigma_med_pop, log_sigma_med_sd);  // Assuming same SD
   
   // Likelihood
