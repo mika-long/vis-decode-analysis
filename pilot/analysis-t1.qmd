@@ -127,3 +127,64 @@ participants %>% left_join(true_ball_pos) %>%
   rename(dist_to_screen = d) -> participants
 ```
 
+# Task 1 
+
+Load data: 
+
+```{r}
+#| code-fold: true 
+
+task1_df <- task_df %>% filter(task == "task1") %>% # task_df
+  select(-slider.x, -slider.y) %>% 
+  left_join(participants, by = join_by(participantId)) %>% 
+  mutate(data.select.left_area = psgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE), 
+         data.ans.x = qsgt(0.5, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)) %>% 
+  # pixel related 
+  mutate(pixel.med.x = data_to_pixel_x(data.ans.x), 
+         pixel.mod.x = data_to_pixel_x(param.mu)) %>% 
+  # phy related 
+  mutate(phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM), 
+         phy.med.x = pixel_to_phy_x(pixel.med.x, pixelToMM), 
+         phy.mod.x = pixel_to_phy_x(pixel.mod.x, pixelToMM)) %>% 
+  # visual angle related 
+  mutate(va.select.x = vis_angle(phy.select.x, dist_to_screen), 
+         va.med.x = vis_angle(phy.med.x, dist_to_screen), 
+         va.mod.x = vis_angle(phy.mod.x, dist_to_screen))
+```
+
+
+```{r}
+#| eval: false 
+model <- cmdstan_model("stan_files/task1.hierarchical.stan")
+model
+``` 
+
+Prepare data for stan: 
+
+```{r}
+#| eval: false 
+N <- task1_df %>% nrow(.)
+x <- task1_df %>% pull(va.select.x)
+x_med <- task1_df %>% pull(va.med.x)
+x_mod <- task1_df %>% pull(va.mod.x)
+
+stan_data <- list(
+  N = N, 
+  x = x, 
+  x_med = x_med, 
+  x_mod = x_mod
+)
+```
+
+Fit the stan model: 
+
+```{r}
+#| output: false 
+#| eval: false 
+
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  # parallel_chains = 4
+)
+```
