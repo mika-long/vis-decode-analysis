@@ -230,6 +230,7 @@ Check fit and posterior:
 summary(m.5.x.va)
 plot(m.5.x.va)
 pp_check(m.5.x.va, ndraws = 100)
+pp_check(m.5.x.va, ndraws = 100, type = "pit_ecdf")
 ```
 
 Average effect: 
@@ -257,7 +258,7 @@ task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   add_epred_draws(m.5.x.va, dpar = "sigma", re_formula = NA)
 
 prediction_grid <- task5_df %>% data_grid(va.ans.y = seq_range(va.ans.y, n = 50)) %>% 
-  add_predicted_draws(m.5.x.va, re_formula = NA, ndraws = 100)
+  add_predicted_draws(m.5.x.va, re_formula = NA)
 
 ggplot(prediction_grid, aes(x = va.ans.y, y = .prediction)) + 
   stat_lineribbon(
@@ -302,9 +303,9 @@ f <- bf(error_va ~ (1 | participantId),
 
 p <- c(
   prior(normal(0, 1), class = Intercept),
-  prior(cauchy(0, 1), class = sd, group = participantId, lb = 0), 
+  prior(normal(0, 1), class = sd, group = participantId, lb = 0), 
   prior(normal(0, 1), class = Intercept, dpar = "sigma"), 
-  prior(cauchy(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
+  prior(normal(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
 )
 ```
 
@@ -351,20 +352,22 @@ Check fit and posterior:
 summary(m.5.y.va)
 plot(m.5.y.va)
 pp_check(m.5.y.va, ndraws = 100)
+pp_check(m.5.y.va, ndraws = 100, type = "pit_ecdf")
 ```
 
 Plot results: 
 
 ```{r}
 prediction_grid <- task5_df %>% data_grid(va.ans.x = seq_range(va.ans.x, n = 50)) %>% 
-  add_predicted_draws(m.5.y.va, re_formula = NA, ndraws = 100)
+  add_predicted_draws(m.5.y.va, re_formula = NA)
 
 ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) + 
   stat_lineribbon(
     .width = c(.95, .80, .50),
     alpha = 0.5, 
     size = 0.5
-  ) + scale_fill_brewer(palette = "Blues")  + 
+  ) + 
+  scale_fill_brewer(palette = "Blues")  + 
   geom_point(data = task5_df, 
              aes(y = va.select.y - va.ans.y, x = va.ans.x), 
              alpha = 0.8, 
