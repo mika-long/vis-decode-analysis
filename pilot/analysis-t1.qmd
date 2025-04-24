@@ -36,26 +36,8 @@ Read in data
 #| label: read-in-data
 #| code-fold: true
 
-df1 <- read.csv("pilot-01.csv") %>% as_tibble(.)
-
-df <- read.csv("pilot-02.csv") %>% as_tibble(.) %>% 
-  bind_rows(df1)
-
-exclude_participants <- c("67fd4f955123c6d79ae66a3a", "67eedf7be13ffb77c677d4dd", "6443ebb84fc33e703937a6f9")
-
-task_df <- df %>% filter(status == "completed") %>% 
-  select(participantId, trialId, responseId, answer) %>%
-  filter(str_detect(trialId, "task")) %>%
-  mutate(answer = as.numeric(answer)) %>% 
-  pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
-  separate_wider_delim(trialId, delim = "_", names = c("task", "type", "id")) %>% 
-  filter(type != "train") %>% 
-  select(-type) %>% 
-  rename(data.select.x = location.x, 
-         data.select.y = location.y,
-         pixel.select.x = pixel.x, 
-         pixel.select.y = pixel.y) %>% 
-  filter(!participantId %in% exclude_participants)
+task_df <- read_rds("task.rds")
+participants <- read_rds("participants.rds")
 ```
 
 ```{r}
@@ -87,47 +69,6 @@ vis_angle <- function(size, distance){
 tolerance <- 1e-10
 ```
 
-```{r}
-#| label: define-special-dfs
-#| code-fold: true
-
-p <- df %>% filter(status == "completed") %>% 
-  select(participantId, trialId, responseId, answer) %>% 
-  filter(grepl("calibration", trialId))
-
-p %>% filter(responseId == "ball-positions") %>% 
-  select(participantId, answer) %>% 
-  mutate(answer = gsub("\\[|\\]", "", answer)) %>% 
-  mutate(split_answer = str_split(answer, ",")) %>% 
-  mutate(numeric_vectors = map(split_answer, ~ as.numeric(.x))) %>% 
-  unnest(split_answer) %>% 
-  mutate(split_answer = as.numeric(split_answer)) %>% 
-  group_by(participantId) %>% 
-  summarise(avg.ball.pos = sum(split_answer) / 5, 
-            min.ball.pos = min(split_answer),
-            max.ball.pos = max(split_answer)) -> avg_ball_pos
-
-avg_ball_pos %>% mutate(true_ball_pos = (avg.ball.pos * 5 - min.ball.pos - max.ball.pos)/3) %>% 
-  select(participantId, true_ball_pos) -> true_ball_pos
-
-participants <- p %>% filter(grepl("pixelsPerMM|dist-calibration-MM", responseId)) %>%
-  select(-trialId) %>%
-  mutate(answer = as.numeric(answer)) %>%
-  pivot_wider(names_from = responseId, values_from = answer) %>%
-  rename(pixelToMM = pixelsPerMM, dist_to_screen = `dist-calibration-MM`) %>%
-  filter(!participantId %in% exclude_participants) %>%
-  left_join(avg_ball_pos) %>% 
-  mutate(phy = dist_to_screen * tan(13.5 * pi / 180), 
-         px = phy * pixelToMM, 
-         square_pos = round(px + avg.ball.pos))
-
-participants %>% left_join(true_ball_pos) %>% 
-  mutate(ball.square.dist = (square_pos - true_ball_pos) / pixelToMM, 
-         d = ball.square.dist / tan(13.5 * pi / 180)) %>% 
-  select(participantId, pixelToMM, d) %>% 
-  rename(dist_to_screen = d) -> participants
-```
-
 # Task 1 
 
 Load data: 
@@ -137,7 +78,7 @@ Load data:
 
 task1_df <- task_df %>% filter(task == "task1") %>% # task_df
   select(-slider.x, -slider.y) %>% 
-  left_join(participants, by = join_by(participantId)) %>% 
+  right_join(participants, by = join_by(participantId)) %>% 
   mutate(data.select.left_area = psgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE), 
          data.ans.x = qsgt(0.5, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)) %>% 
   # pixel related 
@@ -157,8 +98,7 @@ task1_df <- task_df %>% filter(task == "task1") %>% # task_df
 ```{r}
 #| eval: false 
 
-# go and delete the installed cmdstanr ... 
-model <- cmdstan_model("stan_files/task1.hierarchical.stan")
+model <- cmdstan_model("stan_files/task1.weighted.avg.stan")
 model
 ``` 
 
@@ -166,11 +106,12 @@ Prepare data for stan:
 
 ```{r}
 #| eval: false 
+
 N <- task1_df %>% nrow(.)
+J <- length(unique(task1_df$participantId))
 x <- task1_df %>% pull(va.select.x)
 x_med <- task1_df %>% pull(va.med.x)
 x_mod <- task1_df %>% pull(va.mod.x)
-J <- length(unique(task1_df$participant_id))
 
 stan_data <- list(
   N = N, 
@@ -178,12 +119,7 @@ stan_data <- list(
   id = task1_df$participant_id, 
   x = x, 
   x_med = x_med, 
-  x_mod = x_mod, 
-  # Informative priors from brms fit
-  mu_pop_mean = 0.01,            # Mean of participant intercepts
-  mu_pop_sd = 0.06,              # SD of participant intercepts
-  log_sigma_pop_mean = -1.30,    # Mean of log(sigma) - KEEPING ON LOG SCALE
-  log_sigma_pop_sd = 0.20    
+  x_mod = x_mod
 )
 ```
 
@@ -195,7 +131,11 @@ Fit the stan model:
 
 fit <- model$sample(
   data = stan_data, 
-  chains = 4, 
+  chains = 4 # , 
   # parallel_chains = 4
 )
 ```
+
+
+
+
