@@ -35,26 +35,8 @@ Read in data
 #| label: read-in-data
 #| code-fold: true
 
-df1 <- read.csv("pilot-01.csv") %>% as_tibble(.)
-
-df <- read.csv("pilot-02.csv") %>% as_tibble(.) %>% 
-  bind_rows(df1)
-
-exclude_participants <- c("67fd4f955123c6d79ae66a3a", "67eedf7be13ffb77c677d4dd", "6443ebb84fc33e703937a6f9")
-
-task_df <- df %>% filter(status == "completed") %>% 
-  select(participantId, trialId, responseId, answer) %>%
-  filter(str_detect(trialId, "task")) %>%
-  mutate(answer = as.numeric(answer)) %>% 
-  pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
-  separate_wider_delim(trialId, delim = "_", names = c("task", "type", "id")) %>% 
-  filter(type != "train") %>% 
-  select(-type) %>% 
-  rename(data.select.x = location.x, 
-         data.select.y = location.y,
-         pixel.select.x = pixel.x, 
-         pixel.select.y = pixel.y) %>% 
-  filter(!participantId %in% exclude_participants)
+task_df <- read_rds("task.rds")
+participants <- read_rds("participants.rds")
 ```
 
 ```{r}
@@ -86,53 +68,10 @@ vis_angle <- function(size, distance){
 tolerance <- 1e-10
 ```
 
-```{r}
-#| label: define-special-dfs
-#| code-fold: true
-
-p <- df %>% filter(status == "completed") %>% 
-  select(participantId, trialId, responseId, answer) %>% 
-  filter(grepl("calibration", trialId))
-
-p %>% filter(responseId == "ball-positions") %>% 
-  select(participantId, answer) %>% 
-  mutate(answer = gsub("\\[|\\]", "", answer)) %>% 
-  mutate(split_answer = str_split(answer, ",")) %>% 
-  mutate(numeric_vectors = map(split_answer, ~ as.numeric(.x))) %>% 
-  unnest(split_answer) %>% 
-  mutate(split_answer = as.numeric(split_answer)) %>% 
-  group_by(participantId) %>% 
-  summarise(avg.ball.pos = sum(split_answer) / 5, 
-            min.ball.pos = min(split_answer),
-            max.ball.pos = max(split_answer)) -> avg_ball_pos
-
-avg_ball_pos %>% mutate(true_ball_pos = (avg.ball.pos * 5 - min.ball.pos - max.ball.pos)/3) %>% 
-  select(participantId, true_ball_pos) -> true_ball_pos
-
-participants <- p %>% filter(grepl("pixelsPerMM|dist-calibration-MM", responseId)) %>%
-  select(-trialId) %>%
-  mutate(answer = as.numeric(answer)) %>%
-  pivot_wider(names_from = responseId, values_from = answer) %>%
-  rename(pixelToMM = pixelsPerMM, dist_to_screen = `dist-calibration-MM`) %>%
-  filter(!participantId %in% exclude_participants) %>%
-  left_join(avg_ball_pos) %>% 
-  mutate(phy = dist_to_screen * tan(13.5 * pi / 180), 
-         px = phy * pixelToMM, 
-         square_pos = round(px + avg.ball.pos))
-
-participants %>% left_join(true_ball_pos) %>% 
-  mutate(ball.square.dist = (square_pos - true_ball_pos) / pixelToMM, 
-         d = ball.square.dist / tan(13.5 * pi / 180)) %>% 
-  select(participantId, pixelToMM, d) %>% 
-  rename(dist_to_screen = d) -> participants
-```
-
 # Task 4 --- find highest slope 
 
 ```{r}
 #| label: get task 4 data 
-
-epsilon <- 1e-10
 
 data_to_screen_slope <- function(k){
   return(k * 395 / 53.5)
@@ -142,14 +81,14 @@ task4_df <- task_df %>% filter(task == "task4") %>%
   select(-slider.x, -slider.y) %>% 
   mutate(data.select.slope = dsgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE), 
          data.ans.slope = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE)) %>% 
-  left_join(participants, by = join_by(participantId)) %>% 
+  right_join(participants, by = join_by(participantId)) %>% 
   mutate(phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM), 
          phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM),
          va.select.x = vis_angle(phy.select.x, dist_to_screen), 
          va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>%
   mutate(data.ans.x = param.mu, 
-         data.ans.y = 1 / 2 * (psgt(data.ans.x + epsilon, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE) +  
-                                            psgt(data.ans.x - epsilon, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE))) %>%
+         data.ans.y = 1 / 2 * (psgt(data.ans.x + tolerance, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE) +  
+                                            psgt(data.ans.x - tolerance, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE))) %>%
   mutate(pixel.ans.x = data_to_pixel_x(data.ans.x), 
          pixel.ans.y = data_to_pixel_y(data.ans.y)) %>% 
   mutate(phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM), 
@@ -162,6 +101,10 @@ task4_df <- task_df %>% filter(task == "task4") %>%
 Check relations 
 
 ```{r}
+task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) + 
+  geom_dots()
+
+
 task4_df %>% ggplot(aes(x = va.ans.x - va.select.x)) + geom_dots()
 task4_df %>% ggplot(aes(x = va.ans.y - va.select.y)) + geom_dots()
 task4_df %>% ggplot(aes(x = atan(va.ans.y / va.ans.x) * 180 / pi)) + geom_dots()
@@ -176,8 +119,7 @@ task4_df %>% filter(data.select.slope - data.ans.slope == 0)
 task4_df %>% ggplot(aes(x = atan(data.select.slope) * 180 / pi - atan(data.ans.slope) * 180 / pi)) + 
   geom_dots()
 
-task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) + 
-  geom_dots()
+
 
 task4_df %>% ggplot(aes(x = atan(data_to_screen_slope(data.select.slope)) * 180 / pi - atan(data_to_screen_slope(data.ans.slope)) * 180 / pi)) + 
   # geom_dots()
@@ -260,7 +202,7 @@ f <- bf(error ~ 0,
 # mu has log-link, so we don't pose any bounds on it 
 p <- c(
   prior(normal(0, 1), class = Intercept), 
-  prior(cauchy(0, 1), class = sd, group = participantId, lb = 0)
+  prior(normal(0, 1), class = sd, group = participantId, lb = 0)
 )
 ```
 
@@ -290,7 +232,8 @@ model.exponential <- task4_df %>%
       chains = 4, 
       file = "models/task4.exponential", 
       file_refit = "on_change",
-      save_pars = save_pars(all = TRUE)
+      save_pars = save_pars(all = TRUE), 
+      iter = 6000
   )
 ```
 
@@ -298,12 +241,9 @@ Check fit:
 
 ```{r}
 summary(model.exponential)
-```
-
-```{r}
 plot(model.exponential)
 pp_check(model.exponential, ndraws = 100)
-pp_check(model.exponential, ndraws = 100, type = "pit_ecdf") # per Matt's suggestion 
+pp_check(model.exponential, ndraws = 100, type = "pit_ecdf")
 ```
 
 ```{r}
@@ -322,7 +262,7 @@ Overlay plot:
 prediction <- task4_df %>% 
   mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
   mutate(error = ifelse(abs(error) < tolerance, tolerance, error)) %>% 
-  add_predicted_draws(model.exponential, ndraws = 100)
+  add_predicted_draws(model.exponential, re_formula = NA)
 
 prediction %>% ggplot() + 
   stat_slab(aes(x = .prediction), 
@@ -390,7 +330,7 @@ task4_df %>%  mutate(error = abs(data_to_screen_slope(data.select.slope) - data_
   mutate(error = ifelse(error < tolerance, tolerance, error)) %>% 
   get_prior(formula = f, family = lomax_family)
 
-task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>% 
+task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + tolerance) %>% 
   make_stancode(formula = f, family = lomax_family, prior = p)
 ```
 
@@ -509,7 +449,7 @@ task4_df %>%  mutate(error = abs(data_to_screen_slope(data.select.slope) - data_
   mutate(error = ifelse(error < tolerance, tolerance, error)) %>% 
   get_prior(formula = f)
 
-task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>% 
+task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + tolerance) %>% 
   make_stancode(formula = f, prior = p)
 ```
 
@@ -526,9 +466,11 @@ model.weibull <- task4_df %>%
       data = ., 
       prior = p, 
       chains = 4, 
+      cores = 4, 
       file = "models/task4.weibull", 
       file_refit = "on_change",
       save_pars = save_pars(all = TRUE), 
+      iter = 6000 
   )
 ```
 
@@ -560,11 +502,11 @@ Overlay plot:
 #   mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>% 
 #   add_predicted_draws(model.weibull, ndraws = 100)
 
-task4_df %>% modelr::data_grid(error = 0, participantId = unique(participantId)) %>% 
-  add_predicted_draws(model.weibull, ndraws = 100) %>% 
+task4_df %>% modelr::data_grid(error = 0) %>% 
+  add_predicted_draws(model.weibull, re_formula = NA) %>% 
   ggplot() + 
   stat_slab(aes(x = .prediction), 
-            fill = "lightblue", alpha = 1) # + 
+            fill = "lightblue", alpha = 1) + 
   geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) 
 
 task4_df %>% modelr::data_grid(error = 0, participantId = unique(participantId)) %>% 
@@ -592,7 +534,7 @@ task4_df %>% modelr::data_grid(error = 0) %>%
 
 ```{r}
 task4_df %>% modelr::data_grid(error = 0) %>% 
-  add_predicted_draws(model.weibull, ndraws = 100, re_formula = NA) %>% 
+  add_predicted_draws(model.weibull, re_formula = NA) %>% 
   ggplot() + 
   stat_slab(aes(x = .prediction), 
             fill = "lightblue", alpha = 1) + 

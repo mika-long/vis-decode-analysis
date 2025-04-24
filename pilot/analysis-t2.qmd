@@ -459,7 +459,8 @@ task2_df %>% modelr::data_grid(error.y = 0) %>%
             fill = "lightblue", alpha = 1) + 
   geom_dots(data = task2_df, aes(x = va.ans.y - va.select.y)) + 
   labs(y = "Probability", x = "Signed error") + 
-  theme_minimal(base_size = 8) -> p
+  theme_minimal(base_size = 8) + 
+  xlim(0, 0.5) -> p
 
 p
 ```
@@ -640,9 +641,9 @@ f <- bf(error.x ~ 0,
 # sigma has log-link, so we don't pose any bounds on it 
 p <- c(
   prior(normal(0, 1), class = Intercept), 
-  prior(cauchy(0, 1), class = sd, group = participantId, lb = 0), 
+  prior(normal(0, 1), class = sd, group = participantId, lb = 0), 
   prior(normal(0, 1), class = Intercept, dpar = sigma), 
-  prior(cauchy(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
+  prior(normal(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
 )
 ```
 
@@ -670,8 +671,9 @@ model.x.normal <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
     prior = p,
     chains = 4,
     file = "models/task2.x.normal", 
-    file_refit = "on_change"
-    # control = list(adapt_delta = 0.95)
+    file_refit = "on_change",
+    control = list(adapt_delta = 0.99),
+    iter = 6000
   )
 ```
 
@@ -705,11 +707,8 @@ model.x.normal %>% spread_draws(b_Intercept, b_sigma_Intercept) %>%
 Plot lineribbon: 
 
 ```{r}
-prediction <- task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
-                                  # error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)
-                                  ) %>%
-  add_predicted_draws(model.x.normal, re_formula = NULL, ndraws = 100)
-
+prediction <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
+  add_predicted_draws(model.x.normal, re_formula = NA)
 
 task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
                     error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)) %>% 
@@ -767,9 +766,9 @@ f <- bf(error.x ~ 0,
 # define prior 
 p <- c(
   prior(normal(0, 1), class = "Intercept"), 
-  prior(cauchy(0, 1), class = "sd", group = participantId, lb = 0),
+  prior(normal(0, 1), class = "sd", group = participantId, lb = 0),
   prior(normal(0, 1), class = "Intercept", dpar ="sigma"), 
-  prior(cauchy(0, 1), class = "sd", group = participantId, dpar ="sigma", lb = 0)
+  prior(normal(0, 1), class = "sd", group = participantId, dpar ="sigma", lb = 0)
 )
 ```
 
@@ -798,7 +797,6 @@ Fit the model:
 #| label: fix x laplace 
 
 model.x.laplace <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
-  # mutate(error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)) %>% 
   brm(
     formula = f, 
     family = laplace_family, 
@@ -847,6 +845,7 @@ Posterior predictive check:
 
 ```{r}
 pp_check(model.x.laplace, ndraws = 100)
+pp_check(model.x.laplace, ndraws = 100, type = "pit_ecdf")
 ```
 
 Plot posterior distribution: 
@@ -864,12 +863,12 @@ Plot posterior predictive distribution on top:
 ```{r}
 task2_df %>% # mutate(error.x = va.select.x - va.ans.x) %>%
   modelr::data_grid(error.x = 0) %>% 
-  add_predicted_draws(model.x.laplace, ndraws = 100, re_formula = NA) %>% 
+  add_predicted_draws(model.x.laplace, re_formula = NA) %>% 
   ggplot() + 
   stat_slab(aes(x = .prediction), 
             fill = "skyblue", alpha = 0.6) + 
   geom_dots(data = task2_df, aes(x = va.select.x - va.ans.x)) + 
-  labs(y = "Probability", x = "Signed error (On X)", title = "Task 2") + 
+  labs(y = "Probability", x = "Signed error (on X)") + 
   theme_minimal(base_size = 8) -> p 
 
 ggsave("plots/task2.x.laplace.pdf", plot = p, height = 5, width = 5, units = "cm", dpi = 300)
