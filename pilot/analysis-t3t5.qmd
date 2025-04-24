@@ -85,7 +85,7 @@ task5_df <- task_df %>% filter(task == "task5") %>% # or use task_df for full
          data.ans.y = data.select.y, 
          data.select.x = slider.x, 
          data.select.y = slider.y) %>% 
-  left_join(participants, by = join_by(participantId)) %>% 
+  right_join(participants, by = join_by(participantId)) %>% 
   # do all the calculations for user's selected 
   mutate(pixel.select.x = data_to_pixel_x(data.select.x), 
          pixel.select.y = data_to_pixel_y(data.select.y), 
@@ -197,12 +197,23 @@ Plot existing data on top of prediction:
 ```{r}
 # for an average participant 
 
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>% 
+  count(participantId) # %>% 
+  summarise(mean = mean(error_va), sd = sd(error_va))
+
 task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   # account for numerical precision 
   mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
   data_grid(va.ans.y = seq_range(va.ans.y, n = 101)) %>% 
   mutate(error_va = 0) %>% 
   add_epred_draws(m.5.x.va, dpar = "sigma", re_formula = NA)
+
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>% 
+  filter(error_va > 0.4) %>% 
+  ggplot() + 
+  geom_point(aes(x = data.ans.x, y = data.ans.y, color = "ans")) + 
+  geom_point(aes(x = data.select.x, y = data.select.y, color = "select")) + 
+  xlim(-5, 5) + ylim(0, 1)
 
 prediction_grid <- task5_df %>% data_grid(va.ans.y = seq_range(va.ans.y, n = 50)) %>% 
   add_predicted_draws(m.5.x.va, re_formula = NA)
@@ -219,7 +230,7 @@ ggplot(prediction_grid, aes(x = va.ans.y, y = .prediction)) +
   theme(legend.position = "none") -> p1 # + 
   # theme(text = element_text(family = "Helvetica Neue")) -> p
 
-p1
+
 ```
 
 ```{r}
@@ -368,7 +379,7 @@ Get data:
 
 task3_df <- task_df %>% filter(task == "task3") %>% 
   select(-slider.x, -slider.y) %>% 
-  left_join(participants, by = join_by(participantId)) %>% 
+  right_join(participants, by = join_by(participantId)) %>% 
   # do all the calculations for user's selected 
   mutate(pixel.select.x = data_to_pixel_x(data.select.x), 
          pixel.select.y = data_to_pixel_y(data.select.y), 
