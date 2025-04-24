@@ -8,49 +8,61 @@ data {
 }
 
 parameters {
-  // intercept for x_med and x_mod
-  real mu_mod;
-  real mu_med;
+  // Population-level parameters 
+  real mu_mod_mean;
+  real<lower=0> mu_mod_sd; 
+  real mu_med_mean;
+  real<lower=0> mu_med_sd; 
   
   // standard deviations for x_med and x_mod
-  real<lower=0> sigma_mod;
-  real<lower=sigma_mod> sigma_med; // difference between sigmas
+  real log_sigma_mod_mean; 
+  real<lower=0> log_sigma_mod_sd; 
+  real log_sigma_med_mean; 
+  real<lower=0> log_sigma_med_sd;
+
+  // Particiipant-level parameters
+  vector[J] mu_mod; 
+  vector<lower=0>[J] sigma_mod; 
+  vector[J] mu_med; 
+  vector<lower=0>[J] sigma_med; 
 }
 
 transformed parameters {
   vector<lower=0, upper=1>[N] theta; // weight 
-  real inv_mse_med = 1 / (square(mu_med) + square(sigma_med)); 
+  vector[N] inv_mse_med;
   vector[N] inv_mse_mod;  
 
   for (n in 1:N) {
-    inv_mse_mod[n] = 1 / (square(x_mod[n] - x_med[n] + mu_mod) + square(sigma_mod)); 
+    int j = id[n]; 
+    inv_mse_med[n] = 1 / (square(mu_med[j]) + square(sigma_med[j])); 
+    inv_mse_mod[n] = 1 / (square(x_mod[n] - x_med[n] + mu_mod[j]) + square(sigma_mod[j])); 
 
-    theta[n] = inv_mse_med / (inv_mse_med + inv_mse_mod[n]); 
+    theta[n] = inv_mse_med[n] / (inv_mse_med[n] + inv_mse_mod[n]); 
   }
 }
 
 model {
   // priors
-  mu_mod_mean ~ normal(); 
-  log_mu_mod_sd ~ normal(); 
-  sigma_mod_mean ~ normal(); 
-  log_sigma_mod_sd ~ normal(); 
+  mu_mod_mean ~ normal(0.01, 0.02); 
+  mu_mod_sd ~ normal(0.04, 0.03); 
+  log_sigma_mod_mean ~ normal(-1.37, 0.10); 
+  log_sigma_mod_sd ~ normal(0.34, 0.10); 
 
-  mu_med_mean ~ normal(); 
-  log_mu_med_sd ~ normal(); 
-  sigma_med_mean ~ normal(); 
-  log_sigma_med_sd ~ normal(); 
+  mu_med_mean ~ normal(0, 1); 
+  mu_med_sd ~ normal(0, 1); 
+  log_sigma_med_mean ~ normal(0, 1); 
+  log_sigma_med_sd ~ normal(0, 1); 
 
   for (j in 1:J){
-    mu_mod[j] ~ normal(mu_mod_mean, exp(log_mu_mod_sd));
-    sigma_mod[j] ~ normal(sigma_mod_mean, exp(log_sigma_mod_sd)); 
-    mu_med[j] ~ normal(mu_med_mean, exp(log_mu_med_sd)); 
-    sigma_med[j] ~ normal(sigma_med_mean, exp(log_sigma_med_sd)); 
+    mu_mod[j] ~ normal(mu_mod_mean, mu_mod_sd);
+    sigma_mod[j] ~ exp(normal(log_sigma_mod_mean, log_sigma_mod_sd)); 
+    mu_med[j] ~ normal(mu_med_mean, mu_med_sd); 
+    sigma_med[j] ~ exp(normal(log_sigma_med_mean, log_sigma_med_sd)); 
   }
 
   // likelihood
   for (n in 1:N) {
-    j = id[n]; 
+    int j = id[n]; 
     target += normal_lpdf(x[n] | theta[n] * (x_med[n] + mu_med[j]) + (1 - theta[n]) * (x_mod[n] + mu_mod[j]),
                                  sqrt(square(theta[n]) * square(sigma_med[j]) + square(1 - theta[n]) * square(sigma_mod[j]))); 
   }
@@ -61,7 +73,7 @@ generated quantities {
   vector[N] x_org = x;
   
   for (n in 1:N) {
-    j = id[n]; 
+    int j = id[n]; 
     log_lik[n] = normal_lpdf(x[n] | theta[n] * (x_med[n] + mu_med[j]) + (1 - theta[n]) * (x_mod[n] + mu_mod[j]),
                                  sqrt(square(theta[n]) * square(sigma_med[j]) + square(1 - theta[n]) * square(sigma_mod[j])));  
 
