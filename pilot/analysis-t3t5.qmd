@@ -196,11 +196,6 @@ Plot existing data on top of prediction:
 
 ```{r}
 # for an average participant 
-
-task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>% 
-  count(participantId) # %>% 
-  summarise(mean = mean(error_va), sd = sd(error_va))
-
 task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   # account for numerical precision 
   mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
@@ -230,7 +225,7 @@ ggplot(prediction_grid, aes(x = va.ans.y, y = .prediction)) +
   theme(legend.position = "none") -> p1 # + 
   # theme(text = element_text(family = "Helvetica Neue")) -> p
 
-
+p1
 ```
 
 ```{r}
