@@ -611,6 +611,8 @@ log_lik_lomax <- function(i, prep) {
 Loo comparison 
 
 ```{r}
+loo(model.y.exponential, model.y.lognormal, model.y.weibull, moment_match = TRUE)
+
 loo(model.y.lomax, model.y.exponential, model.y.lognormal, model.y.gamma, model.y.weibull, 
     moment_match = TRUE, reloo = TRUE ) 
 ```
