@@ -35,26 +35,8 @@ Read in data
 #| label: read-in-data
 #| code-fold: true
 
-df1 <- read.csv("pilot-01.csv") %>% as_tibble(.)
-
-df <- read.csv("pilot-02.csv") %>% as_tibble(.) %>% 
-  bind_rows(df1)
-
-exclude_participants <- c("67fd4f955123c6d79ae66a3a", "67eedf7be13ffb77c677d4dd", "6443ebb84fc33e703937a6f9")
-
-task_df <- df %>% filter(status == "completed") %>% 
-  select(participantId, trialId, responseId, answer) %>%
-  filter(str_detect(trialId, "task")) %>%
-  mutate(answer = as.numeric(answer)) %>% 
-  pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
-  separate_wider_delim(trialId, delim = "_", names = c("task", "type", "id")) %>% 
-  filter(type != "train") %>% 
-  select(-type) %>% 
-  rename(data.select.x = location.x, 
-         data.select.y = location.y,
-         pixel.select.x = pixel.x, 
-         pixel.select.y = pixel.y) %>% 
-  filter(!participantId %in% exclude_participants)
+task_df <- read_rds("task.rds")
+participants <- read_rds("participants.rds")
 ```
 
 ```{r}
@@ -86,47 +68,6 @@ vis_angle <- function(size, distance){
 tolerance <- 1e-10
 ```
 
-```{r}
-#| label: define-special-dfs
-#| code-fold: true
-
-p <- df %>% filter(status == "completed") %>% 
-  select(participantId, trialId, responseId, answer) %>% 
-  filter(grepl("calibration", trialId))
-
-p %>% filter(responseId == "ball-positions") %>% 
-  select(participantId, answer) %>% 
-  mutate(answer = gsub("\\[|\\]", "", answer)) %>% 
-  mutate(split_answer = str_split(answer, ",")) %>% 
-  mutate(numeric_vectors = map(split_answer, ~ as.numeric(.x))) %>% 
-  unnest(split_answer) %>% 
-  mutate(split_answer = as.numeric(split_answer)) %>% 
-  group_by(participantId) %>% 
-  summarise(avg.ball.pos = sum(split_answer) / 5, 
-            min.ball.pos = min(split_answer),
-            max.ball.pos = max(split_answer)) -> avg_ball_pos
-
-avg_ball_pos %>% mutate(true_ball_pos = (avg.ball.pos * 5 - min.ball.pos - max.ball.pos)/3) %>% 
-  select(participantId, true_ball_pos) -> true_ball_pos
-
-participants <- p %>% filter(grepl("pixelsPerMM|dist-calibration-MM", responseId)) %>%
-  select(-trialId) %>%
-  mutate(answer = as.numeric(answer)) %>%
-  pivot_wider(names_from = responseId, values_from = answer) %>%
-  rename(pixelToMM = pixelsPerMM, dist_to_screen = `dist-calibration-MM`) %>%
-  filter(!participantId %in% exclude_participants) %>%
-  left_join(avg_ball_pos) %>% 
-  mutate(phy = dist_to_screen * tan(13.5 * pi / 180), 
-         px = phy * pixelToMM, 
-         square_pos = round(px + avg.ball.pos))
-
-participants %>% left_join(true_ball_pos) %>% 
-  mutate(ball.square.dist = (square_pos - true_ball_pos) / pixelToMM, 
-         d = ball.square.dist / tan(13.5 * pi / 180)) %>% 
-  select(participantId, pixelToMM, d) %>% 
-  rename(dist_to_screen = d) -> participants
-```
-
 # Task 2 
 
 ```{r}
@@ -143,7 +84,7 @@ task2_df <- task_df %>% filter(task == "task2") %>%
          data.left.grad = numDeriv::grad(dsgt, param.mu - 1, mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
          data.right.grad = numDeriv::grad(dsgt, param.mu + 1, mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
          ) %>% 
-  left_join(participants, by = join_by(participantId)) %>% 
+  right_join(participants, by = join_by(participantId)) %>% 
   # calculate things related to participants' selection 
   mutate(phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM), 
          phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM),
@@ -166,13 +107,13 @@ Checking relations, focusing on the **Y** Axis:
 #| layout-ncol: 2
 #| code-fold: true
 
-task2_df %>% ggplot(aes(y = phy.ans.y - phy.select.y, x = dist_to_screen)) + 
-  geom_point()
-
 task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>% 
   mutate(error_va = ifelse(error_va < tolerance, 0, error_va)) %>% 
   ggplot(aes(x = error_va)) + 
   geom_dots()
+
+task2_df %>% ggplot(aes(y = phy.ans.y - phy.select.y, x = dist_to_screen)) + 
+  geom_point()
 
 task2_df %>% ggplot(aes(y = va.ans.y - va.select.y, x = dist_to_screen)) + 
   geom_point()
@@ -283,7 +224,6 @@ Fit the model:
 #| label: fit lomax 
 
 model.y.lomax <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
-  # mutate(error.y = ifelse(error.y < 1e-5, 0, error.y)) %>% 
   brm(
     formula = f,
     data = .,
@@ -294,12 +234,13 @@ model.y.lomax <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
     cores = 4, 
     file = "models/task2.y.lomax",
     file_refit = "on_change", 
-    iter = 8000, 
-    # init = list()
-    control = list(adapt_delta = 0.99), 
+    iter = 10000, 
+    control = list(adapt_delta = 0.99, max_treedepth = 15), 
     save_pars = save_pars(all = TRUE)
   )
 ```
+
+ESS is still too low ... this might not be a good one ... 
 
 Check fit and posterior check: 
 
@@ -337,7 +278,7 @@ model.y.lomax %>% spread_draws(b_lambda_Intercept, b_alpha_Intercept) %>%
 
 ```{r}
 prediction <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
-  add_predicted_draws(model.y.lomax, ndraws = 100)
+  add_predicted_draws(model.y.lomax, re_formula = NA)
 
  task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
    ggplot() + 
@@ -386,14 +327,14 @@ Fit the model:
 #| output: false 
 #| label: fit exponential 
 
-
 model.y.exponential <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
-  mutate(error.y = ifelse(error.y < 1e-10, 1e-10, error.y)) %>% # exponential cannot deal with 0 values 
+  # mutate(error.y = ifelse(error.y < 1e-10, 1e-10, error.y)) %>% # exponential cannot deal with 0 values 
   brm(
     formula = f,
     data = .,
     prior = p,
     chains = 4,
+    cores = 4, 
     file = "models/task2.y.exponential",
     file_refit = "on_change", 
     control = list(adapt_delta = 0.99), 
@@ -423,21 +364,20 @@ model.y.exponential %>% spread_draws(b_Intercept) %>%
 
 ```{r}
 prediction <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
-  add_predicted_draws(model.y.exponential, ndraws = 100)
+  add_predicted_draws(model.y.exponential, re_formula = NA)
 
  task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
    ggplot() + 
    geom_dots(aes(x = error.y)) + 
    stat_slab(data = prediction, aes(x = .prediction),
-            fill = "skyblue", alpha = 0.5) # + 
-   xlim(0, 0.05)
+            fill = "skyblue", alpha = 0.5) 
 ```
 
 Overlay plot: 
 
 ```{r}
 task2_df %>% modelr::data_grid(error.y = 0) %>% 
-  add_predicted_draws(model.y.exponential, ndraws = 100, re_formula = NA) %>% 
+  add_predicted_draws(model.y.exponential, re_formula = NA) %>% 
   ggplot() + 
   stat_slab(aes(x = .prediction), 
             fill = "lightblue", alpha = 1) + 
@@ -485,18 +425,18 @@ Fit the model:
 #| output: false 
 #| label: fit weibull 
 
-model.y.weibull <- task2_df %>% 
-  mutate(error.y = va.ans.y - va.select.y) %>% 
-  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% # brms needs value to be > 0  
+model.y.weibull <- task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% # brms needs value to be > 0  :Error: Family 'weibull' requires response greater than 0.
   brm(formula = f, 
       data = ., 
       prior = p, 
       chains = 4, 
+      cores = 4, 
       file = "models/task2.y.weibull", 
       file_refit = "on_change",
       save_pars = save_pars(all = TRUE), 
-      control = list(adapt_delta = 0.99, max_treedepth = 15), 
-      iter = 4000
+      control = list(adapt_delta = 0.99), 
+      iter = 6000
   )
 ```
 
@@ -513,14 +453,13 @@ Overlay plot:
 
 ```{r}
 task2_df %>% modelr::data_grid(error.y = 0) %>% 
-  add_predicted_draws(model.y.weibull, ndraws = 100, re_formula = NA) %>% 
+  add_predicted_draws(model.y.weibull, re_formula = NA) %>% 
   ggplot() + 
   stat_slab(aes(x = .prediction), 
             fill = "lightblue", alpha = 1) + 
   geom_dots(data = task2_df, aes(x = va.ans.y - va.select.y)) + 
   labs(y = "Probability", x = "Signed error") + 
-  theme_minimal(base_size = 8) + 
-  xlim(0, 0.2) -> p 
+  theme_minimal(base_size = 8) -> p
 
 p
 ```
@@ -566,17 +505,17 @@ task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>%
 
 model.y.lognormal <- task2_df %>% 
   mutate(error.y = va.ans.y - va.select.y) %>% 
-  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% 
+  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% # Error: Family 'lognormal' requires response greater than 0.
   brm(formula = f, 
       data = ., 
       prior = p, 
       chains = 4, 
-      # cores = 4, 
+      cores = 4, 
       file = "models/task2.y.lognormal", 
       file_refit = "on_change",
       save_pars = save_pars(all = TRUE), 
-      # control = list(adapt_delta = 0.99),
-      # iter = 4000 
+      control = list(adapt_delta = 0.99),
+      iter = 6000 
   )
 ```
 
@@ -641,7 +580,7 @@ model.y.gamma <- task2_df %>%
       data = .,
       prior = p,
       chains = 4,
-      # cores = 4,
+      cores = 4,
       file = "models/task2.y.gamma",
       file_refit = "on_change",
       save_pars = save_pars(all = TRUE),
@@ -650,7 +589,7 @@ model.y.gamma <- task2_df %>%
   )
 ```
 
-So many divergent transitions ... this might not be worth it ... 
+A lot of divergent transitions ... 
 
 ### LOO Comparison 
 
