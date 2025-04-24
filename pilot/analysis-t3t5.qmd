@@ -570,9 +570,10 @@ task3_df %>%
   labs(y = "Signed error", x = "Distance to Y-Axis") +
   theme_minimal(
     base_size = 8) + 
-  theme(legend.position="none")-> p4
+  theme(legend.position="none") -> p4
 
 p4
+ggsave("plots/task3.pdf", plot = p4, height = 5, width = 5, units = "cm")
 ```
 
 ```{r}
@@ -581,7 +582,6 @@ p4
 
 ggsave("plots/t3.1.pdf", plot = p3, height = 5, width = 10, units = "cm")
 ggsave("plots/t3.2.pdf", plot = p4, height = 5, width = 10, units = "cm")
-ggsave("plots/task3.pdf", plot = p4, height = 5, width = 5, units = "cm")
 ```
 
 ```{r}
