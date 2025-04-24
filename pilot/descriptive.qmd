@@ -389,6 +389,12 @@ task3_df %>% filter(abs(data.select.y - 0.5) > 0.1) %>%
   count(participantId)
 ```
 
+Examine particular participants: 
+
+```{r}
+task3_df %>% filter(participantId == "67ea39f872546624b6b520bf")
+```
+
 
 Verify that the scales are correct:
 
