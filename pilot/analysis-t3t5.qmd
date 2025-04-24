@@ -445,14 +445,15 @@ Fit model:
 m3 <- task3_df %>%
   mutate(error_va = va.select.y - va.ans.y, 
          log.va.ans.x = log(va.ans.x)) %>%
-  # mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>%
   brm(
     formula = f,
     data = .,
     family = gaussian(),
     prior = p,
     chains = 4,
-    file="models/task3",
+    cores = 4, 
+    file = "models/task3",
+    file_refit = "on_change", 
     save_pars = save_pars(all=TRUE), 
     control = list(adapt_delta = 0.99), 
     iter = 6000
@@ -480,104 +481,28 @@ m3 %>% spread_draws(b_sigma_Intercept) %>%
   stat_halfeye()
 ```
 
-Let's plot the ribbon plots, but first, let's see the difference between `add_predicted_draws` and `add_epred_draws`: 
+Plot: 
 
 ```{r}
-#| layout-ncol: 3 
+prediction_grid <- task3_df %>% mutate(error_va = va.select.y - va.ans.y) %>% 
+  data_grid(va.ans.x = seq_range(va.ans.x, n = 101)) %>% 
+  add_predicted_draws(m3, re_formula = NA) 
 
-task3_df %>%
-  mutate(error_va = va.select.y - va.ans.y) %>% 
-  data_grid(va.ans.x = seq_range(va.ans.x, n = 100), 
-            participantId = participantId) %>% 
-  add_predicted_draws(m3, ndraws = 100) %>% 
+prediction_grid %>% 
   ggplot(aes(x = va.ans.x, y = .prediction)) + 
   stat_lineribbon(
     .width = c(.95, .80, .50),
-    alpha = 0.5, 
-    size = 0.5
-  ) + scale_fill_brewer(palette = "Blues")
-
-task3_df %>%
-  mutate(error_va = va.select.y - va.ans.y) %>% 
-  data_grid(va.ans.x = seq_range(va.ans.x, n = 100)) %>% 
-  add_predicted_draws(m3, re_formula = NA, ndraws = 100) %>% 
-  ggplot(aes(x = va.ans.x, y = .prediction)) + 
-  stat_lineribbon(
-    .width = c(.95, .80, .50),
-    alpha = 0.5,
-    size = 0.5
-  ) + scale_fill_brewer(palette = "Blues")
-
-task3_df %>%
-  mutate(error_va = va.select.y - va.ans.y) %>% 
-  # group_by(participantId) %>%
-  data_grid(va.ans.x = seq_range(va.ans.x, n = 100)) %>%
-  add_epred_draws(m3, re_formula = NA, ndraws = 100) %>% 
-  ggplot(aes(x = va.ans.x, y = .epred)) + 
-  stat_lineribbon(
-    .width = c(.95, .80, .50),
-    alpha = 0.5, 
-    size = 0.5
-  ) + scale_fill_brewer(palette = "Blues") 
-# this is flat becasue this is just bar(mu)
-```
-
-```{r}
-#| layout-ncol: 2 
-
-# task3_df %>% add_epred_draws(m3) %>% 
-#   ggplot(aes(x = .epred)) + stat_halfeye()
-
-task3_df %>%
-  mutate(error_va = va.select.y - va.ans.y) %>% 
-  data_grid(va.ans.x = seq_range(va.ans.x, n = 100), 
-            participantId = participantId) %>% 
-  add_predicted_draws(m3, ndraws = 100) %>% 
-  ggplot(aes(x = va.ans.x, y = .prediction)) + 
-  stat_lineribbon(
-    .width = c(.95, .80, .50),
-    alpha = 0.5, 
+    # alpha = 0.5, 
     size = 0.5
   ) + scale_fill_brewer(palette = "Blues") + 
-  geom_point(data = task3_df, 
-             aes(y = va.ans.y - va.select.y, x = va.ans.x), 
-             alpha = 0.8, 
-             size = 0.5) +
-  labs(title = "Task 3 (re_formula = NULL)", y = "Signed error", x = "Distance to Y-Axis") -> p3
+  geom_point(data = task3_df, aes(y = va.select.y - va.ans.y, x = va.ans.x), 
+             alpha = 0.5, size = 0.5) + 
+  theme_minimal(base_size = 8) + 
+  theme(legend.position = "none") -> p3
 
-p3
-
-task3_df %>%
-  mutate(error_va = va.select.y - va.ans.y) %>% 
-  data_grid(va.ans.x = seq_range(va.ans.x, n = 100)) %>% 
-  add_predicted_draws(m3, re_formula = NA) %>% # don't need the ndraws = 100 unless we're doing spaghetti plots 
-  ggplot(aes(x = va.ans.x, y = .prediction)) + 
-  stat_lineribbon(
-    .width = c(.95, .80, .50),
-    # alpha = 0.5,
-    size = 0.5, 
-    
-  ) + scale_fill_brewer(palette = "Blues") + 
-  geom_point(data = task3_df, 
-             aes(y = va.ans.y - va.select.y, x = va.ans.x), 
-             alpha = 0.8, 
-             size = 0.5) +
-  labs(y = "Signed error", x = "Distance to Y-Axis") +
-  theme_minimal(
-    base_size = 8) + 
-  theme(legend.position="none") -> p4
-
-p4
-ggsave("plots/task3.pdf", plot = p4, height = 5, width = 5, units = "cm")
+ggsave("plots/task3.pdf", plot = p3, height = 5, width = 5, units = "cm")
 ```
 
-```{r}
-#| echo: false 
-#| eval: false 
-
-ggsave("plots/t3.1.pdf", plot = p3, height = 5, width = 10, units = "cm")
-ggsave("plots/t3.2.pdf", plot = p4, height = 5, width = 10, units = "cm")
-```
 
 ```{r}
 #| echo: false 
