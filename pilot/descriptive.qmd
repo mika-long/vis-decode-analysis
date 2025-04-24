@@ -135,6 +135,8 @@ participants <- calibrations %>% left_join(ball_positions, by = join_by(particip
          d = ball.square.dist / tan(13.5 * pi / 180)) %>% 
   select(participantId, pixelToMM, d) %>% 
   rename(dist_to_screen = d)
+
+saveRDS(participants, "participants.rds")
 ```
 
 Read in the demographic from prolific: (TODO)

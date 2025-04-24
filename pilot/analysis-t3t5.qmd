@@ -37,26 +37,8 @@ Read in data
 #| label: read-in-data
 #| code-fold: true
 
-df1 <- read.csv("pilot-01.csv") %>% as_tibble(.)
-
-df <- read.csv("pilot-02.csv") %>% as_tibble(.) %>% 
-  bind_rows(df1)
-
-exclude_participants <- c("67fd4f955123c6d79ae66a3a", "67eedf7be13ffb77c677d4dd", "6443ebb84fc33e703937a6f9")
-
-task_df <- df %>% filter(status == "completed") %>% 
-  select(participantId, trialId, responseId, answer) %>%
-  filter(str_detect(trialId, "task")) %>%
-  mutate(answer = as.numeric(answer)) %>% 
-  pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
-  separate_wider_delim(trialId, delim = "_", names = c("task", "type", "id")) %>% 
-  filter(type != "train") %>% 
-  select(-type) %>% 
-  rename(data.select.x = location.x, 
-         data.select.y = location.y,
-         pixel.select.x = pixel.x, 
-         pixel.select.y = pixel.y) %>% 
-  filter(!participantId %in% exclude_participants)
+task_df <- read_rds("task.rds")
+participants <- read_rds("participants.rds")
 ```
 
 ```{r}
@@ -86,47 +68,6 @@ vis_angle <- function(size, distance){
 
 # tolerance for numerical precision 
 tolerance <- 1e-10
-```
-
-```{r}
-#| label: define-special-dfs
-#| code-fold: true
-
-p <- df %>% filter(status == "completed") %>% 
-  select(participantId, trialId, responseId, answer) %>% 
-  filter(grepl("calibration", trialId))
-
-p %>% filter(responseId == "ball-positions") %>% 
-  select(participantId, answer) %>% 
-  mutate(answer = gsub("\\[|\\]", "", answer)) %>% 
-  mutate(split_answer = str_split(answer, ",")) %>% 
-  mutate(numeric_vectors = map(split_answer, ~ as.numeric(.x))) %>% 
-  unnest(split_answer) %>% 
-  mutate(split_answer = as.numeric(split_answer)) %>% 
-  group_by(participantId) %>% 
-  summarise(avg.ball.pos = sum(split_answer) / 5, 
-            min.ball.pos = min(split_answer),
-            max.ball.pos = max(split_answer)) -> avg_ball_pos
-
-avg_ball_pos %>% mutate(true_ball_pos = (avg.ball.pos * 5 - min.ball.pos - max.ball.pos)/3) %>% 
-  select(participantId, true_ball_pos) -> true_ball_pos
-
-participants <- p %>% filter(grepl("pixelsPerMM|dist-calibration-MM", responseId)) %>%
-  select(-trialId) %>%
-  mutate(answer = as.numeric(answer)) %>%
-  pivot_wider(names_from = responseId, values_from = answer) %>%
-  rename(pixelToMM = pixelsPerMM, dist_to_screen = `dist-calibration-MM`) %>%
-  filter(!participantId %in% exclude_participants) %>%
-  left_join(avg_ball_pos) %>% 
-  mutate(phy = dist_to_screen * tan(13.5 * pi / 180), 
-         px = phy * pixelToMM, 
-         square_pos = round(px + avg.ball.pos))
-
-participants %>% left_join(true_ball_pos) %>% 
-  mutate(ball.square.dist = (square_pos - true_ball_pos) / pixelToMM, 
-         d = ball.square.dist / tan(13.5 * pi / 180)) %>% 
-  select(participantId, pixelToMM, d) %>% 
-  rename(dist_to_screen = d) -> participants
 ```
 
 # Task 5 --- Project from dot to axes 
