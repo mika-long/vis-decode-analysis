@@ -115,10 +115,10 @@ $$\begin{align*}
 \end{align*}$$
 
 ```{r}
-task5_df %>% ggplot(aes(x = va.ans.y, y = va.select.x - va.ans.x)) + 
+task5_df %>% filter(! participantId %in% c("6679e88eb948e8a4b08a39fb", "67eb99ebe23a2e1ce36ce110")) %>% 
+  ggplot(aes(x = va.ans.y, y = va.select.x - va.ans.x)) + 
   geom_point(alpha = 0.5)
 ```
-
 
 Formula and prior: 
 
@@ -232,6 +232,12 @@ ggsave("plots/task5-project-x.pdf", p1, height = 5, width = 10, units = "cm", dp
 
 ## Task 5 -- Project to Y-Axis 
 
+```{r}
+task5_df %>% filter(! participantId %in% c("6679e88eb948e8a4b08a39fb", "67eb99ebe23a2e1ce36ce110")) %>% 
+  ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) + 
+  geom_point(alpha = 0.5)
+```
+
 Math: 
 
 $$\begin{align*}
@@ -285,7 +291,7 @@ m.5.y.va <- task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
     family = gaussian(),
     prior = p,
     chains = 4, 
-    # cores = 4,
+    cores = 4,
     control = list(adapt_delta = 0.99),
     iter = 6000, 
     file = "models/task5.y", 
@@ -380,6 +386,12 @@ task3_df <- task_df %>% filter(task == "task3") %>%
          phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM), 
          va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
+```
+
+```{r}
+task3_df %>% filter(! participantId %in% c("6679e88eb948e8a4b08a39fb", "67eb99ebe23a2e1ce36ce110")) %>% 
+  ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) + 
+  geom_point(alpha = 0.5)
 ```
 
 Math: 
