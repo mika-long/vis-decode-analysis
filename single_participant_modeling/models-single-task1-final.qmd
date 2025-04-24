@@ -338,21 +338,9 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
 
 ```{r}
 #| eval: false 
-model <- cmdstan_model("stan_files/sheng.mix.2.3.stan")
+model <- cmdstan_model("stan_files/normal.normal.mix.logit.stan")
 model
 ``` 
-
-### Mixture + inv_mse 
-
-### Weighted Average + Logit 
-
-### Weighted Average + Inv_MSE
-
-### lambda = inv-logit(beta * (med - mod)^2)
-
-
-
-Fit the stan model: 
 
 ```{r}
 #| output: false 
@@ -361,14 +349,10 @@ Fit the stan model:
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
-  # parallel_chains = 4
+  adapt_delta = 0.95,  # Increased from default 0.8
+  max_treedepth = 15,   # Increased from default 10
+  parallel_chains = 4
 )
-```
-
-```{r}
-#| echo: false
-#| output: false 
-fit <- readRDS("models/task1.sq.diff.rds")
 ```
 
 Posterior predictive checks: 
@@ -380,35 +364,83 @@ summary <- fit$summary()
 custom_pp_check(fit)
 ```
 
-Checking the posterior results: 
-
 ```{r}
-#| column: margin 
+#| layout-ncol: 2 
 
-fit$draws() %>% 
-  spread_draws(`beta`) %>%
-  ggplot(aes(x = beta)) + 
-  stat_halfeye()
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = y_rep)) + 
+  ggdist::stat_lineribbon() + 
+  geom_point(aes(y = va.select.x - va.med.x))
 
-fit$draws() %>% 
-  spread_draws(`mu_med`, `mu_mod`) %>% 
-  pivot_longer(4:5) %>% 
-  ggplot(aes(x = value, y = name)) + 
-  stat_halfeye()
-
-fit$draws() %>% 
-  spread_draws(`sigma_med`, `sigma_mod`) %>% 
-  pivot_longer(4:5) %>% 
-  ggplot(aes(x = value, y = name)) + 
-  stat_halfeye()
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) + 
+  ggdist::stat_lineribbon() + 
+  geom_point(aes(y = va.select.x - va.med.x))
 ```
 
-Save the stan model: 
+### Mixture + inv_mse 
 
 ```{r}
 #| eval: false 
+model <- cmdstan_model("stan_files/")
+model
+``` 
 
-fit$save_object(file = "models/task1.sq.diff.rds")
+```{r}
+#| output: false 
+#| eval: false 
+
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  adapt_delta = 0.95,  # Increased from default 0.8
+  max_treedepth = 15,   # Increased from default 10
+  parallel_chains = 4
+)
+```
+
+### Weighted Average + Logit 
+
+```{r}
+#| eval: false 
+model <- cmdstan_model("stan_files/")
+model
+``` 
+
+```{r}
+#| output: false 
+#| eval: false 
+
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  adapt_delta = 0.95,  # Increased from default 0.8
+  max_treedepth = 15,   # Increased from default 10
+  parallel_chains = 4
+)
+```
+
+### Weighted Average + Inv_MSE
+
+```{r}
+#| eval: false 
+model <- cmdstan_model("stan_files/")
+model
+``` 
+
+```{r}
+#| output: false 
+#| eval: false 
+
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  adapt_delta = 0.95,  # Increased from default 0.8
+  max_treedepth = 15,   # Increased from default 10
+  parallel_chains = 4
+)
 ```
 
 ### LOO Compare the above models so far 
