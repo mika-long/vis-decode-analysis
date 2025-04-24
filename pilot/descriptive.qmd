@@ -61,6 +61,9 @@ task_df <- df %>% filter(str_detect(trialId, "task")) %>%
          pixel.select.y = pixel.y)
 
 exclude_participants <- c("67fd4f955123c6d79ae66a3a", "67eedf7be13ffb77c677d4dd", "6443ebb84fc33e703937a6f9", "67ea39f872546624b6b520bf")
+
+task_df %>% filter(!participantId %in% exclude_participants) -> task_df
+saveRDS(task_df, file = "task.rds")
 ```
 
 ```{r}
