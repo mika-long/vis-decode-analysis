@@ -118,6 +118,8 @@ task5_df %>% filter(va.select.x - va.ans.x > 0.4) %>%
   left_join(participants, by = join_by(participantId))
 ```
 
+Turns out these participants were aligning things wrongly on the slider (i.e, they did not match the blue dot to the red dot but matched the thing on the lsider to the red dot, hence the shift in their answers. We exclude these participants from our analysis.)
+
 ```{r}
 task5_df %>% filter(participantId == "667433338e6cc9e53c828774") %>% 
   mutate(error = data.select.x - data.ans.x) %>% 
@@ -128,7 +130,9 @@ task5_df %>% filter(participantId == "667433338e6cc9e53c828774") %>%
   xlim(-5, 5) + ylim(0, 1)
 ```
 
-
+```{r}
+task5.x.exclude <- c("667433338e6cc9e53c828774", "67e2f5ebbe69a58c40a5d550")
+```
 
 
 Math: 
@@ -177,6 +181,7 @@ Fit model:
 ```{r}
 #| output: false 
 m.5.x.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  filter(!participantId %in% task5.x.exclude) %>% 
   brm(
     formula = f,
     data = .,
@@ -184,9 +189,10 @@ m.5.x.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     prior = p,
     chains = 4, 
     cores = 4,
-    control = list(adapt_delta = 0.99, max_treedepth = 15),
+    control = list(adapt_delta = 0.99),
     iter = 6000, 
     file = "models/task5.x", 
+    file_refit = "on_change", 
     save_pars = save_pars(all = TRUE)
 )
 ```

@@ -731,7 +731,7 @@ Relationship between signed error (in visual angle space) and distance to X-axes
 ```{r}
 #| code-fold: true
 
-task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) + 
+task5_df %>% ggplot(aes(x = va.ans.y, y = va.select.x - va.ans.x)) + 
   geom_point(alpha = 0.5) +
   geom_vline(xintercept = 0, linetype="dashed", color="gray") + 
   labs(title="Task 5 - Project from Dot to X-Axes") #+ 
@@ -744,10 +744,9 @@ task5_df %>% ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x)) +
 task5_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) + 
   geom_point(alpha = 0.5) +
   geom_vline(xintercept = 0, linetype="dashed", color="gray") + 
-  labs(title="Task 5 - Project from Dot to Y-Axes") # + 
-  xlim(-0.2, 0.6)
+  labs(title="Task 5 - Project from Dot to Y-Axes") 
   
-  task5_df %>% filter(va.select.y - va.ans.y > 1)
+task5_df %>% filter(va.select.y - va.ans.y > 1)
 ```
 
 ```{r}
@@ -762,7 +761,16 @@ Have reason to suspect that this participant really isn't answering the question
 
 # Calculate average time 
 
-TODO 
+```{r}
+df %>% filter(!participantId %in% exclude_participants) %>% 
+  filter(grepl("task", trialId)) %>% 
+  group_by(participantId, trialId, rsp_time) %>%
+  summarise(.) %>% 
+  group_by(participantId) %>% 
+  summarise(sum_rsp = sum(rsp_time)) %>% 
+  pull(sum_rsp) %>% mean(.) / 60
+```
+
 
 # SAVE 
 
