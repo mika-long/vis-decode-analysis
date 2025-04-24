@@ -171,7 +171,7 @@ m.5.x.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     prior = p,
     chains = 4, 
     cores = 4,
-    control = list(adapt_delta = 0.99),
+    control = list(adapt_delta = 0.99, max_treedepth = 15),
     iter = 6000, 
     file = "models/task5.x", 
     save_pars = save_pars(all = TRUE)
