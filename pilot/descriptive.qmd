@@ -62,6 +62,8 @@ task_df <- df %>% filter(str_detect(trialId, "task")) %>%
 
 exclude_participants <- c("67fd4f955123c6d79ae66a3a", "67eedf7be13ffb77c677d4dd", "6443ebb84fc33e703937a6f9", "67ea39f872546624b6b520bf")
 
+# maybe also 6679e88eb948e8a4b08a39fb 
+
 task_df %>% filter(!participantId %in% exclude_participants) -> task_df
 saveRDS(task_df, file = "task.rds")
 ```
@@ -136,6 +138,8 @@ participants <- calibrations %>% left_join(ball_positions, by = join_by(particip
   select(participantId, pixelToMM, d) %>% 
   rename(dist_to_screen = d)
 
+participants %>% filter(dist_to_screen < 250)
+
 participants %>% filter(!participantId %in% exclude_participants) %>% 
   saveRDS(., "participants.rds")
 ```
@@ -202,6 +206,15 @@ task1_df %>% filter(participantId == "67ea39f872546624b6b520bf") %>%
 ```
 
 The author is clearly not answering correctly ... we will not include their data. Huh ... what happened to this data ...? 
+
+```{r}
+task1_df %>% filter(participantId == "6679e88eb948e8a4b08a39fb") %>% 
+  ggplot(aes(x = data.select.x, y = data.select.y)) + 
+  geom_point() + xlim(-5, 5) + ylim(0, 1) + 
+  geom_point(data = filter(task1_df, participantId == "6679e88eb948e8a4b08a39fb"), aes(x = data.ans.x, color = "answer"))
+```
+
+The answer is good but the distance to screen is highly unreasonable ... 
 
 ---
 
