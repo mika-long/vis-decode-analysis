@@ -60,7 +60,7 @@ task_df <- df %>% filter(str_detect(trialId, "task")) %>%
          pixel.select.x = pixel.x, 
          pixel.select.y = pixel.y)
 
-# task_df %>% count(participantId)
+# initialize empty list of participants to be excluded from analysis 
 exclude_participants <- c()
 ```
 
@@ -138,19 +138,12 @@ participants <- calibrations %>% right_join(ball_positions, by = join_by(partici
 participants %>% ggplot(aes(x = dist_to_screen)) + 
   geom_histogram()
 
-# clearly those under 200 are not normal. We do not include these data. 
+# for a participant to arrive at dist_to_screen to be less than 200 
+# it means they did not press the space bar as instructed. 
+# we do not include such participants in our analysis. 
 
 participants %>% filter(dist_to_screen > 200) -> participants
 ```
-
-<!-- Read in the demographic from prolific: (TODO) -->
-
-<!-- ```{r} -->
-<!-- prolific_demographic <- read.csv("pilot-01-demographic.csv") %>% as_tibble(.) -->
-
-<!-- prolific_demographic %>% t(.) %>% view(.) -->
-<!-- ``` -->
-
 
 # Task 1 -- Split area into equal halves
 

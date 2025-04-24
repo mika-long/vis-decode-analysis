@@ -32,6 +32,12 @@ transformed parameters {
   vector<lower=0>[J] sigma_mod; 
   vector[J] mu_med; 
   vector<lower=0>[J] sigma_med; 
+
+  // Non-centered param 
+  mu_mod = mu_mod_mean + mu_mod_z * mu_mod_sd; 
+  sigma_mod = exp(log_sigma_mod_mean + log_sigma_mod_z * log_sigma_mod_sd); 
+  mu_med = mu_med_mean + mu_med_z * mu_med_sd; 
+  sigma_med = exp(log_sigma_med_mean + log_sigma_med_z * log_sigma_med_sd); 
   
   vector<lower=0, upper=1>[N] theta; // weight 
   vector[N] inv_mse_med;
@@ -44,34 +50,29 @@ transformed parameters {
 
     theta[n] = inv_mse_med[n] / (inv_mse_med[n] + inv_mse_mod[n]); 
   }
-
-  // Non-centered param 
-  mu_mod = mu_mod_mean + mu_mod_z * mu_mod_sd; 
-  sigma_mod = exp(log_sigma_mod_mean + log_sigma_mod_z * log_sigma_mod_sd); 
-  mu_med = mu_med_mean + mu_med_z * mu_med_sd; 
-  sigma_med = exp(log_sigma_med_mean + log_sigma_med_z * log_sigma_med_sd); 
 }
 
 model {
   // priors
-  mu_mod_mean ~ normal(0.01, 0.02); 
-  mu_mod_sd ~ normal(0.04, 0.03); 
-  log_sigma_mod_mean ~ normal(-1.37, 0.10); 
-  log_sigma_mod_sd ~ normal(0.34, 0.10); 
+  // use N(0, 1) 
+  // mu_mod_mean ~ normal(0.01, 0.02); // center this at 0 // the main goal is to set a good prior on the variance .. 
+  // mu_mod_sd ~ normal(0.04, 0.03); 
+  // log_sigma_mod_mean ~ normal(-1.37, 0.10); 
+  // log_sigma_mod_sd ~ normal(0.34, 0.10); 
+  mu_mod_mean ~ normal(0, 1); 
+  mu_mod_sd ~ normal(0, 1); 
+  log_sigma_mod_mean ~ normal(0, 1); 
+  log_sigma_mod_sd ~ normal(0, 1); 
 
   mu_med_mean ~ normal(0, 1); 
   mu_med_sd ~ normal(0, 1); 
   log_sigma_med_mean ~ normal(0, 1); 
   log_sigma_med_sd ~ normal(0, 1); 
 
-  
   mu_mod_z ~ std_normal(); 
   mu_med_z ~ std_normal(); 
   log_sigma_mod_z ~ std_normal(); 
   log_sigma_med_z ~ std_normal(); 
-
-  
-  
 
   // mu_mod[j] ~ normal(mu_mod_mean, mu_mod_sd);
   // sigma_mod[j] ~ lognormal(log_sigma_mod_mean, log_sigma_mod_sd); 
