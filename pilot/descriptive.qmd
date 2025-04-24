@@ -37,16 +37,19 @@ read in data and write functions for processing:
 #| label: read-in-data
 #| code-fold: true
 
+# read in data from the three studies 
 df1 <- read.csv("pilot-01.csv") %>% as_tibble(.)
+df2 <- read.csv("pilot-02.csv") %>% as_tibble(.)
+df3 <- read.csv("pilot-03.csv") %>% as_tibble(.)
 
-df <- read.csv("pilot-02.csv") %>% as_tibble(.) %>% 
-  bind_rows(df1)
+# combine data from the three studies 
+combined_df <- bind_rows(df1, df2, df3)
 
-exclude_participants <- c("67fd4f955123c6d79ae66a3a", "67eedf7be13ffb77c677d4dd", "6443ebb84fc33e703937a6f9")
-
-task_df <- df %>% filter(status == "completed") %>% 
-  select(participantId, trialId, responseId, answer) %>%
-  filter(str_detect(trialId, "task")) %>%
+df <- combined_df %>% filter(status == "completed") %>% 
+  mutate(rsp_time = as.numeric(cleanedDuration) / 1000) %>% # seconds
+  select(participantId, trialId, responseId, answer, rsp_time, status)
+  
+task_df <- df %>% filter(str_detect(trialId, "task")) %>%
   mutate(answer = as.numeric(answer)) %>% 
   pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
   separate_wider_delim(trialId, delim = "_", names = c("task", "type", "id")) %>% 
@@ -55,8 +58,9 @@ task_df <- df %>% filter(status == "completed") %>%
   rename(data.select.x = location.x, 
          data.select.y = location.y,
          pixel.select.x = pixel.x, 
-         pixel.select.y = pixel.y) %>% 
-  filter(!participantId %in% exclude_participants)
+         pixel.select.y = pixel.y)
+
+exclude_participants <- c("67fd4f955123c6d79ae66a3a", "67eedf7be13ffb77c677d4dd", "6443ebb84fc33e703937a6f9")
 ```
 
 ```{r}
@@ -98,17 +102,40 @@ p <- df %>% filter(status == "completed") %>%
   select(participantId, trialId, responseId, answer) %>% 
   filter(grepl("calibration", trialId))
 
-p %>% filter(responseId == "ball-positions") %>% 
-  select(participantId, answer) %>% 
-  mutate(answer = gsub("\\[|\\]", "", answer)) %>% 
-  mutate(split_answer = str_split(answer, ",")) %>% 
+ball_positions <- df %>% filter(status == "completed") %>% 
+  filter(grepl("calibration", trialId)) %>% 
+  select(participantId, responseId, answer) %>% 
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  # filter(!is.na(`square-position`)) %>% 
+  mutate(`ball-positions` = gsub("\\[|\\]", "", `ball-positions`)) %>%
+  mutate(split_answer = str_split(`ball-positions`, ",")) %>% 
   mutate(numeric_vectors = map(split_answer, ~ as.numeric(.x))) %>% 
   unnest(split_answer) %>% 
   mutate(split_answer = as.numeric(split_answer)) %>% 
   group_by(participantId) %>% 
   summarise(avg.ball.pos = sum(split_answer) / 5, 
             min.ball.pos = min(split_answer),
-            max.ball.pos = max(split_answer)) -> avg_ball_pos
+            max.ball.pos = max(split_answer))
+
+calibrations <- p %>% filter(grepl("pixelsPerMM|dist-calibration-MM", responseId)) %>%
+  select(-trialId) %>%
+  mutate(answer = as.numeric(answer)) %>%
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  rename(pixelToMM = pixelsPerMM, dist_to_screen = `dist-calibration-MM`) 
+
+calibrations %>% left_join(ball_positions) %>% 
+  mutate(phy = dist_to_screen * tan(13.5 * pi / 180), 
+         px = phy * pixelToMM, 
+         square_pos = round(px + avg.ball.pos)) -> test 
+
+df %>% filter(status == "completed") %>% 
+  filter(grepl("calibration", trialId)) %>% 
+  select(participantId, responseId, answer) %>% 
+  pivot_wider(names_from = responseId, values_from = answer) %>% 
+  filter(!is.na(`square-position`)) %>% 
+  left_join(test) %>% view(.)
+
+
 
 avg_ball_pos %>% mutate(true_ball_pos = (avg.ball.pos * 5 - min.ball.pos - max.ball.pos)/3) %>% 
   select(participantId, true_ball_pos) -> true_ball_pos
