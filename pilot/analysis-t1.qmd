@@ -113,10 +113,21 @@ x <- task1_df %>% pull(va.select.x)
 x_med <- task1_df %>% pull(va.med.x)
 x_mod <- task1_df %>% pull(va.mod.x)
 
+# change the participantId to numeric id 
+# 1. Get unique participant IDs
+unique_ids <- unique(task1_df$participantId)
+
+# 2. Create a mapping
+id_mapping <- setNames(1:length(unique_ids), unique_ids)
+
+# 3. Create the numeric ID vector
+numeric_id <- as.numeric(factor(task1_df$participantId, levels = names(id_mapping)))
+
+
 stan_data <- list(
   N = N, 
   J = J, 
-  id = task1_df$participant_id, 
+  id = numeric_id, 
   x = x, 
   x_med = x_med, 
   x_mod = x_mod
@@ -131,11 +142,73 @@ Fit the stan model:
 
 fit <- model$sample(
   data = stan_data, 
-  chains = 4 # , 
+  chains = 4, 
+  iter_warmup = 2000,   # Number of warmup iterations (e.g., 1000)
+  iter_sampling = 4000, 
+  adapt_delta = 0.95 # Number of sampling iterations (e.g., 2000)
   # parallel_chains = 4
 )
 ```
 
+```{r}
+summary <- fit$summary()
+```
 
+Define custom posterior predictive check function: 
+
+```{r}
+#| label: custom pp_check 
+custom_pp_check <- function(
+   fitted_model, 
+   fun = bayesplot::ppc_dens_overlay, 
+   ndraws = 100, 
+   transform = identity,
+   ...
+ ) {
+   y_rep <- as_draws_rvars(fitted_model)$y_rep |> 
+     transform() |>
+     as_draws_matrix()
+   if (!is.null(ndraws)) {
+     y_rep = y_rep |>
+       merge_chains() |>
+       resample_draws(ndraws = ndraws) 
+   }
+   y <- fitted_model$draws("x_org", format = "matrix")[1, ] |>
+     as.vector() |>
+     transform()
+   fun(y, y_rep, ...)
+ }
+```
+
+```{r}
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = with(task1_df, case_when(param.lambda < 0 ~ "neg", param.lambda == 0 ~ "zero", param.lambda > 0 ~ "pos")))
+
+custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.med.x, ndraws = NULL)
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+```
+
+```{r}
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = y_rep)) + 
+  ggdist::stat_lineribbon() + 
+  geom_point(aes(y = va.select.x - va.med.x))
+
+
+```
+
+```{r}
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) + 
+  ggdist::stat_lineribbon() + 
+  geom_point(aes(y = va.select.x - va.med.x)) + 
+  facet_wrap(~ participantId)
+
+
+```
 
 

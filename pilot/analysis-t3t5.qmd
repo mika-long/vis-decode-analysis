@@ -118,6 +118,19 @@ task5_df %>% filter(va.select.x - va.ans.x > 0.4) %>%
   left_join(participants, by = join_by(participantId))
 ```
 
+```{r}
+task5_df %>% filter(participantId == "667433338e6cc9e53c828774") %>% 
+  mutate(error = data.select.x - data.ans.x) %>% 
+  pull(error)
+  ggplot() + 
+  geom_point(aes(x = data.select.x, y = data.select.y, color = "select")) +
+  geom_point(aes(x = data.ans.x, y = data.ans.y, color = "ans")) + 
+  xlim(-5, 5) + ylim(0, 1)
+```
+
+
+
+
 Math: 
 
 $$\begin{align*}
