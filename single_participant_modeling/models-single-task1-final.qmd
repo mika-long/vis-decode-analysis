@@ -145,7 +145,7 @@ task1_df %>% ggplot(aes(x = param.lambda, y = va.select.x - va.med.x)) +
 ## Weight function is logit 
 
 ```{r}
-#| eval: false 
+
 model <- cmdstan_model("stan_files/normal.laplace.logit.stan")
 # model$print()
 model 
@@ -154,7 +154,7 @@ model
 Prepare data for stan: 
 
 ```{r}
-#| eval: false 
+
 N <- task1_df %>% nrow(.)
 x <- task1_df %>% pull(va.select.x)
 x_med <- task1_df %>% pull(va.med.x)
@@ -224,6 +224,7 @@ custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$pa
 Checking the posterior results: 
 
 ```{r}
+#| layout-ncol: 2 
 # fit$draws() %>% spread_draws(`theta`) # %>%
 #   ggplot(aes(x = theta)) + 
 #   stat_halfeye()
@@ -258,7 +259,6 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
 ## Weight function is inv-mse 
 
 ```{r}
-#| eval: false 
 model <- cmdstan_model("stan_files/normal.laplace.inv_mse.stan")
 model
 ``` 
@@ -296,12 +296,12 @@ custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$pa
 Checking the posterior results: 
 
 ```{r}
-#| column: margin 
+#| layout-ncol: 2 
 
-fit$draws() %>% 
-  spread_draws(`theta`) %>%
-  ggplot(aes(x = beta)) + 
-  stat_halfeye()
+# fit$draws() %>% 
+#   spread_draws(`theta`) %>%
+#   ggplot(aes(x = beta)) + 
+#   stat_halfeye()
 
 fit$draws() %>% 
   spread_draws(`mu_med`, `mu_mod`) %>% 
@@ -383,14 +383,14 @@ The following has a hard time fitting ... skipping for now ...
 ### Mixture + inv_mse 
 
 ```{r}
-#| eval: false 
+
 model <- cmdstan_model("stan_files/normal.normal.mix.inv_mse.stan")
 model
 ``` 
 
 ```{r}
 #| output: false 
-#| eval: false 
+
 
 fit <- model$sample(
   data = stan_data, 
@@ -438,7 +438,7 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
 ### Weighted Average + Logit 
 
 ```{r}
-#| eval: false 
+
 model <- cmdstan_model("stan_files/normal.normal.weight.logit.stan")
 model
 ``` 
@@ -490,7 +490,7 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
 ### Weighted Average + Inv_MSE
 
 ```{r}
-#| eval: false 
+
 model <- cmdstan_model("stan_files/normal.normal.weight.inv_mse.stan")
 model
 ``` 
