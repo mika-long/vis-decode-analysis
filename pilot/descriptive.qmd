@@ -767,6 +767,10 @@ task5_df %>% filter(va.select.y - va.ans.y > 1) %>%
 
 Have reason to suspect that this participant really isn't answering the questions nicely ... 
 
+# Calculate average time 
+
+TODO 
+
 # SAVE 
 
 ```{r}

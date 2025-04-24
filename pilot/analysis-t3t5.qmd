@@ -39,7 +39,6 @@ Read in data
 
 task_df <- read_rds("task.rds")
 participants <- read_rds("participants.rds")
-participants %>% filter(dist_to_screen > 250) -> participants
 ```
 
 ```{r}
@@ -104,6 +103,21 @@ task5_df <- task_df %>% filter(task == "task5") %>% # or use task_df for full
 
 ## Project to X-Axis 
 
+```{r}
+task5_df %>% ggplot(aes(x = va.ans.y, y = va.select.x - va.ans.x, color = participantId)) + 
+  geom_point(alpha = 0.5)
+
+task5_df %>% filter(va.select.x - va.ans.x > 0.4) %>% 
+  ggplot() + 
+  geom_point(aes(x = data.select.x, y = data.select.y, color = "select")) + 
+  geom_point(aes(x = data.ans.x, y = data.ans.y, color = "ans")) + 
+  facet_wrap(~participantId) + xlim(-5, 5) + ylim(0, 1)
+
+task5_df %>% filter(va.select.x - va.ans.x > 0.4) %>% 
+  count(participantId) %>% 
+  left_join(participants, by = join_by(participantId))
+```
+
 Math: 
 
 $$\begin{align*}
@@ -114,11 +128,6 @@ $$\begin{align*}
 \mu_\alpha, \bar{\mu} &\sim N(0, 1) \\ 
 \sigma_\alpha, \bar{\sigma} &\sim \text{Half-Cauchy}(0, 1)
 \end{align*}$$
-
-```{r}
-task5_df %>% ggplot(aes(x = va.ans.y, y = va.select.x - va.ans.x)) + 
-  geom_point(alpha = 0.5)
-```
 
 Formula and prior: 
 
@@ -155,8 +164,6 @@ Fit model:
 ```{r}
 #| output: false 
 m.5.x.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
-  # account for numerical precision 
-  # mutate(error_va = ifelse(abs(error_va) < tolerance, 0, error_va)) %>% 
   brm(
     formula = f,
     data = .,
