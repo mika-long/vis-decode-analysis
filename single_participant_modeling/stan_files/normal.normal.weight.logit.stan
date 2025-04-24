@@ -6,6 +6,11 @@ data {
 }
 
 parameters {
+// scaling factor for distance
+  real beta;
+  // intercept for distance
+  real alpha;
+
   // intercept for x_med and x_mod
   real mu_mod;
   real mu_med;
@@ -32,6 +37,9 @@ model {
   sigma_mod ~ normal(0.15, 0.01);
   mu_med ~ normal(0, 0.05);
   sigma_med ~ normal(0.15, 0.6);
+
+  beta ~ normal(0, 1);
+  alpha ~ normal(0, 1);
   
   // likelihood
   for (n in 1:N) {

@@ -198,21 +198,27 @@ Fit the stan model:
 
 ```{r}
 #| output: false 
-#| eval: false 
 
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
-  # parallel_chains = 4
 )
+
+fit$save_object(file = "models/task1.normal.laplace.logit.rds")
 ```
 
 Posterior predictive checks: 
 
 ```{r}
 summary <- fit$summary()
-custom_pp_check(fit)
-# custom_pp_check(fit, type = "pit_ecdf")
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = with(task1_df, case_when(param.lambda < 0 ~ "neg", param.lambda == 0 ~ "zero", param.lambda > 0 ~ "pos")))
+
+custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.med.x, ndraws = NULL)
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
 ```
 
 Checking the posterior results: 
@@ -249,7 +255,6 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
   geom_point(aes(y = va.select.x - va.med.x))
 ```
 
-
 ## Weight function is inv-mse 
 
 ```{r}
@@ -262,20 +267,15 @@ Fit the stan model:
 
 ```{r}
 #| output: false 
-#| eval: false 
+#| eval: true 
 
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
   # parallel_chains = 4
 )
-```
 
-```{r}
-#| echo: false
-#| output: false 
-
-fit <- readRDS("models/task1.diff.rds")
+fit$save_object("models/normal.laplace.inv_mse.rds")
 ```
 
 Posterior predictive checks: 
@@ -284,7 +284,13 @@ Posterior predictive checks:
 #| column: margin 
 summary <- fit$summary()
 
-custom_pp_check(fit)
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = with(task1_df, case_when(param.lambda < 0 ~ "neg", param.lambda == 0 ~ "zero", param.lambda > 0 ~ "pos")))
+
+custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.med.x, ndraws = NULL)
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
 ```
 
 Checking the posterior results: 
@@ -310,14 +316,6 @@ fit$draws() %>%
   stat_halfeye()
 ```
 
-Save the stan model: 
-
-```{r}
-#| eval: false 
-
-fit$save_object(file = "models/task1.diff.rds")
-```
-
 ```{r}
 task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
   unnest_rvars() %>% 
@@ -336,9 +334,57 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
 
 ### Mixture + Logit 
 
+The following has a hard time fitting ... skipping for now ... 
+
+<!-- ```{r} -->
+<!-- #| eval: false  -->
+<!-- model <- cmdstan_model("stan_files/normal.normal.mix.logit.stan") -->
+<!-- model -->
+<!-- ```  -->
+
+<!-- ```{r} -->
+<!-- #| output: false  -->
+<!-- #| eval: false  -->
+
+<!-- fit <- model$sample( -->
+<!--   data = stan_data,  -->
+<!--   chains = 4,  -->
+<!--   adapt_delta = 0.99,  # Increased from default 0.8 -->
+<!--   max_treedepth = 15,   # Increased from default 10 -->
+<!--   parallel_chains = 4 -->
+<!-- ) -->
+<!-- ``` -->
+
+<!-- Posterior predictive checks:  -->
+
+<!-- ```{r} -->
+<!-- #| column: margin  -->
+<!-- summary <- fit$summary() -->
+
+<!-- custom_pp_check(fit) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- #| layout-ncol: 2  -->
+
+<!-- task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%  -->
+<!--   unnest_rvars() %>%  -->
+<!--   ggplot(aes(x = param.lambda, y = y_rep)) +  -->
+<!--   ggdist::stat_lineribbon() +  -->
+<!--   geom_point(aes(y = va.select.x - va.med.x)) -->
+
+<!-- task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%  -->
+<!--   unnest_rvars() %>%  -->
+<!--   ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) +  -->
+<!--   ggdist::stat_lineribbon() +  -->
+<!--   geom_point(aes(y = va.select.x - va.med.x)) -->
+<!-- ``` -->
+
+### Mixture + inv_mse 
+
 ```{r}
 #| eval: false 
-model <- cmdstan_model("stan_files/normal.normal.mix.logit.stan")
+model <- cmdstan_model("stan_files/normal.normal.mix.inv_mse.stan")
 model
 ``` 
 
@@ -349,19 +395,28 @@ model
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
-  adapt_delta = 0.99,  # Increased from default 0.8
-  max_treedepth = 15,   # Increased from default 10
-  parallel_chains = 4
+  adapt_delta = 0.95 # ,  # Increased from default 0.8
+  # max_treedepth = 15,   # Increased from default 10
+  # parallel_chains = 4
 )
+
+fit$save_object("models/normal.normal.mix.inv_mse.rds")
 ```
 
 Posterior predictive checks: 
 
 ```{r}
-#| column: margin 
+#| layout-ncol: 2 
+
 summary <- fit$summary()
 
-custom_pp_check(fit)
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = with(task1_df, case_when(param.lambda < 0 ~ "neg", param.lambda == 0 ~ "zero", param.lambda > 0 ~ "pos")))
+
+custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.med.x, ndraws = NULL)
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
 ```
 
 ```{r}
@@ -378,627 +433,133 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
   ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) + 
   ggdist::stat_lineribbon() + 
   geom_point(aes(y = va.select.x - va.med.x))
-```
-
-### Mixture + inv_mse 
-
-```{r}
-#| eval: false 
-model <- cmdstan_model("stan_files/")
-model
-``` 
-
-```{r}
-#| output: false 
-#| eval: false 
-
-fit <- model$sample(
-  data = stan_data, 
-  chains = 4, 
-  adapt_delta = 0.95,  # Increased from default 0.8
-  max_treedepth = 15,   # Increased from default 10
-  parallel_chains = 4
-)
 ```
 
 ### Weighted Average + Logit 
 
 ```{r}
 #| eval: false 
-model <- cmdstan_model("stan_files/")
+model <- cmdstan_model("stan_files/normal.normal.weight.logit.stan")
 model
 ``` 
 
 ```{r}
 #| output: false 
-#| eval: false 
 
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
-  adapt_delta = 0.95,  # Increased from default 0.8
-  max_treedepth = 15,   # Increased from default 10
-  parallel_chains = 4
+  adapt_delta = 0.95
 )
+
+fit$save_object("models/normal.normal.weight.logit.rds")
+```
+
+Posterior predictive checks: 
+
+```{r}
+#| layout-ncol: 2 
+
+summary <- fit$summary()
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = with(task1_df, case_when(param.lambda < 0 ~ "neg", param.lambda == 0 ~ "zero", param.lambda > 0 ~ "pos")))
+
+custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.med.x, ndraws = NULL)
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+```
+
+```{r}
+#| layout-ncol: 2 
+
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = y_rep)) + 
+  ggdist::stat_lineribbon() + 
+  geom_point(aes(y = va.select.x - va.med.x))
+
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) + 
+  ggdist::stat_lineribbon() + 
+  geom_point(aes(y = va.select.x - va.med.x))
 ```
 
 ### Weighted Average + Inv_MSE
 
 ```{r}
 #| eval: false 
-model <- cmdstan_model("stan_files/")
+model <- cmdstan_model("stan_files/normal.normal.weight.inv_mse.stan")
 model
 ``` 
 
 ```{r}
 #| output: false 
-#| eval: false 
+
 
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
-  adapt_delta = 0.95,  # Increased from default 0.8
-  max_treedepth = 15,   # Increased from default 10
-  parallel_chains = 4
+  adapt_delta = 0.95
 )
+
+fit$save_object("models/normal.normal.weight.inv_mse.rds")
+```
+
+Posterior predictive checks: 
+
+```{r}
+#| layout-ncol: 2 
+summary <- fit$summary()
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = with(task1_df, case_when(param.lambda < 0 ~ "neg", param.lambda == 0 ~ "zero", param.lambda > 0 ~ "pos")))
+
+custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.med.x, ndraws = NULL)
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+```
+
+
+```{r}
+#| layout-ncol: 2 
+
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = y_rep)) + 
+  ggdist::stat_lineribbon() + 
+  geom_point(aes(y = va.select.x - va.med.x))
+
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) + 
+  ggdist::stat_lineribbon() + 
+  geom_point(aes(y = va.select.x - va.med.x))
 ```
 
 ### LOO Compare the above models so far 
 
 ```{r}
-m1 <- readRDS("models/task1.diff.rds") # diff
+m1 <- readRDS("models/task1.normal.laplace.logit.rds")
 m1_loo <- m1$loo()
-m2 <- readRDS("models/task1.abs.diff.rds") # abs diff
+m2 <- readRDS("models/normal.laplace.inv_mse.rds") 
 m2_loo <- m2$loo()
-m3 <- readRDS("models/task1.sq.diff.rds") # diff^2
+m3 <- readRDS("models/normal.normal.mix.inv_mse.rds") 
 m3_loo <- m3$loo()
-m4 <- readRDS("models/task1.beta.rds") # beta 
+m4 <- readRDS("models/normal.normal.weight.inv_mse.rds") 
 m4_loo <- m4$loo()
+m5 <- readRDS("models/normal.normal.weight.logit.rds") 
+m5_loo <- m5$loo()
 
-brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo, "Model 3" = m3_loo, "Model 4" = m4_loo),
+brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo, 
+                             "Model 3" = m3_loo, "Model 4" = m4_loo, 
+                             "Model 5" = m5_loo),
                   method = c("stacking"))
 ```
 
-Let's zoom in on what the lambdas have: 
+The weighted average of normal approach beats the mixture model every time ... 
+Which makes sense. We are not picking from one or the other, but more like pick and adjust ... 
 
-```{r}
-m2 <- readRDS("models/task1.abs.diff.rds") # abs diff
-summary <- m2$summary()
-
-summary %>% filter(str_detect(variable, "^lambda")) %>%
-  arrange(median) %>% 
-  ggplot(aes(y = reorder(variable, median))) +
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +
-  geom_point(aes(x = median))
-```
-
-One thing about the above model is that the mixing parameter `theta` is constrained to be >= 0.5. This is because of how we defined the function. We could also fit models that have an intercept, allowing the full range to be something more broad. 
-
-### lambda = inv-logit (alpha + beta * abs(x.med - x.mod))
-
-Math model: 
-
-$$\begin{align*}
-p_X(x_i) & =  \theta \cdot \Pr(\hat{x}^{\text{med}}_i) + (1 - \theta) \cdot \Pr(\hat{x}^{\text{mod}}_i) \\
-\hat{x}^{\text{med}}_i &\sim \mathcal{N}(x^\text{med}_i, (\sigma^\text{med})^2) \\ 
-\hat{x}^{\text{mod}}_i &\sim \text{Laplace}(x^\text{mod}_i, (\sigma^{\text{mod}})^2) \\ 
-\theta &= \text{logit}^{-1}(\alpha + \beta \times |x^{\text{med}}_i - x^{\text{mod}}_i| ) \\ 
-\beta &\sim \mathcal{N}(0, 1), \alpha \sim \mathcal{N}(0, 1)
-\end{align*}$$
-
-Note: 
-
-- The prior on `alpha` would greatly influence what the value of `alpha` would be. If `alpha ~ N(0, 1)` then posterior `alpha` would be around 2. 
-- We will implement a way to scale `alpha`. 
-
-Read stan model: 
-
-```{r}
-#| eval: false 
-model <- cmdstan_model("stan_files/sheng.mix.2.4.stan")
-model
-``` 
-
-Fit the model: 
-
-```{r}
-#| output: false 
-#| eval: false 
-fit <- model$sample(
-  data = stan_data, 
-  chains = 4, 
-  # parallel_chains = 4
-  )
-```
-
-```{r}
-#| echo: false
-#| output: false 
-fit <- readRDS("models/task1.alpha.abs.diff.rds")
-```
-
-Posterior predictive checks: 
-
-```{r}
-#| column: margin 
-summary <- fit$summary()
-
-custom_pp_check(fit)
-```
-
-Checking the posterior results: 
-
-```{r}
-#| column: margin 
-
-fit$draws() %>% 
-  spread_draws(`alpha`, `beta`) %>%
-  pivot_longer(4:5) %>%
-  ggplot(aes(x = value, y = name)) + 
-  stat_halfeye()
-
-fit$draws() %>% 
-  spread_draws(`mu_med`, `mu_mod`) %>% 
-  pivot_longer(4:5) %>% 
-  ggplot(aes(x = value, y = name)) + 
-  stat_halfeye()
-
-fit$draws() %>% 
-  spread_draws(`sigma_med`, `sigma_mod`) %>% 
-  pivot_longer(4:5) %>% 
-  ggplot(aes(x = value, y = name)) + 
-  stat_halfeye()
-```
-
-Save the stan model: 
-
-```{r}
-#| eval: false 
-
-fit$save_object(file = "models/task1.alpha.abs.diff.rds")
-```
-
-**If we put a standard prior on alpha, it is usually positive, meaning that we still can't go all the way to negative with alpha + beta * abs(diff).**
-
-### lambda = inv-logit(alpha + beta * abs(x.med - x.mod) / var)
-
-... where `var` is defined as $\sqrt{(\sigma^\text{med})^2 + 2 \times \sigma^\text{mod}^2}$. 
-
-Read stan model: 
-
-```{r}
-#| eval: false 
-model <- cmdstan_model("stan_files/sheng.mix.2.5.stan")
-model 
-``` 
-
-Fit the model: 
-
-```{r}
-#| output: false 
-#| eval: false 
-fit <- model$sample(
-  data = stan_data, 
-  chains = 4, 
-  # parallel_chains = 4
-  )
-```
-
-```{r}
-#| echo: false
-#| output: false 
-fit <- readRDS("models/task1.alpha.abs.adj.diff.rds")
-```
-
-Posterior predictive checks: 
-
-```{r}
-#| column: margin 
-summary <- fit$summary()
-
-custom_pp_check(fit)
-```
-
-Checking the posterior results: 
-
-```{r}
-#| column: margin 
-
-fit$draws() %>% 
-  spread_draws(`alpha`, `beta`) %>%
-  pivot_longer(4:5) %>%
-  ggplot(aes(x = value, y = name)) + 
-  stat_halfeye()
-
-fit$draws() %>% 
-  spread_draws(`mu_med`, `mu_mod`) %>% 
-  pivot_longer(4:5) %>% 
-  ggplot(aes(x = value, y = name)) + 
-  stat_halfeye()
-
-fit$draws() %>% 
-  spread_draws(`sigma_med`, `sigma_mod`) %>% 
-  pivot_longer(4:5) %>% 
-  ggplot(aes(x = value, y = name)) + 
-  stat_halfeye()
-```
-
-Save the stan model: 
-
-```{r}
-#| eval: false 
-
-fit$save_object(file = "models/task1.alpha.abs.adj.diff.rds")
-```
-
-### Compare between abs(diff) and abs(diff)/var 
-
-```{r}
-m1 <- read_rds("models/task1.alpha.abs.diff.rds")
-m1_loo <- m1$loo()
-m2 <- read_rds("models/task1.alpha.abs.adj.diff.rds")
-m2_loo <- m2$loo()
-
-brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo),
-                  method = c("stacking"))
-```
-
-The model with scaled variance works better. Let's see in detail what it actually does: 
-
-```{r}
-fit <- m2
-summary <- fit$summary()
-
-summary %>% filter(str_detect(variable, "^lambda")) %>%
-  arrange(median) %>% 
-  ggplot(aes(y = reorder(variable, median))) +
-  geom_segment(aes(x = q5, xend = q95, yend = variable)) +
-  geom_point(aes(x = median)) + xlim(0, 1)
-```
-
-```{r}
-task1_df %>% mutate(mix_paramter = as_draws_rvars(fit)$lambda) %>% 
-  unnest_rvars() %>% 
-  ggplot(aes(x = param.lambda, y = mix_paramter)) + 
-  ggdist::stat_ribbon() + 
-  ylim(0, 1)
-
-task1_df %>% mutate(mix_paramter = as_draws_rvars(fit)$lambda) %>% 
-  unnest_rvars() %>% 
-  ggplot(aes(x = param.lambda, y = 1 - mix_paramter)) + 
-  ggdist::stat_ribbon() + 
-  ylim(0, 1)
-```
-
-This, however, is still not what we want. When `lambda = 0`, the participant should be selecting mod all the time with little variance, which is not what the above graph is telling us about. 
-
-```{r}
-task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
-  unnest_rvars() %>% 
-  ggplot(aes(x = param.lambda, y = y_rep)) + 
-  ggdist::stat_lineribbon() + 
-  geom_point(aes(y = va.select.x - va.med.x))
-
-task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
-  unnest_rvars() %>% 
-  ggplot(aes(x = abs(va.med.x - va.mod.x), y = y_rep)) + 
-  ggdist::stat_lineribbon() + 
-  geom_point(aes(y = va.select.x - va.med.x))
-```
-
-### lambda = inv-logit(beta * (alpha + abs(x.med - x.mod) / var))
-
-```{r}
-#| eval: false 
-model <- cmdstan_model("stan_files/sheng.mix.2.6.stan")
-model 
-``` 
-
-Fit the model: 
-
-```{r}
-#| output: false 
-#| eval: false 
-fit <- model$sample(
-  data = stan_data, 
-  chains = 4, 
-  # parallel_chains = 4, 
-  adapt_delta = 0.95)
-```
-
-```{r}
-#| echo: false
-#| output: false 
-fit <- readRDS("models/task1.beta.abs.adj.diff.alpha.rds")
-```
-
-Posterior predictive checks: 
-
-```{r}
-#| column: margin 
-summary <- fit$summary()
-
-custom_pp_check(fit)
-```
-
-Checking the posterior results: 
-
-```{r}
-#| column: margin 
-
-fit$draws() %>% 
-  spread_draws(`alpha`, `beta`) %>%
-  pivot_longer(4:5) %>%
-  ggplot(aes(x = value, y = name)) + 
-  stat_halfeye()
-
-fit$draws() %>% 
-  spread_draws(`mu_med`, `mu_mod`) %>% 
-  pivot_longer(4:5) %>% 
-  ggplot(aes(x = value, y = name)) + 
-  stat_halfeye()
-
-fit$draws() %>% 
-  spread_draws(`sigma_med`, `sigma_mod`) %>% 
-  pivot_longer(4:5) %>% 
-  ggplot(aes(x = value, y = name)) + 
-  stat_halfeye()
-```
-
-Save the stan model: 
-
-```{r}
-#| eval: false 
-
-fit$save_object(file = "models/task1.beta.abs.adj.diff.alpha.rds")
-```
-
-### Compare between whether alpha should be intercept outside or inside 
-
-```{r}
-m1 <- read_rds("models/task1.alpha.abs.adj.diff.rds")
-m1_loo <- m1$loo()
-m2 <- read_rds("models/task1.beta.abs.adj.diff.alpha.rds")
-m2_loo <- m2$loo()
-
-brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo),
-                  method = c("stacking"))
-```
-
-So alpha should be outside instead of inside. 
-
-## Weighted average model 
-
-### The model 
-
-After talking to Matt, Matt said that the process is more similar to anchor then adjust, instead of choosing to anchor or adjust, so the model might be better with weighted average. 
-
-As of now, we don't know what a weighted average^[or convolution integration?] between a Normal distribution and a Laplace distribution is. Let's first start with a Normal + Normal, since we know that the sum is still Normal. 
-
-$$\begin{align*}
-    \hat{x}_i &\sim w_i \cdot \hat{x}^\text{med}_i + (1 - w_i) \cdot \hat{x}^\text{mod}_i \\ 
-    \hat{x}^\text{med}_i &\sim \mathcal{N}(x^\text{med}_i + \mu^\text{med}, (\sigma^\text{med})^2) \\ 
-    \hat{x}^\text{mod}_i &\sim \mathcal{N}(x^\text{mod}_i + \mu^\text{mod}, \sigma^\text{mod}^2) \\ 
-    w_i &= \frac{\text{MSE}^{-1}(\hat{x}_i^\text{med})}{\text{MSE}^{-1}(\hat{x}_i^\text{med}) + \text{MSE}^{-1}(\hat{x}_i^\text{mod})}
-\end{align*}$$
-
-```{r}
-#| eval: false 
-model <- cmdstan_model("stan_files/sheng.mix.2.8.stan")
-model
-``` 
-
-Fit the model: 
-
-```{r}
-#| output: false 
-#| eval: false 
-fit <- model$sample(
-  data = stan_data, 
-  chains = 4, 
-  # parallel_chains = 4, 
-  # adapt_delta = 0.95
-  )
-```
-
-```{r}
-#| echo: false
-#| output: false 
-fit <- readRDS("models/task1.weighted.rds")
-```
-
-Posterior predictive checks: 
-
-```{r}
-#| column: margin 
-summary <- fit$summary()
-
-custom_pp_check(fit)
-```
-
-Save the stan model: 
-
-```{r}
-#| eval: false 
-
-fit$save_object(file = "models/task1.weighted.rds")
-```
-
-```{r}
-as_draws_rvars(fit)$w
-```
-
-
-```{r}
-task1_df %>% mutate(weight = as_draws_rvars(fit)$w) %>% 
-  unnest_rvars() %>% 
-  ggplot(aes(x = param.lambda, y = weight)) + 
-  ggdist::stat_ribbon() + ylim(0, 1)
-
-task1_df %>% mutate(weight = as_draws_rvars(fit)$w) %>% 
-  unnest_rvars() %>% 
-  ggplot(aes(x = param.lambda, y = 1 - weight)) + 
-  ggdist::stat_ribbon() + ylim(0, 1)
-```
-
-```{r}
-# task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
-#   unnest_rvars() %>% 
-#   ggplot(aes(x = param.lambda, y = y_rep)) + 
-#   ggdist::stat_ribbon() + 
-#   scale_fill_brewer(palette = "Blues")
-
-task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
-  unnest_rvars() %>% 
-  ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) + 
-  ggdist::stat_lineribbon(alpha = 0.5) +
-  geom_point(aes(y = va.select.x - va.med.x), data = task1_df, alpha = 0.8) + 
-  scale_fill_brewer(palette = "Blues")
-
-task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
-  unnest_rvars() %>% 
-  ggplot(aes(x = abs(va.med.x - va.mod.x), y = y_rep)) + 
-  ggdist::stat_lineribbon(alpha = 0.5) +
-  geom_point(aes(y = va.select.x - va.med.x), data = task1_df, alpha = 0.8) + 
-  scale_fill_brewer(palette = "Blues")
-```
-
-```{r}
-task1_df %>% ggplot(aes(x = abs(va.med.x - va.mod.x), y = va.select.x - va.med.x)) + geom_point()
-  # ggdist::stat_lineribbon(alpha = 0.5) +
-  geom_point(aes(y = va.select.x - va.med.x), data = task1_df, alpha = 0.8) + 
-  # scale_fill_brewer(palette = "Blues")
-```
-
-Matt's suggestion: 
-
-```{r}
-custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = with(task1_df, case_when(param.lambda < 0 ~ "neg", param.lambda == 0 ~ "zero", param.lambda > 0 ~ "pos")))
-
-custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
-
-custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.med.x, ndraws = NULL)
-
-custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
-```
-
-### The model with bigger variance 
-
-```{r}
-#| eval: false 
-model <- cmdstan_model("stan_files/sheng.mix.2.8_big.var.stan")
-model
-``` 
-
-Fit the model: 
-
-```{r}
-#| output: false 
-#| eval: false 
-fit <- model$sample(
-  data = stan_data, 
-  chains = 4, 
-  # parallel_chains = 4, 
-  # adapt_delta = 0.95
-  )
-```
-
-```{r}
-#| echo: false
-#| output: false 
-fit <- readRDS("models/task1.weighted_big.var.rds")
-```
-
-Posterior predictive checks: 
-
-```{r}
-#| column: margin 
-summary <- fit$summary()
-
-custom_pp_check(fit)
-```
-
-Save the stan model: 
-
-```{r}
-#| eval: false 
-
-fit$save_object(file = "models/task1.weighted_big.var.rds")
-```
-
-```{r}
-#| layout-ncol: 2 
-
-task1_df %>% mutate(weight = as_draws_rvars(fit)$w) %>% 
-  unnest_rvars() %>% 
-  ggplot(aes(x = param.lambda, y = weight)) + 
-  ggdist::stat_ribbon() + ylim(0, 1)
-
-task1_df %>% mutate(weight = as_draws_rvars(fit)$w) %>% 
-  unnest_rvars() %>% 
-  ggplot(aes(x = param.lambda, y = 1 - weight)) + 
-  ggdist::stat_ribbon() + ylim(0, 1)
-```
-
-```{r}
-task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
-  unnest_rvars() %>% 
-  ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) + 
-  ggdist::stat_lineribbon(alpha = 0.5) +
-  geom_point(aes(y = va.select.x - va.med.x), data = task1_df, alpha = 0.8) + 
-  scale_fill_brewer(palette = "Blues")
-
-task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
-  unnest_rvars() %>% 
-  ggplot(aes(x = param.lambda, y = y_rep)) + 
-  ggdist::stat_lineribbon(alpha = 0.5) +
-  geom_point(aes(y = va.select.x - va.med.x), data = task1_df, alpha = 0.8) + 
-  scale_fill_brewer(palette = "Blues")
-```
-
-```{r}
-custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = with(task1_df, case_when(param.lambda < 0 ~ "neg", param.lambda == 0 ~ "zero", param.lambda > 0 ~ "pos")))
-
-custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
-
-custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.med.x, ndraws = NULL)
-
-custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
-```
-
-### Compare the two weighted average models 
-
-```{r}
-m1 <- readRDS("models/task1.weighted.rds")
-m1_loo <- m1$loo()
-m2 <- readRDS("models/task1.weighted_big.var.rds")
-m2_loo <- m2$loo()
-brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo),
-                  method = c("stacking"))
-```
-
-The one with the bigger variance has slightly better performance. 
-
-
-## Compare all six models 
-
-```{r}
-# TODO 
-# m1 <- readRDS(file = "mix_models/sheng.mix.2.1.rds")
-# m2 <- readRDS(file = "mix_models/sheng.mix.2.2.1.rds")
-# m3 <- readRDS(file = "mix_models/sheng.mix.2.3.rds")
-# m4 <- readRDS(file = "mix_models/sheng.mix.2.4.rds")
-# m5 <- readRDS(file = "mix_models/sheng.mix.2.5.rds")
-# m6 <- readRDS(file = "mix_models/sheng.mix.2.6.rds")
-# # calculate loo 
-# m1_loo <- m1$loo()
-# m2_loo <- m2$loo()
-# m3_loo <- m3$loo()
-# m4_loo <- m4$loo()
-# m5_loo <- m5$loo()
-# m6_loo <- m6$loo()
-# 
-# brms::loo_model_weights(list("Model 1" = m1_loo, "Model 2" = m2_loo, "Model 3" = m3_loo, 
-#                              "Model 4" = m4_loo, "Model 5" = m5_loo, "Model 6" = m6_loo),
-#                   method = c("stacking"))
-```

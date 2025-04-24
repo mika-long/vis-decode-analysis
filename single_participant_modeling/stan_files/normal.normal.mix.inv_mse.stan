@@ -21,7 +21,7 @@ transformed parameters {
   vector[N] inv_mse_mod;  
 
   for (n in 1:N) {
-    inv_mse_mod[n] = 1 / (square(x_mod[n] - x_med[n] + mu_mod) + quare(sigma_mod)); 
+    inv_mse_mod[n] = 1 / (square(x_mod[n] - x_med[n] + mu_mod) + square(sigma_mod)); 
 
     theta[n] = inv_mse_med / (inv_mse_med + inv_mse_mod[n]); 
   }
