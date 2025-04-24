@@ -60,7 +60,7 @@ task_df <- df %>% filter(str_detect(trialId, "task")) %>%
          pixel.select.x = pixel.x, 
          pixel.select.y = pixel.y)
 
-exclude_participants <- c("67fd4f955123c6d79ae66a3a", "67eedf7be13ffb77c677d4dd", "6443ebb84fc33e703937a6f9")
+exclude_participants <- c("67fd4f955123c6d79ae66a3a", "67eedf7be13ffb77c677d4dd", "6443ebb84fc33e703937a6f9", "67ea39f872546624b6b520bf")
 ```
 
 ```{r}
@@ -115,7 +115,8 @@ ball_positions <- df %>% filter(status == "completed") %>%
   group_by(participantId) %>% 
   summarise(avg.ball.pos = sum(split_answer) / 5, 
             min.ball.pos = min(split_answer),
-            max.ball.pos = max(split_answer))
+            max.ball.pos = max(split_answer), 
+            true_ball_pos = (avg.ball.pos * 5 - min.ball.pos - max.ball.pos)/3)
 
 calibrations <- p %>% filter(grepl("pixelsPerMM|dist-calibration-MM", responseId)) %>%
   select(-trialId) %>%
@@ -123,42 +124,17 @@ calibrations <- p %>% filter(grepl("pixelsPerMM|dist-calibration-MM", responseId
   pivot_wider(names_from = responseId, values_from = answer) %>%
   rename(pixelToMM = pixelsPerMM, dist_to_screen = `dist-calibration-MM`) 
 
-calibrations %>% left_join(ball_positions) %>% 
+participants <- calibrations %>% left_join(ball_positions, by = join_by(participantId)) %>% 
   mutate(phy = dist_to_screen * tan(13.5 * pi / 180), 
          px = phy * pixelToMM, 
-         square_pos = round(px + avg.ball.pos)) -> test 
-
-df %>% filter(status == "completed") %>% 
-  filter(grepl("calibration", trialId)) %>% 
-  select(participantId, responseId, answer) %>% 
-  pivot_wider(names_from = responseId, values_from = answer) %>% 
-  filter(!is.na(`square-position`)) %>% 
-  left_join(test) %>% view(.)
-
-
-
-avg_ball_pos %>% mutate(true_ball_pos = (avg.ball.pos * 5 - min.ball.pos - max.ball.pos)/3) %>% 
-  select(participantId, true_ball_pos) -> true_ball_pos
-
-participants <- p %>% filter(grepl("pixelsPerMM|dist-calibration-MM", responseId)) %>%
-  select(-trialId) %>%
-  mutate(answer = as.numeric(answer)) %>%
-  pivot_wider(names_from = responseId, values_from = answer) %>%
-  rename(pixelToMM = pixelsPerMM, dist_to_screen = `dist-calibration-MM`) %>%
-  filter(!participantId %in% exclude_participants) %>%
-  left_join(avg_ball_pos) %>% 
-  mutate(phy = dist_to_screen * tan(13.5 * pi / 180), 
-         px = phy * pixelToMM, 
-         square_pos = round(px + avg.ball.pos))
-
-participants %>% left_join(true_ball_pos) %>% 
+         square_pos = round(px + avg.ball.pos)) %>% 
   mutate(ball.square.dist = (square_pos - true_ball_pos) / pixelToMM, 
          d = ball.square.dist / tan(13.5 * pi / 180)) %>% 
   select(participantId, pixelToMM, d) %>% 
-  rename(dist_to_screen = d) -> participants
+  rename(dist_to_screen = d)
 ```
 
-Read in the demographic from prolific: 
+Read in the demographic from prolific: (TODO)
 
 ```{r}
 prolific_demographic <- read.csv("pilot-01-demographic.csv") %>% as_tibble(.)
@@ -175,7 +151,7 @@ Load data:
 #| label: get task 1 data 
 #| code-fold: true 
 
-task1_df <- task_df %>% filter(task == "task1") %>% # task_df
+task1_df <- task_df %>% filter(task == "task1") %>%
   select(-slider.x, -slider.y) %>% 
   left_join(participants, by = join_by(participantId)) %>% 
   mutate(data.select.left_area = psgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE), 
@@ -200,8 +176,10 @@ task1_df %>% group_by(participantId) %>%
   summarise(correlation.x = cor(data.select.x, data.ans.x)) %>% 
   mutate(mean = mean(correlation.x), sd = sd(correlation.x), 
          lb = mean - 2 * sd, ub = mean + 2 * sd) %>% 
-  filter(correlation.x  < lb)
+  filter(correlation.x  < 0.5)
 ```
+
+Examine the specific participants: 
 
 ```{r}
 task1_df %>% filter(participantId == "67f44a0314ad081a761de62c") %>% 
@@ -210,13 +188,26 @@ task1_df %>% filter(participantId == "67f44a0314ad081a761de62c") %>%
   geom_point(data = filter(task1_df, participantId == "67f44a0314ad081a761de62c"), aes(x = data.ans.x, color = "answer"))
 ```
 
+```{r}
+task1_df %>% filter(participantId == "67ea39f872546624b6b520bf") %>% 
+  ggplot(aes(x = data.select.x, y = data.select.y)) + 
+  geom_point() + xlim(-5, 5) + ylim(0, 1) + 
+  geom_point(data = filter(task1_df, participantId == "67ea39f872546624b6b520bf"), aes(x = data.ans.x, color = "answer"))
+```
 
+The author is clearly not answering correctly ... we will not include their data. Huh ... what happened to this data ...? 
+
+---
 
 Plotting selection, answer, and `x` coordinate for highest point against lambda: 
 
 ```{r}
-task1_df %>% ggplot(aes(y = data.select.x - data.ans.x, x = param.lambda)) + 
-  geom_point(alpha = 0.5) # + ylim(-1, 1)# + 
+exclude <- c("67ea39f872546624b6b520bf", "67f44a0314ad081a761de62c")
+
+
+task1_df %>% filter(!participantId %in% exclude) %>% 
+  ggplot(aes(y = data.select.x - data.ans.x, x = param.lambda)) + 
+  geom_point(alpha = 0.5) + # + ylim(-1, 1)# + 
   geom_point(aes(y = data.ans.x - param.mu, x = param.lambda), color = "red", alpha = 0.5)
   
 task1_df %>% ggplot(aes(y = data.select.left_area - 0.5, x = param.lambda)) + 
@@ -291,9 +282,27 @@ task2_df <- task_df %>% filter(task == "task2") %>%
 ```{r}
 task2_df %>% group_by(participantId) %>% 
   summarise(correlation.y = cor(data.select.y,  data.ans.y), 
-            correlation.x = cor(data.select.x, data.ans.x))
+            correlation.x = cor(data.select.x, data.ans.x)) %>% 
+  filter(correlation.y < 0.5 | correlation.x < 0.5)
 ```
 
+Examine particular participants: 
+
+```{r}
+task2_df %>% filter(participantId == "67ea39f872546624b6b520bf") %>% 
+  ggplot(aes(x = data.select.x, y = data.select.y)) + 
+  geom_point() + xlim(-5, 5) + ylim(0, 1) + 
+  geom_point(data = filter(task2_df, participantId == "67ea39f872546624b6b520bf"), aes(x = data.ans.x, color = "answer"))
+```
+
+Examine particular participants: 
+
+```{r}
+task2_df %>% filter(participantId == "67eedf7be13ffb77c677d4dd") %>% 
+  ggplot(aes(x = data.select.x, y = data.select.y)) + 
+  geom_point() + xlim(-5, 5) + ylim(0, 1) + 
+  geom_point(data = filter(task2_df, participantId == "67eedf7be13ffb77c677d4dd"), aes(x = data.ans.x, color = "answer"))
+```
 
 
 Checking relations, focusing on the **y** axes: 
@@ -376,9 +385,9 @@ task3_df <- task_df %>% filter(task == "task3") %>%
 ```
 
 ```{r}
-task3_df %>% filter(abs(data.select.y - 0.5) > 0.1)
+task3_df %>% filter(abs(data.select.y - 0.5) > 0.1) %>% 
+  count(participantId)
 ```
-
 
 
 Verify that the scales are correct:
@@ -478,9 +487,12 @@ task4_df <- task_df %>% filter(task == "task4") %>%
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen)) 
 ```
 
+Calculate correlation: 
+
 ```{r}
 task4_df %>% group_by(participantId) %>% 
-  summarise(correlation = cor(data_to_screen_slope(data.select.slope), data_to_screen_slope(data.ans.slope)))
+  summarise(correlation = cor(data_to_screen_slope(data.select.slope), data_to_screen_slope(data.ans.slope))) %>% 
+  filter(correlation < 0.5)
 ```
 
 
