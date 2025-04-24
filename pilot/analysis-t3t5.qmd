@@ -114,6 +114,12 @@ $$\begin{align*}
 \sigma_\alpha, \bar{\sigma} &\sim \text{Half-Cauchy}(0, 1)
 \end{align*}$$
 
+```{r}
+task5_df %>% ggplot(aes(x = va.ans.y, y = va.select.x - va.ans.x)) + 
+  geom_point(alpha = 0.5)
+```
+
+
 Formula and prior: 
 
 ```{r}
@@ -157,7 +163,7 @@ m.5.x.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     family = gaussian(),
     prior = p,
     chains = 4, 
-    # cores = 4,
+    cores = 4,
     control = list(adapt_delta = 0.99),
     iter = 6000, 
     file = "models/task5.x", 
