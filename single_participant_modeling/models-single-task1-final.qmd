@@ -349,7 +349,7 @@ model
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
-  adapt_delta = 0.95,  # Increased from default 0.8
+  adapt_delta = 0.99,  # Increased from default 0.8
   max_treedepth = 15,   # Increased from default 10
   parallel_chains = 4
 )

@@ -35,8 +35,8 @@ model {
   // priors
   mu_mod ~ normal(-0.02, 0.02); // Different prior than the laplace model 
   sigma_mod ~ normal(0.23, 0.02);
-  mu_med ~ normal(0, 1);
-  sigma_med ~ normal(0.15, 1);
+  mu_med ~ normal(0, 0.1);
+  sigma_med ~ normal(0.23, 0.1);
   
   // likelihood
   for (n in 1:N) {

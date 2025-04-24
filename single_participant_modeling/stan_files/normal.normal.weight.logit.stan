@@ -17,13 +17,12 @@ parameters {
 
 transformed parameters {
   vector<lower=0, upper=1>[N] theta; // weight 
-  real inv_mse_med = 1 / (square(mu_med) + square(sigma_med)); 
-  vector[N] inv_mse_mod;  
 
   for (n in 1:N) {
-    inv_mse_mod[n] = 1 / (square(x_mod[n] - x_med[n] + mu_mod) + 2 * square(sigma_mod)); 
+    real diff = x_med[n] - x_mod[n];
+    real sum_var = sqrt(square(sigma_med) + square(sigma_mod));
 
-    theta[n] = inv_mse_med / (inv_mse_med + inv_mse_mod[n]); 
+    theta[n] = inv_logit(alpha + beta * (abs(diff) / sum_var));
   }
 }
 
@@ -37,9 +36,8 @@ model {
   // likelihood
   for (n in 1:N) {
     // Two-component mixture model
-    target += log_mix(theta[n],
-                      normal_lpdf(x[n] | x_med[n] + mu_med, sigma_med),
-                      double_exponential_lpdf(x[n] | x_mod[n] + mu_mod, sigma_mod));
+    target += normal_lpdf(x[n] | theta[n] * (x_med[n] + mu_med) + (1 - theta[n]) * (x_mod[n] + mu_mod),
+                                 sqrt(square(theta[n]) * square(sigma_med) + square(1 - theta[n]) * square(sigma_mod))); 
   }
 }
 generated quantities {
@@ -48,16 +46,12 @@ generated quantities {
   vector[N] x_org = x;
   
   for (n in 1:N) {
-    log_lik[n] = log_mix(theta[n],
-                         normal_lpdf(x[n] | x_med[n] + mu_med, sigma_med),
-                         double_exponential_lpdf(x[n] | x_mod[n] + mu_mod, sigma_mod));
+    log_lik[n] = normal_lpdf(x[n] | theta[n] * (x_med[n] + mu_med) + (1 - theta[n]) * (x_mod[n] + mu_mod),
+                                 sqrt(square(theta[n]) * square(sigma_med) + square(1 - theta[n]) * square(sigma_mod))); 
 
-    // Generate posterior predictive samples
-    if (bernoulli_rng(theta[n]) == 1) {
-      // Sample from normal component
-      y_rep[n] = normal_rng(x_med[n] + mu_med, sigma_med);
-    } else {
-      y_rep[n] = double_exponential_rng(x_mod[n] + mu_mod, sigma_mod);
-    }
+
+    y_rep[n] = normal_rng(theta[n] * (x_med[n] + mu_med) + (1 - theta[n]) * (x_mod[n] + mu_mod),
+                                 sqrt(square(theta[n]) * square(sigma_med) + square(1 - theta[n]) * square(sigma_mod)));
+
   }
 }
