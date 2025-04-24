@@ -504,8 +504,9 @@ Plot:
 
 ```{r}
 prediction_grid <- task3_df %>% mutate(error_va = va.select.y - va.ans.y) %>% 
-  data_grid(va.ans.x = seq_range(va.ans.x, n = 101)) %>% 
-  add_predicted_draws(m3, re_formula = NA) 
+  data_grid(va.ans.x = seq_range(va.ans.x, n = 100), 
+            participantId = unique(participantId)) %>% 
+  add_predicted_draws(m3) 
 
 prediction_grid %>% 
   ggplot(aes(x = va.ans.x, y = .prediction)) + 
