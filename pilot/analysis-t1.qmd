@@ -20,7 +20,7 @@ library(sgt)
 library(numDeriv)
 library(ggdist)
 # setting the theme 
-theme_set(theme_minimal())
+theme_set(theme_minimal(base_size = 8))
 # model
 library(brms)
 # plot results 
@@ -129,6 +129,7 @@ Define custom posterior predictive check function:
 
 ```{r}
 #| label: custom pp_check 
+
 custom_pp_check <- function(
    fitted_model, 
    fun = bayesplot::ppc_dens_overlay, 
@@ -231,6 +232,8 @@ fit <- model$sample(
 )
 
 fit$save_object("models/task1.informative.prior.rds")
+
+fit <- read_rds("models/task1.informative.prior.rds")
 ```
 
 Posterior Predictive Check: 
@@ -251,7 +254,8 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% # signed e
   unnest_rvars() %>% 
   ggplot(aes(x = param.lambda, y = y_rep)) + 
   ggdist::stat_lineribbon() + 
-  geom_point(aes(y = va.select.x - va.med.x))
+  geom_point(aes(y = va.select.x - va.med.x)) + 
+  scale_fill_brewer(palette = "Blues")
 
 # x.med - x.mod on X axis 
 task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
@@ -260,7 +264,7 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
   ggdist::stat_lineribbon(size = 0.5) + 
   geom_point(aes(y = va.select.x - va.med.x), alpha = 0.5, size = 0.5) + 
   # facet_wrap(~ participantId) + 
-  scale_fill_brewer(palette = "Blues") -=+ 
+  scale_fill_brewer(palette = "Blues") + 
   labs(x = "x^med - x^mod", y = "Signed error") + 
   theme_minimal(base_size = 8) -> p
 
