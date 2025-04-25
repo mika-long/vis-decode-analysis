@@ -297,6 +297,7 @@ fit$save_object("models/task1.non.informative.prior.rds")
 
 # hmm I keep getting these divergent transitions ... 
 # note that the saved model still has divergent transitions ... 
+# maybe I should try iter_warmup = 5000 and iter_sampling = 5000 ...? 
 ```
 
 Posterior Predictive Check: 
