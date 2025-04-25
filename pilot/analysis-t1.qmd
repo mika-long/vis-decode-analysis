@@ -246,13 +246,25 @@ custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$pa
 task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
   unnest_rvars() %>% 
   ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) + 
-  ggdist::stat_lineribbon() + 
-  geom_point(aes(y = va.select.x - va.med.x), alpha = 0.5) + 
+  ggdist::stat_lineribbon(size = 0.5) + 
+  geom_point(aes(y = va.select.x - va.med.x), alpha = 0.5, size = 0.5) + 
   # facet_wrap(~ participantId) + 
   scale_fill_brewer(palette = "Blues") + 
   labs(x = "x^med - x^mod", y = "Signed error") + 
   theme_minimal(base_size = 8) -> p
 
 ggsave("plots/task1.pdf", p, height = 5, width = 10, unit = "cm")
+```
+
+```{r}
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = y_rep)) + 
+  ggdist::stat_lineribbon() + 
+  geom_point(aes(y = va.select.x - va.med.x))
+```
+
+```{r}
+fit$save_object("models/task1.std_normal.prior.rds")
 ```
 
