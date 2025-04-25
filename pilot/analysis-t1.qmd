@@ -95,22 +95,9 @@ task1_df <- task_df %>% filter(task == "task1") %>% # task_df
          va.mod.x = vis_angle(phy.mod.x, dist_to_screen))
 ```
 
-## Centered Parameterization 
-
-Spoiler: Has divergent transitions. 
-
-```{r}
-#| eval: false 
-
-model <- cmdstan_model("stan_files/task1.weighted.avg.stan")
-model
-``` 
-
 Prepare data for stan: 
 
 ```{r}
-#| eval: false 
-
 N <- task1_df %>% nrow(.)
 J <- length(unique(task1_df$participantId))
 x <- task1_df %>% pull(va.select.x)
@@ -138,26 +125,6 @@ stan_data <- list(
 )
 ```
 
-Fit the stan model: 
-
-```{r}
-#| output: false 
-#| eval: false 
-
-fit <- model$sample(
-  data = stan_data, 
-  chains = 4, 
-  iter_warmup = 2000,   # Number of warmup iterations (e.g., 1000)
-  iter_sampling = 4000, 
-  adapt_delta = 0.95 # Number of sampling iterations (e.g., 2000)
-  # parallel_chains = 4
-)
-```
-
-```{r}
-summary <- fit$summary()
-```
-
 Define custom posterior predictive check function: 
 
 ```{r}
@@ -183,6 +150,39 @@ custom_pp_check <- function(
    fun(y, y_rep, ...)
  }
 ```
+
+## Centered Parameterization 
+
+Spoiler: Has divergent transitions. 
+
+```{r}
+#| eval: false 
+
+model <- cmdstan_model("stan_files/task1.weighted.avg.stan")
+model
+``` 
+
+Fit the stan model: 
+
+```{r}
+#| output: false 
+#| eval: false 
+
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  iter_warmup = 2000,   # Number of warmup iterations (e.g., 1000)
+  iter_sampling = 4000, 
+  adapt_delta = 0.95 # Number of sampling iterations (e.g., 2000)
+  # parallel_chains = 4
+)
+```
+
+```{r}
+summary <- fit$summary()
+```
+
+
 
 ```{r}
 custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = with(task1_df, case_when(param.lambda < 0 ~ "neg", param.lambda == 0 ~ "zero", param.lambda > 0 ~ "pos")))
@@ -213,8 +213,7 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
   scale_fill_brewer(palette = "Blues")
 ```
 
-## Non-centered parameterization 
-
+## Non-centered parameterization --- Informative prior 
 
 ```{r}
 #| output: false 
@@ -224,12 +223,14 @@ model <- cmdstan_model("stan_files/task1.weighted.avg.nonc.stan")
 fit <- model$sample(
   data = stan_data, 
   chains = 4, 
+  parallel_chains = 4, 
   iter_warmup = 2000,   
   iter_sampling = 4000, 
   adapt_delta = 0.99,  
-  parallel_chains = 4, 
   max_treedepth = 15
 )
+
+fit$save_object("models/task1.informative.prior.rds")
 ```
 
 Posterior Predictive Check: 
@@ -249,9 +250,11 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
   ggdist::stat_lineribbon(size = 0.5) + 
   geom_point(aes(y = va.select.x - va.med.x), alpha = 0.5, size = 0.5) + 
   # facet_wrap(~ participantId) + 
-  scale_fill_brewer(palette = "Blues") + 
+  scale_fill_brewer(palette = "Blues") -=+ 
   labs(x = "x^med - x^mod", y = "Signed error") + 
   theme_minimal(base_size = 8) -> p
+
+p
 
 ggsave("plots/task1.pdf", p, height = 5, width = 10, unit = "cm")
 ```
@@ -264,7 +267,22 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
   geom_point(aes(y = va.select.x - va.med.x))
 ```
 
-```{r}
-fit$save_object("models/task1.std_normal.prior.rds")
-```
+## Non-centered paramterization --- Uninformative prior 
 
+```{r}
+#| output: false 
+
+model <- cmdstan_model("stan_files/task1.weighted.avg.nonc.normal.stan")
+
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  parallel_chains = 4, 
+  iter_warmup = 4000,   
+  iter_sampling = 8000, 
+  adapt_delta = 0.99,  
+  max_treedepth = 15
+)
+
+fit$save_object("models/task1.non.informative.prior.rds")
+```

@@ -54,10 +54,10 @@ transformed parameters {
 
 model {
   // priors
-  mu_mod_mean ~ normal(0.01, 0.02); 
-  mu_mod_sd ~ normal(0.04, 0.03); 
-  log_sigma_mod_mean ~ normal(-1.37, 0.10); 
-  log_sigma_mod_sd ~ normal(0.34, 0.10); 
+  mu_mod_mean ~ normal(0, 1); 
+  mu_mod_sd ~ normal(0, 1); 
+  log_sigma_mod_mean ~ normal(0, 1); 
+  log_sigma_mod_sd ~ normal(0, 1); 
 
   mu_med_mean ~ normal(0, 1); 
   mu_med_sd ~ normal(0, 1); 
