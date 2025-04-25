@@ -224,7 +224,7 @@ fit <- model$sample(
   data = stan_data, 
   chains = 4, 
   parallel_chains = 4, 
-  iter_warmup = 2000,   
+  iter_warmup = 4000,   
   iter_sampling = 4000, 
   adapt_delta = 0.99,  
   max_treedepth = 15
@@ -244,6 +244,16 @@ custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$pa
 ```
 
 ```{r}
+#| layout-ncol: 2 
+
+# param.lambda on x-axis 
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% # signed error 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = y_rep)) + 
+  ggdist::stat_lineribbon() + 
+  geom_point(aes(y = va.select.x - va.med.x))
+
+# x.med - x.mod on X axis 
 task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
   unnest_rvars() %>% 
   ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) + 
@@ -264,14 +274,6 @@ as_draws_rvars(fit)$mu_mod_mean
 as_draws_rvars(fit)$mu_med_mean
 as_draws_rvars(fit)$log_sigma_mod_mean %>% exp(.)
 as_draws_rvars(fit)$log_sigma_med_mean %>% exp(.)
-```
-
-```{r}
-task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
-  unnest_rvars() %>% 
-  ggplot(aes(x = param.lambda, y = y_rep)) + 
-  ggdist::stat_lineribbon() + 
-  geom_point(aes(y = va.select.x - va.med.x))
 ```
 
 ## Non-centered paramterization --- Uninformative prior 
