@@ -1,6 +1,13 @@
 models/*
 mix_models/*
 pilot/models/*
+!pilot/models/task5.x.rds
+!pilot/models/task5.y.rds
+!pilot/models/task4.weibull.rds
+!pilot/models/task2.y.weibull.rds
+!pilot/models/task2.x.laplace.rds
+!pilot/models/task2.x.normal.rds
+!pilot/models/task1.*
 stan_files/*.exe
 single_participant_modeling/models/*
 single_participant_modeling/stan_files/*
