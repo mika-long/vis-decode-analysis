@@ -219,19 +219,19 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
 ```{r}
 #| output: false 
 
-model <- cmdstan_model("stan_files/task1.weighted.avg.nonc.stan")
-
-fit <- model$sample(
-  data = stan_data, 
-  chains = 4, 
-  parallel_chains = 4, 
-  iter_warmup = 4000,   
-  iter_sampling = 4000, 
-  adapt_delta = 0.99,  
-  max_treedepth = 15
-)
-
-fit$save_object("models/task1.informative.prior.rds")
+# model <- cmdstan_model("stan_files/task1.weighted.avg.nonc.stan")
+# 
+# fit <- model$sample(
+#   data = stan_data, 
+#   chains = 4, 
+#   parallel_chains = 4, 
+#   iter_warmup = 4000,   
+#   iter_sampling = 4000, 
+#   adapt_delta = 0.99,  
+#   max_treedepth = 15
+# )
+# 
+# fit$save_object("models/task1.informative.prior.rds")
 
 fit <- read_rds("models/task1.informative.prior.rds")
 ```
@@ -269,8 +269,17 @@ plot_data %>% ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) +
 
 p
 
-ggsave("plots/task1.pdf", p, height = 5, width = 10, unit = "cm")
+ggsave("plots/task1.pdf", p, height = 5, width = 10, unit = "cm", compression = "lzw")
 ```
+
+```{r}
+draws_df <- fit$draws(format = "df") %>% as_draws(.)
+expand_grid(participantId = task1_df$participantId, 
+            va.med.x = seq(min(task1_df$va.med.x), max(task1_df$va.med.x), 0.1)) # %>% 
+  add_predicted_draws(., fit)
+```
+
+
 
 ```{r}
 as_draws_rvars(fit)$mu_mod_mean
