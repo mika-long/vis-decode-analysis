@@ -249,11 +249,17 @@ summary %>% filter(!grepl("\\[", variable)) %>%
 Posterior Predictive Check: 
 
 ```{r}
-custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero"))) + 
+  theme(text = element_text(size = 10)) -> p1
+
+ggsave("plots/task1-pp-check.pdf", plot = p1, width = 10, height = 5, units = "cm")
 
 custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.med.x, ndraws = NULL)
 
-custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero"))) + 
+  theme(text = element_text(size = 10)) -> p2
+
+ggsave("plots/task1-pit-ecdf-grouped.pdf", plot = p2, width = 10, height = 5, units = "cm")
 ```
 
 ```{r}

@@ -202,15 +202,17 @@ Check fit and posterior:
 ```{r}
 summary(m.5.x.va)
 plot(m.5.x.va)
-pp_check(m.5.x.va, ndraws = 100)
+pp_check(m.5.x.va, ndraws = 100) + 
+  theme(text = element_text(size = 10)) -> p1 
+
+ggsave("plots/task5-x-pp-check.pdf", p1, width = 10, height = 5, unit = "cm")
 ```
 
 ```{r}
 pp_check(m.5.x.va, ndraws = 100, type = "pit_ecdf") + 
-  labs(title = "Task 5 (X)") + 
-  theme(text = element_text(size = 12)) -> task5.x.ecdf
+  theme(text = element_text(size = 10)) -> p2
 
-ggsave("plots/task5-x-pit-ecdf.pdf", task5.x.ecdf, width = 10, height = 8, unit = "cm", dpi = 300)
+ggsave("plots/task5-x-pit-ecdf.pdf", p2, width = 10, height = 5, unit = "cm", dpi = 300)
 ```
 
 
@@ -331,8 +333,15 @@ Check fit and posterior:
 ```{r}
 summary(m.5.y.va)
 plot(m.5.y.va)
-pp_check(m.5.y.va, ndraws = 100)
-pp_check(m.5.y.va, ndraws = 100, type = "pit_ecdf")
+pp_check(m.5.y.va, ndraws = 100) + 
+  theme(text = element_text(size = 10)) -> p1 
+
+ggsave("plots/task5-y-pp-check.pdf", p1, height = 5, width = 10, unit = "cm")
+
+pp_check(m.5.y.va, ndraws = 100, type = "pit_ecdf") + 
+  theme(text = element_text(size = 10)) -> p2 
+
+ggsave("plots/task5-y-pit-ecdf.pdf", p2, height = 5, width = 10, unit = "cm")
 ```
 
 Plot results: 
@@ -492,16 +501,17 @@ Check fit and posterior:
 ```{r}
 summary(m3)
  plot(m3)
-pp_check(m3, ndraws = 100)
+pp_check(m3, ndraws = 100) + 
+  theme(text = element_text(size = 10)) -> p1 
+
+ggsave("plots/task3-pp-check.pdf", p1, height = 5, width = 10, unit = "cm")
 ```
 
 ```{r}
 pp_check(m3, ndraws = 100, type = "pit_ecdf") + 
-  theme_minimal() + 
-  labs(title = "Task 3") + 
-  theme(text = element_text(size = 12)) -> task3_pit  
+  theme(text = element_text(size = 10)) -> p2  
 
-ggsave("plots/task3_pit.pdf", task3_pit, height = 8, width = 10, unit = "cm", dpi = 300)
+ggsave("plots/task3-pit-ecdf.pdf", p2, height = 5, width = 10, unit = "cm", dpi = 300)
 ```
 
 

@@ -479,8 +479,16 @@ Check fit and posterior:
 ```{r}
 summary(model.weibull)
 plot(model.weibull)
-pp_check(model.weibull, ndraws = 100)
-pp_check(model.weibull, ndraws = 100, type = "pit_ecdf")
+pp_check(model.weibull, ndraws = 100) + 
+  coord_cartesian(xlim = c(0, 10)) + 
+  theme(text = element_text(size = 10)) -> p1
+
+ggsave("plots/task4-pp-check.pdf", p1, height = 5, width = 10, unit = "cm")
+
+pp_check(model.weibull, ndraws = 100, type = "pit_ecdf") + 
+  theme(text = element_text(size = 10)) -> p2
+
+ggsave("plots/task4-pit-ecdf.pdf", p2, height = 5, width = 10, unit = "cm")
 ```
 
 ```{r}
