@@ -489,8 +489,9 @@ task2_df %>% modelr::data_grid(error.y = 0,
   labs(y = "density", x = "signed error" ) + 
   scale_y_continuous(breaks = 0) -> p
   
-
 p
+
+ggsave("models/task2-y.pdf", plot = p, height = 5, width = 5, units = "cm")
 ```
 
 ```{r}

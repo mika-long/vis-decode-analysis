@@ -245,7 +245,7 @@ ggplot(prediction_grid, aes(x = va.ans.y, y = .prediction)) +
   geom_point(data = filter(task5_df, !participantId %in% task5.x.exclude), aes(y = va.select.x - va.ans.x, x = va.ans.y), 
              alpha = 0.5, 
              size = 0.5) +
-  labs(title = "Task 5 (Project to X)", y = "Signed Error", x = "Distance to X-Axis") + 
+  labs(title = "Project from dot to x-axis)", y = "Signed Error", x = "Distance to X-Axis") + 
   theme_minimal(base_size = 8) + 
   theme(legend.position = "none") -> p1 
 
@@ -370,7 +370,7 @@ ggsave("plots/task5-project-y.pdf", p2, height = 5, width = 10, units = "cm", dp
 
 ```{r}
 p1 + p2 -> combined
-ggsave("plots/task5-combined.pdf", combined, height = 3.5, width = 10, units = "cm")
+ggsave("plots/task5-combined.pdf", combined, height = 5, width = 10, units = "cm")
 ```
 
 
