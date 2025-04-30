@@ -219,22 +219,22 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
 ```{r}
 #| output: false 
 
-model <- cmdstan_model("stan_files/task1.weighted.avg.nonc.stan")
-
-fit <- model$sample(
-  data = stan_data,
-  chains = 4,
-  parallel_chains = 4,
-  iter_warmup = 4000,
-  iter_sampling = 4000,
-  adapt_delta = 0.99,
-  max_treedepth = 15
-)
-
-fit$save_object("models/task1.informative.prior.rds")
-
-summary <- fit$summary()
-saveRDS(summary, file = "models/task1.informative.prior.summary.rds")
+# model <- cmdstan_model("stan_files/task1.weighted.avg.nonc.stan")
+# 
+# fit <- model$sample(
+#   data = stan_data,
+#   chains = 4,
+#   parallel_chains = 4,
+#   iter_warmup = 4000,
+#   iter_sampling = 4000,
+#   adapt_delta = 0.99,
+#   max_treedepth = 15
+# )
+# 
+# fit$save_object("models/task1.informative.prior.rds")
+# 
+# summary <- fit$summary()
+# saveRDS(summary, file = "models/task1.informative.prior.summary.rds")
 
 fit <- read_rds("models/task1.informative.prior.rds")
 fit
@@ -267,9 +267,6 @@ task1_df %>% modelr::data_grid(diff = seq(-max(abs(va.med.x - va.mod.x)),
                      sigma_med[numericPID], sigma_mod[numericPID]), 
             by = join_by(numericPID)) -> plot_df
 
-
-
-
 plot_df %>% mutate(inv_mse_med = 1 / ((mu_med)^2 + (sigma_med)^2), 
                    inv_mse_mod = 1 / ((x_mod - x_med + mu_mod)^2 + (sigma_mod)^2), 
                    theta = inv_mse_med / (inv_mse_med + inv_mse_mod)) %>% 
@@ -280,17 +277,17 @@ plot2_df %>% group_by(diff) %>%
   median_qi(y_rep, .width = c(0.5, 0.8, 0.95)) -> plot3_df
   
 plot3_df %>% ggplot(aes(x = diff, y = y_rep - diff)) + 
-  geom_lineribbon(aes(ymin = .lower - diff, ymax = .upper - diff)) + 
-  geom_point(data = task1_df, aes(x = va.med.x - va.mod.x, y = va.select.x - va.med.x)) + 
-  scale_color_brewer("Blues")
+  geom_lineribbon(aes(ymin = .lower - diff, ymax = .upper - diff), 
+                  linewidth = 0.5) + 
+  geom_point(data = task1_df, aes(x = va.med.x - va.mod.x, y = va.select.x - va.med.x), 
+             alpha = 0.5, size = 0.5) + 
+  scale_fill_brewer(palette = "Blues") + 
+  labs(x = "x^med - x^mod", y = "signed error") + 
+  theme(legend.position = "none", size = 10) -> p # note that x^mod is fixed to be 0. 
+
+ggsave("plots/task1.pdf", plot = p, height = 5, width = 10, unit = "cm")
+ggsave("plots/task1.svg", plot = p, height = 5, width = 10, unit = "cm")
 ```
-
-
-```{r}
-fit %>% spread_draws(mu_med[numericPID], mu_mod[numericPID], 
-                     sigma_med[numericPID], sigma_mod[numericPID]) -> coeff
-```
-
 
 
 ```{r}

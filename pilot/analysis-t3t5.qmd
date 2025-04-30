@@ -234,7 +234,7 @@ prediction_grid <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
   filter(!participantId %in% task5.x.exclude) %>% 
   data_grid(va.ans.y = seq_range(va.ans.y, n = 100), 
             participantId = unique(participantId)) %>% 
-  add_predicted_draws(m.5.x.va)
+  add_predicted_draws(m.5.x.va, ndraws = 1000)
   
 ggplot(prediction_grid, aes(x = va.ans.y, y = .prediction)) + 
   stat_lineribbon(
@@ -245,7 +245,7 @@ ggplot(prediction_grid, aes(x = va.ans.y, y = .prediction)) +
   geom_point(data = filter(task5_df, !participantId %in% task5.x.exclude), aes(y = va.select.x - va.ans.x, x = va.ans.y), 
              alpha = 0.5, 
              size = 0.5) +
-  labs(title = "Project from dot to x-axis)", y = "Signed Error", x = "Distance to X-Axis") + 
+  labs(title = "Dot to x-axis", y = "Signed Error", x = "Distance to X-Axis") + 
   theme_minimal(base_size = 8) + 
   theme(legend.position = "none") -> p1 
 
@@ -340,7 +340,7 @@ Plot results:
 ```{r}
 prediction_grid <- task5_df %>% data_grid(va.ans.x = seq_range(va.ans.x, n = 100), 
                                           participantId = unique(participantId)) %>% 
-  add_predicted_draws(m.5.y.va)
+  add_predicted_draws(m.5.y.va, ndraws = 1000)
 
 ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) + 
   stat_lineribbon(
@@ -354,7 +354,7 @@ ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) +
              alpha = 0.5, 
              size = 0.5) + 
   # ylim(-0.5, 0.5) + 
-  labs(title = "Task 5 (Project to Y)", y = "Signed Error", x = "Distance to Y-Axis") + 
+  labs(title = "Dot to y-axis", y = "Signed Error", x = "Distance to Y-Axis") + 
   theme_minimal(base_size = 8) + 
   theme(legend.position = "none") -> p2 
 
@@ -383,7 +383,7 @@ combined <- (p1 + guides(color = "none", fill = "none", size = "none")) / (p2 +
 combined <- (p1 + theme(legend.position = "top")) + (p2 + theme(legend.position = "top"))
 
 # ggsave("plots/task5-combined.svg", combined, height = 8, width = 10, units = "cm", dpi = 300)
-ggsave("plots/task5-combined.pdf", combined, height = 8, width = 10, units = "cm", dpi = 300)
+ggsave("plots/task5-combined.pdf", combined, height = 5, width = 10, units = "cm", dpi = 300)
 ```
 
 
