@@ -219,22 +219,32 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
 ```{r}
 #| output: false 
 
-# model <- cmdstan_model("stan_files/task1.weighted.avg.nonc.stan")
-# 
-# fit <- model$sample(
-#   data = stan_data, 
-#   chains = 4, 
-#   parallel_chains = 4, 
-#   iter_warmup = 4000,   
-#   iter_sampling = 4000, 
-#   adapt_delta = 0.99,  
-#   max_treedepth = 15
-# )
-# 
-# fit$save_object("models/task1.informative.prior.rds")
+model <- cmdstan_model("stan_files/task1.weighted.avg.nonc.stan")
+
+fit <- model$sample(
+  data = stan_data,
+  chains = 4,
+  parallel_chains = 4,
+  iter_warmup = 4000,
+  iter_sampling = 4000,
+  adapt_delta = 0.99,
+  max_treedepth = 15
+)
+
+fit$save_object("models/task1.informative.prior.rds")
+
+summary <- fit$summary()
+saveRDS(summary, file = "models/task1.informative.prior.summary.rds")
 
 fit <- read_rds("models/task1.informative.prior.rds")
+fit
 ```
+
+```{r}
+summary %>% filter(!grepl("\\[", variable)) %>% 
+  select(contains("ess"))
+``` 
+
 
 Posterior Predictive Check: 
 
@@ -245,6 +255,43 @@ custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.m
 
 custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
 ```
+
+```{r}
+task1_df %>% modelr::data_grid(diff = seq(-max(abs(va.med.x - va.mod.x)), 
+                                          max(abs(va.med.x - va.mod.x)), length.out = 100), # pretend the mod id 0 
+                               participantId = unique(participantId)) %>% 
+  mutate(numericPID = as.numeric(factor(participantId, levels = names(id_mapping))), 
+         x_mod = 0, 
+         x_med = diff) %>% 
+  left_join(spread_draws(fit, mu_med[numericPID], mu_mod[numericPID], 
+                     sigma_med[numericPID], sigma_mod[numericPID]), 
+            by = join_by(numericPID)) -> plot_df
+
+
+
+
+plot_df %>% mutate(inv_mse_med = 1 / ((mu_med)^2 + (sigma_med)^2), 
+                   inv_mse_mod = 1 / ((x_mod - x_med + mu_mod)^2 + (sigma_mod)^2), 
+                   theta = inv_mse_med / (inv_mse_med + inv_mse_mod)) %>% 
+  mutate(y_rep = rnorm(n(), theta * (x_med + mu_med) + (1 - theta) * (x_mod + mu_mod),
+                            sqrt((theta)^2 * (sigma_med)^2 + (1 - theta)^2 * (sigma_mod)^2))) -> plot2_df
+
+plot2_df %>% group_by(diff) %>% 
+  median_qi(y_rep, .width = c(0.5, 0.8, 0.95)) -> plot3_df
+  
+plot3_df %>% ggplot(aes(x = diff, y = y_rep - diff)) + 
+  geom_lineribbon(aes(ymin = .lower - diff, ymax = .upper - diff)) + 
+  geom_point(data = task1_df, aes(x = va.med.x - va.mod.x, y = va.select.x - va.med.x)) + 
+  scale_color_brewer("Blues")
+```
+
+
+```{r}
+fit %>% spread_draws(mu_med[numericPID], mu_mod[numericPID], 
+                     sigma_med[numericPID], sigma_mod[numericPID]) -> coeff
+```
+
+
 
 ```{r}
 #| layout-ncol: 2 

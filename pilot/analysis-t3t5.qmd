@@ -203,8 +203,16 @@ Check fit and posterior:
 summary(m.5.x.va)
 plot(m.5.x.va)
 pp_check(m.5.x.va, ndraws = 100)
-pp_check(m.5.x.va, ndraws = 100, type = "pit_ecdf")
 ```
+
+```{r}
+pp_check(m.5.x.va, ndraws = 100, type = "pit_ecdf") + 
+  labs(title = "Task 5 (X)") + 
+  theme(text = element_text(size = 12)) -> task5.x.ecdf
+
+ggsave("plots/task5-x-pit-ecdf.pdf", task5.x.ecdf, width = 10, height = 8, unit = "cm", dpi = 300)
+```
+
 
 Posterior for population level mean and sd: 
 
@@ -483,7 +491,7 @@ Check fit and posterior:
 
 ```{r}
 summary(m3)
-plot(m3)
+ plot(m3)
 pp_check(m3, ndraws = 100)
 ```
 
