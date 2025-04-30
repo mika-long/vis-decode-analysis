@@ -509,6 +509,24 @@ task4_df %>% modelr::data_grid(error = 0) %>%
             fill = "lightblue", alpha = 1) + 
   geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) 
 
+task4_df %>% modelr::data_grid(error = 0, 
+                               participantId = unique(participantId)) %>% 
+  add_predicted_draws(model.weibull, ndraws = 100) %>% 
+  ggplot() + 
+  stat_slab(aes(x = .prediction, group = .draw), 
+               color = "lightblue", alpha = 0.5, fill = NA, n = 3000, size = 0.5) + 
+  scale_thickness_shared() + 
+  coord_cartesian(xlim = c(0, 4)) + 
+  geom_rug(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope)), size = 0.5) + 
+  stat_slab(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope)), 
+            color = "darkblue", fill = NA, n = 3000, size = 0.5) + 
+  labs(y = "density", x = "signed error" ) + 
+  scale_y_continuous(breaks = 0) -> p
+  
+# p
+
+ggsave("plots/task4.pdf", plot = p, height = 5, width = 5, units = "cm")
+
 task4_df %>% modelr::data_grid(error = 0, participantId = unique(participantId)) %>% 
   add_predicted_draws(model.weibull, ndraws = 100) %>% 
   group_by(.draw) %>% 

@@ -486,10 +486,10 @@ task2_df %>% modelr::data_grid(error.y = 0,
   geom_rug(data = task2_df, aes(x = va.ans.y - va.select.y), size = 0.5) + 
   stat_slab(data = task2_df, aes(x = va.ans.y - va.select.y), 
             color = "darkblue", fill = NA, n = 3000, size = 0.5) + 
-  labs(y = "density", x = "signed error" ) + 
+  labs(y = "density", x = "signed error (on y)" ) + 
   scale_y_continuous(breaks = 0) -> p
   
-p
+# p
 
 ggsave("plots/task2.y.weibull.pdf", plot = p, height = 5, width = 5, units = "cm")
 ```
@@ -927,7 +927,8 @@ task2_df %>% # mutate(error.x = va.select.x - va.ans.x) %>%
   geom_rug(data = task2_df, aes(x = va.select.x - va.ans.x), size = 0.5) + 
   labs(y = "density", x = "signed error (on x)") + 
   theme_minimal(base_size = 8) + 
-  coord_cartesian(xlim = c(-1, 1.5)) -> p 
+  coord_cartesian(xlim = c(-1, 1.5)) + 
+  scale_y_continuous(breaks = 0) -> p 
 
 p
 
