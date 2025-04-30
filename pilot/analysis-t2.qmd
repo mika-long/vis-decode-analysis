@@ -480,18 +480,18 @@ task2_df %>% modelr::data_grid(error.y = 0,
   # group_by(.draw) %>% 
   ggplot() + 
   stat_slab(aes(x = .prediction, group = .draw), 
-               color = "lightblue", alpha = 0.5, fill = NA, n = 3000) + 
+               color = "lightblue", alpha = 0.5, fill = NA, n = 3000, size = 0.5) + 
   scale_thickness_shared() + 
   coord_cartesian(xlim = c(0, 0.1)) + 
-  geom_rug(data = task2_df, aes(x = va.ans.y - va.select.y)) + 
+  geom_rug(data = task2_df, aes(x = va.ans.y - va.select.y), size = 0.5) + 
   stat_slab(data = task2_df, aes(x = va.ans.y - va.select.y), 
-            color = "darkblue", fill = NA, n = 3000) + 
+            color = "darkblue", fill = NA, n = 3000, size = 0.5) + 
   labs(y = "density", x = "signed error" ) + 
   scale_y_continuous(breaks = 0) -> p
   
 p
 
-ggsave("models/task2-y.pdf", plot = p, height = 5, width = 5, units = "cm")
+ggsave("plots/task2.y.weibull.pdf", plot = p, height = 5, width = 5, units = "cm")
 ```
 
 ```{r}
@@ -918,16 +918,18 @@ Plot posterior predictive distribution on top:
 task2_df %>% # mutate(error.x = va.select.x - va.ans.x) %>%
   modelr::data_grid(error.x = 0, participantId = unique(participantId)) %>% 
   add_predicted_draws(model.x.laplace, ndraws = 100) %>% 
-  group_by(.draw) %>% 
   ggplot() + 
-  geom_density(aes(x = .prediction, group = .draw), color = "skyblue", 
-               alpha = 0.2, linewidth = 0.5) + 
-  # stat_slab(aes(x = .prediction), 
-  #           fill = "skyblue", alpha = 0.6) + 
-  geom_density(data = task2_df, aes(x = va.select.x - va.ans.x)) + 
-  geom_rug(data = task2_df, aes(x = va.select.x - va.ans.x)) + 
-  labs(y = "Probability", x = "Signed error (on X)") + 
-  theme_minimal(base_size = 8) # -> p 
+  stat_slab(aes(x = .prediction, group = .draw), 
+               color = "skyblue", alpha = 0.2, size = 0.5, fill = NA, n = 3000) + 
+  scale_thickness_shared() + 
+  stat_slab(data = task2_df, aes(x = va.select.x - va.ans.x),
+            color = "darkblue", fill = NA, n = 3000, size = 0.5) + 
+  geom_rug(data = task2_df, aes(x = va.select.x - va.ans.x), size = 0.5) + 
+  labs(y = "density", x = "signed error (on x)") + 
+  theme_minimal(base_size = 8) + 
+  coord_cartesian(xlim = c(-1, 1.5)) -> p 
+
+p
 
 ggsave("plots/task2.x.laplace.pdf", plot = p, height = 5, width = 5, units = "cm", dpi = 300)
 
@@ -948,6 +950,28 @@ task2_df %>% mutate(error.x = va.select.x - va.ans.x,
     y = NULL
   )
 ```
+
+```{r}
+task2_df %>% modelr::data_grid(error.y = 0, 
+                               participantId = unique(participantId)) %>% 
+  add_predicted_draws(model.y.weibull, ndraws = 100) %>% 
+  # group_by(.draw) %>% 
+  ggplot() + 
+  stat_slab(aes(x = .prediction, group = .draw), 
+               color = "lightblue", alpha = 0.5, fill = NA, n = 3000, size = 0.5) + 
+  scale_thickness_shared() + 
+  coord_cartesian(xlim = c(0, 0.1)) + 
+  geom_rug(data = task2_df, aes(x = va.ans.y - va.select.y), size = 0.5) + 
+  stat_slab(data = task2_df, aes(x = va.ans.y - va.select.y), 
+            color = "darkblue", fill = NA, n = 3000, size = 0.5) + 
+  labs(y = "density", x = "signed error" ) + 
+  scale_y_continuous(breaks = 0) -> p
+  
+p
+
+ggsave("plots/task2.y.weibull.pdf", plot = p, height = 5, width = 5, units = "cm")
+```
+
 
 ### Student-t distribution 
 
