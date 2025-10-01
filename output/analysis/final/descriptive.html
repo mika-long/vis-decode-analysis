@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.40">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Data Cleaning and Descriptive Checks</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="descriptive_files/libs/clipboard/clipboard.min.js"></script>
+<script src="descriptive_files/libs/quarto-html/quarto.js"></script>
+<script src="descriptive_files/libs/quarto-html/popper.min.js"></script>
+<script src="descriptive_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="descriptive_files/libs/quarto-html/anchor.min.js"></script>
+<link href="descriptive_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="descriptive_files/libs/quarto-html/quarto-syntax-highlighting-549806ee2085284f45b00abea8c6df48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="descriptive_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="descriptive_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="descriptive_files/libs/bootstrap/bootstrap-4f863c1579693c9d56bbaaf04c81ce69.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="descriptive_files/libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet">
+<script src="descriptive_files/libs/pagedtable-1.1/js/pagedtable.js"></script>
+
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#set-up" id="toc-set-up" class="nav-link active" data-scroll-target="#set-up">Set up</a></li>
+  <li><a href="#task-1-split-area-into-equal-halves" id="toc-task-1-split-area-into-equal-halves" class="nav-link" data-scroll-target="#task-1-split-area-into-equal-halves">Task 1 – Split area into equal halves</a></li>
+  <li><a href="#task-2-find-highest-point-on-curve" id="toc-task-2-find-highest-point-on-curve" class="nav-link" data-scroll-target="#task-2-find-highest-point-on-curve">Task 2 – Find highest point on curve</a></li>
+  <li><a href="#task-3-find-point-on-curve-where-y-0.5" id="toc-task-3-find-point-on-curve-where-y-0.5" class="nav-link" data-scroll-target="#task-3-find-point-on-curve-where-y-0.5">Task 3 – Find point on curve where <code>y == 0.5</code></a></li>
+  <li><a href="#task-4-find-slope" id="toc-task-4-find-slope" class="nav-link" data-scroll-target="#task-4-find-slope">Task 4 – Find slope</a></li>
+  <li><a href="#task-5-project-from-dot-to-axes" id="toc-task-5-project-from-dot-to-axes" class="nav-link" data-scroll-target="#task-5-project-from-dot-to-axes">Task 5 — Project from dot to axes</a>
+  <ul class="collapse">
+  <li><a href="#task-5.1-project-from-dot-to-x-axes" id="toc-task-5.1-project-from-dot-to-x-axes" class="nav-link" data-scroll-target="#task-5.1-project-from-dot-to-x-axes">Task 5.1 — Project from dot to X axes</a></li>
+  </ul></li>
+  <li><a href="#calculate-average-time" id="toc-calculate-average-time" class="nav-link" data-scroll-target="#calculate-average-time">Calculate average time</a></li>
+  <li><a href="#save-the-cleaned-data" id="toc-save-the-cleaned-data" class="nav-link" data-scroll-target="#save-the-cleaned-data">Save the cleaned data</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content page-columns page-full" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Data Cleaning and Descriptive Checks</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="set-up" class="level1">
+<h1>Set up</h1>
+<p>Read in data and write functions for processing:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># read in data from the three studies </span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>df1 <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../../data/final/pilot-01.csv"</span>) <span class="sc">%&gt;%</span> <span class="fu">as_tibble</span>(.)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>df2 <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../../data/final/pilot-02.csv"</span>) <span class="sc">%&gt;%</span> <span class="fu">as_tibble</span>(.)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>df3 <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../../data/final/pilot-03.csv"</span>) <span class="sc">%&gt;%</span> <span class="fu">as_tibble</span>(.)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># combine data from the three studies </span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>combined_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(df1, df2, df3)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> combined_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(status <span class="sc">==</span> <span class="st">"completed"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">rsp_time =</span> <span class="fu">as.numeric</span>(cleanedDuration) <span class="sc">/</span> <span class="dv">1000</span>) <span class="sc">%&gt;%</span> <span class="co"># seconds</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(participantId, trialId, responseId, answer, rsp_time, status)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>task_df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="fu">str_detect</span>(trialId, <span class="st">"task"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">answer =</span> <span class="fu">as.numeric</span>(answer)) <span class="sc">%&gt;%</span> </span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> responseId, <span class="at">values_from =</span> answer, <span class="at">names_repair =</span> <span class="st">"universal"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">separate_wider_delim</span>(trialId, <span class="at">delim =</span> <span class="st">"_"</span>, <span class="at">names =</span> <span class="fu">c</span>(<span class="st">"task"</span>, <span class="st">"type"</span>, <span class="st">"id"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(type <span class="sc">!=</span> <span class="st">"train"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>type) <span class="sc">%&gt;%</span> </span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">data.select.x =</span> location.x, </span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.select.y =</span> location.y,</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>         <span class="at">pixel.select.x =</span> pixel.x, </span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>         <span class="at">pixel.select.y =</span> pixel.y)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>New names:
+• `location-x` -&gt; `location.x`
+• `location-y` -&gt; `location.y`
+• `pixel-x` -&gt; `pixel.x`
+• `pixel-y` -&gt; `pixel.y`
+• `param-mu` -&gt; `param.mu`
+• `param-sigma` -&gt; `param.sigma`
+• `param-lambda` -&gt; `param.lambda`
+• `param-p` -&gt; `param.p`
+• `param-q` -&gt; `param.q`
+• `slider-x` -&gt; `slider.x`
+• `slider-y` -&gt; `slider.y`</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># initialize empty list of participants to be excluded from analysis </span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>exclude_participants <span class="ot">&lt;-</span> <span class="fu">c</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Define the necessary functions for transforming between pixel space, physical space, and visual angle space:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># origin is top left  </span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>data_to_pixel_y <span class="ot">&lt;-</span> <span class="cf">function</span>(data_y) {</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="sc">-</span><span class="dv">395</span> <span class="sc">*</span> data_y <span class="sc">+</span> <span class="dv">410</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>data_to_pixel_x <span class="ot">&lt;-</span> <span class="cf">function</span>(data_x) {</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span> (<span class="fl">53.5</span> <span class="sc">*</span> data_x <span class="sc">+</span> <span class="fl">317.5</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co"># origin is bottom left </span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>pixel_to_phy_x <span class="ot">&lt;-</span> <span class="cf">function</span>(pixel, pxMM){</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  (pixel <span class="sc">-</span> <span class="dv">50</span>) <span class="sc">/</span> pxMM</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>pixel_to_phy_y <span class="ot">&lt;-</span> <span class="cf">function</span>(pixel, pxMM){</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  (<span class="dv">410</span> <span class="sc">-</span> pixel) <span class="sc">/</span> pxMM</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co"># return visual angle in degrees and not radian</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>vis_angle <span class="ot">&lt;-</span> <span class="cf">function</span>(size, distance){</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="dv">2</span> <span class="sc">*</span> <span class="fu">atan</span>(size <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> distance)) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co"># tolerance for numerical precision </span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>tolerance <span class="ot">&lt;-</span> <span class="fl">1e-10</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Some participants did not answer the calibration tasks truthfully. Therefore, we need to reverse engineer the pixel location of <code>squarePos</code> to verify if participants actually put in the correct effort into the calibration tasks.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(status <span class="sc">==</span> <span class="st">"completed"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(participantId, trialId, responseId, answer) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">"calibration"</span>, trialId))</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>ball_positions <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(status <span class="sc">==</span> <span class="st">"completed"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">"calibration"</span>, trialId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(participantId, responseId, answer) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> responseId, <span class="at">values_from =</span> answer) <span class="sc">%&gt;%</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># filter(!is.na(`square-position`)) %&gt;% </span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="st">`</span><span class="at">ball-positions</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">gsub</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">[|</span><span class="sc">\\</span><span class="st">]"</span>, <span class="st">""</span>, <span class="st">`</span><span class="at">ball-positions</span><span class="st">`</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">split_answer =</span> <span class="fu">str_split</span>(<span class="st">`</span><span class="at">ball-positions</span><span class="st">`</span>, <span class="st">","</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">numeric_vectors =</span> <span class="fu">map</span>(split_answer, <span class="sc">~</span> <span class="fu">as.numeric</span>(.x))) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(split_answer) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">split_answer =</span> <span class="fu">as.numeric</span>(split_answer)) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(participantId) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">avg.ball.pos =</span> <span class="fu">sum</span>(split_answer) <span class="sc">/</span> <span class="dv">5</span>, </span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>            <span class="at">min.ball.pos =</span> <span class="fu">min</span>(split_answer),</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>            <span class="at">max.ball.pos =</span> <span class="fu">max</span>(split_answer), </span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>            <span class="at">true_ball_pos =</span> (avg.ball.pos <span class="sc">*</span> <span class="dv">5</span> <span class="sc">-</span> min.ball.pos <span class="sc">-</span> max.ball.pos)<span class="sc">/</span><span class="dv">3</span>)</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>calibrations <span class="ot">&lt;-</span> p <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">"pixelsPerMM|dist-calibration-MM"</span>, responseId)) <span class="sc">%&gt;%</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>trialId) <span class="sc">%&gt;%</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">answer =</span> <span class="fu">as.numeric</span>(answer)) <span class="sc">%&gt;%</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> responseId, <span class="at">values_from =</span> answer) <span class="sc">%&gt;%</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">pixelToMM =</span> pixelsPerMM, <span class="at">dist_to_screen =</span> <span class="st">`</span><span class="at">dist-calibration-MM</span><span class="st">`</span>) </span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>participants <span class="ot">&lt;-</span> calibrations <span class="sc">%&gt;%</span> <span class="fu">right_join</span>(ball_positions, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy =</span> dist_to_screen <span class="sc">*</span> <span class="fu">tan</span>(<span class="fl">13.5</span> <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span>), </span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>         <span class="at">px =</span> phy <span class="sc">*</span> pixelToMM, </span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>         <span class="at">square_pos =</span> <span class="fu">round</span>(px <span class="sc">+</span> avg.ball.pos)) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ball.square.dist =</span> (square_pos <span class="sc">-</span> true_ball_pos) <span class="sc">/</span> pixelToMM, </span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>         <span class="at">d =</span> ball.square.dist <span class="sc">/</span> <span class="fu">tan</span>(<span class="fl">13.5</span> <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(participantId, pixelToMM, d) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">dist_to_screen =</span> d)</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a><span class="co"># plot distance to screen distribution </span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>participants <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> dist_to_screen)) <span class="sc">+</span> </span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>() <span class="sc">+</span> </span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"distance to screen (mm)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>`stat_bin()` using `bins = 30`. Pick better value `binwidth`.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="descriptive_files/figure-html/define-special-dfs-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>From the above histogram, two participants have <code>dist_to_screen</code> less than 200 mm. This indicates that they did not press the space bar in the calibration tasks as instructed, thus we do not include these participants in our analysis.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>participants <span class="sc">%&gt;%</span> <span class="fu">filter</span>(dist_to_screen <span class="sc">&gt;</span> <span class="dv">200</span>) <span class="ot">-&gt;</span> participants</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="task-1-split-area-into-equal-halves" class="level1">
+<h1>Task 1 – Split area into equal halves</h1>
+<p>Load data:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>task1_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task1"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>slider.x, <span class="sc">-</span>slider.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">right_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">data.select.left_area =</span> <span class="fu">psgt</span>(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>), </span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.ans.x =</span> <span class="fu">qsgt</span>(<span class="fl">0.5</span>, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># pixel related </span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pixel.med.x =</span> <span class="fu">data_to_pixel_x</span>(data.ans.x), </span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">pixel.mod.x =</span> <span class="fu">data_to_pixel_x</span>(param.mu)) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># phy related </span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.select.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.select.x, pixelToMM), </span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.med.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.med.x, pixelToMM), </span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.mod.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.mod.x, pixelToMM)) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># visual angle related </span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">va.select.x =</span> <span class="fu">vis_angle</span>(phy.select.x, dist_to_screen), </span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.med.x =</span> <span class="fu">vis_angle</span>(phy.med.x, dist_to_screen), </span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.mod.x =</span> <span class="fu">vis_angle</span>(phy.mod.x, dist_to_screen))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Calculate correlation:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>task1_corr <span class="ot">&lt;-</span> task1_df <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(participantId) <span class="sc">%&gt;%</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">correlation.x =</span> <span class="fu">cor</span>(data.select.x, data.ans.x)) <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">mean =</span> <span class="fu">mean</span>(correlation.x), <span class="at">sd =</span> <span class="fu">sd</span>(correlation.x),</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">lb =</span> mean <span class="sc">-</span> <span class="dv">2</span> <span class="sc">*</span> sd, <span class="at">ub =</span> mean <span class="sc">+</span> <span class="dv">2</span> <span class="sc">*</span> sd) <span class="sc">%&gt;%</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(correlation.x  <span class="sc">&lt;</span> <span class="fl">0.5</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(participantId) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">correlation.x =</span> <span class="fu">cor</span>(data.select.x, data.ans.x)) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">mean =</span> <span class="fu">mean</span>(correlation.x), <span class="at">sd =</span> <span class="fu">sd</span>(correlation.x), </span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">lb =</span> mean <span class="sc">-</span> <span class="dv">2</span> <span class="sc">*</span> sd, <span class="at">ub =</span> mean <span class="sc">+</span> <span class="dv">2</span> <span class="sc">*</span> sd) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> correlation.x)) <span class="sc">+</span> </span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>`stat_bin()` using `bins = 30`. Pick better value `binwidth`.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Given that most participants have correlation &gt; 0.5, we filter out participant whose selection’s correlation to the actual answer has correlation &lt; 0.5.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>exclude_participants <span class="ot">&lt;-</span> <span class="fu">c</span>(task1_corr <span class="sc">%&gt;%</span> <span class="fu">pull</span>(participantId), exclude_participants)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled" title="Further examination">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Further examination
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Let’s also examine the two participants who have correlation &lt; 0.5 for task 1, by plotting the actual answer (in red) and the participants’ selection (in black):</p>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(participantId <span class="sc">==</span> <span class="st">"67f44a0314ad081a761de62c"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.select.x, <span class="at">y =</span> data.select.y)) <span class="sc">+</span> </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> <span class="fu">xlim</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">5</span>) <span class="sc">+</span> <span class="fu">ylim</span>(<span class="dv">0</span>, <span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> <span class="fu">filter</span>(task1_df, </span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>                           participantId <span class="sc">==</span> <span class="st">"67f44a0314ad081a761de62c"</span>), </span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>             <span class="fu">aes</span>(<span class="at">x =</span> data.ans.x, <span class="at">color =</span> <span class="st">"answer"</span>)) <span class="sc">+</span> </span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"PID --- 67f44a0314ad081a761de62c"</span>)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(participantId <span class="sc">==</span> <span class="st">"67ea39f872546624b6b520bf"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.select.x, <span class="at">y =</span> data.select.y)) <span class="sc">+</span> </span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> <span class="fu">xlim</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">5</span>) <span class="sc">+</span> <span class="fu">ylim</span>(<span class="dv">0</span>, <span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> <span class="fu">filter</span>(task1_df, participantId <span class="sc">==</span> <span class="st">"67ea39f872546624b6b520bf"</span>), <span class="fu">aes</span>(<span class="at">x =</span> data.ans.x, <span class="at">color =</span> <span class="st">"answer"</span>)) <span class="sc">+</span> </span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"PID --- 67ea39f872546624b6b520bf"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-4-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</div>
+<p>This participant is selecting -5 or 5 all the time. Clearly demonstrated low effort. We exclude their answers from the final analysis.</p>
+</div>
+</div>
+</div>
+<p>Plotting other relations descriptively:</p>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plotting selection, answer, and `x` coordinate for highest point against lambda: </span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span>participantId <span class="sc">%in%</span> exclude_participants) <span class="sc">%&gt;%</span> </span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.x <span class="sc">-</span> data.ans.x, <span class="at">x =</span> param.lambda)) <span class="sc">+</span> </span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="co"># + ylim(-1, 1)</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span>participantId <span class="sc">%in%</span> exclude_participants) <span class="sc">%&gt;%</span> </span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.left_area <span class="sc">-</span> <span class="fl">0.5</span>, <span class="at">x =</span> param.lambda)) <span class="sc">+</span> </span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span>participantId <span class="sc">%in%</span> exclude_participants) <span class="sc">%&gt;%</span> </span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> va.select.x <span class="sc">-</span> va.med.x, <span class="at">x =</span> param.lambda)) <span class="sc">+</span> </span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> param.lambda, <span class="at">y =</span> data.select.x <span class="sc">-</span> param.mu)) <span class="sc">+</span> <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span>  data.select.x <span class="sc">-</span> param.mu)) <span class="sc">+</span> </span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span>  data.select.x <span class="sc">-</span> param.mu, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span> </span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span>  data.select.left_area <span class="sc">-</span> <span class="fl">0.5</span>, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span> </span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.ans.x <span class="sc">-</span> data.select.x)) <span class="sc">+</span> </span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.ans.x <span class="sc">-</span> data.select.x, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span> </span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>task1_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.left_area<span class="sc">^</span>(<span class="dv">1</span><span class="sc">/</span><span class="fl">0.7</span>), <span class="at">x =</span> param.lambda)) <span class="sc">+</span> </span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+
+</div>
+</section>
+<section id="task-2-find-highest-point-on-curve" class="level1 page-columns page-full">
+<h1>Task 2 – Find highest point on curve</h1>
+<p>First we get the data:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task2"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>slider.x, <span class="sc">-</span>slider.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">data.ans.x =</span> param.mu, </span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.ans.y =</span> <span class="fu">dsgt</span>(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>),</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>         <span class="co"># this is the gradient of the left of the highest point </span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.left.grad =</span> numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, param.mu <span class="sc">-</span> <span class="dv">1</span>, <span class="at">mu =</span> param.mu, <span class="at">sigma =</span> param.sigma, <span class="at">lambda =</span> param.lambda, <span class="at">p =</span> param.p, <span class="at">q =</span> param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>), </span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.right.grad =</span> numDeriv<span class="sc">::</span><span class="fu">grad</span>(dsgt, param.mu <span class="sc">+</span> <span class="dv">1</span>, <span class="at">mu =</span> param.mu, <span class="at">sigma =</span> param.sigma, <span class="at">lambda =</span> param.lambda, <span class="at">p =</span> param.p, <span class="at">q =</span> param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>), </span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>         ) <span class="sc">%&gt;%</span> </span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">right_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># calculate things related to participants' selection </span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.select.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.select.x, pixelToMM), </span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.select.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.select.y, pixelToMM),</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.select.x =</span> <span class="fu">vis_angle</span>(phy.select.x, dist_to_screen), </span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.select.y =</span> <span class="fu">vis_angle</span>(phy.select.y, dist_to_screen)) <span class="sc">%&gt;%</span> </span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># calculate things related to answer </span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pixel.ans.x =</span> <span class="fu">data_to_pixel_x</span>(data.ans.x), </span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>         <span class="at">pixel.ans.y =</span> <span class="fu">data_to_pixel_y</span>(data.ans.y), </span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.ans.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.ans.x, pixelToMM), </span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.ans.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.ans.y, pixelToMM),</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.ans.x =</span> <span class="fu">vis_angle</span>(phy.ans.x, dist_to_screen),</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.ans.y =</span> <span class="fu">vis_angle</span>(phy.ans.y, dist_to_screen)) <span class="sc">%&gt;%</span> </span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">flat =</span> (<span class="fu">abs</span>(data.left.grad) <span class="sc">+</span> <span class="fu">abs</span>(data.right.grad))<span class="sc">/</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Calculate correlation<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>:</p>
+<div class="no-row-height column-margin column-container"><div id="fn1"><p><sup>1</sup>&nbsp;similar to what we did for Task 1, exclude those who have correlation to the true answer &lt; 0.5</p></div></div><div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>task2_corr <span class="ot">&lt;-</span> task2_df <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(participantId) <span class="sc">%&gt;%</span> </span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">correlation.y =</span> <span class="fu">cor</span>(data.select.y,  data.ans.y), </span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">correlation.x =</span> <span class="fu">cor</span>(data.select.x, data.ans.x)) <span class="sc">%&gt;%</span> </span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(correlation.y <span class="sc">&lt;</span> <span class="fl">0.5</span> <span class="sc">|</span> correlation.x <span class="sc">&lt;</span> <span class="fl">0.5</span>)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>task2_corr</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["participantId"],"name":[1],"type":["chr"],"align":["left"]},{"label":["correlation.y"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["correlation.x"],"name":[3],"type":["dbl"],"align":["right"]}],"data":[{"1":"67ea39f872546624b6b520bf","2":"-0.4512904","3":"-0.09859427"},{"1":"67eedf7be13ffb77c677d4dd","2":"0.9935061","3":"0.48743290"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>exclude_participants <span class="ot">&lt;-</span> <span class="fu">c</span>(exclude_participants, task2_corr <span class="sc">%&gt;%</span> <span class="fu">pull</span>(participantId))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled" title="Further examination">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Further examination
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Examine particular participants:</p>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(participantId <span class="sc">==</span> <span class="st">"67ea39f872546624b6b520bf"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.select.x, <span class="at">y =</span> data.select.y)) <span class="sc">+</span> </span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> <span class="fu">xlim</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">5</span>) <span class="sc">+</span> <span class="fu">ylim</span>(<span class="dv">0</span>, <span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> <span class="fu">filter</span>(task2_df, participantId <span class="sc">==</span> <span class="st">"67ea39f872546624b6b520bf"</span>), <span class="fu">aes</span>(<span class="at">x =</span> data.ans.x, <span class="at">color =</span> <span class="st">"answer"</span>))</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(participantId <span class="sc">==</span> <span class="st">"67eedf7be13ffb77c677d4dd"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.select.x, <span class="at">y =</span> data.select.y)) <span class="sc">+</span> </span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> <span class="fu">xlim</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">5</span>) <span class="sc">+</span> <span class="fu">ylim</span>(<span class="dv">0</span>, <span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> <span class="fu">filter</span>(task2_df, participantId <span class="sc">==</span> <span class="st">"67eedf7be13ffb77c677d4dd"</span>), <span class="fu">aes</span>(<span class="at">x =</span> data.ans.x, <span class="at">y =</span> data.ans.y, <span class="at">color =</span> <span class="st">"answer"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-7-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>Checking relations, focusing on the <strong>y</strong> axes:</p>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># task2_df %&gt;% ggplot(aes(y = phy.ans.y - phy.select.y, x = dist_to_screen)) + </span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   geom_point()</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co"># task2_df %&gt;% ggplot(aes(y = va.ans.y - va.select.y, x = dist_to_screen)) + </span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="co">#   geom_point()</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span>participantId <span class="sc">%in%</span> exclude_participants) <span class="sc">%&gt;%</span> </span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.ans.y <span class="sc">-</span> va.select.y)) <span class="sc">+</span> </span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.ans.y <span class="sc">-</span> data.select.y)) <span class="sc">+</span> <span class="fu">geom_dots</span>()</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> phy.ans.y <span class="sc">-</span> phy.select.y)) <span class="sc">+</span> <span class="fu">geom_dots</span>()</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> (phy.ans.y <span class="sc">-</span> phy.select.y) <span class="sc">/</span> dist_to_screen)) <span class="sc">+</span> <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+
+</div>
+<p>Checking relations, focusing on the <strong>x</strong> axes:</p>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span>participantId <span class="sc">%in%</span> exclude_participants) <span class="sc">%&gt;%</span> </span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.select.x <span class="sc">-</span> va.ans.x)) <span class="sc">+</span> </span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.ans.x <span class="sc">-</span> data.select.x)) <span class="sc">+</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> (phy.ans.x <span class="sc">-</span> phy.select.x)<span class="sc">/</span>dist_to_screen)) <span class="sc">+</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.select.x <span class="sc">-</span> va.ans.x)) <span class="sc">+</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>() <span class="sc">+</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>participantId)</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> va.select.x <span class="sc">-</span> va.ans.x, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span></span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>task2_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> va.select.x <span class="sc">-</span> va.ans.x, <span class="at">x =</span> param.lambda)) <span class="sc">+</span></span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Signed error on x-axes against skewness"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+
+</div>
+</section>
+<section id="task-3-find-point-on-curve-where-y-0.5" class="level1">
+<h1>Task 3 – Find point on curve where <code>y == 0.5</code></h1>
+<p>First we get the data:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>task3_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task3"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>slider.x, <span class="sc">-</span>slider.y) <span class="sc">%&gt;%</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">right_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># do all the calculations for user's selected</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pixel.select.x =</span> <span class="fu">data_to_pixel_x</span>(data.select.x),</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">pixel.select.y =</span> <span class="fu">data_to_pixel_y</span>(data.select.y),</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.select.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.select.x, pixelToMM),</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.select.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.select.y, pixelToMM),</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.select.x =</span> <span class="fu">vis_angle</span>(phy.select.x, dist_to_screen),</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.select.y =</span> <span class="fu">vis_angle</span>(phy.select.y, dist_to_screen)) <span class="sc">%&gt;%</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">data.ans.y =</span> <span class="fl">0.5</span>,</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.ans.x =</span> <span class="fu">qsgt</span>(<span class="fl">0.5</span>, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># do all the calculations for the actual answer</span></span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pixel.ans.x =</span> <span class="fu">data_to_pixel_x</span>(data.ans.x),</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>         <span class="at">pixel.ans.y =</span> <span class="fu">data_to_pixel_y</span>(data.ans.y),</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.ans.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.ans.x, pixelToMM),</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.ans.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.ans.y, pixelToMM),</span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.ans.x =</span> <span class="fu">vis_angle</span>(phy.ans.x, dist_to_screen),</span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.ans.y =</span> <span class="fu">vis_angle</span>(phy.ans.y, dist_to_screen))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Calculation correlation and exclude participants:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># can't calculat correlation on y because the standard deviation is 0. </span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="co"># we use x as an approximation </span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>task3_corr <span class="ot">&lt;-</span> task3_df <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(participantId) <span class="sc">%&gt;%</span> </span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">correlation =</span> <span class="fu">suppressWarnings</span>(<span class="fu">cor</span>(data.select.x, data.ans.x))) <span class="sc">%&gt;%</span> </span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">is.na</span>(correlation) <span class="sc">|</span> correlation <span class="sc">&lt;</span> <span class="fl">0.9</span>)</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>task3_corr</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["participantId"],"name":[1],"type":["chr"],"align":["left"]},{"label":["correlation"],"name":[2],"type":["dbl"],"align":["right"]}],"data":[{"1":"67ea39f872546624b6b520bf","2":"NA"},{"1":"67ee9fb880b10fe380af1803","2":"-0.1844966"},{"1":"67eedf7be13ffb77c677d4dd","2":"0.6960668"},{"1":"67fd4f955123c6d79ae66a3a","2":"NA"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>exclude_participants <span class="ot">&lt;-</span> <span class="fu">c</span>(exclude_participants, <span class="fu">pull</span>(task3_corr, participantId))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled" title="Further examine">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Further examine
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Examine particular participants:</p>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>task3_plot <span class="ot">&lt;-</span> <span class="cf">function</span>(pid){</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  task3_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(participantId <span class="sc">==</span> pid) <span class="sc">%&gt;%</span> </span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>() <span class="sc">+</span> </span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.select.x, <span class="at">y =</span> data.select.y, <span class="at">color =</span> <span class="st">"select"</span>)) <span class="sc">+</span> </span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.ans.x, <span class="at">y =</span> <span class="fl">0.5</span>, <span class="at">color =</span> <span class="st">"answer"</span>)) <span class="sc">+</span> </span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ylim</span>(<span class="dv">0</span>, <span class="dv">1</span>) <span class="sc">+</span> <span class="fu">xlim</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">5</span>) <span class="sc">+</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="fl">0.5</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"gray"</span>) <span class="sc">+</span> </span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> pid)</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a><span class="fu">task3_plot</span>(<span class="st">"67ea39f872546624b6b520bf"</span>)</span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a><span class="fu">task3_plot</span>(<span class="st">"67ee9fb880b10fe380af1803"</span>)</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a><span class="fu">task3_plot</span>(<span class="st">"67eedf7be13ffb77c677d4dd"</span>)</span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a><span class="fu">task3_plot</span>(<span class="st">"67fd4f955123c6d79ae66a3a"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-12-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-12-3.png" class="img-fluid" width="672"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-12-4.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>Verify that the scales are correct:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># verify that the results are of correct scale</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.select.x <span class="sc">-</span> data.ans.x)) <span class="sc">+</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.select.y <span class="sc">-</span> data.ans.y)) <span class="sc">+</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> pixel.select.x <span class="sc">-</span> pixel.ans.x)) <span class="sc">+</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> pixel.select.y <span class="sc">-</span> pixel.ans.y)) <span class="sc">+</span></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> phy.select.x <span class="sc">-</span> phy.ans.x)) <span class="sc">+</span></span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> phy.select.y <span class="sc">-</span> phy.ans.y)) <span class="sc">+</span></span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.select.x <span class="sc">-</span> va.ans.x)) <span class="sc">+</span></span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.select.y <span class="sc">-</span> va.ans.y)) <span class="sc">+</span></span>
+<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>It is not very normal that we have a bunch of selections that have this big of a variation on y …</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="fu">abs</span>(data.select.y <span class="sc">-</span> data.ans.y) <span class="sc">&gt;</span> <span class="fl">0.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["participantId"],"name":[1],"type":["chr"],"align":["left"]},{"label":["task"],"name":[2],"type":["chr"],"align":["left"]},{"label":["id"],"name":[3],"type":["chr"],"align":["left"]},{"label":["rsp_time"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["status"],"name":[5],"type":["chr"],"align":["left"]},{"label":["data.select.x"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["data.select.y"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["pixel.select.x"],"name":[8],"type":["dbl"],"align":["right"]},{"label":["pixel.select.y"],"name":[9],"type":["dbl"],"align":["right"]},{"label":["param.mu"],"name":[10],"type":["dbl"],"align":["right"]},{"label":["param.sigma"],"name":[11],"type":["dbl"],"align":["right"]},{"label":["param.lambda"],"name":[12],"type":["dbl"],"align":["right"]},{"label":["param.p"],"name":[13],"type":["dbl"],"align":["right"]},{"label":["param.q"],"name":[14],"type":["dbl"],"align":["right"]},{"label":["pixelToMM"],"name":[15],"type":["dbl"],"align":["right"]},{"label":["dist_to_screen"],"name":[16],"type":["dbl"],"align":["right"]},{"label":["phy.select.x"],"name":[17],"type":["dbl"],"align":["right"]},{"label":["phy.select.y"],"name":[18],"type":["dbl"],"align":["right"]},{"label":["va.select.x"],"name":[19],"type":["dbl"],"align":["right"]},{"label":["va.select.y"],"name":[20],"type":["dbl"],"align":["right"]},{"label":["data.ans.y"],"name":[21],"type":["dbl"],"align":["right"]},{"label":["data.ans.x"],"name":[22],"type":["dbl"],"align":["right"]},{"label":["pixel.ans.x"],"name":[23],"type":["dbl"],"align":["right"]},{"label":["pixel.ans.y"],"name":[24],"type":["dbl"],"align":["right"]},{"label":["phy.ans.x"],"name":[25],"type":["dbl"],"align":["right"]},{"label":["phy.ans.y"],"name":[26],"type":["dbl"],"align":["right"]},{"label":["va.ans.x"],"name":[27],"type":["dbl"],"align":["right"]},{"label":["va.ans.y"],"name":[28],"type":["dbl"],"align":["right"]}],"data":[{"1":"67eedf7be13ffb77c677d4dd","2":"task3","3":"1","4":"3.932","5":"completed","6":"1.79","7":"0.98980620","8":"413.265","9":"19.02655","10":"-1.71","11":"1.12","12":"0.52","13":"4.19","14":"13.60","15":"3.529412","16":"541.3038","17":"102.92508","18":"110.775811","19":"10.861739","20":"11.6847009","21":"0.5","22":"-0.81983717","23":"273.6387","24":"212.5","25":"63.36430","26":"55.95833","27":"6.699324","28":"5.917796"},{"1":"67eedf7be13ffb77c677d4dd","2":"task3","3":"2","4":"8.274","5":"completed","6":"0.75","7":"0.98716703","8":"357.625","9":"20.06902","10":"-1.37","11":"0.65","12":"0.66","13":"4.70","14":"19.35","15":"3.529412","16":"541.3038","17":"87.16042","18":"110.480443","19":"9.205876","20":"11.6537600","21":"0.5","22":"-0.70544881","23":"279.7585","24":"212.5","25":"65.09824","26":"55.95833","27":"6.882214","28":"5.917796"},{"1":"67eedf7be13ffb77c677d4dd","2":"task3","3":"3","4":"6.526","5":"completed","6":"1.17","7":"0.99999754","8":"380.095","9":"15.00097","10":"-1.95","11":"0.63","12":"0.02","13":"2.09","14":"24.05","15":"3.529412","16":"541.3038","17":"93.52692","18":"111.916391","19":"9.875093","20":"11.8041650","21":"0.5","22":"-1.93410305","23":"214.0255","24":"212.5","25":"46.47389","26":"55.95833","27":"4.916137","28":"5.917796"},{"1":"67eedf7be13ffb77c677d4dd","2":"task3","3":"4","4":"4.240","5":"completed","6":"0.36","7":"0.83329565","8":"336.760","9":"80.84822","10":"0.01","11":"0.80","12":"-0.34","13":"2.20","14":"26.67","15":"3.529412","16":"541.3038","17":"81.24867","18":"93.259671","19":"8.583895","20":"9.8470146","21":"0.5","22":"-0.33819456","23":"299.4066","24":"212.5","25":"70.66520","26":"55.95833","27":"7.469155","28":"5.917796"},{"1":"67eedf7be13ffb77c677d4dd","2":"task3","3":"5","4":"3.277","5":"completed","6":"0.44","7":"0.95729051","8":"341.040","9":"31.87025","10":"-0.94","11":"0.82","12":"0.02","13":"4.39","14":"24.94","15":"3.529412","16":"541.3038","17":"82.46133","18":"107.136763","19":"8.711523","20":"11.3033787","21":"0.5","22":"-0.91411765","23":"268.5947","24":"212.5","25":"61.93517","26":"55.95833","27":"6.548558","28":"5.917796"},{"1":"67eedf7be13ffb77c677d4dd","2":"task3","3":"6","4":"3.478","5":"completed","6":"1.56","7":"0.97591612","8":"400.960","9":"24.51313","10":"-0.45","11":"0.60","12":"0.84","13":"2.38","14":"1.48","15":"3.529412","16":"541.3038","17":"99.43867","18":"109.221279","19":"10.495906","20":"11.5218385","21":"0.5","22":"-0.04593456","23":"315.0425","24":"212.5","25":"75.09538","26":"55.95833","27":"7.935963","28":"5.917796"},{"1":"67eedf7be13ffb77c677d4dd","2":"task3","3":"7","4":"3.532","5":"completed","6":"3.14","7":"0.99887802","8":"485.490","9":"15.44318","10":"-0.05","11":"1.42","12":"-0.14","13":"3.27","14":"10.83","15":"3.529412","16":"541.3038","17":"123.38883","18":"111.791098","19":"13.004312","20":"11.7910431","21":"0.5","22":"-0.34242033","23":"299.1805","24":"212.5","25":"70.60115","26":"55.95833","27":"7.462404","28":"5.917796"},{"1":"67eedf7be13ffb77c677d4dd","2":"task3","3":"8","4":"3.399","5":"completed","6":"2.60","7":"0.99303892","8":"456.600","9":"17.74963","10":"-0.36","11":"0.76","12":"0.65","13":"2.48","14":"13.20","15":"3.529412","16":"541.3038","17":"115.20333","18":"111.137606","19":"12.148294","20":"11.7225980","21":"0.5","22":"0.27341659","23":"332.1278","24":"212.5","25":"79.93621","26":"55.95833","27":"8.445739","28":"5.917796"},{"1":"67eedf7be13ffb77c677d4dd","2":"task3","3":"9","4":"3.794","5":"completed","6":"0.19","7":"1.00000000","8":"327.665","9":"15.00000","10":"-1.45","11":"0.62","12":"-0.47","13":"3.88","14":"6.26","15":"3.529412","16":"541.3038","17":"78.67175","18":"111.916666","19":"8.312614","20":"11.8041938","21":"0.5","22":"-1.88464295","23":"216.6716","24":"212.5","25":"47.22362","26":"55.95833","27":"4.995346","28":"5.917796"},{"1":"67eedf7be13ffb77c677d4dd","2":"task3","3":"10","4":"4.440","5":"completed","6":"3.29","7":"0.96471753","8":"493.515","9":"28.93658","10":"0.40","11":"0.97","12":"0.65","13":"3.38","14":"11.63","15":"3.529412","16":"541.3038","17":"125.66258","18":"107.967970","19":"13.241841","20":"11.3905002","21":"0.5","22":"1.30043396","23":"387.0732","24":"212.5","25":"95.50408","26":"55.95833","27":"10.082788","28":"5.917796"},{"1":"67fd4f955123c6d79ae66a3a","2":"task3","3":"2","4":"11.609","5":"completed","6":"0.50","7":"0.99970200","8":"344.250","9":"15.11771","10":"-1.38","11":"0.53","12":"0.09","13":"2.46","14":"20.89","15":"4.752941","16":"490.7630","17":"61.90903","18":"83.081670","19":"7.218216","20":"9.6765822","21":"0.5","22":"-1.31546723","23":"247.1225","24":"212.5","25":"41.47379","26":"41.55322","27":"4.839119","28":"4.848375"},{"1":"67fd4f955123c6d79ae66a3a","2":"task3","3":"3","4":"11.698","5":"completed","6":"0.50","7":"0.96466763","8":"344.250","9":"28.95629","10":"-0.68","11":"0.85","12":"-0.17","13":"3.05","14":"4.84","15":"4.752941","16":"490.7630","17":"61.90903","18":"80.170088","19":"7.218216","20":"9.3389947","21":"0.5","22":"-0.88339248","23":"270.2385","24":"212.5","25":"46.33731","26":"41.55322","27":"5.405791","28":"4.848375"},{"1":"67fd4f955123c6d79ae66a3a","2":"task3","3":"4","4":"10.270","5":"completed","6":"0.50","7":"0.99981145","8":"344.250","9":"15.07448","10":"-1.47","11":"0.87","12":"-0.22","13":"4.84","14":"2.92","15":"4.752941","16":"490.7630","17":"61.90903","18":"83.090766","19":"7.218216","20":"9.6776365","21":"0.5","22":"-1.76781686","23":"222.9218","24":"212.5","25":"36.38206","26":"41.55322","27":"4.245602","28":"4.848375"},{"1":"67fd4f955123c6d79ae66a3a","2":"task3","3":"5","4":"13.831","5":"completed","6":"0.50","7":"0.27887576","8":"344.250","9":"299.84407","10":"0.34","11":"0.67","12":"0.68","13":"2.14","14":"3.24","15":"4.752941","16":"490.7630","17":"61.90903","18":"23.176371","19":"7.218216","20":"2.7053005","21":"0.5","22":"0.81746902","23":"361.2346","24":"212.5","25":"65.48253","26":"41.55322","27":"7.633665","28":"4.848375"},{"1":"67fd4f955123c6d79ae66a3a","2":"task3","3":"7","4":"23.014","5":"completed","6":"0.50","7":"0.89985749","8":"344.250","9":"54.55629","10":"-0.41","11":"0.64","12":"0.11","13":"2.81","14":"2.19","15":"4.752941","16":"490.7630","17":"61.90903","18":"74.783948","19":"7.218216","20":"8.7140671","21":"0.5","22":"-0.32066600","23":"300.3444","24":"212.5","25":"52.67146","26":"41.55322","27":"6.143414","28":"4.848375"},{"1":"67fd4f955123c6d79ae66a3a","2":"task3","3":"8","4":"13.746","5":"completed","6":"0.50","7":"0.80491207","8":"344.250","9":"92.05973","10":"-1.01","11":"0.76","12":"0.65","13":"3.82","14":"38.44","15":"4.752941","16":"490.7630","17":"61.90903","18":"66.893373","19":"7.218216","20":"7.7976337","21":"0.5","22":"-0.27407814","23":"302.8368","24":"212.5","25":"53.19587","26":"41.55322","27":"6.204460","28":"4.848375"},{"1":"67fd4f955123c6d79ae66a3a","2":"task3","3":"9","4":"18.895","5":"completed","6":"0.50","7":"0.29057205","8":"344.250","9":"295.22404","10":"0.94","11":"0.76","12":"0.05","13":"4.49","14":"5.95","15":"4.752941","16":"490.7630","17":"61.90903","18":"24.148407","19":"7.218216","20":"2.8187183","21":"0.5","22":"0.99952919","23":"370.9748","24":"212.5","25":"67.53183","26":"41.55322","27":"7.871825","28":"4.848375"},{"1":"67fd4f955123c6d79ae66a3a","2":"task3","3":"10","4":"13.247","5":"completed","6":"0.50","7":"0.90633456","8":"344.250","9":"51.99785","10":"-1.92","11":"1.09","12":"0.50","13":"3.45","14":"9.82","15":"4.752941","16":"490.7630","17":"61.90903","18":"75.322235","19":"7.218216","20":"8.7765459","21":"0.5","22":"-1.12665284","23":"257.2241","24":"212.5","25":"43.59912","26":"41.55322","27":"5.086782","28":"4.848375"},{"1":"67ea39f872546624b6b520bf","2":"task3","3":"1","4":"5.662","5":"completed","6":"5.00","7":"1.00000000","8":"585.000","9":"15.00000","10":"-0.88","11":"0.52","12":"-0.48","13":"2.03","14":"18.82","15":"5.294118","16":"426.9587","17":"101.05556","18":"74.611111","19":"13.498383","20":"9.9870854","21":"0.5","22":"-1.18160869","23":"254.2839","24":"212.5","25":"38.58697","26":"37.30556","27":"5.174663","28":"5.003043"},{"1":"67ea39f872546624b6b520bf","2":"task3","3":"2","4":"3.356","5":"completed","6":"5.00","7":"1.00000000","8":"585.000","9":"15.00000","10":"-1.04","11":"0.67","12":"-0.38","13":"3.14","14":"19.76","15":"5.294118","16":"426.9587","17":"101.05556","18":"74.611111","19":"13.498383","20":"9.9870854","21":"0.5","22":"-1.40802265","23":"242.1708","24":"212.5","25":"36.29893","26":"37.30556","27":"4.868209","28":"5.003043"},{"1":"67ea39f872546624b6b520bf","2":"task3","3":"3","4":"3.415","5":"completed","6":"5.00","7":"1.00000000","8":"585.000","9":"15.00000","10":"1.74","11":"1.31","12":"-0.78","13":"4.91","14":"25.98","15":"5.294118","16":"426.9587","17":"101.05556","18":"74.611111","19":"13.498383","20":"9.9870854","21":"0.5","22":"0.15841970","23":"325.9755","24":"212.5","25":"52.12870","26":"37.30556","27":"6.986748","28":"5.003043"},{"1":"67ea39f872546624b6b520bf","2":"task3","3":"4","4":"4.469","5":"completed","6":"5.00","7":"0.99998948","8":"585.000","9":"15.00416","10":"1.51","11":"0.80","12":"0.43","13":"3.81","14":"23.92","15":"5.294118","16":"426.9587","17":"101.05556","18":"74.610326","19":"13.498383","20":"9.9869809","21":"0.5","22":"2.03074892","23":"426.1451","24":"212.5","25":"71.04962","26":"37.30556","27":"9.512603","28":"5.003043"},{"1":"67ea39f872546624b6b520bf","2":"task3","3":"5","4":"4.022","5":"completed","6":"5.00","7":"0.99973795","8":"585.000","9":"15.10351","10":"1.33","11":"0.66","12":"0.68","13":"2.16","14":"24.62","15":"5.294118","16":"426.9587","17":"101.05556","18":"74.591559","19":"13.498383","20":"9.9844815","21":"0.5","22":"1.87558297","23":"417.8437","24":"212.5","25":"69.48159","26":"37.30556","27":"9.303595","28":"5.003043"},{"1":"67ea39f872546624b6b520bf","2":"task3","3":"6","4":"3.331","5":"completed","6":"5.00","7":"0.99995355","8":"585.000","9":"15.01835","10":"0.63","11":"0.92","12":"0.82","13":"4.43","14":"39.24","15":"5.294118","16":"426.9587","17":"101.05556","18":"74.607645","19":"13.498383","20":"9.9866239","21":"0.5","22":"1.77177234","23":"412.2898","24":"212.5","25":"68.43252","26":"37.30556","27":"9.163728","28":"5.003043"},{"1":"67ea39f872546624b6b520bf","2":"task3","3":"7","4":"3.673","5":"completed","6":"5.00","7":"0.99999980","8":"585.000","9":"15.00008","10":"1.61","11":"0.81","12":"0.38","13":"4.58","14":"44.64","15":"5.294118","16":"426.9587","17":"101.05556","18":"74.611096","19":"13.498383","20":"9.9870834","21":"0.5","22":"2.09482124","23":"429.5729","24":"212.5","25":"71.69711","26":"37.30556","27":"9.598890","28":"5.003043"},{"1":"67ea39f872546624b6b520bf","2":"task3","3":"8","4":"3.149","5":"completed","6":"5.00","7":"1.00000000","8":"585.000","9":"15.00000","10":"-1.56","11":"0.64","12":"0.73","13":"3.22","14":"36.94","15":"5.294118","16":"426.9587","17":"101.05556","18":"74.611111","19":"13.498383","20":"9.9870854","21":"0.5","22":"-0.90110590","23":"269.2908","24":"212.5","25":"41.42160","26":"37.30556","27":"5.554224","28":"5.003043"},{"1":"67ea39f872546624b6b520bf","2":"task3","3":"9","4":"3.286","5":"completed","6":"5.00","7":"1.00000000","8":"585.000","9":"15.00000","10":"-1.08","11":"0.87","12":"-0.49","13":"4.73","14":"46.87","15":"5.294118","16":"426.9587","17":"101.05556","18":"74.611111","19":"13.498383","20":"9.9870854","21":"0.5","22":"-1.75091270","23":"223.8262","24":"212.5","25":"32.83383","26":"37.30556","27":"4.403971","28":"5.003043"},{"1":"67ea39f872546624b6b520bf","2":"task3","3":"10","4":"3.215","5":"completed","6":"5.00","7":"0.99999993","8":"585.000","9":"15.00003","10":"-1.18","11":"0.81","12":"0.20","13":"2.11","14":"13.76","15":"5.294118","16":"426.9587","17":"101.05556","18":"74.611106","19":"13.498383","20":"9.9870847","21":"0.5","22":"-0.97760397","23":"265.1982","24":"212.5","25":"40.64855","26":"37.30556","27":"5.450723","28":"5.003043"},{"1":"67ee9fb880b10fe380af1803","2":"task3","3":"1","4":"11.293","5":"completed","6":"0.05","7":"0.19755902","8":"320.175","9":"331.96419","10":"1.06","11":"0.86","12":"-0.12","13":"4.69","14":"37.93","15":"4.694118","16":"760.7501","17":"57.55608","18":"16.624171","19":"4.332762","20":"1.2519971","21":"0.5","22":"0.89548562","23":"365.4085","24":"212.5","25":"67.19228","26":"42.07393","27":"5.057291","28":"3.167985"},{"1":"67ee9fb880b10fe380af1803","2":"task3","3":"2","4":"18.406","5":"completed","6":"0.50","7":"0.99779938","8":"344.250","9":"15.86925","10":"-1.33","11":"0.51","12":"0.44","13":"3.54","14":"8.07","15":"4.694118","16":"760.7501","17":"62.68484","18":"83.962692","19":"4.718431","20":"6.3172304","21":"0.5","22":"-1.00047287","23":"263.9747","24":"212.5","25":"45.58358","26":"42.07393","27":"3.432094","28":"3.167985"},{"1":"67ee9fb880b10fe380af1803","2":"task3","3":"3","4":"10.598","5":"completed","6":"0.50","7":"0.99425343","8":"344.250","9":"17.26990","10":"-0.36","11":"0.57","12":"-0.29","13":"3.50","14":"12.50","15":"4.694118","16":"760.7501","17":"62.68484","18":"83.664308","19":"4.718431","20":"6.2948256","21":"0.5","22":"-0.60627917","23":"285.0641","24":"212.5","25":"50.07630","26":"42.07393","27":"3.770129","28":"3.167985"},{"1":"67ee9fb880b10fe380af1803","2":"task3","3":"4","4":"16.700","5":"completed","6":"0.50","7":"0.99493208","8":"344.250","9":"17.00183","10":"-1.10","11":"0.72","12":"-0.03","13":"3.22","14":"14.35","15":"4.694118","16":"760.7501","17":"62.68484","18":"83.721415","19":"4.718431","20":"6.2991136","21":"0.5","22":"-1.13182322","23":"256.9475","24":"212.5","25":"44.08655","26":"42.07393","27":"3.319443","28":"3.167985"},{"1":"67ee9fb880b10fe380af1803","2":"task3","3":"6","4":"10.580","5":"completed","6":"0.50","7":"0.05795681","8":"344.250","9":"387.10706","10":"1.62","11":"0.59","12":"-0.17","13":"2.73","14":"38.32","15":"4.694118","16":"760.7501","17":"62.68484","18":"4.876942","19":"4.718431","20":"0.3673049","21":"0.5","22":"1.47870812","23":"396.6109","24":"212.5","25":"73.83941","26":"42.07393","27":"5.556845","28":"3.167985"},{"1":"67ee9fb880b10fe380af1803","2":"task3","3":"8","4":"11.035","5":"completed","6":"0.50","7":"0.19433951","8":"344.250","9":"333.23590","10":"0.57","11":"0.74","12":"0.55","13":"4.35","14":"44.15","15":"4.694118","16":"760.7501","17":"62.68484","18":"16.353255","19":"4.718431","20":"1.2315956","21":"0.5","22":"1.19870909","23":"381.6309","24":"212.5","25":"70.64819","26":"42.07393","27":"5.317039","28":"3.167985"},{"1":"67ee9fb880b10fe380af1803","2":"task3","3":"9","4":"9.466","5":"completed","6":"0.50","7":"0.01634647","8":"344.250","9":"403.54314","10":"1.80","11":"0.78","12":"0.17","13":"2.36","14":"22.19","15":"4.694118","16":"760.7501","17":"62.68484","18":"1.375521","19":"4.718431","20":"0.1035971","21":"0.5","22":"1.97614154","23":"423.2236","24":"212.5","25":"79.50878","26":"42.07393","27":"5.982750","28":"3.167985"},{"1":"67ee9fb880b10fe380af1803","2":"task3","3":"10","4":"9.899","5":"completed","6":"0.50","7":"0.73042093","8":"344.250","9":"121.48373","10":"-1.87","11":"1.63","12":"0.47","13":"4.08","14":"17.64","15":"4.694118","16":"760.7501","17":"62.68484","18":"61.463365","19":"4.718431","20":"4.6265887","21":"0.5","22":"-0.69879348","23":"280.1145","24":"212.5","25":"49.02190","26":"42.07393","27":"3.690800","28":"3.167985"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+<p>Hmm it is very clear that this participant only selected values very close to 1 … which is NOT what we wanted …</p>
+<p>Distribution of signed error:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.select.y <span class="sc">-</span> va.ans.y)) <span class="sc">+</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>() <span class="sc">+</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"black"</span>) <span class="sc">+</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Task 3 -- Find dot on curve where y == 0.5"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Relationship between distance from the y-axes and the signed distribution:</p>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.ans.x, <span class="at">y =</span> va.select.y <span class="sc">-</span> va.ans.y)) <span class="sc">+</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"black"</span>) <span class="co"># +</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Task 3 -- CDF Median"</span>)</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>task3_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.select.y <span class="sc">-</span> va.ans.y)) <span class="sc">+</span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<pre><code>&lt;ggplot2::labels&gt; List of 1
+ $ title: chr "Task 3 -- CDF Median"</code></pre>
+</div>
+</div>
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-15-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</div>
+</section>
+<section id="task-4-find-slope" class="level1">
+<h1>Task 4 – Find slope</h1>
+<p>Get data:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>epsilon <span class="ot">&lt;-</span> <span class="fl">1e-10</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>data_to_screen_slope <span class="ot">&lt;-</span> <span class="cf">function</span>(k){</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(k <span class="sc">*</span> <span class="dv">395</span> <span class="sc">/</span> <span class="fl">53.5</span>)</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>task4_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task4"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>slider.x, <span class="sc">-</span>slider.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">data.select.slope =</span> <span class="fu">dsgt</span>(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent=</span><span class="cn">FALSE</span>), </span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.ans.slope =</span> <span class="fu">dsgt</span>(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent=</span><span class="cn">FALSE</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">right_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.select.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.select.x, pixelToMM), </span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.select.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.select.y, pixelToMM),</span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.select.x =</span> <span class="fu">vis_angle</span>(phy.select.x, dist_to_screen), </span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.select.y =</span> <span class="fu">vis_angle</span>(phy.select.y, dist_to_screen)) <span class="sc">%&gt;%</span></span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">data.ans.x =</span> param.mu, </span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.ans.y =</span> <span class="dv">1</span> <span class="sc">/</span> <span class="dv">2</span> <span class="sc">*</span> (<span class="fu">psgt</span>(data.ans.x <span class="sc">+</span> epsilon, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>) <span class="sc">+</span>  </span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>                                            <span class="fu">psgt</span>(data.ans.x <span class="sc">-</span> epsilon, param.mu, param.sigma, param.lambda, param.p, param.q, <span class="at">mean.cent =</span> <span class="cn">FALSE</span>))) <span class="sc">%&gt;%</span></span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pixel.ans.x =</span> <span class="fu">data_to_pixel_x</span>(data.ans.x), </span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a>         <span class="at">pixel.ans.y =</span> <span class="fu">data_to_pixel_y</span>(data.ans.y)) <span class="sc">%&gt;%</span> </span>
+<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.ans.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.ans.x, pixelToMM), </span>
+<span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.ans.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.ans.y, pixelToMM)) <span class="sc">%&gt;%</span> </span>
+<span id="cb29-23"><a href="#cb29-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">va.ans.x =</span> <span class="fu">vis_angle</span>(phy.ans.x, dist_to_screen), </span>
+<span id="cb29-24"><a href="#cb29-24" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.ans.y =</span> <span class="fu">vis_angle</span>(phy.ans.y, dist_to_screen)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Calculate correlation:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>task4_corr <span class="ot">&lt;-</span> task4_df <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(participantId) <span class="sc">%&gt;%</span> </span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">correlation =</span> <span class="fu">cor</span>(<span class="fu">data_to_screen_slope</span>(data.select.slope), <span class="fu">data_to_screen_slope</span>(data.ans.slope))) <span class="sc">%&gt;%</span> </span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(correlation <span class="sc">&lt;</span> <span class="fl">0.5</span>)</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>task4_corr</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["participantId"],"name":[1],"type":["chr"],"align":["left"]},{"label":["correlation"],"name":[2],"type":["dbl"],"align":["right"]}],"data":[{"1":"67ea39f872546624b6b520bf","2":"-0.1952817"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>exclude_participants <span class="ot">&lt;-</span> <span class="fu">c</span>(exclude_participants, <span class="fu">pull</span>(task4_corr, participantId))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Check relations:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.ans.x <span class="sc">-</span> va.select.x)) <span class="sc">+</span> <span class="fu">geom_dots</span>()</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.ans.y <span class="sc">-</span> va.select.y)) <span class="sc">+</span> <span class="fu">geom_dots</span>()</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">atan</span>(va.ans.y <span class="sc">/</span> va.ans.x) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi)) <span class="sc">+</span> <span class="fu">geom_dots</span>()</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.ans.y <span class="sc">/</span> va.ans.x, <span class="at">y =</span> data.ans.slope)) <span class="sc">+</span> </span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> <span class="fu">coord_equal</span>()</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.select.slope <span class="sc">-</span> data.ans.slope)) <span class="sc">+</span> </span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(data.select.slope <span class="sc">-</span> data.ans.slope <span class="sc">==</span> <span class="dv">0</span>)</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">atan</span>(data.select.slope) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi <span class="sc">-</span> <span class="fu">atan</span>(data.ans.slope) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi)) <span class="sc">+</span> </span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">data_to_screen_slope</span>(data.select.slope) <span class="sc">-</span> <span class="fu">data_to_screen_slope</span>(data.ans.slope))) <span class="sc">+</span> </span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">atan</span>(<span class="fu">data_to_screen_slope</span>(data.select.slope)) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi <span class="sc">-</span> <span class="fu">atan</span>(<span class="fu">data_to_screen_slope</span>(data.ans.slope)) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi)) <span class="sc">+</span> </span>
+<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_ecdf</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>If we map the mathematical slope to the actual slope, this is what we get:</p>
+<ul>
+<li>y axis range [0, 1] correspond to 395 px -&gt; 395px / unit</li>
+<li>x axis range [-5, 5] correspond to 535 px -&gt; 53.5 px / unit</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">data_to_screen_slope</span>(data.select.slope), <span class="at">y =</span> <span class="fu">data_to_screen_slope</span>(data.ans.slope))) <span class="sc">+</span> </span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> </span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">data_to_screen_slope</span>(data.select.slope) <span class="sc">-</span> <span class="fu">data_to_screen_slope</span>(data.ans.slope))) <span class="sc">+</span> </span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-18-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Let’s first see the distribution of signed error:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.select.slope <span class="sc">-</span> data.ans.slope)) <span class="sc">+</span> </span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span> </span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-19-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>It seems that the selected slope is consistently smaller than the actual slope of the answer.</p>
+<p>Let’s see if there’s any obvious relation between signed error and parameters of the distribution:</p>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> dist_to_screen)) <span class="sc">+</span> </span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> param.mu)) <span class="sc">+</span> </span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> param.sigma)) <span class="sc">+</span> </span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> param.lambda)) <span class="sc">+</span> </span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> param.p)) <span class="sc">+</span> </span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> data.select.slope <span class="sc">-</span> data.ans.slope, <span class="at">x =</span> param.q)) <span class="sc">+</span> </span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>task4_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.select.slope <span class="sc">-</span> data.ans.slope)) <span class="sc">+</span> </span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+
+</div>
+</section>
+<section id="task-5-project-from-dot-to-axes" class="level1">
+<h1>Task 5 — Project from dot to axes</h1>
+<p>Get data:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="ot">&lt;-</span> task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(task <span class="sc">==</span> <span class="st">"task5"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(participantId, task, id, data.select.x, data.select.y, slider.x, slider.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">data.ans.x =</span> data.select.x, </span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.ans.y =</span> data.select.y, </span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.select.x =</span> slider.x, </span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">data.select.y =</span> slider.y) <span class="sc">%&gt;%</span> </span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">right_join</span>(participants, <span class="at">by =</span> <span class="fu">join_by</span>(participantId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># do all the calculations for user's selected </span></span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pixel.select.x =</span> <span class="fu">data_to_pixel_x</span>(data.select.x), </span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">pixel.select.y =</span> <span class="fu">data_to_pixel_y</span>(data.select.y), </span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.select.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.select.x, pixelToMM),</span>
+<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.select.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.select.y, pixelToMM), </span>
+<span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.select.x =</span> <span class="fu">vis_angle</span>(phy.select.x, dist_to_screen),</span>
+<span id="cb38-14"><a href="#cb38-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.select.y =</span> <span class="fu">vis_angle</span>(phy.select.y, dist_to_screen)) <span class="sc">%&gt;%</span> </span>
+<span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># do all the calculations for the actual answer</span></span>
+<span id="cb38-16"><a href="#cb38-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pixel.ans.x =</span> <span class="fu">data_to_pixel_x</span>(data.ans.x),</span>
+<span id="cb38-17"><a href="#cb38-17" aria-hidden="true" tabindex="-1"></a>         <span class="at">pixel.ans.y =</span> <span class="fu">data_to_pixel_y</span>(data.ans.y),</span>
+<span id="cb38-18"><a href="#cb38-18" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.ans.x =</span> <span class="fu">pixel_to_phy_x</span>(pixel.ans.x, pixelToMM),</span>
+<span id="cb38-19"><a href="#cb38-19" aria-hidden="true" tabindex="-1"></a>         <span class="at">phy.ans.y =</span> <span class="fu">pixel_to_phy_y</span>(pixel.ans.y, pixelToMM), </span>
+<span id="cb38-20"><a href="#cb38-20" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.ans.x =</span> <span class="fu">vis_angle</span>(phy.ans.x, dist_to_screen),</span>
+<span id="cb38-21"><a href="#cb38-21" aria-hidden="true" tabindex="-1"></a>         <span class="at">va.ans.y =</span> <span class="fu">vis_angle</span>(phy.ans.y, dist_to_screen))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Check correlation:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>task5_corr <span class="ot">&lt;-</span> task5_df <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(participantId) <span class="sc">%&gt;%</span> </span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">correlation.x =</span> <span class="fu">cor</span>(data.select.x, data.ans.x), </span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">correlation.y =</span> <span class="fu">cor</span>(data.select.y, data.ans.y)) <span class="sc">%&gt;%</span> </span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(correlation.x <span class="sc">&lt;</span> <span class="fl">0.9</span> <span class="sc">|</span> correlation.y <span class="sc">&lt;</span> <span class="fl">0.9</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: There was 1 warning in `summarise()`.
+ℹ In argument: `correlation.x = cor(data.select.x, data.ans.x)`.
+ℹ In group 12: `participantId = "67ea39f872546624b6b520bf"`.
+Caused by warning in `cor()`:
+! the standard deviation is zero</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>task5_corr</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["participantId"],"name":[1],"type":["chr"],"align":["left"]},{"label":["correlation.x"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["correlation.y"],"name":[3],"type":["dbl"],"align":["right"]}],"data":[{"1":"6443ebb84fc33e703937a6f9","2":"0.99362807","3":"0.18403431"},{"1":"67ea39f872546624b6b520bf","2":"NA","3":"0.53280169"},{"1":"67eedf7be13ffb77c677d4dd","2":"-0.08672003","3":"0.07825885"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>exclude_participants <span class="ot">&lt;-</span> <span class="fu">c</span>(exclude_participants, task5_corr <span class="sc">%&gt;%</span> <span class="fu">pull</span>(participantId))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled" title="Further examination">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Further examination
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Examine specific participants:</p>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>task5_plot <span class="ot">&lt;-</span> <span class="cf">function</span>(pid){</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  task5_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(participantId <span class="sc">==</span> pid) <span class="sc">%&gt;%</span> </span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>() <span class="sc">+</span> </span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.ans.x, <span class="at">y =</span> data.ans.y, <span class="at">color =</span> <span class="st">"answer"</span>)) <span class="sc">+</span> </span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.select.x, <span class="at">y =</span> data.select.y, <span class="at">color =</span> <span class="st">"select"</span>)) <span class="sc">+</span> </span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">xlim</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">5</span>) <span class="sc">+</span> <span class="fu">ylim</span>(<span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a><span class="fu">task5_plot</span>(<span class="st">"6443ebb84fc33e703937a6f9"</span>)</span>
+<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a><span class="fu">task5_plot</span>(<span class="st">"67ea39f872546624b6b520bf"</span>)</span>
+<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a><span class="fu">task5_plot</span>(<span class="st">"67eedf7be13ffb77c677d4dd"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-22-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-22-3.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>Verify that the results are in the right scale:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.ans.x <span class="sc">-</span> data.select.x)) <span class="sc">+</span> <span class="fu">geom_dots</span>()</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> pixel.select.x <span class="sc">-</span> pixel.ans.x)) <span class="sc">+</span> </span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> pixel.select.y <span class="sc">-</span> pixel.ans.y)) <span class="sc">+</span> </span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> phy.select.x <span class="sc">-</span> phy.ans.x)) <span class="sc">+</span> </span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()  </span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> phy.select.y <span class="sc">-</span> phy.ans.y)) <span class="sc">+</span> </span>
+<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>() </span>
+<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.select.x <span class="sc">-</span> va.ans.x)) <span class="sc">+</span> </span>
+<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a>  <span class="co">#ggdist::geom_swarm()</span></span>
+<span id="cb44-17"><a href="#cb44-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()</span>
+<span id="cb44-18"><a href="#cb44-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-19"><a href="#cb44-19" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.select.y <span class="sc">-</span> va.ans.y)) <span class="sc">+</span> </span>
+<span id="cb44-20"><a href="#cb44-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>()  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<section id="task-5.1-project-from-dot-to-x-axes" class="level2">
+<h2 class="anchored" data-anchor-id="task-5.1-project-from-dot-to-x-axes">Task 5.1 — Project from dot to X axes</h2>
+<p>Distribution of signed error:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.select.x <span class="sc">-</span> va.ans.x)) <span class="sc">+</span> </span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dots</span>() <span class="sc">+</span></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"black"</span>) <span class="sc">+</span> </span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Task 5 - Project from Dot to X-Axes - Vis Angle"</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Relationship between signed error (in visual angle space) and distance to X-axes:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.ans.y, <span class="at">y =</span> va.select.x <span class="sc">-</span> va.ans.x)) <span class="sc">+</span> </span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Task 5 - Project from Dot to X-Axes"</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-24-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> va.ans.x, <span class="at">y =</span> va.select.y <span class="sc">-</span> va.ans.y)) <span class="sc">+</span> </span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>, <span class="at">color=</span><span class="st">"gray"</span>) <span class="sc">+</span> </span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Task 5 - Project from Dot to Y-Axes"</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-25-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(va.select.y <span class="sc">-</span> va.ans.y <span class="sc">&gt;</span> <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["participantId"],"name":[1],"type":["chr"],"align":["left"]},{"label":["task"],"name":[2],"type":["chr"],"align":["left"]},{"label":["id"],"name":[3],"type":["chr"],"align":["left"]},{"label":["data.ans.x"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["data.ans.y"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["data.select.x"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["data.select.y"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["pixelToMM"],"name":[8],"type":["dbl"],"align":["right"]},{"label":["dist_to_screen"],"name":[9],"type":["dbl"],"align":["right"]},{"label":["pixel.select.x"],"name":[10],"type":["dbl"],"align":["right"]},{"label":["pixel.select.y"],"name":[11],"type":["dbl"],"align":["right"]},{"label":["phy.select.x"],"name":[12],"type":["dbl"],"align":["right"]},{"label":["phy.select.y"],"name":[13],"type":["dbl"],"align":["right"]},{"label":["va.select.x"],"name":[14],"type":["dbl"],"align":["right"]},{"label":["va.select.y"],"name":[15],"type":["dbl"],"align":["right"]},{"label":["pixel.ans.x"],"name":[16],"type":["dbl"],"align":["right"]},{"label":["pixel.ans.y"],"name":[17],"type":["dbl"],"align":["right"]},{"label":["phy.ans.x"],"name":[18],"type":["dbl"],"align":["right"]},{"label":["phy.ans.y"],"name":[19],"type":["dbl"],"align":["right"]},{"label":["va.ans.x"],"name":[20],"type":["dbl"],"align":["right"]},{"label":["va.ans.y"],"name":[21],"type":["dbl"],"align":["right"]}],"data":[{"1":"67eedf7be13ffb77c677d4dd","2":"task5","3":"2","4":"0.44","5":"6.402339e-01","6":"2.35","7":"0.73","8":"3.529412","9":"541.3038","10":"443.225","11":"121.65","12":"111.41375","13":"81.69917","14":"11.751522","15":"8.631310","16":"341.040","17":"157.1076","18":"82.46133","19":"7.165284e+01","20":"8.711523","21":"7.573245e+00"},{"1":"67eedf7be13ffb77c677d4dd","2":"task5","3":"4","4":"0.46","5":"1.833428e-01","6":"0.52","7":"0.68","8":"3.529412","9":"541.3038","10":"345.320","11":"141.40","12":"83.67400","13":"76.10333","14":"8.839130","15":"8.042135","16":"342.110","17":"337.5796","18":"82.76450","19":"2.051912e+01","20":"8.743427","21":"2.171642e+00"},{"1":"67eedf7be13ffb77c677d4dd","2":"task5","3":"3","4":"0.29","5":"2.654315e-01","6":"-1.47","7":"0.47","8":"3.529412","9":"541.3038","10":"238.855","11":"224.35","12":"53.50892","13":"52.60083","14":"5.659192","15":"5.563303","16":"333.015","17":"305.1545","18":"80.18758","19":"2.970621e+01","20":"8.472202","21":"3.143546e+00"},{"1":"67eedf7be13ffb77c677d4dd","2":"task5","3":"8","4":"0.88","5":"3.810112e-01","6":"-0.31","7":"0.53","8":"3.529412","9":"541.3038","10":"300.915","11":"200.65","12":"71.09258","13":"59.31583","14":"7.514199","15":"6.272175","16":"364.580","17":"259.5006","18":"89.13100","19":"4.264150e+01","20":"9.413084","21":"4.511174e+00"},{"1":"6443ebb84fc33e703937a6f9","2":"task5","3":"5","4":"0.38","5":"4.890180e-01","6":"0.74","7":"0.65","8":"6.329412","9":"513.7461","10":"357.090","11":"153.25","12":"48.51794","13":"40.56459","14":"5.406970","15":"4.521637","16":"337.830","17":"216.8379","18":"45.47500","19":"3.051818e+01","20":"5.068313","21":"3.402554e+00"},{"1":"6443ebb84fc33e703937a6f9","2":"task5","3":"3","4":"1.18","5":"2.663909e-01","6":"1.17","7":"0.69","8":"6.329412","9":"513.7461","10":"380.095","11":"137.45","12":"52.15256","13":"43.06087","14":"5.811351","15":"4.799576","16":"380.630","17":"304.7756","18":"52.23708","19":"1.662467e+01","20":"5.820754","21":"1.853913e+00"},{"1":"6443ebb84fc33e703937a6f9","2":"task5","3":"4","4":"0.97","5":"2.093710e-01","6":"0.93","7":"0.67","8":"6.329412","9":"513.7461","10":"367.255","11":"145.35","12":"50.12393","13":"41.81273","14":"5.585667","15":"4.660613","16":"369.395","17":"327.2985","18":"50.46204","19":"1.306623e+01","20":"5.623284","21":"1.457139e+00"},{"1":"6443ebb84fc33e703937a6f9","2":"task5","3":"6","4":"1.01","5":"5.134915e-01","6":"1.09","7":"0.69","8":"6.329412","9":"513.7461","10":"375.815","11":"137.45","12":"51.47635","13":"43.06087","14":"5.736128","15":"4.799576","16":"371.535","17":"207.1709","18":"50.80014","19":"3.204550e+01","20":"5.660900","21":"3.572731e+00"},{"1":"67ea39f872546624b6b520bf","2":"task5","3":"2","4":"5.00","5":"6.572833e-07","6":"0.25","7":"0.52","8":"5.294118","9":"426.9587","10":"330.875","11":"204.60","12":"53.05417","13":"38.79778","14":"7.110472","15":"5.202895","16":"585.000","17":"409.9997","18":"101.05556","19":"4.904063e-05","20":"13.498383","21":"6.581015e-06"},{"1":"67ea39f872546624b6b520bf","2":"task5","3":"9","4":"5.00","5":"1.481532e-102","6":"5.00","7":"0.82","8":"5.294118","9":"426.9587","10":"585.000","11":"86.10","12":"101.05556","13":"61.18111","14":"13.498383","15":"8.196203","16":"585.000","17":"410.0000","18":"101.05556","19":"0.000000e+00","20":"13.498383","21":"0.000000e+00"},{"1":"67ea39f872546624b6b520bf","2":"task5","3":"5","4":"5.00","5":"7.041312e-05","6":"3.49","7":"0.72","8":"5.294118","9":"426.9587","10":"504.215","11":"125.60","12":"85.79617","13":"53.72000","14":"11.474920","15":"7.199476","16":"585.000","17":"409.9722","18":"101.05556","19":"5.253601e-03","20":"13.498383","21":"7.050078e-04"},{"1":"67ea39f872546624b6b520bf","2":"task5","3":"1","4":"5.00","5":"3.673171e-06","6":"5.00","7":"0.75","8":"5.294118","9":"426.9587","10":"585.000","11":"113.75","12":"101.05556","13":"55.95833","14":"13.498383","15":"7.498615","16":"585.000","17":"409.9985","18":"101.05556","19":"2.740594e-04","20":"13.498383","21":"3.677744e-05"},{"1":"67ea39f872546624b6b520bf","2":"task5","3":"6","4":"5.00","5":"1.529635e-08","6":"4.74","7":"0.76","8":"5.294118","9":"426.9587","10":"571.090","11":"109.80","12":"98.42811","13":"56.70444","14":"13.150539","15":"7.598306","16":"585.000","17":"410.0000","18":"101.05556","19":"1.141278e-06","20":"13.498383","21":"1.531539e-07"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>task5_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(va.select.y <span class="sc">-</span> va.ans.y <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.ans.x, <span class="at">y =</span> data.ans.y, <span class="at">color =</span> <span class="st">"answer"</span>)) <span class="sc">+</span> </span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> </span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x =</span> data.select.x, <span class="at">y =</span> data.select.y, <span class="at">color =</span> <span class="st">"select"</span>)) <span class="sc">+</span> </span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlim</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">5</span>) <span class="sc">+</span> <span class="fu">ylim</span>(<span class="dv">0</span>, <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="descriptive_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Have reason to suspect that this participant really isn’t answering the questions nicely …</p>
+</section>
+</section>
+<section id="calculate-average-time" class="level1">
+<h1>Calculate average time</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span>participantId <span class="sc">%in%</span> exclude_participants) <span class="sc">%&gt;%</span> </span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">"task"</span>, trialId)) <span class="sc">%&gt;%</span> </span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(participantId, trialId, rsp_time) <span class="sc">%&gt;%</span></span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(.) <span class="sc">%&gt;%</span> </span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(participantId) <span class="sc">%&gt;%</span> </span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">sum_rsp =</span> <span class="fu">sum</span>(rsp_time)) <span class="sc">%&gt;%</span> </span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(sum_rsp) <span class="sc">%&gt;%</span> <span class="fu">mean</span>(.) <span class="sc">/</span> <span class="dv">60</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by 'participantId', 'trialId'. You can
+override using the `.groups` argument.</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 18.60775</code></pre>
+</div>
+</div>
+</section>
+<section id="save-the-cleaned-data" class="level1 page-columns page-full">
+<h1>Save the cleaned data</h1>
+<p>Count the number of times participants are excluded<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>:</p>
+<div class="no-row-height column-margin column-container"><div id="fn2"><p><sup>2</sup>&nbsp;Given that we have five tasks, the maximum number of times that a participant can be excluded is 5</p></div></div><div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>exclude_participants <span class="sc">%&gt;%</span> <span class="fu">as_tibble</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(value)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["value"],"name":[1],"type":["chr"],"align":["left"]},{"label":["n"],"name":[2],"type":["int"],"align":["right"]}],"data":[{"1":"6443ebb84fc33e703937a6f9","2":"1"},{"1":"67ea39f872546624b6b520bf","2":"5"},{"1":"67ee9fb880b10fe380af1803","2":"1"},{"1":"67eedf7be13ffb77c677d4dd","2":"3"},{"1":"67f44a0314ad081a761de62c","2":"1"},{"1":"67fd4f955123c6d79ae66a3a","2":"1"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+<p>Save the cleaned files:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span>participantId <span class="sc">%in%</span> exclude_participants) <span class="ot">-&gt;</span> task_df</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(task_df, <span class="at">file =</span> <span class="st">"../../data/final/task.rds"</span>)</span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>participants <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span>participantId <span class="sc">%in%</span> exclude_participants) <span class="sc">%&gt;%</span> </span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">saveRDS</span>(., <span class="st">"../../data/final/participants.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -1,0 +1,10 @@
+project:
+  output-dir: output
+  
+format: 
+  html: 
+    code-fold: false
+    reference-location: margin
+    df-print: paged
+    toc: true
+    code-overflow: wrap

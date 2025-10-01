@@ -1,3 +1,0 @@
-pilot/models/task1.non.informative.prior.rds filter=lfs diff=lfs merge=lfs -text
-pilot/models/task1.std_normal.prior.rds filter=lfs diff=lfs merge=lfs -text
-pilot/models/task1.informative.prior.rds filter=lfs diff=lfs merge=lfs -text

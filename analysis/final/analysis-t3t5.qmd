@@ -1,0 +1,535 @@
+---
+title: "Analysis --- Task 3, Task 5"
+---
+
+```{r}
+#| echo: false
+#| output: false
+#| label: setup 
+#| include: false 
+
+library(tidyverse)
+library(ggplot2)
+library(sgt)
+library(numDeriv)
+library(ggdist)
+# setting the theme 
+theme_set(theme_minimal() + theme(base_size = 6))
+# model
+library(brms)
+# plot results 
+library(tidybayes)
+library(modelr)
+library(patchwork)
+
+# source the helper functions 
+source("../../R/helpers.R")
+```
+
+# Overview 
+
+... 
+
+# Set up
+
+Read in data 
+
+```{r}
+#| label: read-in-data
+#| code-fold: true
+
+task_df <- read_rds("../../data/final/task.rds")
+participants <- read_rds("../../data/final/participants.rds")
+```
+
+# Task 5 --- Project from dot to axes 
+
+Get the data: 
+
+```{r}
+#| label: task 5 load data
+#| code-fold: true 
+
+task5_df <- task_df %>% filter(task == "task5") %>% 
+  select(participantId, task, id, data.select.x, data.select.y, slider.x, slider.y) %>% 
+  rename(data.ans.x = data.select.x, 
+         data.ans.y = data.select.y, 
+         data.select.x = slider.x, 
+         data.select.y = slider.y) %>% 
+  right_join(participants, by = join_by(participantId)) %>% 
+  # do all the calculations for user's selected 
+  mutate(pixel.select.x = data_to_pixel_x(data.select.x), 
+         pixel.select.y = data_to_pixel_y(data.select.y), 
+         phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM),
+         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM), 
+         va.select.x = vis_angle(phy.select.x, dist_to_screen),
+         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>% 
+  # do all the calculations for the actual answer
+  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x),
+         pixel.ans.y = data_to_pixel_y(data.ans.y),
+         phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM),
+         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM), 
+         va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
+         va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
+```
+
+## Project to X-Axis 
+
+Descriptive checks: 
+
+```{r}
+task5_df %>% ggplot(aes(x = va.ans.y, y = va.select.x - va.ans.x, color = participantId)) + 
+  geom_point(alpha = 0.5)
+
+task5_df %>% filter(va.select.x - va.ans.x > 0.4) %>% 
+  ggplot() + 
+  geom_point(aes(x = data.select.x, y = data.select.y, color = "select")) + 
+  geom_point(aes(x = data.ans.x, y = data.ans.y, color = "ans")) + 
+  facet_wrap(~participantId) + xlim(-5, 5) + ylim(0, 1)
+
+task5_df %>% filter(va.select.x - va.ans.x > 0.4) %>% 
+  count(participantId) %>% 
+  left_join(participants, by = join_by(participantId))
+```
+
+Turns out these participants were aligning things wrongly on the slider (i.e, they did not match the blue dot to the red dot but matched the thing on the slider to the red dot, hence the shift in their answers. We exclude these participants from our analysis.)
+
+```{r}
+task5_df %>% filter(participantId == "667433338e6cc9e53c828774") %>% 
+  mutate(error = data.select.x - data.ans.x) %>% 
+  pull(error)
+  ggplot() + 
+  geom_point(aes(x = data.select.x, y = data.select.y, color = "select")) +
+  geom_point(aes(x = data.ans.x, y = data.ans.y, color = "ans")) + 
+  xlim(-5, 5) + ylim(0, 1)
+```
+
+```{r}
+task5.x.exclude <- c("667433338e6cc9e53c828774", "67e2f5ebbe69a58c40a5d550")
+```
+
+
+Math: 
+
+$$\begin{align*}
+\texttt{error}_i &\sim \mathcal{N}(\mu_\text{PID}[i], \sigma_{i, \text{PID}[i]}) \\ 
+\mu_j &\sim \mathcal{N}{\overline{\mu}, \overline{\sigma}^2)\\ 
+\log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.y}_i) \\ 
+\alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
+\mu_\alpha, \bar{\mu} &\sim N(0, 1) \\ 
+\sigma_\alpha, \bar{\sigma} &\sim \text{Half-Cauchy}(0, 1)
+\end{align*}$$
+
+Formula and prior: 
+
+```{r}
+f <- bf(error_va ~ (1 | participantId),  
+        sigma ~ (1 | participantId) + offset(log(va.ans.y)))
+ 
+p <- c(
+  prior(normal(0, 1), class = Intercept),
+  prior(normal(0, 1), class = sd, group = participantId, lb = 0), 
+  prior(normal(0, 1), class = Intercept, dpar = "sigma"), 
+  prior(normal(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
+)
+```
+
+```{r}
+#| echo: false 
+#| output: false 
+#| eval: false
+
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  get_prior(formula = f,
+            data = .)
+
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  make_stancode(f, data = ., prior = p, family = gaussian())
+
+task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  make_standata(f, data = ., prior = p, family = gaussian())
+```
+
+Fit model: 
+
+```{r}
+#| output: false 
+m.5.x.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  filter(!participantId %in% task5.x.exclude) %>% 
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p,
+    chains = 4, 
+    cores = 4,
+    control = list(adapt_delta = 0.99),
+    iter = 6000, 
+    file = "models/task5.x", 
+    file_refit = "on_change", 
+    save_pars = save_pars(all = TRUE)
+)
+```
+
+Check fit and posterior: 
+
+```{r}
+summary(m.5.x.va)
+plot(m.5.x.va)
+pp_check(m.5.x.va, ndraws = 100) + 
+  theme(text = element_text(size = 10)) -> p1 
+
+ggsave("../../figs/task5-x-pp-check.pdf", p1, width = 10, height = 5, unit = "cm")
+```
+
+```{r}
+pp_check(m.5.x.va, ndraws = 100, type = "pit_ecdf") + 
+  theme(text = element_text(size = 10)) -> p2
+
+ggsave("../../figs/task5-x-pit-ecdf.pdf", p2, width = 10, height = 5, unit = "cm", dpi = 300)
+```
+
+Posterior for population level mean and sd: 
+
+```{r}
+# m.5.x.va %>% get_variables(.)
+
+m.5.x.va %>% spread_draws(b_Intercept, b_sigma_Intercept) %>% 
+  mutate(b = exp(b_Intercept), b_sigma = exp(b_sigma_Intercept)) %>% 
+  pivot_longer(6:7) %>% 
+  ggplot(aes(x = value, y = name)) + 
+  stat_halfeye()
+```
+
+Plot existing data on top of prediction: 
+
+```{r}
+# for an average participant 
+prediction_grid <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
+  filter(!participantId %in% task5.x.exclude) %>% 
+  data_grid(va.ans.y = seq_range(va.ans.y, n = 100), 
+            participantId = unique(participantId)) %>% 
+  add_predicted_draws(m.5.x.va, ndraws = 1000)
+  
+ggplot(prediction_grid, aes(x = va.ans.y, y = .prediction)) + 
+  stat_lineribbon(
+    .width = c(.95, .80, .50),
+    # alpha = 0.5, 
+    size = 0.5
+  ) + scale_fill_brewer(palette = "Blues") + 
+  geom_point(data = filter(task5_df, !participantId %in% task5.x.exclude), aes(y = va.select.x - va.ans.x, x = va.ans.y), 
+             alpha = 0.5, 
+             size = 0.5) +
+  labs(title = "Dot to x-axis", y = "Signed Error", x = "Distance to X-Axis") + 
+  theme_minimal(base_size = 8) + 
+  theme(legend.position = "none") -> p1 
+
+p1
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+
+# save 
+ggsave("../../figs/task5-project-x.pdf", p1, height = 5, width = 10, units = "cm", dpi = 300)
+```
+
+## Task 5 -- Project to Y-Axis 
+
+```{r}
+task5_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) + 
+  geom_point(alpha = 0.5)
+```
+
+Math: 
+
+$$\begin{align*}
+\texttt{error}_i &\sim \mathcal{N}(0, \sigma_{i, \text{PID}[i]}) \\ 
+\log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.x}_i) \\ 
+\alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
+\mu_\alpha &\sim N(0, 1) \\ 
+\sigma_\alpha &\sim \text{Half-Cauchy}(0, 1)
+\end{align*}$$
+
+Formula and prior: 
+
+```{r}
+f <- bf(error_va ~ (1 | participantId), 
+        sigma ~ (1|participantId) + offset(log(va.ans.x)))
+
+p <- c(
+  prior(normal(0, 1), class = Intercept),
+  prior(normal(0, 1), class = sd, group = participantId, lb = 0), 
+  prior(normal(0, 1), class = Intercept, dpar = "sigma"), 
+  prior(normal(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
+)
+```
+
+```{r}
+#| echo: false 
+#| output: false 
+#| eval: false
+
+task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
+  get_prior(formula = f,
+            data = .)
+
+task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
+  make_stancode(f, data = ., prior = p, family = gaussian())
+
+task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
+  make_standata(f, data = ., prior = p, family = gaussian())
+```
+
+Fit model: 
+
+```{r}
+#| output: false 
+m.5.y.va <- task5_df %>% mutate(error_va = va.select.y - va.ans.y) %>%
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p,
+    chains = 4, 
+    cores = 4,
+    control = list(adapt_delta = 0.99),
+    iter = 6000, 
+    file = "models/task5.y", 
+    save_pars = save_pars(all = TRUE)
+)
+```
+
+Check fit and posterior: 
+
+```{r}
+summary(m.5.y.va)
+plot(m.5.y.va)
+pp_check(m.5.y.va, ndraws = 100) + 
+  theme(text = element_text(size = 10)) -> p1 
+
+ggsave("plots/task5-y-pp-check.pdf", p1, height = 5, width = 10, unit = "cm")
+
+pp_check(m.5.y.va, ndraws = 100, type = "pit_ecdf") + 
+  theme(text = element_text(size = 10)) -> p2 
+
+ggsave("plots/task5-y-pit-ecdf.pdf", p2, height = 5, width = 10, unit = "cm")
+```
+
+Plot results: 
+
+```{r}
+prediction_grid <- task5_df %>% data_grid(va.ans.x = seq_range(va.ans.x, n = 100), 
+                                          participantId = unique(participantId)) %>% 
+  add_predicted_draws(m.5.y.va, ndraws = 1000)
+
+ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) + 
+  stat_lineribbon(
+    .width = c(.95, .80, .50),
+    # alpha = 0.5, 
+    size = 0.5
+  ) + 
+  scale_fill_brewer(palette = "Blues")  + 
+  geom_point(data = task5_df, 
+             aes(y = va.select.y - va.ans.y, x = va.ans.x), 
+             alpha = 0.5, 
+             size = 0.5) + 
+  # ylim(-0.5, 0.5) + 
+  labs(title = "Dot to y-axis", y = "Signed Error", x = "Distance to Y-Axis") + 
+  theme_minimal(base_size = 8) + 
+  theme(legend.position = "none") -> p2 
+
+p2
+```
+
+```{r}
+#| echo: false 
+#| eval: false 
+
+ggsave("plots/task5-project-y.pdf", p2, height = 5, width = 10, units = "cm", dpi = 300)
+```
+
+```{r}
+p1 + p2 -> combined
+ggsave("plots/task5-combined.pdf", combined, height = 5, width = 10, units = "cm")
+```
+
+
+Combine and save: 
+
+```{r}
+combined <- (p1 + guides(color = "none", fill = "none", size = "none")) / (p2 +
+  guides(color = "none", fill = "none", size = "none"))
+
+combined <- (p1 + theme(legend.position = "top")) + (p2 + theme(legend.position = "top"))
+
+# ggsave("plots/task5-combined.svg", combined, height = 8, width = 10, units = "cm", dpi = 300)
+ggsave("plots/task5-combined.pdf", combined, height = 5, width = 10, units = "cm", dpi = 300)
+```
+
+
+# Task 3 --- Find where y == 0.5 
+
+Get data: 
+
+```{r}
+#| label: Get task 3 data
+
+task3_df <- task_df %>% filter(task == "task3") %>% 
+  select(-slider.x, -slider.y) %>% 
+  right_join(participants, by = join_by(participantId)) %>% 
+  # do all the calculations for user's selected 
+  mutate(pixel.select.x = data_to_pixel_x(data.select.x), 
+         pixel.select.y = data_to_pixel_y(data.select.y), 
+         phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM),
+         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM), 
+         va.select.x = vis_angle(phy.select.x, dist_to_screen),
+         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>% 
+  mutate(data.ans.y = 0.5, 
+         data.ans.x = qsgt(0.5, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)) %>% 
+  # do all the calculations for the actual answer
+  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x),
+         pixel.ans.y = data_to_pixel_y(data.ans.y),
+         phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM),
+         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM), 
+         va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
+         va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
+```
+
+```{r}
+task3_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) + 
+  geom_point(alpha = 0.5)
+
+task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) + 
+  geom_dots()
+```
+
+Math: 
+
+$$\begin{align*}
+\texttt{error}_i &\sim \mathcal{N}(0, \sigma_{i, \text{PID}[i]}) \\ 
+\log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.x}_i) \\ 
+\alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
+\mu_\alpha &\sim N(0, 1) \\ 
+\sigma_\alpha &\sim \text{Half-Cauchy}(0, 1)
+\end{align*}$$
+
+Formula and prior: 
+
+```{r}
+f <- bf(error_va ~ (1 | participantId), 
+        sigma ~ (1|participantId) + offset(log(va.ans.x)))
+
+p <- c(
+  prior(normal(0, 1), class = Intercept),
+  prior(normal(0, 1), class = sd, group = participantId, lb = 0),
+  prior(normal(0, 1), class = Intercept, dpar = "sigma"), 
+  prior(normal(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
+)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+
+task3_df %>% mutate(error_va = va.select.y - va.ans.y, 
+                    log.va.ans.x = log(va.ans.x)) %>%
+get_prior(formula = f,
+          data = .)
+
+task3_df %>% mutate(error_va = va.select.y - va.ans.y, 
+                    log.va.ans.x = log(va.ans.x)) %>%
+make_stancode(formula = f,
+              data = ., 
+              prior = p)
+```
+
+Fit model: 
+
+```{r}
+#| output: false
+#| label: task 3 fit normal 
+
+m3 <- task3_df %>%
+  mutate(error_va = va.select.y - va.ans.y, 
+         log.va.ans.x = log(va.ans.x)) %>%
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p,
+    chains = 4,
+    cores = 4, 
+    file = "models/task3",
+    file_refit = "on_change", 
+    save_pars = save_pars(all=TRUE), 
+    control = list(adapt_delta = 0.99), 
+    iter = 6000
+)
+```
+
+Check fit and posterior: 
+
+```{r}
+summary(m3)
+ plot(m3)
+pp_check(m3, ndraws = 100) + 
+  theme(text = element_text(size = 10)) -> p1 
+
+ggsave("plots/task3-pp-check.pdf", p1, height = 5, width = 10, unit = "cm")
+```
+
+```{r}
+pp_check(m3, ndraws = 100, type = "pit_ecdf") + 
+  theme(text = element_text(size = 10)) -> p2  
+
+ggsave("plots/task3-pit-ecdf.pdf", p2, height = 5, width = 10, unit = "cm", dpi = 300)
+```
+
+
+Average participant behavior: 
+
+```{r}
+# m3 %>% get_variables(.)
+
+# Extract posterior samples using spread_draws
+m3 %>% spread_draws(b_sigma_Intercept) %>% 
+  mutate(b_sigma = exp(b_sigma_Intercept)) %>% 
+  ggplot(aes(x = b_sigma)) + 
+  stat_halfeye()
+```
+
+Plot: 
+
+```{r}
+prediction_grid <- task3_df %>% mutate(error_va = va.select.y - va.ans.y) %>% 
+  data_grid(va.ans.x = seq_range(va.ans.x, n = 100), 
+            participantId = unique(participantId)) %>% 
+  add_predicted_draws(m3) 
+
+prediction_grid %>% 
+  ggplot(aes(x = va.ans.x, y = .prediction)) + 
+  stat_lineribbon(
+    .width = c(.95, .80, .50),
+    # alpha = 0.5, 
+    size = 0.5
+  ) + scale_fill_brewer(palette = "Blues") + 
+  geom_point(data = task3_df, aes(y = va.select.y - va.ans.y, x = va.ans.x), 
+             alpha = 0.5, size = 0.5) + 
+  theme_minimal(base_size = 8) + 
+  theme(legend.position = "none") + 
+  labs(y = "Signed error", x = "Distance to Y-Axis") -> p3
+
+ggsave("plots/task3.pdf", plot = p3, height = 5, width = 5, units = "cm")
+```
+
+
+```{r}
+#| echo: false 
+#| eval: false 
+(p1 + guides(color = "none", fill = "none", size = "none")) / (p2 + guides(color = "none", fill = "none", size = "none")) / (p3 + guides(color = "none", fill = "none", size = "none")) -> combined 
+# ggsave("plots/t3t5-combined.svg", plot = combined, height = 10, width = 10, units = "cm")
+ggsave("plots/t3t5-combined.pdf", plot = combined, height = 9, width = 10, units = "cm")
+```
+
