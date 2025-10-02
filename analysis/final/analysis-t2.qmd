@@ -1,5 +1,5 @@
 ---
-title: "Analysis - Task 2"
+title: "Analysis --- Task 2"
 ---
 
 ```{r}
@@ -16,21 +16,35 @@ library(ggdist)
 theme_set(theme_minimal())
 # model
 library(brms)
+library(rstan)
+options(brms.backend = "cmdstanr")
+options(mc.cores = parallel::detectCores())
 # plot results 
 library(tidybayes)
+library(here)
 
 # source the helper functions 
-source("../../R/helpers.R")
+source(here("R", "helpers.R"))
+
+library(RColorBrewer)
 ```
 
 # Overview / TLDR
 
 Task 2 is ... 
-For modeling the signed error on the Y-axis, we ran the following models: 
+For modeling the signed error on the **Y-axis**, we ran the following models: 
 
 - [Lomax](@sec-y-lomax)
 - [Exponential](@sec-y-exponential) 
-- 
+- [Weibull](@sec-y-weibull)
+- [Log-Normal](@sec-y-logNormal)
+- [Gamma](@sec-y-gamma)
+
+For modeling the signed error on the **X-axis**, we ran the following models: 
+
+- [Normal](@sec-x-normal)
+- [Laplace](@sec-x-laplace)
+- [Student-t](@sec-x-studentT)
 
 # Set up
 
@@ -40,8 +54,8 @@ Read in data
 #| label: read-in-data
 #| code-fold: true
 
-task_df <- read_rds("../../data/final/task.rds")
-participants <- read_rds("../../data/final/participants.rds")
+task_df <- read_rds(here("data", "final", "task.rds"))
+participants <- read_rds(here("data", "final", "participants.rds"))
 ```
 
 # Task 2 
@@ -54,9 +68,6 @@ task2_df <- task_df %>% filter(task == "task2") %>%
   select(-slider.x, -slider.y) %>% 
   mutate(data.ans.x = param.mu, 
          data.ans.y = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE),
-         # data.select.grad = numDeriv::grad(dsgt, data.select.x, mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
-         # data.select.angle = atan(data.select.grad) * 180 / pi
-         # this is the gradient of the left of the highest point 
          data.left.grad = numDeriv::grad(dsgt, param.mu - 1, mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
          data.right.grad = numDeriv::grad(dsgt, param.mu + 1, mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
          ) %>% 
@@ -98,13 +109,11 @@ task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
 task2_df %>% ggplot(aes(x = (phy.ans.y - phy.select.y) / dist_to_screen)) + geom_dots()
 ```
 
-Checking relations, ocusing on the **X** Axis: 
+Checking relations, focusing on the **X** Axis: 
 
 ```{r}
 #| layout-ncol: 2
 #| code-fold: true
-
-library(RColorBrewer)
 
 task2_df %>% ggplot(aes(x = data.ans.x - data.select.x)) + 
   geom_dots()
@@ -133,6 +142,7 @@ task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = param.lambda)) +
 
 [Wikipedia](https://en.wikipedia.org/wiki/Lomax_distribution). Note that `alpha` is shape and `lambda` is scale. 
 This is the [stan reference](https://mc-stan.org/docs/functions-reference/positive_lower-bounded_distributions.html#pareto-type-2-distribution). 
+
 Math model: 
 
 $$\begin{align*}\text{error}_i &\sim \text{Lomax}(\lambda_{\text{PID}[i]}, \alpha_{\text{PID}[i]}) \\ 
@@ -165,6 +175,8 @@ stan_funs <- "
   }
 "
 ```
+
+Formula and posterior: 
 
 ```{r}
 f <- bf(error.y ~ 0, 
@@ -206,15 +218,13 @@ model.y.lomax <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
     stanvars = stanvar(scode = stan_funs, block = "functions"),
     chains = 4,
     cores = 4, 
-    file = "models/task2.y.lomax",
+    file = here("fitted_models", "task2.y.lomax"),
     file_refit = "on_change", 
     iter = 10000, 
     control = list(adapt_delta = 0.99, max_treedepth = 15), 
     save_pars = save_pars(all = TRUE)
   )
 ```
-
-ESS is still too low ... this might not be a good one ... 
 
 Check fit and posterior check: 
 
@@ -223,7 +233,12 @@ summary(model.y.lomax)
 plot(model.y.lomax)
 ```
 
+Observe that the `ESS` is very low, even though we have taken the number of iterations to 10000^[for context other models took numb of iterations about 4000]. This suggests that the lomax model is not the right one. 
+
+Nevertheless we still check the posterior: 
+
 ```{r}
+#| layout-ncol: 2
 expose_functions(model.y.lomax, vectorize = TRUE)
 
 # Define the posterior_predict function in R as per vignette
@@ -236,6 +251,8 @@ posterior_predict_lomax <- function(i, draws, ...) {
 pp_check(model.y.lomax, ndraws = 100)
 pp_check(model.y.lomax, ndraws = 100, type = "pit_ecdf")
 ```
+
+From the ECDF check it seems that indeed the lomax model is not a good one. 
 
 Hmm from the ecdf we know it's not in the desired region .. 
 
@@ -262,7 +279,7 @@ prediction <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
    xlim(0, 0.05)
 ```
 
-Hmm there is something a bit wrong with how things are being plotted ... 
+<!-- Hmm there is something a bit wrong with how things are being plotted ...  -->
 
 ### Exponential Distribution {#sec-y-exponential}
 
@@ -272,6 +289,8 @@ $$\begin{align*}\text{error}_i &\sim \text{Exponential}(\lambda_{\text{PID}[i]})
 \log(\lambda_j) &\sim \text{Normal}(\mu_\lambda, \sigma_\lambda) \\ 
 \mu_\lambda &\sim \mathcal{N}(0, 1), \sigma_\lambda \sim \text{Half-Cauchy}(0, 1)
 \end{align*}$$
+
+Formula and prior: 
 
 ```{r}
 f <- bf(error.y ~ 0, 
@@ -309,7 +328,7 @@ model.y.exponential <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)
     prior = p,
     chains = 4,
     cores = 4, 
-    file = "models/task2.y.exponential",
+    file = here("fitted_models", "task2.y.exponential"),
     file_refit = "on_change", 
     control = list(adapt_delta = 0.99), 
     iter = 6000, 
@@ -322,11 +341,13 @@ Check fit and posterior:
 ```{r}
 summary(model.y.exponential)
 plot(model.y.exponential)
+```
+
+```{r}
+#| layout-ncol: 2
 pp_check(model.y.exponential, ndraws = 100)
 pp_check(model.y.exponential, ndraws = 100, type = "pit_ecdf")
 ```
-
-Plot posterior: 
 
 ```{r}
 model.y.exponential %>% get_variables(.)
@@ -362,8 +383,9 @@ task2_df %>% modelr::data_grid(error.y = 0) %>%
 p
 ```
 
+### Weibull {#sec-y-weibull}
 
-### Weibull 
+Specify formula and prior: 
 
 ```{r}
 f <- bf(
@@ -389,8 +411,8 @@ task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>%
   mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% 
   get_prior(formula = f, data = . )
 
-# task2_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>% 
-#   make_stancode(formula = f, prior = p)
+task2_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>%
+  make_stancode(formula = f, prior = p)
 ```
 
 Fit the model: 
@@ -400,13 +422,13 @@ Fit the model:
 #| label: fit weibull 
 
 model.y.weibull <- task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
-  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% # brms needs value to be > 0  :Error: Family 'weibull' requires response greater than 0.
+  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% # Weibull needs value to be > 0
   brm(formula = f, 
       data = ., 
       prior = p, 
       chains = 4, 
       cores = 4, 
-      file = "models/task2.y.weibull", 
+      file = here("fitted_models", "task2.y.weibull"), 
       file_refit = "on_change",
       save_pars = save_pars(all = TRUE), 
       control = list(adapt_delta = 0.99), 
@@ -419,17 +441,13 @@ Check fit and posterior:
 ```{r}
 summary(model.y.weibull)
 plot(model.y.weibull)
-pp_check(model.y.weibull, ndraws = 100)
 ```
 
 ```{r}
-pp_check(model.y.weibull, ndraws = 100, type = "pit_ecdf") + 
-  labs(title = "Task 2") + 
-  theme(text = element_text(size = 12)) -> task3.y
-
-ggsave("plots/task2.y.pdf", plot = task3.y, height = 8, width = 10, units = "cm", dpi = 300)
+#| layout-ncol: 2
+pp_check(model.y.weibull, ndraws = 100)
+pp_check(model.y.weibull, ndraws = 100, type = "pit_ecdf")
 ```
-
 
 Overlay plot: 
 
@@ -463,24 +481,20 @@ task2_df %>% modelr::data_grid(error.y = 0,
   labs(y = "density", x = "signed error (on y)" ) + 
   scale_y_continuous(breaks = 0) -> p
   
-# p
-
-ggsave("plots/task2.y.weibull.pdf", plot = p, height = 5, width = 5, units = "cm")
+p
 ```
 
 ```{r}
-pp_check(model.y.weibull, ndraws = 100, type = "pit_ecdf")
-```
-
-
-```{r}
-#| echo: false 
 #| eval: false 
+#| echo: false 
 
-ggsave("plots/task2.y.weibull.pdf", plot = p, height = 5, width = 5, unit = "cm", dpi = 300)
+ggsave("plots/task2.y.weibull.pdf", plot = p, 
+       height = 5, width = 5, units = "cm", dpi = 300)
 ```
 
-### Log-Normal 
+### Log-Normal {#sec-y-logNormal}
+
+Specify formula and prior: 
 
 ```{r}
 f <- bf(error.y ~ 0,
@@ -504,8 +518,8 @@ task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>%
   mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% 
   get_prior(formula = f, data = . )
 
-# task2_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>% 
-#   make_stancode(formula = f, prior = p)
+task2_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>%
+  make_stancode(formula = f, prior = p)
 ```
 
 ```{r}
@@ -514,13 +528,13 @@ task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>%
 
 model.y.lognormal <- task2_df %>% 
   mutate(error.y = va.ans.y - va.select.y) %>% 
-  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% # Error: Family 'lognormal' requires response greater than 0.
+  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% 
   brm(formula = f, 
       data = ., 
       prior = p, 
       chains = 4, 
       cores = 4, 
-      file = "models/task2.y.lognormal", 
+      file = here("fitted_models", "task2.y.lognormal"),
       file_refit = "on_change",
       save_pars = save_pars(all = TRUE), 
       control = list(adapt_delta = 0.99),
@@ -528,9 +542,15 @@ model.y.lognormal <- task2_df %>%
   )
 ```
 
+Check fit and posterior: 
+
 ```{r}
 summary(model.y.lognormal)
 plot(model.y.lognormal)
+```
+
+```{r}
+#| layout-ncol: 2
 pp_check(model.y.lognormal, ndraws = 100)
 pp_check(model.y.lognormal, ndraws = 100, type = "pit_ecdf")
 ```
@@ -550,7 +570,9 @@ task2_df %>% modelr::data_grid(error.y = 0) %>%
 p
 ```
 
-### Gamma 
+### Gamma {#sec-y-gamma}
+
+Specify formula and prior: 
 
 ```{r}
 f <- bf(error.y ~ 0,
@@ -574,8 +596,8 @@ task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>%
   mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% 
   get_prior(formula = f, data = . )
 
-# task2_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>% 
-#   make_stancode(formula = f, prior = p)
+task2_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>%
+  make_stancode(formula = f, prior = p)
 ```
 
 ```{r}
@@ -590,7 +612,7 @@ model.y.gamma <- task2_df %>%
       prior = p,
       chains = 4,
       cores = 4,
-      file = "models/task2.y.gamma",
+      file = here("fitted_models", "task2.y.gamma"), 
       file_refit = "on_change",
       save_pars = save_pars(all = TRUE),
       control = list(adapt_delta = 0.99),
@@ -598,9 +620,16 @@ model.y.gamma <- task2_df %>%
   )
 ```
 
-A lot of divergent transitions ... 
+The above model have a lot of divergent transitions, suggesting that this is not perhaps the best fit. 
 
-### LOO Comparison 
+Check fit: 
+
+```{r}
+summary(task2.y.gamma)
+```
+
+
+### LOO Comparison {#sec-y-loo}
 
 Define custom functions for the Lomax distribution: 
 
@@ -617,7 +646,7 @@ log_lik_lomax <- function(i, prep) {
 }
 ```
 
-Loo comparison 
+Loo comparison: 
 
 ```{r}
 #| cache: true 
@@ -630,7 +659,7 @@ loo(model.y.lomax, model.y.exponential, model.y.lognormal, model.y.gamma, model.
 
 ## Task 2 -- Error on X 
 
-### Normal distribution 
+### Normal distribution {#sec-x-normal}
 
 Math model: 
 
@@ -640,7 +669,7 @@ $$\begin{align}
 \sigma &\sim \text{Half-Cauchy}(0, 1)
 \end{align}$$
 
-`brms` formula:
+Formula and prior: 
 
 ```{r}
 f <- bf(error.x ~ 0,
@@ -680,7 +709,8 @@ model.x.normal <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
     data = .,
     prior = p,
     chains = 4,
-    file = "models/task2.x.normal", 
+    cores = 4, 
+    file = here("fitted_models", "task2.x.normal"),
     file_refit = "on_change",
     control = list(adapt_delta = 0.99),
     iter = 6000
@@ -692,19 +722,32 @@ Check fit and posterior:
 ```{r}
 summary(model.x.normal)
 plot(model.x.normal)
+```
+
+```{r}
+#| layout-ncol: 2
 pp_check(model.x.normal, ndraws= 100) + 
   theme(text = element_text(size = 10)) + 
   labs(title = "Task 2") -> task2.x.gaussian
-
-ggsave("plots/task2.x.gaussian.pdf", task2.x.gaussian, height = 5, width = 8, unit = "cm", dpi = 300)
 
 pp_check(model.x.normal, ndraws= 100, type = "pit_ecdf") + 
   theme(text = element_text(size = 10)) + 
   labs(title = "Task 2") -> task2.x.gaussian.pit
 
-ggsave("../../figs/task2.x.gaussian-pit.pdf", task2.x.gaussian.pit, height = 4, width = 8, unit = "cm", dpi = 300)
-
+task2.x.gaussian
+task2.x.gaussian.pit
 ```
+
+```{r}
+#| eval: false 
+
+ggsave("plots/task2.x.gaussian.pdf", task2.x.gaussian, 
+       height = 5, width = 8, unit = "cm", dpi = 300)
+
+ggsave("../../figs/task2.x.gaussian-pit.pdf", task2.x.gaussian.pit, 
+       height = 4, width = 8, unit = "cm", dpi = 300)
+```
+
 
 Get the posterior for fitting another task: 
 
@@ -743,7 +786,7 @@ task2_df %>% mutate(error.x = va.select.x - va.ans.x,
   )
 ```
 
-### Laplace distribution 
+### Laplace distribution {#sec-x-laplace}
 
 Math model: 
 
@@ -753,7 +796,7 @@ $$\begin{align}
 b &\sim \text{Half-Cauchy}(0, 1)
 \end{align}$$
 
-To fit a laplace distribution, we need to define our own custom distribution, since `brms` does not provide a default defined Laplace distributino. 
+To fit a laplace distribution, we need to define our own custom distribution, since `brms` does not provide a default defined Laplace distribution. 
 
 :::{.callout-note collapsed="true"}
 There is a [wiki](https://en.wikipedia.org/wiki/Laplace_distribution) about Laplace distribution, which defines the pdf of a Laplace distribution to be $f(x | \mu, b) = \frac{1}{2b} \exp(-\frac{|x - \mu|}{b})$, where $\mu$ is a location parameter, and $b > 0$ is a scale parameter. And this is what the [stan manual](https://en.wikipedia.org/wiki/Laplace_distribution) defines the pdf of the **double exponential** distribution  --- $f(y|\mu, \sigma) = \frac{1}{2\sigma} \exp(- \frac{|y - \mu|}{\sigma})$, basically everything is the same except they're using different notations for the scale parameter ...  
@@ -776,6 +819,8 @@ laplace_family = custom_family(
   type = "real"
 )
 ```
+
+Formula and prior: 
 
 ```{r}
 f <- bf(error.x ~ 0, 
@@ -824,7 +869,8 @@ model.x.laplace <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
     prior = p, 
     data = ., 
     chains = 4, 
-    file = "models/task2.x.laplace", 
+    cores = 4, 
+    file = here("fitted_models", "task2.x.laplace"),
     file_refit = "on_change", 
     iter = 6000, 
     control = list(adapt_delta = 0.99)
@@ -838,9 +884,7 @@ summary(model.x.laplace)
 plot(model.x.laplace)
 ```
 
-Given that we are using custom families, we also need to define our custom function to perform posterior predictive checks: 
-
-Define custom functions for posterior predictive check: 
+Given that we are using custom families, we also need to define our custom function to perform posterior predictive checks. Let's define custom functions for posterior predictive check: 
 
 ```{r}
 #| code-fold: true 
@@ -864,18 +908,24 @@ posterior_predict_laplace <- function(i, prep, ...) {
 Posterior predictive check: 
 
 ```{r}
+#| layout-ncol: 2
 pp_check(model.x.laplace, ndraws = 100) + 
   theme(text = element_text(size = 10)) + 
   labs(title = "Task 2 -- Error on Y -- Laplace") -> task2.laplace
-
-ggsave("plots/task2.y.laplace.pdf", task2.laplace, height = 4, width = 8, unit = "cm")
 
 pp_check(model.x.laplace, ndraws = 100, type = "pit_ecdf") + 
   theme(text = element_text(size = 10)) + 
   labs(title = "Task 2 -- Error on Y -- Laplace") -> task2.laplace.pit
 
-ggsave("plots/task2.y.laplace-pit.pdf", task2.laplace.pit, height = 4, width = 8, unit = "cm")
+task2.laplace
+task2.laplace.pit
+```
 
+```{r}
+#| eval: false 
+ggsave("plots/task2.y.laplace.pdf", task2.laplace, 
+       height = 4, width = 8, units = "cm")
+ggsave("plots/task2.y.laplace-pit.pdf", task2.laplace.pit, height = 4, width = 8, units = "cm")
 ```
 
 Plot posterior distribution: 
@@ -908,8 +958,6 @@ task2_df %>% # mutate(error.x = va.select.x - va.ans.x) %>%
 
 p
 
-ggsave("plots/task2.x.laplace.pdf", plot = p, height = 5, width = 5, units = "cm", dpi = 300)
-
 prediction <- task2_df %>% mutate(error.x = va.select.x - va.ans.x, ) %>%
   add_predicted_draws(model.x.laplace, ndraws = 100)
 
@@ -929,6 +977,13 @@ task2_df %>% mutate(error.x = va.select.x - va.ans.x,
 ```
 
 ```{r}
+#| eval: false
+
+ggsave("plots/task2.x.laplace.pdf", plot = p, height = 5, width = 5, units = "cm", dpi = 300)
+```
+
+
+```{r}
 task2_df %>% modelr::data_grid(error.y = 0, 
                                participantId = unique(participantId)) %>% 
   add_predicted_draws(model.y.weibull, ndraws = 100) %>% 
@@ -945,12 +1000,15 @@ task2_df %>% modelr::data_grid(error.y = 0,
   scale_y_continuous(breaks = 0) -> p
   
 p
+```
 
+```{r}
+#| eval: false
 ggsave("plots/task2.y.weibull.pdf", plot = p, height = 5, width = 5, units = "cm")
 ```
 
 
-### Student-t distribution 
+### Student-t distribution {#sec-x-studentT}
 
 The Cauchy distribution puts too much weight on its tails; we'll go for studente-t, which is more robust. 
 
@@ -963,7 +1021,7 @@ $$\begin{align}
 \nu ... 
 \end{align}$$
 
-`brms` formula: 
+Formula and prior: 
 
 ```{r}
 f <- bf(
@@ -1007,15 +1065,15 @@ Fit the model:
 ```{r}
 #| output: false 
 
-model.x.student <- task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
-                                       # error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)
-                                       ) %>%
+model.x.student <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
   brm(
     formula = f, 
     prior = p, 
     data = ., 
     chains = 4, 
-    file = "models/task2.x.student"
+    cores = 4, 
+    file = here("fitted_models", "task2.x.student"),
+    file_refit = "on_change"
   )
 ```
 
@@ -1028,7 +1086,6 @@ pp_check(model.x.student, ndraws = 100)
 ```
 
 The default `student` function has `student(link = "identity", link_sigma = "log", link_nu = "logm1")`. Which means that we need to transform the fitted `sigma` and `nu`. 
-
 ```{r}
 model.x.student %>% get_variables(.)
 
@@ -1059,10 +1116,10 @@ task2_df %>% mutate(error.x = va.select.x - va.ans.x,
     x = "error.x",
     y = NULL
   ) + 
-  xlim(-5, 5)
+  coord_cartesian(xlim = c(-5, 5))
 ```
 
-### LOO comparisons 
+### LOO comparisons {#sec-x-loo}
 
 Recall that the when using a custom `brms` family, we need to define our own funtions. First define the `log_lik` (log likelihood) related functions: 
 

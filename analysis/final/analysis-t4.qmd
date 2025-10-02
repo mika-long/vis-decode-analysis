@@ -13,14 +13,18 @@ library(sgt)
 library(numDeriv)
 library(ggdist)
 # setting the theme 
-theme_set(theme_minimal())
+theme_set(theme_minimal(base_size = 10))
 # model
 library(brms)
+library(rstan)
+# options(brms.backend = "cmdstanr")
+options(mc.cores = parallel::detectCores())
 # plot results 
 library(tidybayes)
+library(here)
 
 # source the helper functions 
-source("../../R/helpers.R")
+source(here("R", "helpers.R"))
 ```
 
 # Overview / TLDR 
@@ -42,8 +46,8 @@ Read in data
 #| label: read-in-data
 #| code-fold: true
 
-task_df <- read_rds("../../data/final/task.rds")
-participants <- read_rds("../../data/final/participants.rds")
+task_df <- read_rds(here("data", "final", "task.rds"))
+participants <- read_rds(here("data", "final", "participants.rds"))
 ```
 
 Get task 4 specific data: 
@@ -206,7 +210,8 @@ model.exponential <- task4_df %>%
       data = ., 
       prior = p, 
       chains = 4, 
-      file = "models/task4.exponential", 
+      cores = 4, 
+      file = here("fitted_models", "task4.exponential"),
       file_refit = "on_change",
       save_pars = save_pars(all = TRUE), 
       iter = 6000
@@ -218,12 +223,17 @@ Check fit:
 ```{r}
 summary(model.exponential)
 plot(model.exponential)
+```
+
+```{r}
+#| layout-ncol: 2
 pp_check(model.exponential, ndraws = 100)
 pp_check(model.exponential, ndraws = 100, type = "pit_ecdf")
 ```
 
+
 ```{r}
-model.exponential %>% get_variables()
+# model.exponential %>% get_variables()
 
 model.exponential %>% spread_draws(b_Intercept, sd_participantId__Intercept) %>% 
   mutate(lambda = exp(b_Intercept))  %>% 
@@ -324,7 +334,7 @@ model.lomax <- task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.
     stanvars = stanvar(scode = stan_funs, block = "functions"),
     chains = 4,
     cores = 4,
-    file = "models/task4.lomax",
+    file = here("fitted_models", "task4.lomax"),
     file_refit = "on_change",
     control = list(adapt_delta = 0.99),
     iter = 4000,
@@ -371,7 +381,10 @@ log_lik_lomax <- function(i, prep){
   y <- prep$data$Y[i]
   lomax_lpdf(y, 0, lambda, alpha)
 }
+```
 
+```{r}
+#| layout-ncol: 2
 pp_check(model.lomax, ndraws = 100)
 pp_check(model.lomax, ndraws = 100, type = "pit_ecdf")
 ```
@@ -389,19 +402,13 @@ prediction %>% ggplot() +
   geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope)))
 ```
 
-
-<!-- ```{r} -->
-<!-- # huh something is a bit wrong with its add_predicted_draws ... -->
-<!-- task4_df %>% modelr::data_grid(error = 0, participantId = unique(participantId)) %>% -->
-<!--   add_predicted_draws(model.lomax, ndraws = 100, re_formula = NA) -->
-<!-- ``` -->
-
-
 ## Weibull distribution {#sec-weibull}
 
 - [wikipedia](https://en.wikipedia.org/wiki/Weibull_distribution)
 - [stan](https://mc-stan.org/docs/functions-reference/positive_continuous_distributions.html#weibull-distribution)
-- it's also implemented in brms! So no need for a custom function.
+- it's also implemented in brms! So unlike the [Lomax model](@sec-lomax), we don't need to write custom functions. 
+
+Specify formula and prior: 
 
 ```{r}
 f <- bf(
@@ -445,7 +452,7 @@ model.weibull <- task4_df %>%
       prior = p,
       chains = 4,
       cores = 4,
-      file = "models/task4.weibull",
+      file = here("fitted_models", "task4.weibull"), 
       file_refit = "on_change",
       save_pars = save_pars(all = TRUE),
       iter = 6000
@@ -457,27 +464,33 @@ Check fit and posterior:
 ```{r}
 summary(model.weibull)
 plot(model.weibull)
+```
 
+```{r}
+#| layout-ncol: 2
 pp_check(model.weibull, ndraws = 100) +
   coord_cartesian(xlim = c(0, 10)) +
   theme(text = element_text(size = 10)) -> p1
 
 pp_check(model.weibull, ndraws = 100, type = "pit_ecdf") +
   theme(text = element_text(size = 10)) -> p2
-```
 
-Save plots: 
+p1
+p2
+```
 
 ```{r}
 #| eval: false 
 
-ggsave("../../figs/task4-pp-check.pdf", p1, height = 5, width = 10, unit = "cm")
+ggsave(here("figs", "task4-pp-check.pdf"), p1, 
+       height = 5, width = 10, units = "cm", dpi = 300)
 
-ggsave("../../figs/task4-pit-ecdf.pdf", p2, height = 5, width = 10, unit = "cm")
+ggsave(here("figs", "task4-pit-ecdf.pdf"), p2, 
+       height = 5, width = 10, units = "cm", dpi = 300)
 ```
 
 ```{r}
-model.weibull %>% get_variables()
+# model.weibull %>% get_variables()
 
 model.weibull %>% spread_draws(b_Intercept, b_shape_Intercept) %>%
   mutate(mu = exp(b_Intercept), shape = exp(b_shape_Intercept)) %>%
@@ -526,7 +539,8 @@ Save results:
 ```{r}
 #| eval: false 
 
-ggsave("../../figs/task4.pdf", plot = p, height = 5, width = 5, units = "cm")
+ggsave(here("figs", "task4.pdf"), plot = p, 
+       height = 6, width = 8, units = "cm", dpi = 300)
 ```
 
 
@@ -553,6 +567,8 @@ ggsave("../../figs/task4.pdf", plot = p, height = 5, width = 5, unit = "cm", dpi
 
 ## Log-Normal distribution {#sec-logNormal}
 
+Formula and prior: 
+
 ```{r}
 f <- bf(error ~ 0,
         mu ~ (1 | participantId),
@@ -576,6 +592,8 @@ task4_df %>%
   get_prior(data = ., formula = f)
 ```
 
+Fit the model: 
+
 ```{r}
 #| output: false
 #| label: fit lognormal
@@ -588,7 +606,7 @@ model.lognormal <- task4_df %>%
       prior = p,
       chains = 4,
       cores = 4,
-      file = "models/task4.lognormal",
+      file = here("fitted_models", "task4.lognormal"), 
       file_refit = "on_change",
       save_pars = save_pars(all = TRUE),
       control = list(adapt_delta = 0.99),
@@ -601,6 +619,10 @@ Check fit and posterior:
 ```{r}
 summary(model.lognormal)
 plot(model.lognormal)
+```
+
+```{r}
+#| layout-ncol: 2
 pp_check(model.lognormal, ndraws = 100)
 pp_check(model.lognormal, ndraws = 100, type = "pit_ecdf")
 ```
@@ -628,16 +650,14 @@ task4_df %>% modelr::data_grid(error = 0) %>%
   geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope)))
 ```
 
-
 ## Model Comparison {#sec-model-compare}
 
 ```{r}
-#| cache: true 
 loo(model.exponential, model.lomax, model.weibull, model.lognormal, 
     moment_match = TRUE) 
 ```
 
-The weibull model performs the best. This can also be seen from the posterior predictive checks: 
+The Weibull model performs the best. 
 
 ```{r}
 #| layout-ncol: 2
