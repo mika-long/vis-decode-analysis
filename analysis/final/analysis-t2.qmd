@@ -1,5 +1,5 @@
 ---
-title: "Analysis --- Task 2"
+title: "Analysis --- Task 2 --- "
 ---
 
 ```{r}
@@ -58,7 +58,7 @@ task_df <- read_rds(here("data", "final", "task.rds"))
 participants <- read_rds(here("data", "final", "participants.rds"))
 ```
 
-# Task 2 
+Load data specific for task 2: 
 
 ```{r}
 #| label: task 2 load data
@@ -87,11 +87,12 @@ task2_df <- task_df %>% filter(task == "task2") %>%
   mutate(flat = (abs(data.left.grad) + abs(data.right.grad))/2)
 ```
 
-Checking relations, focusing on the **Y** Axis: 
-
 ```{r}
 #| layout-ncol: 2
 #| code-fold: true
+#| eval: false 
+
+# Checking relations, focusing on the **Y** Axis
 
 task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>% 
   mutate(error_va = ifelse(error_va < tolerance, 0, error_va)) %>% 
@@ -109,11 +110,12 @@ task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
 task2_df %>% ggplot(aes(x = (phy.ans.y - phy.select.y) / dist_to_screen)) + geom_dots()
 ```
 
-Checking relations, focusing on the **X** Axis: 
-
 ```{r}
 #| layout-ncol: 2
 #| code-fold: true
+#| eval: false 
+
+# Checking relations, focusing on the **X** Axis: 
 
 task2_df %>% ggplot(aes(x = data.ans.x - data.select.x)) + 
   geom_dots()
@@ -136,13 +138,12 @@ task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = param.lambda)) +
   labs(title = "Signed error on x-axes against skewness")
 ```
 
-## Task 2 --- Error on Y
+# Task 2 --- Error on Y
 
-### Lomax distribution {#sec-y-lomax}
+## Lomax distribution {#sec-y-lomax}
 
 [Wikipedia](https://en.wikipedia.org/wiki/Lomax_distribution). Note that `alpha` is shape and `lambda` is scale. 
 This is the [stan reference](https://mc-stan.org/docs/functions-reference/positive_lower-bounded_distributions.html#pareto-type-2-distribution). 
-
 Math model: 
 
 $$\begin{align*}\text{error}_i &\sim \text{Lomax}(\lambda_{\text{PID}[i]}, \alpha_{\text{PID}[i]}) \\ 
@@ -179,6 +180,8 @@ stan_funs <- "
 Formula and posterior: 
 
 ```{r}
+#| filename: "Formula and Posterior"
+
 f <- bf(error.y ~ 0, 
         mu ~ 0, 
         lambda ~ (1 | participantId), 
@@ -196,9 +199,12 @@ p <- c(
 ```{r}
 #| eval: false 
 #| echo: false 
+
+# inspect prior set up 
 task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
   get_prior(f, data = .)
 
+# generate stan model code 
 task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
   make_stancode(f, data = ., prior = p)
 ```
@@ -233,7 +239,7 @@ summary(model.y.lomax)
 plot(model.y.lomax)
 ```
 
-Observe that the `ESS` is very low, even though we have taken the number of iterations to 10000^[for context other models took numb of iterations about 4000]. This suggests that the lomax model is not the right one. 
+Observe that the `Tail_ESS` is very low, even though we have taken the number of iterations to 10000^[for context other models took numb of iterations about 4000]. This suggests that the lomax model is not the right one. 
 
 Nevertheless we still check the posterior: 
 
@@ -281,7 +287,7 @@ prediction <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
 
 <!-- Hmm there is something a bit wrong with how things are being plotted ...  -->
 
-### Exponential Distribution {#sec-y-exponential}
+## Exponential Distribution {#sec-y-exponential}
 
 Math model: 
 
@@ -383,7 +389,7 @@ task2_df %>% modelr::data_grid(error.y = 0) %>%
 p
 ```
 
-### Weibull {#sec-y-weibull}
+## Weibull {#sec-y-weibull}
 
 Specify formula and prior: 
 
@@ -492,7 +498,7 @@ ggsave("plots/task2.y.weibull.pdf", plot = p,
        height = 5, width = 5, units = "cm", dpi = 300)
 ```
 
-### Log-Normal {#sec-y-logNormal}
+## Log-Normal {#sec-y-logNormal}
 
 Specify formula and prior: 
 
@@ -570,7 +576,7 @@ task2_df %>% modelr::data_grid(error.y = 0) %>%
 p
 ```
 
-### Gamma {#sec-y-gamma}
+## Gamma {#sec-y-gamma}
 
 Specify formula and prior: 
 
@@ -625,11 +631,10 @@ The above model have a lot of divergent transitions, suggesting that this is not
 Check fit: 
 
 ```{r}
-summary(task2.y.gamma)
+summary(model.y.gamma)
 ```
 
-
-### LOO Comparison {#sec-y-loo}
+## LOO Comparison {#sec-y-loo}
 
 Define custom functions for the Lomax distribution: 
 
@@ -657,9 +662,9 @@ loo(model.y.lomax, model.y.exponential, model.y.lognormal, model.y.gamma, model.
     moment_match = TRUE, reloo = TRUE ) 
 ```
 
-## Task 2 -- Error on X 
+# Task 2 -- Error on X 
 
-### Normal distribution {#sec-x-normal}
+## Normal distribution {#sec-x-normal}
 
 Math model: 
 
@@ -786,7 +791,7 @@ task2_df %>% mutate(error.x = va.select.x - va.ans.x,
   )
 ```
 
-### Laplace distribution {#sec-x-laplace}
+## Laplace distribution {#sec-x-laplace}
 
 Math model: 
 
@@ -1008,7 +1013,7 @@ ggsave("plots/task2.y.weibull.pdf", plot = p, height = 5, width = 5, units = "cm
 ```
 
 
-### Student-t distribution {#sec-x-studentT}
+## Student-t distribution {#sec-x-studentT}
 
 The Cauchy distribution puts too much weight on its tails; we'll go for studente-t, which is more robust. 
 
@@ -1119,7 +1124,7 @@ task2_df %>% mutate(error.x = va.select.x - va.ans.x,
   coord_cartesian(xlim = c(-5, 5))
 ```
 
-### LOO comparisons {#sec-x-loo}
+## LOO comparisons {#sec-x-loo}
 
 Recall that the when using a custom `brms` family, we need to define our own funtions. First define the `log_lik` (log likelihood) related functions: 
 

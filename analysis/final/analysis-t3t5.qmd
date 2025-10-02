@@ -81,8 +81,6 @@ task5_df <- task_df %>% filter(task == "task5") %>%
 
 ## Task 5 -- Project to X-Axis 
 
-Descriptive checks: 
-
 ```{r}
 #| code-fold: true 
 
@@ -111,7 +109,6 @@ Recall that we are dealing with data that is already cleaned, so why are we stil
 ```{r}
 task5.x.exclude <- c("667433338e6cc9e53c828774", "67e2f5ebbe69a58c40a5d550")
 ```
-
 
 Math model:
 

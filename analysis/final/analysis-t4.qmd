@@ -1,5 +1,5 @@
 ---
-title: "Analysis --- Task 4 --- find highest slope"
+title: "Analysis --- Task 4"
 ---
 
 ```{r}
@@ -17,7 +17,7 @@ theme_set(theme_minimal(base_size = 10))
 # model
 library(brms)
 library(rstan)
-# options(brms.backend = "cmdstanr")
+options(brms.backend = "cmdstanr")
 options(mc.cores = parallel::detectCores())
 # plot results 
 library(tidybayes)
@@ -28,6 +28,8 @@ source(here("R", "helpers.R"))
 ```
 
 # Overview / TLDR 
+
+Recall that Task 4 is the task where we ask the participant to find the highest sloped on the CDF (i.e., find mode on CDF). 
 
 We ran the following models: 
 
@@ -80,11 +82,12 @@ task4_df <- task_df %>% filter(task == "task4") %>%
 
 ```
 
-## Plot relations 
-
 ```{r}
 #| code-fold: true 
 #| layout-ncol: 2 
+#| eval: false 
+
+## Plot relations 
 
 task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) + 
   geom_dots()
@@ -161,18 +164,18 @@ task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) +
   geom_dots()
 ```
 
-## Exponential Model {#sec-exponential}
+# Exponential Model {#sec-exponential}
 
 Math model: 
 
-$$\begin{align*}
+$$\begin{align}
 \text{error_i} &\sim \text{Exponential}(\lambda_{\text{PID}[i]}) \\ 
 \log(\lambda_j) &\sim \mathcal{N}(\mu_\lambda, \sigma_\lambda) \\ 
 \mu_\lambda &\sim \mathcal{N}(0, 1) \\ 
 \sigma_\lambda &\sim \text{Half-Cauchy}(0, 1) 
-\end{align*}$$
+\end{align}$$
 
-Formula: 
+Formula and prior: 
 
 ```{r}
 f <- bf(error ~ 0,
@@ -188,6 +191,7 @@ p <- c(
 
 ```{r}
 #| eval: false 
+#| echo: false 
 
 task4_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) %>% 
   get_prior(f, data = .)
@@ -231,8 +235,10 @@ pp_check(model.exponential, ndraws = 100)
 pp_check(model.exponential, ndraws = 100, type = "pit_ecdf")
 ```
 
-
 ```{r}
+#| eval: false 
+#| echo: false 
+
 # model.exponential %>% get_variables()
 
 model.exponential %>% spread_draws(b_Intercept, sd_participantId__Intercept) %>% 
@@ -242,7 +248,7 @@ model.exponential %>% spread_draws(b_Intercept, sd_participantId__Intercept) %>%
   stat_halfeye()
 ```
 
-Overlay plot: 
+TODO: Overlay plot: 
 
 ```{r}
 prediction <- task4_df %>% 
@@ -265,11 +271,9 @@ task4_df %>% modelr::data_grid(error = 0) %>%
   geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) 
 ```
 
-## Lomax Model {#sec-lomax}
+# Lomax Model {#sec-lomax}
 
-Lomax is Pareto Type II distribution. We had similar models for task 2.
-
-Note that the Half-Cauchy prior for hyperpriors led to divergent transitions, so we switched to truncated normal.
+Lomax is Pareto Type II distribution, which is implemented in `cmdstanr`. We had similar models for task 2. 
 
 ```{r}
 lomax_family <- custom_family(
@@ -290,6 +294,8 @@ stan_funs <- "
   }
 "
 ```
+
+Specify formula and prior^[Note that the Half-Cauchy prior for hyperpriors led to divergent transitions, so we switched to truncated normal for priors]: 
 
 ```{r}
 # Define the formula for the model
@@ -350,11 +356,15 @@ summary(model.lomax)
 plot(model.lomax)
 ```
 
-Let's check the posterior of alpha and lambda:
-
 ```{r}
+#| eval: false 
+#| echo: false 
+
+# Check the posterior distribution of parameters, alpha and lambda:
+
 model.lomax %>% spread_draws(`^b_.*`, regex = TRUE) %>%
-  mutate(b_alpha = exp(b_alpha_Intercept), b_lambda = exp(b_lambda_Intercept)) %>%
+  mutate(b_alpha = exp(b_alpha_Intercept), 
+         b_lambda = exp(b_lambda_Intercept)) %>%
   pivot_longer(6:7) %>%
   ggplot(aes(x = value, y = name)) +
   stat_halfeye() +
@@ -362,7 +372,7 @@ model.lomax %>% spread_draws(`^b_.*`, regex = TRUE) %>%
   geom_vline(xintercept = 1e-10, linetype = "dashed", color = "gray")
 ```
 
-Define custom functions for `pp_check` and `loo`:
+Define custom functions^[Check out this [link](https://cran.r-project.org/web/packages/brms/vignettes/brms_customfamilies.html?utm_source=chatgpt.com) for more details.] for posterior predictive check (`pp_check`) and model comparison (`loo`):
 
 ```{r}
 expose_functions(model.lomax, vectorize = TRUE)
@@ -402,7 +412,7 @@ prediction %>% ggplot() +
   geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope)))
 ```
 
-## Weibull distribution {#sec-weibull}
+# Weibull distribution {#sec-weibull}
 
 - [wikipedia](https://en.wikipedia.org/wiki/Weibull_distribution)
 - [stan](https://mc-stan.org/docs/functions-reference/positive_continuous_distributions.html#weibull-distribution)
@@ -480,7 +490,7 @@ p2
 ```
 
 ```{r}
-#| eval: false 
+#| echo: false 
 
 ggsave(here("figs", "task4-pp-check.pdf"), p1, 
        height = 5, width = 10, units = "cm", dpi = 300)
@@ -490,6 +500,9 @@ ggsave(here("figs", "task4-pit-ecdf.pdf"), p2,
 ```
 
 ```{r}
+#| eval: false 
+#| echo: false 
+
 # model.weibull %>% get_variables()
 
 model.weibull %>% spread_draws(b_Intercept, b_shape_Intercept) %>%
@@ -502,9 +515,8 @@ model.weibull %>% spread_draws(b_Intercept, b_shape_Intercept) %>%
 Overlay plot:
 
 ```{r}
-#| code-fold: true
-#| layout-ncol: 3
-
+#| code-fold: true 
+#| layout-ncol: 2
 
 # prediction <- task4_df %>%
 #   mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>%
@@ -517,12 +529,29 @@ task4_df %>% modelr::data_grid(error = 0) %>%
             fill = "lightblue", alpha = 1) +
   geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope)))
 
+task4_df %>% modelr::data_grid(error = 0) %>%
+  add_predicted_draws(model.weibull, re_formula = NA) %>%
+  ggplot() +
+  stat_slab(aes(x = .prediction),
+            fill = "lightblue", alpha = 1) +
+  geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) +
+  labs(y = "Probability", x = "Signed error") +
+  coord_cartesian(xlim=c(0, 5))
+```
+
+Posterior draws + strip plot of actual answers: 
+
+```{r}
+#| code-fold: true
+#| layout-ncol: 3
+
 task4_df %>% modelr::data_grid(error = 0,
                                participantId = unique(participantId)) %>%
   add_predicted_draws(model.weibull, ndraws = 100) %>%
   ggplot() +
   stat_slab(aes(x = .prediction, group = .draw),
-               color = "lightblue", alpha = 0.5, fill = NA, n = 3000, linewidth = 0.5) +
+               color = "lightblue", alpha = 0.5, fill = NA, 
+            n = 3000, linewidth = 0.5) +
   scale_thickness_shared() +
   coord_cartesian(xlim = c(0, 4)) +
   geom_rug(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope)), size = 0.5) +
@@ -534,38 +563,13 @@ task4_df %>% modelr::data_grid(error = 0,
 p
 ```
 
-Save results: 
-
 ```{r}
-#| eval: false 
-
+#| echo: false 
 ggsave(here("figs", "task4.pdf"), plot = p, 
        height = 6, width = 8, units = "cm", dpi = 300)
 ```
 
-
-```{r}
-task4_df %>% modelr::data_grid(error = 0) %>%
-  add_predicted_draws(model.weibull, re_formula = NA) %>%
-  ggplot() +
-  stat_slab(aes(x = .prediction),
-            fill = "lightblue", alpha = 1) +
-  geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) +
-  labs(y = "Probability", x = "Signed error") +
-  xlim(0, 5) +
-  theme_minimal(base_size = 8) -> p
-
-p
-```
-
-```{r}
-#| echo: false
-#| eval: false
-
-ggsave("../../figs/task4.pdf", plot = p, height = 5, width = 5, unit = "cm", dpi = 300)
-```
-
-## Log-Normal distribution {#sec-logNormal}
+# Log-Normal distribution {#sec-logNormal}
 
 Formula and prior: 
 
@@ -650,7 +654,7 @@ task4_df %>% modelr::data_grid(error = 0) %>%
   geom_dots(data = task4_df, aes(x = data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope)))
 ```
 
-## Model Comparison {#sec-model-compare}
+# Model Comparison {#sec-model-compare}
 
 ```{r}
 loo(model.exponential, model.lomax, model.weibull, model.lognormal, 
@@ -672,5 +676,5 @@ pp_check(model.lognormal, ndraws = 100, type = "pit_ecdf") +
   labs(title = "Log-Normal")
 ```
 
-
+`pit_ecdf` is the empirical CDF of PIT (Probability Integral Transform) values. This helps us assess whether the model is well-calibrated; if it is, then the PIT ECDF plot should follow the 45 degree diagonal line, which is what we see for Weibull. 
 
