@@ -1,0 +1,404 @@
+---
+title: "Analysis --- Task 1"
+---
+
+```{r}
+#| echo: false
+#| output: false
+#| label: setup
+
+library(tidyverse)
+library(ggplot2)
+library(sgt)
+library(numDeriv)
+library(ggdist)
+# setting the theme 
+theme_set(theme_minimal(base_size = 8))
+# model
+library(brms)
+# plot results 
+library(tidybayes)
+library(cmdstanr)
+library(posterior)
+
+library(here)
+
+# source the helper functions 
+source("../../R/helpers.R")
+```
+
+# Set up
+
+Read in data 
+
+```{r}
+#| label: read-in-data
+#| code-fold: true
+
+task_df <- read_rds("../../data/final/task.rds")
+participants <- read_rds("../../data/final/participants.rds")
+```
+
+Load data for task 1 only: 
+
+```{r}
+#| code-fold: true 
+
+task1_df <- task_df %>% filter(task == "task1") %>% # task_df
+  select(-slider.x, -slider.y) %>% 
+  right_join(participants, by = join_by(participantId)) %>% 
+  mutate(data.select.left_area = psgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE), 
+         data.ans.x = qsgt(0.5, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)) %>% 
+  # pixel related 
+  mutate(pixel.med.x = data_to_pixel_x(data.ans.x), 
+         pixel.mod.x = data_to_pixel_x(param.mu)) %>% 
+  # phy related 
+  mutate(phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM), 
+         phy.med.x = pixel_to_phy_x(pixel.med.x, pixelToMM), 
+         phy.mod.x = pixel_to_phy_x(pixel.mod.x, pixelToMM)) %>% 
+  # visual angle related 
+  mutate(va.select.x = vis_angle(phy.select.x, dist_to_screen), 
+         va.med.x = vis_angle(phy.med.x, dist_to_screen), 
+         va.mod.x = vis_angle(phy.mod.x, dist_to_screen))
+```
+
+Prepare data for stan: 
+
+```{r}
+N <- task1_df %>% nrow(.)
+J <- length(unique(task1_df$participantId))
+x <- task1_df %>% pull(va.select.x)
+x_med <- task1_df %>% pull(va.med.x)
+x_mod <- task1_df %>% pull(va.mod.x)
+
+# change the participantId to numeric id 
+# 1. Get unique participant IDs
+unique_ids <- unique(task1_df$participantId)
+
+# 2. Create a mapping
+id_mapping <- setNames(1:length(unique_ids), unique_ids)
+
+# 3. Create the numeric ID vector
+numeric_id <- as.numeric(factor(task1_df$participantId, levels = names(id_mapping)))
+
+
+stan_data <- list(
+  N = N, 
+  J = J, 
+  id = numeric_id, 
+  x = x, 
+  x_med = x_med, 
+  x_mod = x_mod
+)
+```
+
+Define custom posterior predictive check function: 
+
+```{r}
+#| code-summary: "custom pp_check"
+#| code-fold: true 
+
+custom_pp_check <- function(
+   fitted_model, 
+   fun = bayesplot::ppc_dens_overlay, 
+   ndraws = 100, 
+   transform = identity,
+   ...
+ ) {
+   y_rep <- as_draws_rvars(fitted_model)$y_rep |> 
+     transform() |>
+     as_draws_matrix()
+   if (!is.null(ndraws)) {
+     y_rep = y_rep |>
+       merge_chains() |>
+       resample_draws(ndraws = ndraws) 
+   }
+   y <- fitted_model$draws("x_org", format = "matrix")[1, ] |>
+     as.vector() |>
+     transform()
+   fun(y, y_rep, ...)
+ }
+```
+
+## Centered Parameterization 
+
+Spoiler: The following model has divergent transitions after fitting.  
+
+```{r}
+#| eval: false 
+
+model <- cmdstan_model("stan_files/task1.weighted.avg.stan")
+model
+``` 
+
+Fit the stan model: 
+
+```{r}
+#| output: false 
+#| eval: false 
+
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  iter_warmup = 2000,   # Number of warmup iterations (e.g., 1000)
+  iter_sampling = 4000, 
+  adapt_delta = 0.95, # Number of sampling iterations (e.g., 2000)
+  parallel_chains = 4
+)
+```
+
+```{r}
+summary <- fit$summary()
+summary
+```
+
+Density overlay plot: 
+
+```{r}
+#| code-fold: true
+custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+```
+
+Overall PIC-ECDF plot: 
+
+```{r}
+#| code-fold: true
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.med.x, ndraws = NULL)
+```
+
+PIT-ECDF for each "group", where group is defined by whether $\lambda$ is positive, negative, or zero: 
+
+```{r}
+#| code-fold: true
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = with(task1_df, case_when(param.lambda < 0 ~ "neg", param.lambda == 0 ~ "zero", param.lambda > 0 ~ "pos")))
+
+# custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+```
+
+```{r}
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = param.lambda, y = y_rep)) + 
+  ggdist::stat_lineribbon() + 
+  geom_point(aes(y = va.select.x - va.med.x)) + 
+  scale_fill_brewer(palette = "Blues")
+```
+
+```{r}
+#| echo: false
+#| eval: false
+
+# facetted plot for each participant 
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) + 
+  ggdist::stat_lineribbon() + 
+  geom_point(aes(y = va.select.x - va.med.x)) + 
+  facet_wrap(~ participantId) + 
+  scale_fill_brewer(palette = "Blues")
+```
+
+## Non-centered parameterization --- Informative prior 
+
+```{r}
+#| output: false 
+
+# model <- cmdstan_model("stan_files/task1.weighted.avg.nonc.stan")
+# 
+# fit <- model$sample(
+#   data = stan_data,
+#   chains = 4,
+#   parallel_chains = 4,
+#   iter_warmup = 4000,
+#   iter_sampling = 4000,
+#   adapt_delta = 0.99,
+#   max_treedepth = 15
+# )
+# 
+# fit$save_object("models/task1.informative.prior.rds")
+# 
+# summary <- fit$summary()
+# saveRDS(summary, file = "models/task1.informative.prior.summary.rds")
+
+fit <- read_rds("models/task1.informative.prior.rds")
+summary <- fit$summary()
+```
+
+Check `BULK_ESS` and `TAIL_ESS`: 
+
+```{r}
+summary %>% filter(!grepl("\\[", variable)) %>% 
+  select(contains("ess"))
+``` 
+
+Posterior Predictive Check: 
+
+```{r}
+#| code-fold: true 
+
+# Overall 
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.med.x, ndraws = NULL)
+```
+
+```{r}
+#| code-fold: true 
+custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero"))) -> p1
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero"))) -> p2
+
+p1
+p2
+```
+
+```{r}
+#| eval: false
+#| echo: false 
+
+ggsave(here("figs", "task1-pp-check.pdf"), plot = p1, 
+       width = 8, height = 6, units = "cm", dpi = 300)
+ggsave(here("figs", "task1-pit-ecdf-grouped.pdf"),
+       plot = p2, width = 8, height = 6, units = "cm", dpi = 300)
+```
+
+```{r}
+#| code-fold: true 
+
+plot_df <- task1_df %>% modelr::data_grid(diff = seq(-max(abs(va.med.x - va.mod.x)), 
+                                          max(abs(va.med.x - va.mod.x)), length.out = 100), # pretend the mod id 0 
+                               participantId = unique(participantId)) %>% 
+  mutate(numericPID = as.numeric(factor(participantId, levels = names(id_mapping))), 
+         x_mod = 0, 
+         x_med = diff) %>% 
+  left_join(spread_draws(fit, mu_med[numericPID], mu_mod[numericPID], 
+                     sigma_med[numericPID], sigma_mod[numericPID]), 
+            by = join_by(numericPID))
+
+plot2_df <- plot_df %>% mutate(inv_mse_med = 1 / ((mu_med)^2 + (sigma_med)^2), 
+                   inv_mse_mod = 1 / ((x_mod - x_med + mu_mod)^2 + (sigma_mod)^2), 
+                   theta = inv_mse_med / (inv_mse_med + inv_mse_mod)) %>% 
+  mutate(y_rep = rnorm(n(), theta * (x_med + mu_med) + (1 - theta) * (x_mod + mu_mod),
+                            sqrt((theta)^2 * (sigma_med)^2 + (1 - theta)^2 * (sigma_mod)^2)))
+
+plot3_df <- plot2_df %>% group_by(diff) %>% 
+  median_qi(y_rep, .width = c(0.5, 0.8, 0.95)) 
+  
+plot3_df %>% ggplot(aes(x = diff, y = y_rep - diff)) + 
+  geom_lineribbon(aes(ymin = .lower - diff, ymax = .upper - diff), 
+                  linewidth = 0.5) + 
+  geom_point(data = task1_df, aes(x = va.med.x - va.mod.x, y = va.select.x - va.med.x), 
+             alpha = 0.5, size = 0.5) + 
+  scale_fill_brewer(palette = "Blues") + 
+  labs(x = "x^med - x^mod", y = "signed error") + 
+  theme(legend.position = "none") -> p # note that x^mod is fixed to be 0. 
+p
+```
+
+```{r}
+#| echo: false
+#| eval: false 
+ggsave(here("figs", "task1.pdf"), plot = p, 
+       height = 6, width = 8, units= "cm", dpi = 300)
+```
+
+```{r}
+#| layout-ncol: 2 
+
+plot_data <- task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% # signed error 
+  unnest_rvars() 
+
+# param.lambda on x-axis 
+plot_data %>% ggplot(aes(x = param.lambda, y = y_rep)) + 
+  ggdist::stat_lineribbon(linewidth = 0.5) + 
+  geom_point(aes(y = va.select.x - va.med.x), size = 0.5) + 
+  scale_fill_brewer(palette = "Blues")
+
+# x.med - x.mod on X axis 
+plot_data %>% ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) + 
+  ggdist::stat_lineribbon(size = 0.5) + 
+  geom_point(aes(y = va.select.x - va.med.x), alpha = 0.5, size = 0.5) + 
+  # facet_wrap(~ participantId) + 
+  scale_fill_brewer(palette = "Blues") + 
+  labs(x = "x^med - x^mod", y = "Signed error") + 
+  theme_minimal(base_size = 8) -> p
+
+p
+```
+
+```{r}
+#| eval: false
+#| echo: false
+ggsave("plots/task1.pdf", p, height = 5, width = 10, unit = "cm", compression = "lzw")
+```
+
+```{r}
+draws_df <- fit$draws(format = "df") %>% as_draws(.)
+expand_grid(participantId = task1_df$participantId, 
+            va.med.x = seq(min(task1_df$va.med.x), max(task1_df$va.med.x), 0.1)) # %>% 
+  # add_predicted_draws(., fit)
+```
+
+
+
+```{r}
+as_draws_rvars(fit)$mu_mod_mean
+as_draws_rvars(fit)$mu_med_mean
+as_draws_rvars(fit)$log_sigma_mod_mean %>% exp(.)
+as_draws_rvars(fit)$log_sigma_med_mean %>% exp(.)
+```
+
+## Non-centered paramterization --- Uninformative prior 
+
+```{r}
+#| output: false 
+
+model <- cmdstan_model("stan_files/task1.weighted.avg.nonc.normal.stan")
+
+fit <- model$sample(
+  data = stan_data, 
+  chains = 4, 
+  parallel_chains = 4, 
+  iter_warmup = 4000,   
+  iter_sampling = 4000, 
+  adapt_delta = 0.99,  
+  max_treedepth = 15
+)
+
+fit$save_object("models/task1.non.informative.prior.rds")
+
+# hmm I keep getting these divergent transitions ... 
+# note that the saved model still has divergent transitions ... 
+# maybe I should try iter_warmup = 5000 and iter_sampling = 5000 ...? 
+```
+
+Posterior Predictive Check: 
+
+```{r}
+custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.med.x, ndraws = NULL)
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+```
+
+```{r}
+task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
+  unnest_rvars() %>% 
+  ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) + 
+  ggdist::stat_lineribbon(size = 0.5) + 
+  geom_point(aes(y = va.select.x - va.med.x), alpha = 0.5, size = 0.5) + 
+  # facet_wrap(~ participantId) + 
+  scale_fill_brewer(palette = "Blues") + 
+  labs(x = "x^med - x^mod", y = "Signed error") + 
+  theme_minimal(base_size = 8) -> p
+
+p
+```
+
+```{r}
+as_draws_rvars(fit)$mu_mod_mean
+as_draws_rvars(fit)$mu_med_mean
+as_draws_rvars(fit)$log_sigma_mod_mean %>% exp(.)
+as_draws_rvars(fit)$log_sigma_med_mean %>% exp(.)
+```
+
+<!-- Most of the difference seems to be in the `sigma` related stuff ...?  -->
