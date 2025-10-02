@@ -5,3 +5,5 @@ analysis/final/models
 .quarto/*
 .Rproj.user
 fitted_models/*
+
+/.quarto/

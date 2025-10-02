@@ -8,3 +8,7 @@ format:
     df-print: paged
     toc: true
     code-overflow: wrap
+
+execute:
+  warning: false
+  message: false
