@@ -7,3 +7,5 @@ analysis/final/models
 fitted_models/*
 
 /.quarto/
+
+**/*.quarto_ipynb

@@ -1,5 +1,5 @@
 ---
-title: "Analysis --- Task 2 --- "
+title: "Analysis --- Task 2"
 ---
 
 ```{r}
@@ -235,13 +235,14 @@ model.y.lomax <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
 Check fit and posterior check: 
 
 ```{r}
+#| warning: true 
 summary(model.y.lomax)
-plot(model.y.lomax)
+# plot(model.y.lomax)
 ```
 
-Observe that the `Tail_ESS` is very low, even though we have taken the number of iterations to 10000^[for context other models took numb of iterations about 4000]. This suggests that the lomax model is not the right one. 
+Observe that the we still have three divergent transitions, even though we have taken the number of iterations to 10000^[for context other models took numb of iterations about 4000]. This suggests that the lomax model is likely not the right model. 
 
-Nevertheless we still check the posterior: 
+Nevertheless, we still check the posterior to further confirm: 
 
 ```{r}
 #| layout-ncol: 2
@@ -258,11 +259,12 @@ pp_check(model.y.lomax, ndraws = 100)
 pp_check(model.y.lomax, ndraws = 100, type = "pit_ecdf")
 ```
 
-From the ECDF check it seems that indeed the lomax model is not a good one. 
-
-Hmm from the ecdf we know it's not in the desired region .. 
+From the PIT-ECDF check it seems that indeed the lomax model is not a good one, because a well-calibrated model should show the line following the 45 degree line, not a flat line from above.  
 
 ```{r}
+#| eval: false 
+#| echo: false 
+
 model.y.lomax %>% get_variables(.)
 
 model.y.lomax %>% spread_draws(b_lambda_Intercept, b_alpha_Intercept) %>% 
@@ -274,6 +276,8 @@ model.y.lomax %>% spread_draws(b_lambda_Intercept, b_alpha_Intercept) %>%
 ```
 
 ```{r}
+#| eval: false
+#| echo: false
 prediction <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
   add_predicted_draws(model.y.lomax, re_formula = NA)
 
@@ -284,8 +288,6 @@ prediction <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
             fill = "skyblue", alpha = 1) # + 
    xlim(0, 0.05)
 ```
-
-<!-- Hmm there is something a bit wrong with how things are being plotted ...  -->
 
 ## Exponential Distribution {#sec-y-exponential}
 
@@ -327,7 +329,6 @@ Fit the model:
 #| label: fit exponential 
 
 model.y.exponential <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
-  # mutate(error.y = ifelse(error.y < 1e-10, 1e-10, error.y)) %>% # exponential cannot deal with 0 values 
   brm(
     formula = f,
     data = .,
@@ -356,6 +357,9 @@ pp_check(model.y.exponential, ndraws = 100, type = "pit_ecdf")
 ```
 
 ```{r}
+#| eval: false
+#| echo: false
+
 model.y.exponential %>% get_variables(.)
 
 model.y.exponential %>% spread_draws(b_Intercept) %>% 
@@ -364,6 +368,9 @@ model.y.exponential %>% spread_draws(b_Intercept) %>%
 ```
 
 ```{r}
+#| eval: false
+#| echo: false
+
 prediction <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
   add_predicted_draws(model.y.exponential, re_formula = NA)
 
@@ -481,7 +488,7 @@ task2_df %>% modelr::data_grid(error.y = 0,
                color = "lightblue", alpha = 0.5, fill = NA, n = 3000, size = 0.5) + 
   scale_thickness_shared() + 
   coord_cartesian(xlim = c(0, 0.1)) + 
-  geom_rug(data = task2_df, aes(x = va.ans.y - va.select.y), size = 0.5) + 
+  geom_rug(data = task2_df, aes(x = va.ans.y - va.select.y), linewidth = 0.5) + 
   stat_slab(data = task2_df, aes(x = va.ans.y - va.select.y), 
             color = "darkblue", fill = NA, n = 3000, size = 0.5) + 
   labs(y = "density", x = "signed error (on y)" ) + 
@@ -494,8 +501,8 @@ p
 #| eval: false 
 #| echo: false 
 
-ggsave("plots/task2.y.weibull.pdf", plot = p, 
-       height = 5, width = 5, units = "cm", dpi = 300)
+ggsave(here("figs", "task2.y.weibull.pdf"), plot = p, 
+       height = 6, width = 8, units = "cm", dpi = 300)
 ```
 
 ## Log-Normal {#sec-y-logNormal}
@@ -561,9 +568,11 @@ pp_check(model.y.lognormal, ndraws = 100)
 pp_check(model.y.lognormal, ndraws = 100, type = "pit_ecdf")
 ```
 
-Overlay plot: 
-
 ```{r}
+#| eval: false
+#| echo: false
+
+# Overlay plot: 
 task2_df %>% modelr::data_grid(error.y = 0) %>% 
   add_predicted_draws(model.y.lognormal, ndraws = 100, re_formula = NA) %>% 
   ggplot() + 
@@ -631,36 +640,28 @@ The above model have a lot of divergent transitions, suggesting that this is not
 Check fit: 
 
 ```{r}
+#| warning: true
 summary(model.y.gamma)
+```
+
+Note that the above have a lot of divergent transitions, even though we took `adapt_delta = 0.99`, suggesting that this is not the right model. We can also check the PIC-ECDF plot to confirm:  
+
+```{r}
+pp_check(model.y.gamma, type = "pit_ecdf")
 ```
 
 ## LOO Comparison {#sec-y-loo}
 
-Define custom functions for the Lomax distribution: 
-
-```{r}
-expose_functions(model.y.lomax, vectorize = TRUE)
-
-# Define log-likelihood function for brms
-log_lik_lomax <- function(i, prep) {
-  mu <- brms::get_dpar(prep, "mu", i = i)
-  lambda <- brms::get_dpar(prep, "lambda", i = i)
-  alpha <- brms::get_dpar(prep, "alpha", i = i)
-  y <- prep$data$Y[i]
-  lomax_lpdf(y, mu, lambda, alpha)
-}
-```
+Note that we won't use [Lomax](#sec-y-lomax) and [Gamma](#sec-y-gamma) in the model comparison, because the models have divergent transitions after fitting and demonstrate poor calibration. 
 
 Loo comparison: 
 
 ```{r}
-#| cache: true 
-
-loo(model.y.exponential, model.y.lognormal, model.y.weibull, moment_match = TRUE)
-
-loo(model.y.lomax, model.y.exponential, model.y.lognormal, model.y.gamma, model.y.weibull, 
-    moment_match = TRUE, reloo = TRUE ) 
+loo(model.y.exponential, model.y.lognormal, model.y.weibull, 
+    moment_match = TRUE, reloo=TRUE)
 ```
+
+Weibull is the best model. 
 
 # Task 2 -- Error on X 
 
@@ -708,7 +709,6 @@ Fit the model:
 #| output: false
 
 model.x.normal <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
-  # mutate(error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)) %>% 
   brm(
     formula = f,
     data = .,
@@ -718,7 +718,8 @@ model.x.normal <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
     file = here("fitted_models", "task2.x.normal"),
     file_refit = "on_change",
     control = list(adapt_delta = 0.99),
-    iter = 6000
+    iter = 6000, 
+    save_pars = save_pars(all = TRUE)
   )
 ```
 
@@ -731,13 +732,9 @@ plot(model.x.normal)
 
 ```{r}
 #| layout-ncol: 2
-pp_check(model.x.normal, ndraws= 100) + 
-  theme(text = element_text(size = 10)) + 
-  labs(title = "Task 2") -> task2.x.gaussian
+pp_check(model.x.normal, ndraws= 100) -> task2.x.gaussian
 
-pp_check(model.x.normal, ndraws= 100, type = "pit_ecdf") + 
-  theme(text = element_text(size = 10)) + 
-  labs(title = "Task 2") -> task2.x.gaussian.pit
+pp_check(model.x.normal, ndraws= 100, type = "pit_ecdf") -> task2.x.gaussian.pit
 
 task2.x.gaussian
 task2.x.gaussian.pit
@@ -745,25 +742,20 @@ task2.x.gaussian.pit
 
 ```{r}
 #| eval: false 
+#| echo: false 
 
-ggsave("plots/task2.x.gaussian.pdf", task2.x.gaussian, 
-       height = 5, width = 8, unit = "cm", dpi = 300)
+ggsave(here("figs", "task2.x.gaussian.pdf"), task2.x.gaussian, 
+       height = 6, width = 8, unit = "cm", dpi = 300)
 
-ggsave("../../figs/task2.x.gaussian-pit.pdf", task2.x.gaussian.pit, 
-       height = 4, width = 8, unit = "cm", dpi = 300)
+ggsave(here("figs", "task2.x.gaussian-pit.pdf"), task2.x.gaussian.pit, 
+       height = 6, width = 8, unit = "cm", dpi = 300)
 ```
 
-
-Get the posterior for fitting another task: 
-
-```{r}
-model.x.normal %>% spread_draws(b_sigma_Intercept) %>% 
-  mutate(b_sigma = exp(b_sigma_Intercept)) %>%
-  summarise(mean = mean(b_sigma), sd = sd(b_sigma))
-```
+:::{.callout-caution}
+Get the posterior for fitting another task (i.e., task 1): 
 
 ```{r}
-model.x.normal %>% get_variables(.)
+# model.x.normal %>% get_variables(.)
 
 model.x.normal %>% spread_draws(b_Intercept, b_sigma_Intercept) %>% 
   mutate(b_sigma = exp(b_sigma_Intercept)) %>% 
@@ -771,25 +763,7 @@ model.x.normal %>% spread_draws(b_Intercept, b_sigma_Intercept) %>%
   ggplot(aes(x = value, y = name)) + 
   stat_halfeye()
 ```
-
-Plot lineribbon: 
-
-```{r}
-prediction <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
-  add_predicted_draws(model.x.normal, re_formula = NA)
-
-task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
-                    error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)) %>% 
-  ggplot() + 
-  stat_slab(data = prediction, aes(x = .prediction), 
-            fill = "skyblue", alpha = 0.6) +
-  geom_dots(aes(x = error.x)) + 
-  labs(
-    title = "Posterior Predictive Distribution vs. Observed Data",
-    x = "error.x",
-    y = NULL
-  )
-```
+:::
 
 ## Laplace distribution {#sec-x-laplace}
 
@@ -878,7 +852,8 @@ model.x.laplace <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
     file = here("fitted_models", "task2.x.laplace"),
     file_refit = "on_change", 
     iter = 6000, 
-    control = list(adapt_delta = 0.99)
+    control = list(adapt_delta = 0.99), 
+    save_pars = save_pars(all = TRUE), 
   )
 ```
 
@@ -914,13 +889,10 @@ Posterior predictive check:
 
 ```{r}
 #| layout-ncol: 2
-pp_check(model.x.laplace, ndraws = 100) + 
-  theme(text = element_text(size = 10)) + 
-  labs(title = "Task 2 -- Error on Y -- Laplace") -> task2.laplace
+#| code-fold: true
+pp_check(model.x.laplace, ndraws = 100) -> task2.laplace
 
-pp_check(model.x.laplace, ndraws = 100, type = "pit_ecdf") + 
-  theme(text = element_text(size = 10)) + 
-  labs(title = "Task 2 -- Error on Y -- Laplace") -> task2.laplace.pit
+pp_check(model.x.laplace, ndraws = 100, type = "pit_ecdf") -> task2.laplace.pit
 
 task2.laplace
 task2.laplace.pit
@@ -928,41 +900,28 @@ task2.laplace.pit
 
 ```{r}
 #| eval: false 
-ggsave("plots/task2.y.laplace.pdf", task2.laplace, 
-       height = 4, width = 8, units = "cm")
-ggsave("plots/task2.y.laplace-pit.pdf", task2.laplace.pit, height = 4, width = 8, units = "cm")
+#| echo: false 
+ggsave(here("figs", "task2.y.laplace.pdf"), task2.laplace, 
+       height = 6, width = 8, units = "cm", dpi = 300)
+ggsave(here("figs", "task2.y.laplace-pit-ecdf.pdf"), task2.laplace.pit, 
+       height = 6, width = 8, units = "cm", dpi = 300)
 ```
 
-Plot posterior distribution: 
+Plot posterior distribution of model parameter: 
 
 ```{r}
-model.x.laplace %>% get_variables(.) 
+#| code-fold: true
+# model.x.laplace %>% get_variables(.) 
 
 model.x.laplace %>% spread_draws(b_Intercept, b_sigma_Intercept) %>% 
   pivot_longer(4:5) %>% 
   ggplot(aes(x = value, y = name)) + stat_halfeye()
 ```
 
-Plot posterior predictive distribution on top: 
+Plot posterior predictive distribution on top:
 
 ```{r}
-task2_df %>% # mutate(error.x = va.select.x - va.ans.x) %>%
-  modelr::data_grid(error.x = 0, participantId = unique(participantId)) %>% 
-  add_predicted_draws(model.x.laplace, ndraws = 100) %>% 
-  ggplot() + 
-  stat_slab(aes(x = .prediction, group = .draw), 
-               color = "skyblue", alpha = 0.2, size = 0.5, fill = NA, n = 3000) + 
-  scale_thickness_shared() + 
-  stat_slab(data = task2_df, aes(x = va.select.x - va.ans.x),
-            color = "darkblue", fill = NA, n = 3000, size = 0.5) + 
-  geom_rug(data = task2_df, aes(x = va.select.x - va.ans.x), size = 0.5) + 
-  labs(y = "density", x = "signed error (on x)") + 
-  theme_minimal(base_size = 8) + 
-  coord_cartesian(xlim = c(-1, 1.5)) + 
-  scale_y_continuous(breaks = 0) -> p 
-
-p
-
+#| code-fold: true
 prediction <- task2_df %>% mutate(error.x = va.select.x - va.ans.x, ) %>%
   add_predicted_draws(model.x.laplace, ndraws = 100)
 
@@ -981,10 +940,34 @@ task2_df %>% mutate(error.x = va.select.x - va.ans.x,
   )
 ```
 
+Plot strip plot: 
+
+```{r}
+#| code-fold: true
+task2_df %>% modelr::data_grid(error.x = 0, 
+                               participantId = unique(participantId)) %>% 
+  add_predicted_draws(model.x.laplace, ndraws = 100) %>% 
+  ggplot() + 
+  stat_slab(aes(x = .prediction, group = .draw), 
+               color = "skyblue", alpha = 0.2, size = 0.5, fill = NA, n = 3000) + 
+  scale_thickness_shared() + 
+  stat_slab(data = task2_df, aes(x = va.select.x - va.ans.x),
+            color = "darkblue", fill = NA, n = 3000, size = 0.5) + 
+  geom_rug(data = task2_df, aes(x = va.select.x - va.ans.x), size = 0.5) + 
+  labs(y = "density", x = "signed error (on x)") + 
+  theme_minimal(base_size = 8) + 
+  coord_cartesian(xlim = c(-1, 1.5)) + 
+  scale_y_continuous(breaks = 0) -> p 
+
+p
+```
+
 ```{r}
 #| eval: false
+#| echo: false
 
-ggsave("plots/task2.x.laplace.pdf", plot = p, height = 5, width = 5, units = "cm", dpi = 300)
+ggsave(here("figs", "task2.x.laplace.pdf"), plot = p, 
+       height = 6, width = 8, units = "cm", dpi = 300)
 ```
 
 
@@ -1009,7 +992,10 @@ p
 
 ```{r}
 #| eval: false
-ggsave("plots/task2.y.weibull.pdf", plot = p, height = 5, width = 5, units = "cm")
+#| echo: false 
+
+ggsave(here("figs", "task2.y.weibull.pdf"), plot = p, 
+       height = 6, width = 8, units = "cm")
 ```
 
 
@@ -1069,6 +1055,8 @@ Fit the model:
 
 ```{r}
 #| output: false 
+#| label: fit-x-student-t
+#| warning: true 
 
 model.x.student <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
   brm(
@@ -1078,21 +1066,38 @@ model.x.student <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
     chains = 4, 
     cores = 4, 
     file = here("fitted_models", "task2.x.student"),
-    file_refit = "on_change"
+    file_refit = "on_change", 
+    iter = 6000, 
+    control = list(adapt_delta = 0.99)
   )
 ```
+
+The model does not converge, and has exceeded the maximum treedepth, suggesting that this is likely not the best model. 
 
 Check the fitted results: 
 
 ```{r}
 summary(model.x.student)
 plot(model.x.student)
-pp_check(model.x.student, ndraws = 100)
 ```
 
-The default `student` function has `student(link = "identity", link_sigma = "log", link_nu = "logm1")`. Which means that we need to transform the fitted `sigma` and `nu`. 
 ```{r}
-model.x.student %>% get_variables(.)
+#| layout-ncol: 2
+#| code-fold: true
+
+pp_check(model.x.student, ndraws = 100)
+pp_check(model.x.student, ndraws = 100, type = "pit_ecdf")
+```
+
+The model does appear to be well-calibrated, however. 
+
+```{r}
+#| eval: false
+#| echo: false
+
+# The default `student` function has `student(link = "identity", link_sigma = "log", link_nu = "logm1")`. Which means that we need to transform the fitted `sigma` and `nu`. 
+
+# model.x.student %>% get_variables(.)
 
 model.x.student %>% spread_draws(b_Intercept, b_sigma_Intercept, b_nu_Intercept) %>% 
   mutate(b_mu = b_Intercept, 
@@ -1104,6 +1109,9 @@ model.x.student %>% spread_draws(b_Intercept, b_sigma_Intercept, b_nu_Intercept)
 ```
 
 ```{r}
+#| echo: false
+#| eval: false
+
 prediction <- task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
                     # error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)
                     ) %>%
@@ -1143,17 +1151,13 @@ log_lik_laplace <- function(i, prep) {
   y <- prep$data$Y[i]
   laplace_lpdf(y, mu, sigma)
 }
-
-loo(model.x.laplace)
 ```
 
-Loo comparison between all models for **error on the X-axis in visual angle**: 
+Loo comparison between all models for **error on the X-axis in visual angle**^[Note that we do not use student t because it did not converge.]: 
 
 ```{r}
-#| cache: true 
-
-loo(model.x.normal, model.x.laplace, model.x.student)
+loo(model.x.normal, model.x.laplace, moment_match = TRUE)
 ```
 
-So the results are: **Laplace** ~ **Student-t** > **Normal**. 
+So we see that the laplace model is the best one for X. 
 
