@@ -21,6 +21,8 @@ library(tidybayes)
 library(cmdstanr)
 library(posterior)
 
+library(here)
+
 # source the helper functions 
 source("../../R/helpers.R")
 ```
@@ -93,7 +95,8 @@ stan_data <- list(
 Define custom posterior predictive check function: 
 
 ```{r}
-#| label: custom pp_check 
+#| code-summary: "custom pp_check"
+#| code-fold: true 
 
 custom_pp_check <- function(
    fitted_model, 
@@ -119,7 +122,7 @@ custom_pp_check <- function(
 
 ## Centered Parameterization 
 
-Spoiler: Has divergent transitions. 
+Spoiler: The following model has divergent transitions after fitting.  
 
 ```{r}
 #| eval: false 
@@ -139,23 +142,37 @@ fit <- model$sample(
   chains = 4, 
   iter_warmup = 2000,   # Number of warmup iterations (e.g., 1000)
   iter_sampling = 4000, 
-  adapt_delta = 0.95 # Number of sampling iterations (e.g., 2000)
-  # parallel_chains = 4
+  adapt_delta = 0.95, # Number of sampling iterations (e.g., 2000)
+  parallel_chains = 4
 )
 ```
 
 ```{r}
 summary <- fit$summary()
+summary
 ```
 
+Density overlay plot: 
+
 ```{r}
+#| code-fold: true
+custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+```
+
+Overall PIC-ECDF plot: 
+
+```{r}
+#| code-fold: true
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.med.x, ndraws = NULL)
+```
+
+PIT-ECDF for each "group", where group is defined by whether $\lambda$ is positive, negative, or zero: 
+
+```{r}
+#| code-fold: true
 custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = with(task1_df, case_when(param.lambda < 0 ~ "neg", param.lambda == 0 ~ "zero", param.lambda > 0 ~ "pos")))
 
-custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
-
-custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.med.x, ndraws = NULL)
-
-custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
+# custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
 ```
 
 ```{r}
@@ -168,6 +185,10 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
 ```
 
 ```{r}
+#| echo: false
+#| eval: false
+
+# facetted plot for each participant 
 task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% 
   unnest_rvars() %>% 
   ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) + 
@@ -200,8 +221,10 @@ task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
 # saveRDS(summary, file = "models/task1.informative.prior.summary.rds")
 
 fit <- read_rds("models/task1.informative.prior.rds")
-fit
+summary <- fit$summary()
 ```
+
+Check `BULK_ESS` and `TAIL_ESS`: 
 
 ```{r}
 summary %>% filter(!grepl("\\[", variable)) %>% 
@@ -211,21 +234,36 @@ summary %>% filter(!grepl("\\[", variable)) %>%
 Posterior Predictive Check: 
 
 ```{r}
-custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero"))) + 
-  theme(text = element_text(size = 10)) -> p1
+#| code-fold: true 
 
-ggsave("plots/task1-pp-check.pdf", plot = p1, width = 10, height = 5, units = "cm")
-
+# Overall 
 custom_pp_check(fit, bayesplot::ppc_pit_ecdf, transform = \(x) x - task1_df$va.med.x, ndraws = NULL)
-
-custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero"))) + 
-  theme(text = element_text(size = 10)) -> p2
-
-ggsave("plots/task1-pit-ecdf-grouped.pdf", plot = p2, width = 10, height = 5, units = "cm")
 ```
 
 ```{r}
-task1_df %>% modelr::data_grid(diff = seq(-max(abs(va.med.x - va.mod.x)), 
+#| code-fold: true 
+custom_pp_check(fit, bayesplot::ppc_dens_overlay_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero"))) -> p1
+
+custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero"))) -> p2
+
+p1
+p2
+```
+
+```{r}
+#| eval: false
+#| echo: false 
+
+ggsave(here("figs", "task1-pp-check.pdf"), plot = p1, 
+       width = 8, height = 6, units = "cm", dpi = 300)
+ggsave(here("figs", "task1-pit-ecdf-grouped.pdf"),
+       plot = p2, width = 8, height = 6, units = "cm", dpi = 300)
+```
+
+```{r}
+#| code-fold: true 
+
+plot_df <- task1_df %>% modelr::data_grid(diff = seq(-max(abs(va.med.x - va.mod.x)), 
                                           max(abs(va.med.x - va.mod.x)), length.out = 100), # pretend the mod id 0 
                                participantId = unique(participantId)) %>% 
   mutate(numericPID = as.numeric(factor(participantId, levels = names(id_mapping))), 
@@ -233,16 +271,16 @@ task1_df %>% modelr::data_grid(diff = seq(-max(abs(va.med.x - va.mod.x)),
          x_med = diff) %>% 
   left_join(spread_draws(fit, mu_med[numericPID], mu_mod[numericPID], 
                      sigma_med[numericPID], sigma_mod[numericPID]), 
-            by = join_by(numericPID)) -> plot_df
+            by = join_by(numericPID))
 
-plot_df %>% mutate(inv_mse_med = 1 / ((mu_med)^2 + (sigma_med)^2), 
+plot2_df <- plot_df %>% mutate(inv_mse_med = 1 / ((mu_med)^2 + (sigma_med)^2), 
                    inv_mse_mod = 1 / ((x_mod - x_med + mu_mod)^2 + (sigma_mod)^2), 
                    theta = inv_mse_med / (inv_mse_med + inv_mse_mod)) %>% 
   mutate(y_rep = rnorm(n(), theta * (x_med + mu_med) + (1 - theta) * (x_mod + mu_mod),
-                            sqrt((theta)^2 * (sigma_med)^2 + (1 - theta)^2 * (sigma_mod)^2))) -> plot2_df
+                            sqrt((theta)^2 * (sigma_med)^2 + (1 - theta)^2 * (sigma_mod)^2)))
 
-plot2_df %>% group_by(diff) %>% 
-  median_qi(y_rep, .width = c(0.5, 0.8, 0.95)) -> plot3_df
+plot3_df <- plot2_df %>% group_by(diff) %>% 
+  median_qi(y_rep, .width = c(0.5, 0.8, 0.95)) 
   
 plot3_df %>% ggplot(aes(x = diff, y = y_rep - diff)) + 
   geom_lineribbon(aes(ymin = .lower - diff, ymax = .upper - diff), 
@@ -251,12 +289,16 @@ plot3_df %>% ggplot(aes(x = diff, y = y_rep - diff)) +
              alpha = 0.5, size = 0.5) + 
   scale_fill_brewer(palette = "Blues") + 
   labs(x = "x^med - x^mod", y = "signed error") + 
-  theme(legend.position = "none", size = 10) -> p # note that x^mod is fixed to be 0. 
-
-ggsave("plots/task1.pdf", plot = p, height = 5, width = 10, unit = "cm")
-ggsave("plots/task1.svg", plot = p, height = 5, width = 10, unit = "cm")
+  theme(legend.position = "none") -> p # note that x^mod is fixed to be 0. 
+p
 ```
 
+```{r}
+#| echo: false
+#| eval: false 
+ggsave(here("figs", "task1.pdf"), plot = p, 
+       height = 6, width = 8, units= "cm", dpi = 300)
+```
 
 ```{r}
 #| layout-ncol: 2 
@@ -266,7 +308,7 @@ plot_data <- task1_df %>% mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %
 
 # param.lambda on x-axis 
 plot_data %>% ggplot(aes(x = param.lambda, y = y_rep)) + 
-  ggdist::stat_lineribbon(size = 0.5) + 
+  ggdist::stat_lineribbon(linewidth = 0.5) + 
   geom_point(aes(y = va.select.x - va.med.x), size = 0.5) + 
   scale_fill_brewer(palette = "Blues")
 
@@ -280,7 +322,11 @@ plot_data %>% ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) +
   theme_minimal(base_size = 8) -> p
 
 p
+```
 
+```{r}
+#| eval: false
+#| echo: false
 ggsave("plots/task1.pdf", p, height = 5, width = 10, unit = "cm", compression = "lzw")
 ```
 
@@ -288,7 +334,7 @@ ggsave("plots/task1.pdf", p, height = 5, width = 10, unit = "cm", compression = 
 draws_df <- fit$draws(format = "df") %>% as_draws(.)
 expand_grid(participantId = task1_df$participantId, 
             va.med.x = seq(min(task1_df$va.med.x), max(task1_df$va.med.x), 0.1)) # %>% 
-  add_predicted_draws(., fit)
+  # add_predicted_draws(., fit)
 ```
 
 
@@ -355,4 +401,4 @@ as_draws_rvars(fit)$log_sigma_mod_mean %>% exp(.)
 as_draws_rvars(fit)$log_sigma_med_mean %>% exp(.)
 ```
 
-Most of the difference seems to be in the `sigma` related stuff ...? 
+<!-- Most of the difference seems to be in the `sigma` related stuff ...?  -->
