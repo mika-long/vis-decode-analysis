@@ -3,3 +3,5 @@ analysis/final/models
 .Rprofile
 .Rproj.user/*
 .quarto/*
+.Rproj.user
+fitted_models/*
