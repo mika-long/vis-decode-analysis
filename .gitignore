@@ -1,3 +1,4 @@
+.ipynb_checkpoints
 .DS_Store
 analysis/final/models
 .Rprofile
@@ -9,3 +10,4 @@ fitted_models/*
 /.quarto/
 
 **/*.quarto_ipynb
+
