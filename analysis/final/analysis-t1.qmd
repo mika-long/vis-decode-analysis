@@ -24,7 +24,7 @@ library(posterior)
 library(here)
 
 # source the helper functions 
-source("../../R/helpers.R")
+source(paste0(here(), "/R/helpers.R"))
 ```
 
 # Set up
@@ -35,8 +35,8 @@ Read in data
 #| label: read-in-data
 #| code-fold: true
 
-task_df <- read_rds("../../data/final/task.rds")
-participants <- read_rds("../../data/final/participants.rds")
+task_df <- read_rds(paste0(here(), "/data/final/task.rds"))
+participants <- read_rds(paste0(here(), "/data/final/participants.rds"))
 ```
 
 Load data for task 1 only: 
@@ -60,6 +60,15 @@ task1_df <- task_df %>% filter(task == "task1") %>% # task_df
   mutate(va.select.x = vis_angle(phy.select.x, dist_to_screen), 
          va.med.x = vis_angle(phy.med.x, dist_to_screen), 
          va.mod.x = vis_angle(phy.mod.x, dist_to_screen))
+```
+
+Save processed data for python fitting: 
+
+```{r}
+# library(nanoparquet)
+# task1_df
+# write_parquet(task1_df, paste0(here(), "/data/processed/task1.parquet"))
+task1_df %>% as.data.frame(.) %>% write.csv(paste0(here(), "/data/processed/task1.csv"))
 ```
 
 Prepare data for stan: 

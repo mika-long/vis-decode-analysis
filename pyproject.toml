@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "arviz>=0.23.0",
+    "cmdstanpy>=1.3.0",
     "graphviz>=0.21",
     "jupyter>=1.1.1",
     "numpy>=2.3.5",
