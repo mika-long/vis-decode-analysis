@@ -79,6 +79,12 @@ task5_df <- task_df %>% filter(task == "task5") %>%
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
 ```
 
+Export data for python processing: 
+
+```{r}
+task5_df %>% write.csv(here("data", "processed", "task5.csv"))
+```
+
 ## Task 5 -- Project to X-Axis 
 
 ```{r}
@@ -112,14 +118,16 @@ task5.x.exclude <- c("667433338e6cc9e53c828774", "67e2f5ebbe69a58c40a5d550")
 
 Math model:
 
-$$\begin{align}
+$$
+\begin{align}
 \texttt{error}_i &\sim \mathcal{N}(\mu_\text{PID}[i], \sigma_{i, \text{PID}[i]}) \\ 
 \mu_j &\sim \mathcal{N}(\overline{\mu}, \overline{\sigma}^2)\\ 
 \log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.y}_i) \\ 
 \alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
 \mu_\alpha, \bar{\mu} &\sim N(0, 1) \\ 
 \sigma_\alpha, \bar{\sigma} &\sim \text{Half-Cauchy}(0, 1)
-\end{align}$$
+\end{align}
+$$
 
 Specify formula and prior: 
 
@@ -255,13 +263,15 @@ task5_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
 
 Math: 
 
-$$\begin{align*}
+$$
+\begin{align*}
 \texttt{error}_i &\sim \mathcal{N}(0, \sigma_{i, \text{PID}[i]}) \\ 
 \log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.x}_i) \\ 
 \alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
 \mu_\alpha &\sim N(0, 1) \\ 
 \sigma_\alpha &\sim \text{Half-Cauchy}(0, 1)
-\end{align*}$$
+\end{align*}
+$$
 
 Formula and prior: 
 
@@ -413,6 +423,12 @@ task3_df <- task_df %>% filter(task == "task3") %>%
          phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM), 
          va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
          va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
+```
+
+Export data for python processing: 
+
+```{r}
+task3_df %>% write.csv(here("data", "processed", "task3.csv"))
 ```
 
 Descriptive plots: 
