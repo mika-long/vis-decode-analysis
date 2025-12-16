@@ -12,5 +12,7 @@ dependencies = [
     "numpy>=2.3.5",
     "pandas>=2.3.3",
     "polars>=1.36.1",
+    "pyarrow>=22.0.0",
     "pymc>=5.26.1",
+    "seaborn>=0.13.2",
 ]
