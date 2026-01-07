@@ -176,12 +176,14 @@ task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) +
 
 Math model: 
 
-$$\begin{align}
+$$
+\begin{align}
 \text{error_i} &\sim \text{Exponential}(\lambda_{\text{PID}[i]}) \\ 
 \log(\lambda_j) &\sim \mathcal{N}(\mu_\lambda, \sigma_\lambda) \\ 
 \mu_\lambda &\sim \mathcal{N}(0, 1) \\ 
 \sigma_\lambda &\sim \text{Half-Cauchy}(0, 1) 
-\end{align}$$
+\end{align}
+$$
 
 Formula and prior: 
 
