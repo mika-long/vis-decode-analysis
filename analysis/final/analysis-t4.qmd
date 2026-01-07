@@ -84,6 +84,14 @@ task4_df <- task_df %>% filter(task == "task4") %>%
 
 ```{r}
 #| code-fold: true 
+#| eval: false 
+
+# save this data for python analysis 
+write_csv(task4_df, here("data", "processed", "task4.csv"))
+```
+
+```{r}
+#| code-fold: true 
 #| layout-ncol: 2 
 #| eval: false 
 
