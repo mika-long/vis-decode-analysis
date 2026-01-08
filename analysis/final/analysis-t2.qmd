@@ -87,6 +87,15 @@ task2_df <- task_df %>% filter(task == "task2") %>%
   mutate(flat = (abs(data.left.grad) + abs(data.right.grad))/2)
 ```
 
+Save data for python analysis 
+
+```{r}
+#| eval: false 
+#| code-fold: true 
+
+write_csv(task2_df, here("data", "processed", "task2.csv"))
+```
+
 ```{r}
 #| layout-ncol: 2
 #| code-fold: true
