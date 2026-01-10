@@ -82,6 +82,8 @@ task5_df <- task_df %>% filter(task == "task5") %>%
 Export data for python processing: 
 
 ```{r}
+#| eval: false 
+#| code-fold: true 
 task5_df %>% write.csv(here("data", "processed", "task5.csv"))
 ```
 
@@ -120,7 +122,7 @@ Math model:
 
 $$
 \begin{align}
-\texttt{error}_i &\sim \mathcal{N}(\mu_\text{PID}[i], \sigma_{i, \text{PID}[i]}) \\ 
+\texttt{error}_i &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_{i, \text{PID}[i]}) \\ 
 \mu_j &\sim \mathcal{N}(\overline{\mu}, \overline{\sigma}^2)\\ 
 \log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.y}_i) \\ 
 \alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
