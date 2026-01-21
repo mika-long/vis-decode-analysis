@@ -38,7 +38,6 @@ def compute_pit_values(
         "pit": pit_values
     })
 
-
 def compute_pointwise_envelope(
     n: int,
     alpha: float = 0.05,
@@ -128,10 +127,9 @@ def pp_check_pit_ecdf(
         
         p = (
             ggplot(pit_sorted, aes(x="pit", y="ecdf_diff")) +
-            geom_hline(yintercept=0, color="gray", linetype="dashed") +
+            # geom_hline(yintercept=0, color="gray", linetype="dashed") +
             geom_step(color="darkblue", size=0.8) +
-            labs(x="PIT", y="ECDF − Uniform") +
-            theme_minimal()
+            labs(x="PIT", y="ECDF")
         )
         
         if envelope:
@@ -152,8 +150,7 @@ def pp_check_pit_ecdf(
             # geom_abline(intercept=0, slope=1, color="gray", linetype="dashed") +
             stat_ecdf(color="darkblue", size=0.8) +
             labs(x="PIT", y="ECDF") +
-            coord_cartesian(xlim=(0, 1), ylim=(0, 1)) +
-            theme_minimal()
+            coord_cartesian(xlim=(0, 1), ylim=(0, 1))
         )
         
         if envelope:
@@ -168,7 +165,8 @@ def pp_check_pit_ecdf(
                 color="lightblue", linetype="dashed", size=0.5
             )
     
-    return p
+    return (p + theme_minimal())
+
 def pp_check_dens_overlay(
     idata: az.InferenceData, 
     var_name: str = "error", 
@@ -178,14 +176,13 @@ def pp_check_dens_overlay(
     """
     df_ppc = az.extract(idata, group="posterior_predictive", num_samples=num_samples).to_dataframe().reset_index()
     df_ppc['.group'] = df_ppc['chain'].astype(str) + "_" + df_ppc['draw'].astype(str)
-    # print(df_ppc)
     df_og = idata.observed_data.to_dataframe().reset_index()
     p = (
         ggplot() + 
         geom_density(data = df_ppc, mapping=aes(x='error', group=".group"), color="lightblue", alpha=0.5, size=0.25) + 
         geom_density(data = df_og, mapping=aes(x = 'error'), color="darkblue", size=1) + 
-        theme_minimal() + 
         labs(y = "") + 
+        theme_minimal() + 
         theme(
             axis_text_y=element_blank(),  # Removes the numbers (0.0, 0.2, etc.)
             axis_ticks_y=element_blank(), # Removes the little tick marks
@@ -211,16 +208,6 @@ def pp_check_ecdf_overlay(
         ggplot() + 
         stat_ecdf(data = df_ppc, mapping=aes(x='error', group=".group"), color="lightblue", alpha=0.5, size=0.25, geom="line") + 
         stat_ecdf(data = df_og, mapping=aes(x = 'error'), geom="line", color="darkblue", size=1) + 
-        theme_minimal() + 
-        # geom_hline(yintercept=0.5, linetype="dashed", size=0.3, color="darkblue") + 
-        # geom_hline(yintercept=0, linetype="dashed", size=0.3, color="darkblue") + 
-        # geom_hline(yintercept=1, linetype="dashed", size=0.3, color="darkblue") # + 
         labs(y = "") 
-        # theme(
-        #     axis_text_y=element_blank(),  # Removes the numbers (0.0, 0.2, etc.)
-        #     axis_ticks_y=element_blank(), # Removes the little tick marks
-        #     panel_grid_minor_y=element_blank(), # Optional: removes minor grid lines
-        #     panel_grid_major_y=element_blank()  # Optional: removes major grid lines
-        # )
     )
-    return p
+    return (p + theme_minimal())
