@@ -174,10 +174,19 @@ m.5.x.va <- task5_df %>% mutate(error_va = va.select.x - va.ans.x) %>%
     cores = 4,
     control = list(adapt_delta = 0.99),
     iter = 6000, 
-    file = here("fitted_models", "task5.x"), 
+    file = here("analysis", "fitted_models", "task5.x"), 
     file_refit = "on_change", 
     save_pars = save_pars(all = TRUE)
 )
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+
+sd <- standata(m.5.x.va)
+table(sd$Z_1_1)
+table(sd$Z_2_sigma_1)
 ```
 
 Check fit and posterior: 
@@ -197,6 +206,10 @@ p1
 pp_check(m.5.x.va, ndraws = 100, type = "pit_ecdf") + 
   theme(text = element_text(size = 10)) -> p2
 p2
+
+pp_check(m.5.x.va, ndraws = 100, type = "pit_ecdf", plot_diff = TRUE) + 
+  theme(text = element_text(size = 10)) -> p3
+p3 
 ```
 
 ```{r}
@@ -206,6 +219,9 @@ ggsave(here("figs", "task5-x-pp-check.pdf"), p1,
 
 ggsave(here("figs", "task5-x-pit-ecdf.pdf"), p2, 
        width = 10, height = 5, units = "cm", dpi = 300)
+
+ggsave(here("figs", "task5-x-pit-ecdf-diff.pdf"), p3, 
+width = 10, height = 5, units = "cm", dpi = 300)
 ```
 
 Posterior for population level mean and sd: 
