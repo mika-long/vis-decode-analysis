@@ -218,22 +218,6 @@ def compute_simultaneous_envelope(
 ) -> pl.DataFrame:
     """
     Compute simultaneous confidence envelope for uniform ECDF.
-    
-    Matches bayesplot's ecdf_intervals with adjust_gamma.
-    
-    Parameters
-    ----------
-    N : int
-        Sample size (number of PIT values)
-    prob : float, default=0.99
-        Simultaneous coverage probability
-    K : int, optional
-        Number of evaluation points. Defaults to min(N + 1, 1000)
-    
-    Returns
-    -------
-    pl.DataFrame
-        Columns: x, lower, upper, lower_diff, upper_diff
     """
     if K is None:
         K = min(N + 1, 1000)
@@ -244,12 +228,13 @@ def compute_simultaneous_envelope(
     lower = stats.binom.ppf(gamma / 2, N, x) / N
     upper = stats.binom.ppf(1 - gamma / 2, N, x) / N
     
+    # Drop the first element (x=0) to match bayesplot behavior
     return pl.DataFrame({
-        "x": x,
-        "lower": lower,
-        "upper": upper,
-        "lower_diff": lower - x,
-        "upper_diff": upper - x
+        "x": x[1:],
+        "lower": lower[1:],
+        "upper": upper[1:],
+        "lower_diff": lower[1:] - x[1:],
+        "upper_diff": upper[1:] - x[1:]
     })
 
 def pp_check_pit_ecdf(
