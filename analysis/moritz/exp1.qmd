@@ -30,3 +30,24 @@ p_df %>% ggplot(aes(x = computed_error, y = variability, fill = flip)) +
 ```
 
 Note that `flip = TRUE` entails that more variability in lower values of y, while `flip = FALSE` entails higher variability in higher values of y. 
+
+I guess it does look kind of Gaussian ... ?
+
+What about absolute error ? 
+
+
+```{r}
+p_df %>% ggplot(aes(x = abs(computed_error), y = variability)) + 
+    stat_halfeye() + 
+    theme_minimal()
+```
+
+What about the distribution of the true average values ...? 
+
+
+```{r}
+p_df %>% select(average) %>% unique(.) %>% 
+    ggplot(aes(x = average)) + stat_halfeye() + 
+    coord_cartesian(xlim=c(0, 1)) + 
+    theme_minimal()
+```
