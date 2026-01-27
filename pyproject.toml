@@ -24,3 +24,8 @@ dependencies = [
     "pymc>=5.26.1",
     "seaborn>=0.13.2",
 ]
+
+[tool.uv]
+required-environments = [
+    "sys_platform == 'darwin' and platform_machine == 'x86_64'",
+]
