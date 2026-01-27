@@ -51,6 +51,8 @@ p_df %>% group_by(stimuliindex, average) %>% summarize(.) %>%
     coord_cartesian(xlim=c(0, 1)) + 
     theme_minimal() + 
     labs(title = "signed error")
+
+p_df %>% group_by(stimuliindex, average) %>% summarize(.)
 ```
 
 If we answer 0.5 all the time, then the distribution of error is going to look like: 
