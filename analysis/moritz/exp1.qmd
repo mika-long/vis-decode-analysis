@@ -44,10 +44,30 @@ p_df %>% ggplot(aes(x = abs(computed_error), y = variability)) +
 
 What about the distribution of the true average values ...? 
 
+```{r}
+p_df %>% group_by(stimuliindex, average) %>% summarize(.) %>% 
+    ggplot(aes(x = average)) + 
+    stat_halfeye() + 
+    coord_cartesian(xlim=c(0, 1)) + 
+    theme_minimal() + 
+    labs(title = "signed error")
+```
+
+If we answer 0.5 all the time, then the distribution of error is going to look like: 
+
 
 ```{r}
-p_df %>% select(average) %>% unique(.) %>% 
-    ggplot(aes(x = average)) + stat_halfeye() + 
-    coord_cartesian(xlim=c(0, 1)) + 
-    theme_minimal()
+p_df %>% group_by(stimuliindex, average) %>% summarize(.) %>% 
+    ggplot(aes(x = average - 0.5)) + 
+    stat_halfeye() + 
+    # coord_cartesian(xlim=c(0, 1)) + 
+    theme_minimal() + 
+    labs(title = "signed error")
+
+p_df %>% group_by(stimuliindex, average) %>% summarize(.) %>% 
+    ggplot(aes(x = abs(average - 0.5))) + 
+    stat_halfeye() + 
+    # coord_cartesian(xlim=c(0, 1)) + 
+    theme_minimal() + 
+    labs(title = "abs error")
 ```
