@@ -1,0 +1,32 @@
+---
+title: "Moritz exp1"
+---
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(tidybayes)
+library(here)
+```
+
+Read in data: 
+
+- 142 participants 
+- each participant did 48 trials 
+- `computed_error` is calculated as `average - reportedaverage`
+
+```{r}
+df <- read.csv(here("data", "moritz", "exp", "exp1.csv")) %>% as.data.frame(.)
+
+p_df <- df %>% select(assignmentid, trial, stimuliindex, variability, flip, average, error, errorFrom50, reportedaverage, computed_error)
+p_df %>% group_by(trial) %>% count(.)
+```
+
+
+```{r}
+p_df %>% ggplot(aes(x = computed_error, y = variability, fill = flip)) + 
+    stat_halfeye(alpha = 0.5) + 
+    theme_minimal()
+```
+
+Note that `flip = TRUE` entails that more variability in lower values of y, while `flip = FALSE` entails higher variability in higher values of y. 
