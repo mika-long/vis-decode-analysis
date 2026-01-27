@@ -1,5 +1,5 @@
 ---
-title: "Moritz exp1"
+title: "Moritz exp1 and exp 2"
 ---
 
 ```{r}
@@ -7,9 +7,12 @@ library(ggplot2)
 library(tidyverse)
 library(tidybayes)
 library(here)
+library(jsonlite)
 ```
 
-Read in data: 
+# Exp 1 
+
+Read in data for experiment 1: 
 
 - 142 participants 
 - each participant did 48 trials 
@@ -72,4 +75,23 @@ p_df %>% group_by(stimuliindex, average) %>% summarize(.) %>%
     # coord_cartesian(xlim=c(0, 1)) + 
     theme_minimal() + 
     labs(title = "abs error")
+```
+
+# Read in data for experiment 2 
+
+
+```{r}
+json_data <- jsonlite::fromJSON(here("data", "moritz", "stimuli", "exp2-stimuli.json" ))
+json_data
+
+df <- json_data %>% as_tibble(.) %>% 
+    select(index, seed, noise, flip, type, data)
+
+# we only want data that has type equal to `point` or `point_arc` 
+
+point_df <- df %>% filter(type != "line")
+
+point_df %>% unnest(cols=c(data)) %>% 
+    group_by(index, seed, noise, flip, type) %>% 
+    summarise(mean_x = mean(x), mean_y = mean(y))
 ```
