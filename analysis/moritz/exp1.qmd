@@ -95,3 +95,20 @@ point_df %>% unnest(cols=c(data)) %>%
     group_by(index, seed, noise, flip, type) %>% 
     summarise(mean_x = mean(x), mean_y = mean(y))
 ```
+
+We can try to see that for the same seed, noise, flip, what different types entail ... 
+
+
+```{r}
+point_df %>% unnest(cols=c(data)) %>% 
+    group_by(index, seed, noise, flip, type) %>% 
+    summarise(mean_x = mean(x), mean_y = mean(y)) %>% 
+    ungroup(.) %>% 
+    select(seed, noise, flip, type, mean_y) %>% 
+    filter(flip == FALSE) %>% 
+    ggplot(aes(x = seed, y = mean_y, color = type)) + 
+    geom_point() + 
+    theme_minimal()
+```
+
+Indeed the mean is different. 
