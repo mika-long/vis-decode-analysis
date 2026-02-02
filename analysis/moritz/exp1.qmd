@@ -128,17 +128,30 @@ df %>% filter(type != "line") %>%
     ggplot(aes(x = x, y = y, color=noise)) + 
     geom_point() + 
     theme_minimal() + 
-    labs(title = "Data share seed, flip and type; differ in noise")
+    labs(title = "Data share seed, flip and type; differ in noise") + 
+    coord_cartesian(ylim = c(0, 1))
 ```
 
 ```{r}
+#| layout-ncol: 2
+
 df %>% filter(type != "line") %>% 
     filter(index %in% c(4, 8)) %>% 
     unnest(data) %>% 
     ggplot(aes(x = x, y = y, color=type)) + 
     geom_point() + 
+    coord_cartesian(ylim = c(0, 1)) + 
     theme_minimal() + 
-    labs(title = "Data share seed, flip and noise; differ in type")
+    labs(title = "Data share seed, flip and noise; differ in type; no noise")
+
+df %>% filter(type != "line") %>% 
+    filter(index %in% c(6, 10)) %>% 
+    unnest(data) %>% 
+    ggplot(aes(x = x, y = y, color=type)) + 
+    geom_point() + 
+    coord_cartesian(ylim = c(0, 1)) +
+    theme_minimal() + 
+    labs(title = "Data share seed, flip and noise; differ in type; small noise")
 ```
 
 ```{r}
@@ -147,6 +160,7 @@ df %>% filter(type != "line") %>%
     unnest(data) %>% 
     ggplot(aes(x = x, y = y, color=flip)) + 
     geom_point() + 
+    coord_cartesian(ylim = c(0, 1)) +
     theme_minimal() + 
     labs(title = "Data share seed, type and noise; differ in flip")
 ```
@@ -160,24 +174,28 @@ df %>% filter(type != "line") %>%
     ggplot(aes(x = x, y = y, color=flip)) + 
     geom_point() + 
     theme_minimal() + 
+    coord_cartesian(ylim = c(0, 1)) +
     labs(title = "Data share seed, type; differ in flip and noise")
 ```
 
+Let us check the mean for the first group that share the same seed: 
+
 ```{r}
-point_df %>% unnest(cols=c(data)) %>% 
+df %>% filter(type != "line") %>% 
+    filter(seed == 1) %>% 
+    unnest(cols = c(data)) %>% 
     group_by(index, seed, noise, flip, type) %>% 
-    summarise(mean_x = mean(x), mean_y = mean(y)) %>% 
-    ungroup(.) %>% 
-    select(seed, noise, flip, type, mean_y) %>% 
-    filter(flip == FALSE) %>% 
-    ggplot(aes(x = seed, y = mean_y, color = type)) + 
-    geom_point() + 
-    theme_minimal()
+    summarise(x_nrow = n(), mean_y = mean(y))
 ```
 
 ```{r}
-point_df %>% mutate(noise = as.character(noise))
+# df %>% unnest(cols=c(data)) %>% 
+#     group_by(index, seed, noise, flip, type) %>% 
+#     summarise(mean_x = mean(x), mean_y = mean(y)) %>% 
+#     ungroup(.) %>% 
+#     select(seed, noise, flip, type, mean_y) %>% 
+#     filter(flip == FALSE) %>% 
+#     ggplot(aes(x = seed, y = mean_y, color = type)) + 
+#     geom_point() + 
+#     theme_minimal()
 ```
-
-Indeed the mean is different. 
-
