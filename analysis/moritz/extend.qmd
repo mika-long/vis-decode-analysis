@@ -1,0 +1,41 @@
+---
+title: "Extend from current data to Moritz"
+---
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(tidybayes)
+library(here)
+library(jsonlite)
+```
+
+Assume that we have the following model: start from the dots, project to the y-axis. This corresponds to the model xxx that we've fit. 
+
+We will first read in the stimuli data from Mortiz experiment 2: 
+
+```{r}
+exp_json_data <- jsonlite::fromJSON(here("data", "moritz", "stimuli", "exp2-stimuli.json" )) %>% as_tibble(.)
+
+stimuli_df <- exp_json_data %>% select(index, seed, noise, flip, type, data) %>% 
+    mutate(noise = as.character(noise))
+```
+
+Let us from the simple case where index == 0: 
+
+```{r}
+stimuli_df %>% filter(index == 0) %>% 
+    unnest(data) %>% 
+    rename(data_x = x, data_y = y)
+```
+
+# TODO we need to translate from the data space to visual angle space 
+
+... 
+
+Read in the fitted model and recall that the mathematical model is: 
+
+
+```{r}
+# TODO 
+```
