@@ -11,3 +11,5 @@ fitted_models/*
 
 **/*.quarto_ipynb
 
+analysis/fitted_models/*
+
