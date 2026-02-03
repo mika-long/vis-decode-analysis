@@ -77,7 +77,7 @@ p_df %>% group_by(stimuliindex, average) %>% summarize(.) %>%
     labs(title = "abs error")
 ```
 
-# Read in data for experiment 2 
+# Experiment 2 
 
 Experiment design: used a 2 (variability: 0 and .4) `noise` x 2 (variability: upper vs. lower) `flip` x 3 (mark type: line graph, Cartesian spaced points, arc spaced points) `type` mix-design. Using 12 seeds. 
 

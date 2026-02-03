@@ -31,11 +31,59 @@ stimuli_df %>% filter(index == 0) %>%
 
 # TODO we need to translate from the data space to visual angle space 
 
-... 
-
-Read in the fitted model and recall that the mathematical model is: 
-
+The following code was obtained from the original analysis. 
 
 ```{r}
-# TODO 
+#| label: define-function
+#| code-fold: true
+
+# origin is top left  
+data_to_pixel_y <- function(data_y) {
+  return(-395 * data_y + 410)
+}
+data_to_pixel_x <- function(data_x) {
+  return (53.5 * data_x + 317.5)
+}
+
+# origin is bottom left 
+pixel_to_phy_x <- function(pixel, pxMM){
+  (pixel - 50) / pxMM
+}
+pixel_to_phy_y <- function(pixel, pxMM){
+  (410 - pixel) / pxMM
+}
+
+# return visual angle in degrees and not radian
+vis_angle <- function(size, distance){
+  return(2 * atan(size / (2 * distance)) * 180 / pi)
+}
+
+# tolerance for numerical precision 
+tolerance <- 1e-10
+```
+
+In terms of the models that projected to y-axis, we want to look at the model we fitted for task 5, where we projected to y-axis. This is the math model: 
+
+$$
+\begin{align*}
+\texttt{error}_i &\sim \mathcal{N}(0, \sigma_{i, \text{PID}[i]}) \\ 
+\log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.x}_i) \\ 
+\alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
+\mu_\alpha &\sim N(0, 1) \\ 
+\sigma_\alpha &\sim \text{Half-Cauchy}(0, 1)
+\end{align*}
+$$
+
+(Again, copied and pasted from stuff...)
+
+```{r}
+f <- bf(error_va ~ (1 | participantId), 
+        sigma ~ (1|participantId) + offset(log(va.ans.x)))
+
+p <- c(
+  prior(normal(0, 1), class = Intercept),
+  prior(normal(0, 1), class = sd, group = participantId, lb = 0), 
+  prior(normal(0, 1), class = Intercept, dpar = "sigma"), 
+  prior(normal(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
+)
 ```
