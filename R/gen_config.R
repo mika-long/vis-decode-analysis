@@ -111,14 +111,23 @@ task1 = Component(baseComponent = "Moritz", parameters = list(params = list(inde
 convert_to_json(task1)
 
 # creating a sequence of components 
+# for point 
 components <- point_ids %>% imap(~ Component(
   baseComponent = "Moritz", 
   parameters = list(params = list(index = .x))
 )) %>% 
-  set_names(paste0("task", seq_along(point_ids)))
+  set_names(paste0("point_task_", seq_along(point_ids)))
+# creating a sequence of components 
+# for point arcs 
+point_arc_components <- pointArc_ids %>% imap(~ Component(
+  baseComponent = "Moritz", 
+  parameters = list(params = list(index = .x))
+)) %>% 
+  set_names(paste0("pointArc_task_", seq_along(pointArc_ids)))
 
 # build the sequence 
-task_names = paste0("task", 1:48)
+point_task_names = paste0("point_task_", 1:48)
+pointArc_task_names = paste0("pointArc_task_", 1:48)
 sequence <- list(
   order = "fixed", 
   components = list(
@@ -126,8 +135,19 @@ sequence <- list(
     "$virtual-chinrest.se.full",
     list(
       order = "random",
-      components = c(
-        task_names
+      numSamples = 1, # randomly select 1 
+      # components = c(
+      #   point_task_names
+      # )
+      components = list(
+        list(
+          order = "random", 
+          components = c(point_task_names)
+        ), 
+        list(
+          order = "random", 
+          components = c(pointArc_task_names)
+        )
       )
     )
   )
@@ -143,8 +163,6 @@ sequence %>% convert_to_json(.)
 # 5. baseComponents 
 # 6. components 
 # 7. sequence 
-json_output <- toJSON(card_component, auto_unbox = TRUE, pretty = TRUE)
-
 
 final_output = list(
   `$schema` = "https://raw.githubusercontent.com/revisit-studies/study/v2.3.1/src/parser/StudyConfigSchema.json",
@@ -154,14 +172,15 @@ final_output = list(
   baseComponents = list(
     Moritz = moritz_component
   ), 
-  components = components,
+  # components = components,
+  components = c(components, point_arc_components),
   sequence=sequence
 )
 
 config_json <- final_output %>% convert_to_json(.)
 # validate 
-validator(config_json, verbose = TRUE)
+validator(config_json, verbose = FALSE)
 
 # save output 
-config_json %>% write(here("R", "config.json"))
+config_json %>% write(here("R", "config-r.json"))
 
