@@ -1,0 +1,449 @@
+{
+  "schema": "https://raw.githubusercontent.com/revisit-studies/study/v2.3.1/src/parser/StudyConfigSchema.json",
+  "studyMetadata": {
+    "title": "Visual Decoding Operators (Retrieve Value)",
+    "version": "pilot",
+    "authors": [
+      "Sheng Long"
+    ],
+    "date": "2025-12-10",
+    "description": "A study designed to elicit resposnes from participants",
+    "organizations": [
+      "Northwestern University"
+    ]
+  },
+  "uiConfig": {
+    "contactEmail": "shenglong@u.northwestern.edu",
+    "helpTextPath": "vis-decode-retrieve-value/assets/help.md",
+    "logoPath": "revisitAssets/revisitLogoSquare.svg",
+    "withProgressBar": true,
+    "autoDownloadStudy": false,
+    "withSiderbar": false,
+    "minHeightSize": 400,
+    "minWIdthSIze": 400,
+    "urlParticipantIdParam": "PROLIFIC_PID",
+    "studyEndMsg": "**Thank you for completing the study.** \n\n You may click this link and return to Prolific: [https://app.prolific.com/submissions/complete?cc=C1O3ZUHV](https://app.prolific.com/submissions/complete?cc=C1O3ZUHV)"
+  },
+  "importedLibraries": [
+    "virtual-chinrest"
+  ],
+  "BaseComponens": {
+    "Moritz": {
+      "type": "react-component",
+      "path": "vis-decode-retrieve-value/assets/Moritz.tsx",
+      "instruction": "Drag the slider to where the values are on average; imagine that this is some stock prices",
+      "instructionLocation": "aboveStimulus",
+      "nextButtonLocation": "belowStimulus",
+      "parameters": {
+        "taskid": "Mortiz",
+        "taskType": "mortiz"
+      },
+      "response": [
+        {
+          "id": "weightedAverage-value",
+          "prompt": "The value of response",
+          "required": false,
+          "type": "numerical",
+          "hidden": true
+        }
+      ]
+    }
+  },
+  "components": {
+    "task1": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 4
+        }
+      }
+    },
+    "task2": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 5
+        }
+      }
+    },
+    "task3": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 6
+        }
+      }
+    },
+    "task4": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 7
+        }
+      }
+    },
+    "task5": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 16
+        }
+      }
+    },
+    "task6": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 17
+        }
+      }
+    },
+    "task7": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 18
+        }
+      }
+    },
+    "task8": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 19
+        }
+      }
+    },
+    "task9": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 28
+        }
+      }
+    },
+    "task10": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 29
+        }
+      }
+    },
+    "task11": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 30
+        }
+      }
+    },
+    "task12": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 31
+        }
+      }
+    },
+    "task13": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 40
+        }
+      }
+    },
+    "task14": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 41
+        }
+      }
+    },
+    "task15": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 42
+        }
+      }
+    },
+    "task16": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 43
+        }
+      }
+    },
+    "task17": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 52
+        }
+      }
+    },
+    "task18": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 53
+        }
+      }
+    },
+    "task19": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 54
+        }
+      }
+    },
+    "task20": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 55
+        }
+      }
+    },
+    "task21": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 64
+        }
+      }
+    },
+    "task22": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 65
+        }
+      }
+    },
+    "task23": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 66
+        }
+      }
+    },
+    "task24": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 67
+        }
+      }
+    },
+    "task25": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 76
+        }
+      }
+    },
+    "task26": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 77
+        }
+      }
+    },
+    "task27": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 78
+        }
+      }
+    },
+    "task28": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 79
+        }
+      }
+    },
+    "task29": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 88
+        }
+      }
+    },
+    "task30": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 89
+        }
+      }
+    },
+    "task31": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 90
+        }
+      }
+    },
+    "task32": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 91
+        }
+      }
+    },
+    "task33": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 100
+        }
+      }
+    },
+    "task34": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 101
+        }
+      }
+    },
+    "task35": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 102
+        }
+      }
+    },
+    "task36": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 103
+        }
+      }
+    },
+    "task37": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 112
+        }
+      }
+    },
+    "task38": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 113
+        }
+      }
+    },
+    "task39": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 114
+        }
+      }
+    },
+    "task40": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 115
+        }
+      }
+    },
+    "task41": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 124
+        }
+      }
+    },
+    "task42": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 125
+        }
+      }
+    },
+    "task43": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 126
+        }
+      }
+    },
+    "task44": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 127
+        }
+      }
+    },
+    "task45": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 136
+        }
+      }
+    },
+    "task46": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 137
+        }
+      }
+    },
+    "task47": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 138
+        }
+      }
+    },
+    "task48": {
+      "baseComponent": "Mortiz",
+      "parameters": {
+        "params": {
+          "index": 139
+        }
+      }
+    }
+  },
+  "sequence": {
+    "order": "fixed",
+    "components": [
+      "introduction",
+      "$virtual-chinrest.se.full",
+      {
+        "order": "random",
+        "components": ["task1", "task2", "task3", "task4", "task5", "task6", "task7", "task8", "task9", "task10", "task11", "task12", "task13", "task14", "task15", "task16", "task17", "task18", "task19", "task20", "task21", "task22", "task23", "task24", "task25", "task26", "task27", "task28", "task29", "task30", "task31", "task32", "task33", "task34", "task35", "task36", "task37", "task38", "task39", "task40", "task41", "task42", "task43", "task44", "task45", "task46", "task47", "task48"]
+      }
+    ]
+  }
+}

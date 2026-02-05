@@ -21,6 +21,14 @@ stimuli_df <- exp_json_data %>% select(index, seed, noise, flip, type, data) %>%
     mutate(noise = as.character(noise))
 ```
 
+We will then save the part of it where the type is not line: 
+
+```{r}
+# list of index to pull things from 
+stimuli_df %>% filter(type!= "line") %>% 
+  pull(index)
+```
+
 Let us from the simple case where index == 0, which will be the case that we will use: 
 
 ```{r}
