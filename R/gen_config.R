@@ -1,6 +1,13 @@
 library(jsonlite)
 library(purrr)
+library(jsonvalidate)
+library(httr)
 library(here)
+
+# --- initialize json validator 
+schema_url <- "https://raw.githubusercontent.com/revisit-studies/study/v2.3.1/src/parser/StudyConfigSchema.json"
+schema <- content(GET(schema_url), as = "text")
+validator <- json_validator(schema, engine = "ajv")
 
 # --- Get the list of numbers to pull from
 exp_json_data <- jsonlite::fromJSON(here("data", "moritz", "stimuli", "exp2-stimuli.json" )) %>% as_tibble(.)
@@ -151,7 +158,10 @@ final_output = list(
   sequence=sequence
 )
 
+config_json <- final_output %>% convert_to_json(.)
+# validate 
+validator(config_json, verbose = TRUE)
+
 # save output 
-final_output %>% convert_to_json(.) %>%
-  write(here("R", "config.json"))
+config_json %>% write(here("R", "config.json"))
 
