@@ -31,9 +31,9 @@ ui_config = list(
   logoPath = "revisitAssets/revisitLogoSquare.svg",
   withProgressBar = TRUE, 
   autoDownloadStudy = FALSE,
-  withSiderbar = FALSE,
+  withSidebar = FALSE,
   minHeightSize = 400,
-  minWIdthSIze = 400, 
+  minWidthSize = 400, 
   urlParticipantIdParam = "PROLIFIC_PID",
   studyEndMsg = "**Thank you for completing the study.** \n\n You may click this link and return to Prolific: [https://app.prolific.com/submissions/complete?cc=C1O3ZUHV](https://app.prolific.com/submissions/complete?cc=C1O3ZUHV)"
 )
@@ -91,8 +91,8 @@ moritz_component <- BaseComponent(
   instructionLocation = "aboveStimulus",
   nextButtonLocation = "belowStimulus",
   parameters = list(
-    taskid = "Mortiz",
-    taskType = "mortiz"
+    taskid = "Moritz",
+    taskType = "moritz"
   ),
   response_list = list(moritz_response)
 )
@@ -105,7 +105,7 @@ convert_to_json(task1)
 
 # creating a sequence of components 
 components <- point_ids %>% imap(~ Component(
-  baseComponent = "Mortiz", 
+  baseComponent = "Moritz", 
   parameters = list(params = list(index = .x))
 )) %>% 
   set_names(paste0("task", seq_along(point_ids)))
@@ -140,11 +140,11 @@ json_output <- toJSON(card_component, auto_unbox = TRUE, pretty = TRUE)
 
 
 final_output = list(
-  schema = "https://raw.githubusercontent.com/revisit-studies/study/v2.3.1/src/parser/StudyConfigSchema.json",
+  `$schema` = "https://raw.githubusercontent.com/revisit-studies/study/v2.3.1/src/parser/StudyConfigSchema.json",
   studyMetadata = metadata, 
   uiConfig = ui_config,
   importedLibraries = list("virtual-chinrest"), 
-  BaseComponens = list(
+  baseComponents = list(
     Moritz = moritz_component
   ), 
   components = components,

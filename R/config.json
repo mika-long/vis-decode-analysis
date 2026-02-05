@@ -1,5 +1,5 @@
 {
-  "schema": "https://raw.githubusercontent.com/revisit-studies/study/v2.3.1/src/parser/StudyConfigSchema.json",
+  "$schema": "https://raw.githubusercontent.com/revisit-studies/study/v2.3.1/src/parser/StudyConfigSchema.json",
   "studyMetadata": {
     "title": "Visual Decoding Operators (Retrieve Value)",
     "version": "pilot",
@@ -18,16 +18,16 @@
     "logoPath": "revisitAssets/revisitLogoSquare.svg",
     "withProgressBar": true,
     "autoDownloadStudy": false,
-    "withSiderbar": false,
+    "withSidebar": false,
     "minHeightSize": 400,
-    "minWIdthSIze": 400,
+    "minWidthSize": 400,
     "urlParticipantIdParam": "PROLIFIC_PID",
     "studyEndMsg": "**Thank you for completing the study.** \n\n You may click this link and return to Prolific: [https://app.prolific.com/submissions/complete?cc=C1O3ZUHV](https://app.prolific.com/submissions/complete?cc=C1O3ZUHV)"
   },
   "importedLibraries": [
     "virtual-chinrest"
   ],
-  "BaseComponens": {
+  "baseComponents": {
     "Moritz": {
       "type": "react-component",
       "path": "vis-decode-retrieve-value/assets/Moritz.tsx",
@@ -35,8 +35,8 @@
       "instructionLocation": "aboveStimulus",
       "nextButtonLocation": "belowStimulus",
       "parameters": {
-        "taskid": "Mortiz",
-        "taskType": "mortiz"
+        "taskid": "Moritz",
+        "taskType": "moritz"
       },
       "response": [
         {
@@ -51,7 +51,7 @@
   },
   "components": {
     "task1": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 4
@@ -59,7 +59,7 @@
       }
     },
     "task2": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 5
@@ -67,7 +67,7 @@
       }
     },
     "task3": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 6
@@ -75,7 +75,7 @@
       }
     },
     "task4": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 7
@@ -83,7 +83,7 @@
       }
     },
     "task5": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 16
@@ -91,7 +91,7 @@
       }
     },
     "task6": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 17
@@ -99,7 +99,7 @@
       }
     },
     "task7": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 18
@@ -107,7 +107,7 @@
       }
     },
     "task8": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 19
@@ -115,7 +115,7 @@
       }
     },
     "task9": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 28
@@ -123,7 +123,7 @@
       }
     },
     "task10": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 29
@@ -131,7 +131,7 @@
       }
     },
     "task11": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 30
@@ -139,7 +139,7 @@
       }
     },
     "task12": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 31
@@ -147,7 +147,7 @@
       }
     },
     "task13": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 40
@@ -155,7 +155,7 @@
       }
     },
     "task14": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 41
@@ -163,7 +163,7 @@
       }
     },
     "task15": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 42
@@ -171,7 +171,7 @@
       }
     },
     "task16": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 43
@@ -179,7 +179,7 @@
       }
     },
     "task17": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 52
@@ -187,7 +187,7 @@
       }
     },
     "task18": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 53
@@ -195,7 +195,7 @@
       }
     },
     "task19": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 54
@@ -203,7 +203,7 @@
       }
     },
     "task20": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 55
@@ -211,7 +211,7 @@
       }
     },
     "task21": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 64
@@ -219,7 +219,7 @@
       }
     },
     "task22": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 65
@@ -227,7 +227,7 @@
       }
     },
     "task23": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 66
@@ -235,7 +235,7 @@
       }
     },
     "task24": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 67
@@ -243,7 +243,7 @@
       }
     },
     "task25": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 76
@@ -251,7 +251,7 @@
       }
     },
     "task26": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 77
@@ -259,7 +259,7 @@
       }
     },
     "task27": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 78
@@ -267,7 +267,7 @@
       }
     },
     "task28": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 79
@@ -275,7 +275,7 @@
       }
     },
     "task29": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 88
@@ -283,7 +283,7 @@
       }
     },
     "task30": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 89
@@ -291,7 +291,7 @@
       }
     },
     "task31": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 90
@@ -299,7 +299,7 @@
       }
     },
     "task32": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 91
@@ -307,7 +307,7 @@
       }
     },
     "task33": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 100
@@ -315,7 +315,7 @@
       }
     },
     "task34": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 101
@@ -323,7 +323,7 @@
       }
     },
     "task35": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 102
@@ -331,7 +331,7 @@
       }
     },
     "task36": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 103
@@ -339,7 +339,7 @@
       }
     },
     "task37": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 112
@@ -347,7 +347,7 @@
       }
     },
     "task38": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 113
@@ -355,7 +355,7 @@
       }
     },
     "task39": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 114
@@ -363,7 +363,7 @@
       }
     },
     "task40": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 115
@@ -371,7 +371,7 @@
       }
     },
     "task41": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 124
@@ -379,7 +379,7 @@
       }
     },
     "task42": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 125
@@ -387,7 +387,7 @@
       }
     },
     "task43": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 126
@@ -395,7 +395,7 @@
       }
     },
     "task44": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 127
@@ -403,7 +403,7 @@
       }
     },
     "task45": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 136
@@ -411,7 +411,7 @@
       }
     },
     "task46": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 137
@@ -419,7 +419,7 @@
       }
     },
     "task47": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 138
@@ -427,7 +427,7 @@
       }
     },
     "task48": {
-      "baseComponent": "Mortiz",
+      "baseComponent": "Moritz",
       "parameters": {
         "params": {
           "index": 139
