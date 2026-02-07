@@ -57,16 +57,25 @@ StudyResponse <- function(id, type, prompt, required = FALSE, hidden = FALSE) {
   )
 }
 
-BaseComponent <- function(type, path, instruction, instructionLocation, nextButtonLocation, parameters, response_list = NULL) {
+# 'sidebar' | 'aboveStimulus' | 'belowStimulus' | 'stimulus'
+BaseComponent <- function(
+  type, 
+  path, 
+  instruction, 
+  instructionLocation = c("sidebar", "aboveStimulus", "belowStimulus"), 
+  nextButtonLocation = c("sidebar", "aboveStimulus", "belowStimulus"), 
+  parameters, 
+  response_list = NULL) {
   list(
     type = type,
     path = path,
     instruction = instruction, 
-    instructionLocation = instructionLocation,
-    nextButtonLocation = nextButtonLocation,
+    instructionLocation = match.arg(instructionLocation),
+    nextButtonLocation = match.arg(nextButtonLocation),
     parameters = parameters,
     response = if (is.null(response_list)) list() else response_list
   )
+  print(rstudioapi::getActiveDocumentContext())
 }
 
 Component <- function(baseComponent, parameters){
@@ -89,6 +98,24 @@ moritz_response = StudyResponse(
   type = "numerical",
   hidden = TRUE
 )
+
+library(dplyr)
+
+# The "options" as column names
+.instruction_opts <- data.frame(
+  aboveStimulus = TRUE,
+  belowStimulus = TRUE,
+  sidebar = TRUE
+)
+
+# Selector function using tidy eval
+instructionLocation <- function(.data, choice) {
+  .data$instructionLocation <- rlang::as_name(rlang::enquo(choice))
+  .data
+}
+
+# Test:
+.instruction_opts %>% instructionLocation()
 
 # --- construct basecomponent 
 moritz_component <- BaseComponent(
