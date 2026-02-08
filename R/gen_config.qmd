@@ -74,7 +74,6 @@ ui_config = list(
 
 ## Define functions for generating baseComponents 
 
-
 ```{r}
 #| code-fold: true 
 
@@ -144,6 +143,69 @@ moritz_component <- BaseComponent(
   ),
   response_list = list(moritz_response)
 )
+
+intro_component <- list(
+    type="markdown", 
+    path="TODO",
+    response = list(list(
+        id = "prolificId",
+        prompt = "Please enter your Prolific ID (without any spaces):",
+        required = TRUE, 
+        location = "belowStimulus", 
+        type = "shortText",
+        placeholder = "Prolific ID",
+        paramCapture = "PROLIFIC_ID"
+    ))
+)
+
+consent_comp <- list(
+    type = "markdown", 
+    path = "TODO", 
+    nextButtonText = "I agree",
+    response = list(list(
+        id = "consentApproval",
+        prompt = "Do you consent to the study and wish to continue?",
+        required = TRUE,
+        location = "belowStimulus",
+        type = "radio",
+        options = list("Decline", "Accept")
+    ))
+)
+
+post_survey_comp <- list(
+    type = "questionnaire",
+    response = list(
+        list(
+            id = "gender",
+            prompt = "TODO",
+            type = "radio",
+            options = list("Male", "Female", "Prefer to self describe", "Prefer not to ...")
+        ),
+        list(
+            id = "self-gender",
+            prompt = "TODO",
+            location = "belowStimulus",
+            type = "shortText",
+            required = FALSE
+        ),
+        list(
+            id = "age"
+            # TODO 
+        ),
+        list(
+            id = "feedback" 
+            # TODO 
+        ),
+        list(
+            id = "feedback-text",
+            # TODO 
+        ),
+        list(
+            id = "strategy",
+            # TODO 
+        )
+    )
+)
 ```
 
 ```{r}
@@ -201,6 +263,8 @@ sequence <- list(
 
 sequence %>% convert_to_json(.)
 ```
+
+**TODO: Generate attention check code, as well as trial and introduction, etc.**
 
 ## Generate final output 
 
