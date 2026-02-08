@@ -1,15 +1,39 @@
+---
+title: "Generate ReVISit configuration"
+---
+
+# Overview 
+
+For easier presentation, I will use `.qmd` to section off things. 
+
+```{r}
+#| echo: false 
+
 library(jsonlite)
 library(purrr)
 library(jsonvalidate)
 library(httr)
 library(here)
+library(tidyverse)
+```
 
+## Initialize JSON validator 
+... for checking whether the generated json file is schematically correct with ReVISit. 
+
+```{r}
 # --- initialize json validator 
 schema_url <- "https://raw.githubusercontent.com/revisit-studies/study/v2.3.1/src/parser/StudyConfigSchema.json"
 schema <- content(GET(schema_url), as = "text")
-validator <- json_validator(schema, engine = "ajv")
+validator <- json_validator(schema, engine = "ajv") 
+# need to use ajv to handle the newer ones
+```
 
+## Obtain data 
+
+```{r}
 # --- Get the list of numbers to pull from
+# --- since the experiment design is mixed, with the between-subject factor being the visual form, whether its point or point arc. 
+
 exp_json_data <- jsonlite::fromJSON(here("data", "moritz", "stimuli", "exp2-stimuli.json" )) %>% as_tibble(.)
 
 stimuli_df <- exp_json_data %>% select(index, seed, noise, flip, type, data) %>% 
@@ -20,9 +44,11 @@ point_ids <- stimuli_df %>% filter(type == "point") %>%
 
 pointArc_ids <- stimuli_df %>% filter(type == "point_arc") %>% 
   pull(index)
+```
 
-#--- Define UI and metada 
+## Define and generate One-off components, such as UI and metadata 
 
+```{r}
 metadata <- list(
   title = "Visual Decoding Operators (Retrieve Value)",
   version = "pilot",
@@ -44,9 +70,14 @@ ui_config = list(
   urlParticipantIdParam = "PROLIFIC_PID",
   studyEndMsg = "**Thank you for completing the study.** \n\n You may click this link and return to Prolific: [https://app.prolific.com/submissions/complete?cc=C1O3ZUHV](https://app.prolific.com/submissions/complete?cc=C1O3ZUHV)"
 )
+```
+
+## Define functions for generating baseComponents 
 
 
-#--- define functions 
+```{r}
+#| code-fold: true 
+
 StudyResponse <- function(id, type, prompt, required = FALSE, hidden = FALSE) {
   list(
     id = id,
@@ -57,7 +88,6 @@ StudyResponse <- function(id, type, prompt, required = FALSE, hidden = FALSE) {
   )
 }
 
-# 'sidebar' | 'aboveStimulus' | 'belowStimulus' | 'stimulus'
 BaseComponent <- function(
   type, 
   path, 
@@ -87,9 +117,11 @@ Component <- function(baseComponent, parameters){
 convert_to_json <- function(c){
   toJSON(c, auto_unbox = TRUE, pretty = TRUE)
 }
+```
 
+## Construct specific instance and response 
 
-# --- construct response 
+```{r}
 moritz_response = StudyResponse(
   id="weightedAverage-value",
   prompt="The value of response",
@@ -97,8 +129,9 @@ moritz_response = StudyResponse(
   type = "numerical",
   hidden = TRUE
 )
+```
 
-# --- construct basecomponent 
+```{r}
 moritz_component <- BaseComponent(
   type="react-component",
   path="vis-decode-retrieve-value/assets/Moritz.tsx",
@@ -111,37 +144,38 @@ moritz_component <- BaseComponent(
   ),
   response_list = list(moritz_response)
 )
-# test 
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+
 convert_to_json(moritz_component)
+```
 
-# creating a simple component 
-task1 = Component(baseComponent = "Moritz", 
-parameters = list(params = list(index = 4))
-)
-convert_to_json(task1)
+## Construct sequence of components 
 
-# creating a sequence of components 
-# for point 
-components <- point_ids %>% imap(~ Component(
+```{r}
+point_components <- point_ids %>% imap(~ Component(
   baseComponent = "Moritz", 
   parameters = list(params = list(index = .x))
 )) %>% 
-  set_names(paste0("point_task_", seq_along(point_ids)))
-# creating a sequence of components 
-# for point arcs 
+    set_names(paste0("point_task_", seq_along(point_ids)))
+
 point_arc_components <- pointArc_ids %>% imap(~ Component(
   baseComponent = "Moritz", 
   parameters = list(params = list(index = .x))
 )) %>% 
   set_names(paste0("pointArc_task_", seq_along(pointArc_ids)))
+```
 
-# build the sequence 
-point_task_names = paste0("point_task_", 1:48)
-pointArc_task_names = paste0("pointArc_task_", 1:48)
+Build the sequence: 
+
+```{r}
 sequence <- list(
   order = "fixed", 
   components = list(
-    "introduction", 
+    # "introduction", 
     "$virtual-chinrest.se.full",
     list(
       order = "latinSquare",
@@ -159,18 +193,28 @@ sequence <- list(
     )
   )
 )
+```
+
+```{r}
+#| eval: false 
+#| code-fold: false 
+
 sequence %>% convert_to_json(.)
+```
 
-# 4. RENDER
-# the final output has the following components: 
-# 1. schema 
-# 2. studyMetadata 
-# 3. uiConfig, 
-# 4. importedLibraries 
-# 5. baseComponents 
-# 6. components 
-# 7. sequence 
+## Generate final output 
 
+The final output has the following components: 
+1. schema 
+2. studyMetadata 
+3. uiConfig
+4. importedLibraries 
+5. baseComponents 
+6. components 
+7. sequence 
+
+
+```{r}
 final_output = list(
   `$schema` = "https://raw.githubusercontent.com/revisit-studies/study/v2.3.1/src/parser/StudyConfigSchema.json",
   studyMetadata = metadata, 
@@ -179,14 +223,21 @@ final_output = list(
   baseComponents = list(
     Moritz = moritz_component
   ), 
-  components = c(components, point_arc_components),
+  components = c(point_components, point_arc_components),
   sequence=sequence
 )
+```
 
+Generate json and validate: 
+
+```{r}
 config_json <- final_output %>% convert_to_json(.)
 # validate 
 validator(config_json, verbose = FALSE)
+```
 
-# save output 
+Save output: 
+
+```{r}
 config_json %>% write(here("R", "config-r.json"))
-
+```
