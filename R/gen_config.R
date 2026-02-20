@@ -3,8 +3,10 @@ library(purrr)
 library(jsonvalidate)
 library(httr)
 library(here)
+library(tidyverse)
 
-# --- initialize json validator 
+# --- initialize json validator
+# --- only works when one have access to the internet 
 schema_url <- "https://raw.githubusercontent.com/revisit-studies/study/v2.3.1/src/parser/StudyConfigSchema.json"
 schema <- content(GET(schema_url), as = "text")
 validator <- json_validator(schema, engine = "ajv")
@@ -62,20 +64,19 @@ BaseComponent <- function(
   type, 
   path, 
   instruction, 
-  instructionLocation = c("sidebar", "aboveStimulus", "belowStimulus"), 
-  nextButtonLocation = c("sidebar", "aboveStimulus", "belowStimulus"), 
+  instructionLocation, 
+  nextButtonLocation, 
   parameters, 
   response_list = NULL) {
   list(
     type = type,
     path = path,
     instruction = instruction, 
-    instructionLocation = match.arg(instructionLocation),
-    nextButtonLocation = match.arg(nextButtonLocation),
+    instructionLocation = instructionLocation, 
+    nextButtonLocation = nextButtonLocation,
     parameters = parameters,
     response = if (is.null(response_list)) list() else response_list
   )
-  print(rstudioapi::getActiveDocumentContext())
 }
 
 Component <- function(baseComponent, parameters){
@@ -89,7 +90,6 @@ convert_to_json <- function(c){
   toJSON(c, auto_unbox = TRUE, pretty = TRUE)
 }
 
-
 # --- construct response 
 moritz_response = StudyResponse(
   id="weightedAverage-value",
@@ -98,30 +98,14 @@ moritz_response = StudyResponse(
   type = "numerical",
   hidden = TRUE
 )
-
-library(dplyr)
-
-# The "options" as column names
-.instruction_opts <- data.frame(
-  aboveStimulus = TRUE,
-  belowStimulus = TRUE,
-  sidebar = TRUE
-)
-
-# Selector function using tidy eval
-instructionLocation <- function(.data, choice) {
-  .data$instructionLocation <- rlang::as_name(rlang::enquo(choice))
-  .data
-}
-
-# Test:
-.instruction_opts %>% instructionLocation()
+# --- test 
+moritz_response %>% convert_to_json(.)
 
 # --- construct basecomponent 
 moritz_component <- BaseComponent(
   type="react-component",
   path="vis-decode-retrieve-value/assets/Moritz.tsx",
-  instruction= "Drag the slider to where the values are on average; imagine that this is some stock prices",
+  instruction= "***Experiment Instructions.*** Please read the following paragraphs carefully. You will be asked questions about the information in the paragraphs. \n***Scenario:*** Assume that you are a stock market investor. You are investing your own money in stocks, and you want to determine the average price of a stock over time in order to pick the best investment.\n ***Task:*** In this experiment, you will be shown graphs of stock prices over a one-year period like the one below. Your task is to determine the average stock price for that year. What is the average stock price? (Click and drag the line to indicate the average stock price)\n ***Response:*** To indicate the average stock price, use your mouse to drag the line on the chart. Move the line to where you think the average stock price is for that year. You can readjust the line by clicking and dragging. Once you are happy with your judgment of the average stock price, click the next button.",
   instructionLocation = "aboveStimulus",
   nextButtonLocation = "belowStimulus",
   parameters = list(
@@ -130,11 +114,13 @@ moritz_component <- BaseComponent(
   ),
   response_list = list(moritz_response)
 )
-# test 
-convert_to_json(moritz_component)
+
+# --- test 
+moritz_component %>% convert_to_json()
 
 # creating a simple component 
 task1 = Component(baseComponent = "Moritz", parameters = list(params = list(index = 4)))
+# --- test 
 convert_to_json(task1)
 
 # creating a sequence of components 
@@ -161,7 +147,7 @@ sequence <- list(
     "introduction", 
     "$virtual-chinrest.se.full",
     list(
-      order = "random",
+      order = "latinSquare", # needs to be latin square to ensure sampling efficiency 
       numSamples = 1, # randomly select 1 
       # components = c(
       #   point_task_names
