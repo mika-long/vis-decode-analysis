@@ -142,6 +142,61 @@ introduction_component <- list(
 # test 
 introduction_component %>% convert_to_json(.)
 
+# create post study survey component 
+post_study_component = list(
+  post_study = list(
+  type = "questionnaire",
+  response = list(
+    list(
+      id = "gender", 
+      prompt = "## Thank you! \n\n Please answer the following demographics related questions: \n\n Gender",
+      location = "belowStimulus",
+      type = "radio",
+      options = c("Male", "Female", "Prefer to self describe", "Prefer not to say")
+    ), 
+    list(
+      id = "self-gender", 
+      prompt = "If you have selected 'Prefer to self describe', what is your gender?",
+      location = "belowStimulus",
+      type = "shortText",
+      required = FALSE
+    ), 
+    list(
+      id = "age",
+      prompt = "What is your age?",
+      location = "belowStimulus",
+      type = "numerical"
+    ), 
+    list(
+      id = "feedback", 
+      prompt = "Were any of the instructions unclear?",
+      type = "radio",
+      options = c("Yes", "No")
+    ), 
+    list(
+      id = "feedback-text",
+      prompt = "(Optional) If so, which instructions were unclear?", 
+      location = "belowStimulus",
+      type = "longText",
+      required = FALSE
+    ), 
+    list(
+      id = "strategy",
+      prompt = "(Optional) Please share with us any **strategy** you used.",
+      location = "belowStimulus",
+      type = "longText",
+      required = FALSE
+    )
+  )
+)
+)
+
+
+# test 
+post_study_component %>% convert_to_json(.)
+
+# ---
+
 # creating a sequence of components 
 # for point 
 components <- point_ids %>% imap(~ Component(
@@ -178,7 +233,8 @@ sequence <- list(
           components = c(pointArc_task_names)
         )
       )
-    )
+    ),
+    "post_study"
   )
 )
 sequence %>% convert_to_json(.)
@@ -202,13 +258,13 @@ final_output = list(
     Moritz = moritz_component
   ), 
   # components = components,
-  components = c(introduction_component, components, point_arc_components),
+  components = c(introduction_component, components, point_arc_components, post_study_component),
   sequence=sequence
 )
 
 config_json <- final_output %>% convert_to_json(.)
 # validate 
-validator(config_json, verbose = FALSE)
+validator(config_json, verbose = TRUE)
 
 # save output 
 config_json %>% write(here("R", "config-r.json"))
