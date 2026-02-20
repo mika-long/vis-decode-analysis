@@ -123,6 +123,22 @@ task1 = Component(baseComponent = "Moritz", parameters = list(params = list(inde
 # --- test 
 convert_to_json(task1)
 
+# create the component for introduction 
+# "introduction": {
+#             "path": "vis-decode-retrieve-value/assets/introduction.md",
+#             "response": [],
+#             "type": "markdown"
+#  },
+introduction_component <- list(
+  introduction = list(
+    path = "vis-decode-retrieve-value/assets/introduction.md",
+    response = list(),
+    type = "markdown"
+  )
+)
+# test 
+introduction_component %>% convert_to_json(.)
+
 # creating a sequence of components 
 # for point 
 components <- point_ids %>% imap(~ Component(
@@ -186,7 +202,7 @@ final_output = list(
     Moritz = moritz_component
   ), 
   # components = components,
-  components = c(components, point_arc_components),
+  components = c(introduction_component, components, point_arc_components),
   sequence=sequence
 )
 
