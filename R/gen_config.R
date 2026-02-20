@@ -174,12 +174,19 @@ calibration_intro = list(
   )
 )
 
-general_intruction = list(
-  general_instruction = list(
+training_intro = list(
+  training_intro = list(
     type = "markdown",
-    path = "vis-decode-retrieve-value/assets/general_instruction.md",
-    response = list(), 
-    nextButtonEnableTime = 3000
+    path = "vis-decode-retrieve-value/assets/training_intro.md", 
+    response = list()
+  )
+)
+
+testing_intro = list(
+  testing_intro = list(
+    type = "markdown",
+    path = "vis-decode-retrieve-value/assets/testing_intro.md", 
+    response = list()
   )
 )
 
@@ -232,7 +239,6 @@ post_study_component = list(
 )
 )
 
-
 # test 
 post_study_component %>% convert_to_json(.)
 
@@ -272,9 +278,11 @@ sequence <- list(
       )), 
       order = "fixed"
     ),
-    "general_instruction",
     "calibration_intro",
     "$virtual-chinrest.se.full",
+    "training_intro", # training intro 
+    # missing training section here
+    "testing_intro",
     list(
       order = "latinSquare", # needs to be latin square to ensure sampling efficiency 
       numSamples = 1, # randomly select 1 
@@ -314,7 +322,7 @@ final_output = list(
     Moritz = moritz_component
   ), 
   # components = components,
-  components = c(introduction_component, consent_comp, calibration_intro, general_intruction, components, point_arc_components, post_study_component),
+  components = c(introduction_component, consent_comp, calibration_intro, training_intro, testing_intro, components, point_arc_components, post_study_component),
   sequence=sequence
 )
 
