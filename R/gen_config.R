@@ -26,7 +26,7 @@ pointArc_ids <- stimuli_df %>% filter(type == "point_arc") %>%
 #--- Define UI and metada 
 
 metadata <- list(
-  title = "Visual Decoding Operators (Retrieve Value)",
+  title = "Visual Decoding Operators — Average Estimation in Line Graphs",
   version = "pilot",
   authors = list("Sheng Long"),
   date = "2025-12-10",
@@ -105,7 +105,7 @@ moritz_response %>% convert_to_json(.)
 moritz_component <- BaseComponent(
   type="react-component",
   path="vis-decode-retrieve-value/assets/Moritz.tsx",
-  instruction= "***Experiment Instructions.*** Please read the following paragraphs carefully. You will be asked questions about the information in the paragraphs. \n***Scenario:*** Assume that you are a stock market investor. You are investing your own money in stocks, and you want to determine the average price of a stock over time in order to pick the best investment.\n ***Task:*** In this experiment, you will be shown graphs of stock prices over a one-year period like the one below. Your task is to determine the average stock price for that year. What is the average stock price? (Click and drag the line to indicate the average stock price)\n ***Response:*** To indicate the average stock price, use your mouse to drag the line on the chart. Move the line to where you think the average stock price is for that year. You can readjust the line by clicking and dragging. Once you are happy with your judgment of the average stock price, click the next button.",
+  instruction= "***Experiment Instructions.*** Please read the following paragraphs carefully. You will be asked questions about the information in the paragraphs. \n\n***Scenario:*** Assume that you are a stock market investor. You are investing your own money in stocks, and you want to determine the average price of a stock over time in order to pick the best investment.\n\n***Task:*** In this experiment, you will be shown graphs of stock prices over a one-year period like the one below. Your task is to determine the average stock price for that year. What is the average stock price? (Click and drag the line to indicate the average stock price)\n\n***Response:*** To indicate the average stock price, use your mouse to drag the line on the chart. Move the line to where you think the average stock price is for that year. You can readjust the line by clicking and dragging. Once you are happy with your judgment of the average stock price, click the next button.",
   instructionLocation = "aboveStimulus",
   nextButtonLocation = "belowStimulus",
   parameters = list(
@@ -150,7 +150,7 @@ consent_comp = list(
   consent = list(
     type = "markdown",
     path = "vis-decode-retrieve-value/assets/consent.md", 
-    nextButtonText = "I agree",
+    # nextButtonText = "I agree",
     response = list(
       list(
         id = "consentApproval",
@@ -165,6 +165,23 @@ consent_comp = list(
 )
 # test 
 consent_comp %>% convert_to_json(.)
+
+calibration_intro = list(
+  calibration_intro = list(
+    type = "markdown",
+    path = "vis-decode-retrieve-value/assets/calibration_intro.md", 
+    response = list()
+  )
+)
+
+general_intruction = list(
+  general_instruction = list(
+    type = "markdown",
+    path = "vis-decode-retrieve-value/assets/general_instruction.md",
+    response = list(), 
+    nextButtonEnableTime = 3000
+  )
+)
 
 # create post study survey component 
 post_study_component = list(
@@ -255,6 +272,9 @@ sequence <- list(
       )), 
       order = "fixed"
     ),
+    "general_instruction",
+    "calibration_intro",
+    "$virtual-chinrest.se.full",
     list(
       order = "latinSquare", # needs to be latin square to ensure sampling efficiency 
       numSamples = 1, # randomly select 1 
@@ -294,7 +314,7 @@ final_output = list(
     Moritz = moritz_component
   ), 
   # components = components,
-  components = c(introduction_component, components, point_arc_components, post_study_component),
+  components = c(introduction_component, consent_comp, calibration_intro, general_intruction, components, point_arc_components, post_study_component),
   sequence=sequence
 )
 

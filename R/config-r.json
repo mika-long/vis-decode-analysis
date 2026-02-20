@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/revisit-studies/study/v2.3.1/src/parser/StudyConfigSchema.json",
   "studyMetadata": {
-    "title": "Visual Decoding Operators (Retrieve Value)",
+    "title": "Visual Decoding Operators — Average Estimation in Line Graphs",
     "version": "pilot",
     "authors": [
       "Sheng Long"
@@ -31,7 +31,7 @@
     "Moritz": {
       "type": "react-component",
       "path": "vis-decode-retrieve-value/assets/Moritz.tsx",
-      "instruction": "***Experiment Instructions.*** Please read the following paragraphs carefully. You will be asked questions about the information in the paragraphs. \n***Scenario:*** Assume that you are a stock market investor. You are investing your own money in stocks, and you want to determine the average price of a stock over time in order to pick the best investment.\n ***Task:*** In this experiment, you will be shown graphs of stock prices over a one-year period like the one below. Your task is to determine the average stock price for that year. What is the average stock price? (Click and drag the line to indicate the average stock price)\n ***Response:*** To indicate the average stock price, use your mouse to drag the line on the chart. Move the line to where you think the average stock price is for that year. You can readjust the line by clicking and dragging. Once you are happy with your judgment of the average stock price, click the next button.",
+      "instruction": "***Experiment Instructions.*** Please read the following paragraphs carefully. You will be asked questions about the information in the paragraphs. \n***Scenario:*** Assume that you are a stock market investor. You are investing your own money in stocks, and you want to determine the average price of a stock over time in order to pick the best investment.\n\n***Task:*** In this experiment, you will be shown graphs of stock prices over a one-year period like the one below. Your task is to determine the average stock price for that year. What is the average stock price? (Click and drag the line to indicate the average stock price)\n\n***Response:*** To indicate the average stock price, use your mouse to drag the line on the chart. Move the line to where you think the average stock price is for that year. You can readjust the line by clicking and dragging. Once you are happy with your judgment of the average stock price, click the next button.",
       "instructionLocation": "aboveStimulus",
       "nextButtonLocation": "belowStimulus",
       "parameters": {
@@ -64,6 +64,31 @@
         }
       ],
       "type": "markdown"
+    },
+    "consent": {
+      "type": "markdown",
+      "path": "vis-decode-retrieve-value/assets/consent.md",
+      "response": [
+        {
+          "id": "consentApproval",
+          "prompt": "Do you consent to the study and wish to continue?",
+          "required": true,
+          "location": "belowStimulus",
+          "type": "radio",
+          "options": ["Decline", "Accept"]
+        }
+      ]
+    },
+    "calibration_intro": {
+      "type": "markdown",
+      "path": "vis-decode-retrieve-value/assets/calibration_intro.md",
+      "response": []
+    },
+    "general_instruction": {
+      "type": "markdown",
+      "path": "vis-decode-retrieve-value/assets/general_instruction.md",
+      "response": [],
+      "nextButtonEnableTime": 3000
     },
     "point_task_1": {
       "baseComponent": "Moritz",
@@ -899,6 +924,9 @@
         ],
         "order": "fixed"
       },
+      "general_instruction",
+      "calibration_intro",
+      "$virtual-chinrest.se.full",
       {
         "order": "latinSquare",
         "numSamples": 1,
