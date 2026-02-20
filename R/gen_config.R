@@ -121,26 +121,50 @@ moritz_component %>% convert_to_json()
 # creating a simple component 
 task1 = Component(baseComponent = "Moritz", parameters = list(params = list(index = 4)))
 # --- test 
-task1 = Component(baseComponent = "Moritz", 
-parameters = list(params = list(index = 4))
-)
 convert_to_json(task1)
 
 # create the component for introduction 
-# "introduction": {
-#             "path": "vis-decode-retrieve-value/assets/introduction.md",
-#             "response": [],
-#             "type": "markdown"
-#  },
+
 introduction_component <- list(
   introduction = list(
     path = "vis-decode-retrieve-value/assets/introduction.md",
-    response = list(),
+    response = list(
+      list(
+        id = "prolificId",
+        prompt = "Please enter your Prolific ID (without any spaces):",
+        required = TRUE,
+        location = "belowStimulus",
+        type = "shortText", 
+        placeholder = "Prolific ID",
+        paramCapture = "PROLIFIC_PID"
+      )
+    ),
     type = "markdown"
   )
 )
 # test 
 introduction_component %>% convert_to_json(.)
+
+# create the document for consent 
+consent_comp = list(
+  consent = list(
+    type = "markdown",
+    path = "vis-decode-retrieve-value/assets/consent.md", 
+    nextButtonText = "I agree",
+    response = list(
+      list(
+        id = "consentApproval",
+        prompt = "Do you consent to the study and wish to continue?", 
+        required = TRUE,
+        location = "belowStimulus", 
+        type = "radio",
+        options = c("Decline", "Accept")
+      )
+    )
+  )
+)
+# test 
+consent_comp %>% convert_to_json(.)
 
 # create post study survey component 
 post_study_component = list(
@@ -219,7 +243,18 @@ sequence <- list(
   order = "fixed", 
   components = list(
     "introduction", 
-    "$virtual-chinrest.se.full",
+    list(
+      components = list("consent"),
+      skip = list(list(
+        name = "consent",
+        check = "response",
+        responseId = "consentApproval",
+        value = "Decline",
+        to = "end",
+        comparison = "equal"
+      )), 
+      order = "fixed"
+    ),
     list(
       order = "latinSquare", # needs to be latin square to ensure sampling efficiency 
       numSamples = 1, # randomly select 1 
@@ -237,6 +272,7 @@ sequence <- list(
     "post_study"
   )
 )
+
 sequence %>% convert_to_json(.)
 
 # 4. RENDER
