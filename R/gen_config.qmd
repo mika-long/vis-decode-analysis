@@ -1,17 +1,39 @@
+---
+title: "Generate ReVISit configuration"
+---
+
+# Overview 
+
+For easier presentation, I will use `.qmd` to section off things. 
+
+```{r}
+#| echo: false 
+
 library(jsonlite)
 library(purrr)
 library(jsonvalidate)
 library(httr)
 library(here)
 library(tidyverse)
+```
 
-# --- initialize json validator
-# --- only works when one have access to the internet 
+## Initialize JSON validator 
+... for checking whether the generated json file is schematically correct with ReVISit. 
+
+```{r}
+# --- initialize json validator 
 schema_url <- "https://raw.githubusercontent.com/revisit-studies/study/v2.3.1/src/parser/StudyConfigSchema.json"
 schema <- content(GET(schema_url), as = "text")
-validator <- json_validator(schema, engine = "ajv")
+validator <- json_validator(schema, engine = "ajv") 
+# need to use ajv to handle the newer ones
+```
 
+## Obtain data 
+
+```{r}
 # --- Get the list of numbers to pull from
+# --- since the experiment design is mixed, with the between-subject factor being the visual form, whether its point or point arc. 
+
 exp_json_data <- jsonlite::fromJSON(here("data", "moritz", "stimuli", "exp2-stimuli.json" )) %>% as_tibble(.)
 
 stimuli_df <- exp_json_data %>% select(index, seed, noise, flip, type, data) %>% 
@@ -22,9 +44,11 @@ point_ids <- stimuli_df %>% filter(type == "point") %>%
 
 pointArc_ids <- stimuli_df %>% filter(type == "point_arc") %>% 
   pull(index)
+```
 
-#--- Define UI and metada 
+## Define and generate One-off components, such as UI and metadata 
 
+```{r}
 metadata <- list(
   title = "Visual Decoding Operators (Retrieve Value)",
   version = "pilot",
@@ -46,9 +70,13 @@ ui_config = list(
   urlParticipantIdParam = "PROLIFIC_PID",
   studyEndMsg = "**Thank you for completing the study.** \n\n You may click this link and return to Prolific: [https://app.prolific.com/submissions/complete?cc=C1O3ZUHV](https://app.prolific.com/submissions/complete?cc=C1O3ZUHV)"
 )
+```
 
+## Define functions for generating baseComponents 
 
-#--- define functions 
+```{r}
+#| code-fold: true 
+
 StudyResponse <- function(id, type, prompt, required = FALSE, hidden = FALSE) {
   list(
     id = id,
@@ -59,21 +87,20 @@ StudyResponse <- function(id, type, prompt, required = FALSE, hidden = FALSE) {
   )
 }
 
-# 'sidebar' | 'aboveStimulus' | 'belowStimulus' | 'stimulus'
 BaseComponent <- function(
   type, 
   path, 
   instruction, 
-  instructionLocation, 
-  nextButtonLocation, 
+  instructionLocation = c("sidebar", "aboveStimulus", "belowStimulus"), 
+  nextButtonLocation = c("sidebar", "aboveStimulus", "belowStimulus"), 
   parameters, 
   response_list = NULL) {
   list(
     type = type,
     path = path,
     instruction = instruction, 
-    instructionLocation = instructionLocation, 
-    nextButtonLocation = nextButtonLocation,
+    instructionLocation = match.arg(instructionLocation),
+    nextButtonLocation = match.arg(nextButtonLocation),
     parameters = parameters,
     response = if (is.null(response_list)) list() else response_list
   )
@@ -89,8 +116,11 @@ Component <- function(baseComponent, parameters){
 convert_to_json <- function(c){
   toJSON(c, auto_unbox = TRUE, pretty = TRUE)
 }
+```
 
-# --- construct response 
+## Construct specific instance and response 
+
+```{r}
 moritz_response = StudyResponse(
   id="weightedAverage-value",
   prompt="The value of response",
@@ -98,14 +128,13 @@ moritz_response = StudyResponse(
   type = "numerical",
   hidden = TRUE
 )
-# --- test 
-moritz_response %>% convert_to_json(.)
+```
 
-# --- construct basecomponent 
+```{r}
 moritz_component <- BaseComponent(
   type="react-component",
   path="vis-decode-retrieve-value/assets/Moritz.tsx",
-  instruction= "***Experiment Instructions.*** Please read the following paragraphs carefully. You will be asked questions about the information in the paragraphs. \n***Scenario:*** Assume that you are a stock market investor. You are investing your own money in stocks, and you want to determine the average price of a stock over time in order to pick the best investment.\n ***Task:*** In this experiment, you will be shown graphs of stock prices over a one-year period like the one below. Your task is to determine the average stock price for that year. What is the average stock price? (Click and drag the line to indicate the average stock price)\n ***Response:*** To indicate the average stock price, use your mouse to drag the line on the chart. Move the line to where you think the average stock price is for that year. You can readjust the line by clicking and dragging. Once you are happy with your judgment of the average stock price, click the next button.",
+  instruction= "Drag the slider to where the values are on average; imagine that this is some stock prices",
   instructionLocation = "aboveStimulus",
   nextButtonLocation = "belowStimulus",
   parameters = list(
@@ -115,58 +144,103 @@ moritz_component <- BaseComponent(
   response_list = list(moritz_response)
 )
 
-# --- test 
-moritz_component %>% convert_to_json()
-
-# creating a simple component 
-task1 = Component(baseComponent = "Moritz", parameters = list(params = list(index = 4)))
-# --- test 
-task1 = Component(baseComponent = "Moritz", 
-parameters = list(params = list(index = 4))
+intro_component <- list(
+    type="markdown", 
+    path="TODO",
+    response = list(list(
+        id = "prolificId",
+        prompt = "Please enter your Prolific ID (without any spaces):",
+        required = TRUE, 
+        location = "belowStimulus", 
+        type = "shortText",
+        placeholder = "Prolific ID",
+        paramCapture = "PROLIFIC_ID"
+    ))
 )
-convert_to_json(task1)
 
-# create the component for introduction 
-# "introduction": {
-#             "path": "vis-decode-retrieve-value/assets/introduction.md",
-#             "response": [],
-#             "type": "markdown"
-#  },
-introduction_component <- list(
-  introduction = list(
-    path = "vis-decode-retrieve-value/assets/introduction.md",
-    response = list(),
-    type = "markdown"
-  )
+consent_comp <- list(
+    type = "markdown", 
+    path = "TODO", 
+    nextButtonText = "I agree",
+    response = list(list(
+        id = "consentApproval",
+        prompt = "Do you consent to the study and wish to continue?",
+        required = TRUE,
+        location = "belowStimulus",
+        type = "radio",
+        options = list("Decline", "Accept")
+    ))
 )
-# test 
-introduction_component %>% convert_to_json(.)
 
-# creating a sequence of components 
-# for point 
-components <- point_ids %>% imap(~ Component(
+post_survey_comp <- list(
+    type = "questionnaire",
+    response = list(
+        list(
+            id = "gender",
+            prompt = "TODO",
+            type = "radio",
+            options = list("Male", "Female", "Prefer to self describe", "Prefer not to ...")
+        ),
+        list(
+            id = "self-gender",
+            prompt = "TODO",
+            location = "belowStimulus",
+            type = "shortText",
+            required = FALSE
+        ),
+        list(
+            id = "age"
+            # TODO 
+        ),
+        list(
+            id = "feedback" 
+            # TODO 
+        ),
+        list(
+            id = "feedback-text",
+            # TODO 
+        ),
+        list(
+            id = "strategy",
+            # TODO 
+        )
+    )
+)
+```
+
+```{r}
+#| eval: false 
+#| echo: false 
+
+convert_to_json(moritz_component)
+```
+
+## Construct sequence of components 
+
+```{r}
+point_components <- point_ids %>% imap(~ Component(
   baseComponent = "Moritz", 
   parameters = list(params = list(index = .x))
 )) %>% 
-  set_names(paste0("point_task_", seq_along(point_ids)))
-# creating a sequence of components 
-# for point arcs 
+    set_names(paste0("point_task_", seq_along(point_ids)))
+
 point_arc_components <- pointArc_ids %>% imap(~ Component(
   baseComponent = "Moritz", 
   parameters = list(params = list(index = .x))
 )) %>% 
   set_names(paste0("pointArc_task_", seq_along(pointArc_ids)))
+```
 
-# build the sequence 
-point_task_names = paste0("point_task_", 1:48)
-pointArc_task_names = paste0("pointArc_task_", 1:48)
+Build the sequence: 
+
+```{r}
 sequence <- list(
   order = "fixed", 
   components = list(
-    "introduction", 
+    # "introduction", 
     "$virtual-chinrest.se.full",
     list(
-      order = "latinSquare", # needs to be latin square to ensure sampling efficiency 
+      order = "latinSquare",
       numSamples = 1, # randomly select 1 
       components = list(
         list(
@@ -181,18 +255,30 @@ sequence <- list(
     )
   )
 )
+```
+
+```{r}
+#| eval: false 
+#| code-fold: false 
+
 sequence %>% convert_to_json(.)
+```
 
-# 4. RENDER
-# the final output has the following components: 
-# 1. schema 
-# 2. studyMetadata 
-# 3. uiConfig, 
-# 4. importedLibraries 
-# 5. baseComponents 
-# 6. components 
-# 7. sequence 
+**TODO: Generate attention check code, as well as trial and introduction, etc.**
 
+## Generate final output 
+
+The final output has the following components: 
+1. schema 
+2. studyMetadata 
+3. uiConfig
+4. importedLibraries 
+5. baseComponents 
+6. components 
+7. sequence 
+
+
+```{r}
 final_output = list(
   `$schema` = "https://raw.githubusercontent.com/revisit-studies/study/v2.3.1/src/parser/StudyConfigSchema.json",
   studyMetadata = metadata, 
@@ -201,15 +287,21 @@ final_output = list(
   baseComponents = list(
     Moritz = moritz_component
   ), 
-  # components = components,
-  components = c(introduction_component, components, point_arc_components),
+  components = c(point_components, point_arc_components),
   sequence=sequence
 )
+```
 
+Generate json and validate: 
+
+```{r}
 config_json <- final_output %>% convert_to_json(.)
 # validate 
 validator(config_json, verbose = FALSE)
+```
 
-# save output 
+Save output: 
+
+```{r}
 config_json %>% write(here("R", "config-r.json"))
-
+```
