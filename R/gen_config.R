@@ -187,7 +187,8 @@ calibration_intro = list(
   calibration_intro = list(
     type = "markdown",
     path = "vis-decode-retrieve-value/assets/calibration_intro.md", 
-    response = list()
+    response = list(),
+    nextButtonEnableTime = 3000
   )
 )
 
@@ -195,7 +196,8 @@ training_intro = list(
   training_intro = list(
     type = "markdown",
     path = "vis-decode-retrieve-value/assets/training_intro.md", 
-    response = list()
+    response = list(),
+    nextButtonEnableTime = 3000
   )
 )
 
@@ -203,7 +205,8 @@ testing_intro = list(
   testing_intro = list(
     type = "markdown",
     path = "vis-decode-retrieve-value/assets/testing_intro.md", 
-    response = list()
+    response = list(),
+    nextButtonEnableTime = 3000
   )
 )
 
@@ -265,14 +268,14 @@ post_study_component %>% convert_to_json(.)
 # for point 
 components <- point_ids %>% imap(~ Component(
   baseComponent = "Moritz", 
-  parameters = list(params = list(index = .x))
+  parameters = list(params = list(index = .x, type = "point"))
 )) %>% 
   set_names(paste0("point_task_", seq_along(point_ids)))
 # creating a sequence of components 
 # for point arcs 
 point_arc_components <- pointArc_ids %>% imap(~ Component(
   baseComponent = "Moritz", 
-  parameters = list(params = list(index = .x))
+  parameters = list(params = list(index = .x, type = "pointArc"))
 )) %>% 
   set_names(paste0("pointArc_task_", seq_along(pointArc_ids)))
 

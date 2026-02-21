@@ -82,23 +82,27 @@
     "calibration_intro": {
       "type": "markdown",
       "path": "vis-decode-retrieve-value/assets/calibration_intro.md",
-      "response": []
+      "response": [],
+      "nextButtonEnableTime": 3000
     },
     "training_intro": {
       "type": "markdown",
       "path": "vis-decode-retrieve-value/assets/training_intro.md",
-      "response": []
+      "response": [],
+      "nextButtonEnableTime": 3000
     },
     "testing_intro": {
       "type": "markdown",
       "path": "vis-decode-retrieve-value/assets/testing_intro.md",
-      "response": []
+      "response": [],
+      "nextButtonEnableTime": 3000
     },
     "point_task_1": {
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 4
+          "index": 4,
+          "type": "point"
         }
       }
     },
@@ -106,7 +110,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 5
+          "index": 5,
+          "type": "point"
         }
       }
     },
@@ -114,7 +119,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 6
+          "index": 6,
+          "type": "point"
         }
       }
     },
@@ -122,7 +128,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 7
+          "index": 7,
+          "type": "point"
         }
       }
     },
@@ -130,7 +137,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 16
+          "index": 16,
+          "type": "point"
         }
       }
     },
@@ -138,7 +146,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 17
+          "index": 17,
+          "type": "point"
         }
       }
     },
@@ -146,7 +155,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 18
+          "index": 18,
+          "type": "point"
         }
       }
     },
@@ -154,7 +164,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 19
+          "index": 19,
+          "type": "point"
         }
       }
     },
@@ -162,7 +173,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 28
+          "index": 28,
+          "type": "point"
         }
       }
     },
@@ -170,7 +182,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 29
+          "index": 29,
+          "type": "point"
         }
       }
     },
@@ -178,7 +191,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 30
+          "index": 30,
+          "type": "point"
         }
       }
     },
@@ -186,7 +200,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 31
+          "index": 31,
+          "type": "point"
         }
       }
     },
@@ -194,7 +209,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 40
+          "index": 40,
+          "type": "point"
         }
       }
     },
@@ -202,7 +218,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 41
+          "index": 41,
+          "type": "point"
         }
       }
     },
@@ -210,7 +227,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 42
+          "index": 42,
+          "type": "point"
         }
       }
     },
@@ -218,7 +236,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 43
+          "index": 43,
+          "type": "point"
         }
       }
     },
@@ -226,7 +245,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 52
+          "index": 52,
+          "type": "point"
         }
       }
     },
@@ -234,7 +254,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 53
+          "index": 53,
+          "type": "point"
         }
       }
     },
@@ -242,7 +263,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 54
+          "index": 54,
+          "type": "point"
         }
       }
     },
@@ -250,7 +272,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 55
+          "index": 55,
+          "type": "point"
         }
       }
     },
@@ -258,7 +281,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 64
+          "index": 64,
+          "type": "point"
         }
       }
     },
@@ -266,7 +290,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 65
+          "index": 65,
+          "type": "point"
         }
       }
     },
@@ -274,7 +299,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 66
+          "index": 66,
+          "type": "point"
         }
       }
     },
@@ -282,7 +308,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 67
+          "index": 67,
+          "type": "point"
         }
       }
     },
@@ -290,7 +317,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 76
+          "index": 76,
+          "type": "point"
         }
       }
     },
@@ -298,7 +326,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 77
+          "index": 77,
+          "type": "point"
         }
       }
     },
@@ -306,7 +335,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 78
+          "index": 78,
+          "type": "point"
         }
       }
     },
@@ -314,7 +344,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 79
+          "index": 79,
+          "type": "point"
         }
       }
     },
@@ -322,7 +353,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 88
+          "index": 88,
+          "type": "point"
         }
       }
     },
@@ -330,7 +362,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 89
+          "index": 89,
+          "type": "point"
         }
       }
     },
@@ -338,7 +371,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 90
+          "index": 90,
+          "type": "point"
         }
       }
     },
@@ -346,7 +380,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 91
+          "index": 91,
+          "type": "point"
         }
       }
     },
@@ -354,7 +389,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 100
+          "index": 100,
+          "type": "point"
         }
       }
     },
@@ -362,7 +398,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 101
+          "index": 101,
+          "type": "point"
         }
       }
     },
@@ -370,7 +407,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 102
+          "index": 102,
+          "type": "point"
         }
       }
     },
@@ -378,7 +416,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 103
+          "index": 103,
+          "type": "point"
         }
       }
     },
@@ -386,7 +425,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 112
+          "index": 112,
+          "type": "point"
         }
       }
     },
@@ -394,7 +434,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 113
+          "index": 113,
+          "type": "point"
         }
       }
     },
@@ -402,7 +443,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 114
+          "index": 114,
+          "type": "point"
         }
       }
     },
@@ -410,7 +452,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 115
+          "index": 115,
+          "type": "point"
         }
       }
     },
@@ -418,7 +461,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 124
+          "index": 124,
+          "type": "point"
         }
       }
     },
@@ -426,7 +470,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 125
+          "index": 125,
+          "type": "point"
         }
       }
     },
@@ -434,7 +479,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 126
+          "index": 126,
+          "type": "point"
         }
       }
     },
@@ -442,7 +488,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 127
+          "index": 127,
+          "type": "point"
         }
       }
     },
@@ -450,7 +497,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 136
+          "index": 136,
+          "type": "point"
         }
       }
     },
@@ -458,7 +506,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 137
+          "index": 137,
+          "type": "point"
         }
       }
     },
@@ -466,7 +515,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 138
+          "index": 138,
+          "type": "point"
         }
       }
     },
@@ -474,7 +524,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 139
+          "index": 139,
+          "type": "point"
         }
       }
     },
@@ -482,7 +533,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 8
+          "index": 8,
+          "type": "pointArc"
         }
       }
     },
@@ -490,7 +542,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 9
+          "index": 9,
+          "type": "pointArc"
         }
       }
     },
@@ -498,7 +551,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 10
+          "index": 10,
+          "type": "pointArc"
         }
       }
     },
@@ -506,7 +560,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 11
+          "index": 11,
+          "type": "pointArc"
         }
       }
     },
@@ -514,7 +569,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 20
+          "index": 20,
+          "type": "pointArc"
         }
       }
     },
@@ -522,7 +578,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 21
+          "index": 21,
+          "type": "pointArc"
         }
       }
     },
@@ -530,7 +587,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 22
+          "index": 22,
+          "type": "pointArc"
         }
       }
     },
@@ -538,7 +596,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 23
+          "index": 23,
+          "type": "pointArc"
         }
       }
     },
@@ -546,7 +605,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 32
+          "index": 32,
+          "type": "pointArc"
         }
       }
     },
@@ -554,7 +614,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 33
+          "index": 33,
+          "type": "pointArc"
         }
       }
     },
@@ -562,7 +623,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 34
+          "index": 34,
+          "type": "pointArc"
         }
       }
     },
@@ -570,7 +632,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 35
+          "index": 35,
+          "type": "pointArc"
         }
       }
     },
@@ -578,7 +641,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 44
+          "index": 44,
+          "type": "pointArc"
         }
       }
     },
@@ -586,7 +650,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 45
+          "index": 45,
+          "type": "pointArc"
         }
       }
     },
@@ -594,7 +659,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 46
+          "index": 46,
+          "type": "pointArc"
         }
       }
     },
@@ -602,7 +668,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 47
+          "index": 47,
+          "type": "pointArc"
         }
       }
     },
@@ -610,7 +677,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 56
+          "index": 56,
+          "type": "pointArc"
         }
       }
     },
@@ -618,7 +686,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 57
+          "index": 57,
+          "type": "pointArc"
         }
       }
     },
@@ -626,7 +695,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 58
+          "index": 58,
+          "type": "pointArc"
         }
       }
     },
@@ -634,7 +704,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 59
+          "index": 59,
+          "type": "pointArc"
         }
       }
     },
@@ -642,7 +713,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 68
+          "index": 68,
+          "type": "pointArc"
         }
       }
     },
@@ -650,7 +722,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 69
+          "index": 69,
+          "type": "pointArc"
         }
       }
     },
@@ -658,7 +731,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 70
+          "index": 70,
+          "type": "pointArc"
         }
       }
     },
@@ -666,7 +740,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 71
+          "index": 71,
+          "type": "pointArc"
         }
       }
     },
@@ -674,7 +749,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 80
+          "index": 80,
+          "type": "pointArc"
         }
       }
     },
@@ -682,7 +758,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 81
+          "index": 81,
+          "type": "pointArc"
         }
       }
     },
@@ -690,7 +767,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 82
+          "index": 82,
+          "type": "pointArc"
         }
       }
     },
@@ -698,7 +776,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 83
+          "index": 83,
+          "type": "pointArc"
         }
       }
     },
@@ -706,7 +785,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 92
+          "index": 92,
+          "type": "pointArc"
         }
       }
     },
@@ -714,7 +794,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 93
+          "index": 93,
+          "type": "pointArc"
         }
       }
     },
@@ -722,7 +803,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 94
+          "index": 94,
+          "type": "pointArc"
         }
       }
     },
@@ -730,7 +812,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 95
+          "index": 95,
+          "type": "pointArc"
         }
       }
     },
@@ -738,7 +821,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 104
+          "index": 104,
+          "type": "pointArc"
         }
       }
     },
@@ -746,7 +830,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 105
+          "index": 105,
+          "type": "pointArc"
         }
       }
     },
@@ -754,7 +839,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 106
+          "index": 106,
+          "type": "pointArc"
         }
       }
     },
@@ -762,7 +848,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 107
+          "index": 107,
+          "type": "pointArc"
         }
       }
     },
@@ -770,7 +857,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 116
+          "index": 116,
+          "type": "pointArc"
         }
       }
     },
@@ -778,7 +866,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 117
+          "index": 117,
+          "type": "pointArc"
         }
       }
     },
@@ -786,7 +875,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 118
+          "index": 118,
+          "type": "pointArc"
         }
       }
     },
@@ -794,7 +884,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 119
+          "index": 119,
+          "type": "pointArc"
         }
       }
     },
@@ -802,7 +893,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 128
+          "index": 128,
+          "type": "pointArc"
         }
       }
     },
@@ -810,7 +902,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 129
+          "index": 129,
+          "type": "pointArc"
         }
       }
     },
@@ -818,7 +911,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 130
+          "index": 130,
+          "type": "pointArc"
         }
       }
     },
@@ -826,7 +920,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 131
+          "index": 131,
+          "type": "pointArc"
         }
       }
     },
@@ -834,7 +929,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 140
+          "index": 140,
+          "type": "pointArc"
         }
       }
     },
@@ -842,7 +938,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 141
+          "index": 141,
+          "type": "pointArc"
         }
       }
     },
@@ -850,7 +947,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 142
+          "index": 142,
+          "type": "pointArc"
         }
       }
     },
@@ -858,7 +956,8 @@
       "baseComponent": "Moritz",
       "parameters": {
         "params": {
-          "index": 143
+          "index": 143,
+          "type": "pointArc"
         }
       }
     },
