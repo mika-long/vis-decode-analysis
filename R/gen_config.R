@@ -91,9 +91,16 @@ convert_to_json <- function(c){
 }
 
 # --- construct response 
-moritz_response = StudyResponse(
-  id="weightedAverage-value",
-  prompt="The value of response",
+moritz_num_response = StudyResponse(
+  id="numericResponse",
+  prompt="Numeric response of slider to Mortiz question",
+  required = FALSE,
+  type = "numerical",
+  hidden = TRUE
+)
+moritz_px_response = StudyResponse(
+  id="pixelResponse",
+  prompt="Numeric response of slider to Mortiz question",
   required = FALSE,
   type = "numerical",
   hidden = TRUE
@@ -105,14 +112,14 @@ moritz_response %>% convert_to_json(.)
 moritz_component <- BaseComponent(
   type="react-component",
   path="vis-decode-retrieve-value/assets/Moritz.tsx",
-  instruction= "***Experiment Instructions.*** Please read the following paragraphs carefully. You will be asked questions about the information in the paragraphs. \n\n***Scenario:*** Assume that you are a stock market investor. You are investing your own money in stocks, and you want to determine the average price of a stock over time in order to pick the best investment.\n\n***Task:*** In this experiment, you will be shown graphs of stock prices over a one-year period like the one below. Your task is to determine the average stock price for that year. What is the average stock price? (Click and drag the line to indicate the average stock price)\n\n***Response:*** To indicate the average stock price, use your mouse to drag the line on the chart. Move the line to where you think the average stock price is for that year. You can readjust the line by clicking and dragging. Once you are happy with your judgment of the average stock price, click the next button.",
+  instruction= "***Experiment Instructions.*** Please read the following paragraphs carefully. You will be asked questions about the information in the paragraphs. \n\n***Scenario:*** Assume that you are a stock market investor. You are investing your own money in stocks, and you want to determine the average price of a stock over time in order to pick the best investment.\n\n***Task:*** In this experiment, you will be shown graphs of stock prices over a one-year period like the one below. Your task is to determine the average stock price for that year. **What is the average stock price?** \n\n***Response:*** To indicate the average stock price, use your mouse to click and drag the handle on the slider, which will show a dotted red line. Move the line to where you think the average stock price is for that year. You can readjust the line by clicking, dragging, or using the left and right arrow keys. Once you are happy with your judgment of the average stock price, click the next button.",
   instructionLocation = "aboveStimulus",
   nextButtonLocation = "belowStimulus",
   parameters = list(
     taskid = "Moritz",
     taskType = "moritz"
   ),
-  response_list = list(moritz_response)
+  response_list = list(moritz_num_response, moritz_px_response)
 )
 
 # --- test 
@@ -174,7 +181,7 @@ attention_check = list(
     response = list(
       list(
         id = "attention_check",
-        prompt = "During this study, you will be asked to look at graphs of _____ prices. \n\n Fill in the blank below",
+        prompt = "During this study, you will be asked to look at graphs of _____ prices. \n\n What should _____ be?",
         required = TRUE,
         location = "belowStimulus",
         type = "shortText"
