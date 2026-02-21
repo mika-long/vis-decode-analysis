@@ -166,6 +166,23 @@ consent_comp = list(
 # test 
 consent_comp %>% convert_to_json(.)
 
+# attention check component
+attention_check = list(
+  attention_check = list(
+    type = "markdown",
+    path = "vis-decode-retrieve-value/assets/attention_check.md",
+    response = list(
+      list(
+        id = "attention_check",
+        prompt = "During this study, you will be asked to look at graphs of _____ prices. \n\n Fill in the blank below",
+        required = TRUE,
+        location = "belowStimulus",
+        type = "shortText"
+      )
+    )
+  )
+)
+
 calibration_intro = list(
   calibration_intro = list(
     type = "markdown",
@@ -289,18 +306,41 @@ sequence <- list(
       components = list(
         list(
           order = "random", 
-          components = c(point_task_names)
+          components = c(point_task_names), 
+          interruptions = list(
+            list(
+              spacing = "random",
+              numInterruptions = 2,
+              components = list("attention_check")
+            )
+          )
         ), 
         list(
           order = "random", 
-          components = c(pointArc_task_names)
+          components = c(pointArc_task_names),
+          interruptions = list(
+            list(
+              spacing = "random",
+              numInterruptions = 2,
+              components = list("attention_check")
+            )
+          )
         )
       )
     ),
     "post_study"
   )
 )
+# attention check 
+# "interruptions": [
+#         {
+#           "spacing": "random",
+#           "numInterruptions": 2,
+#           "components": ["myAttentionCheckComponent"]
+#         }
+#       ]
 
+# test 
 sequence %>% convert_to_json(.)
 
 # 4. RENDER
@@ -322,7 +362,7 @@ final_output = list(
     Moritz = moritz_component
   ), 
   # components = components,
-  components = c(introduction_component, consent_comp, calibration_intro, training_intro, testing_intro, components, point_arc_components, post_study_component),
+  components = c(introduction_component, consent_comp, calibration_intro, training_intro, testing_intro, components, point_arc_components, post_study_component, attention_check),
   sequence=sequence
 )
 
