@@ -3,6 +3,7 @@ title: "Extend from current data to Moritz"
 ---
 
 ```{r}
+#| code-fold: true
 library(ggplot2)
 library(tidyverse)
 library(tidybayes)
@@ -10,36 +11,54 @@ library(here)
 library(jsonlite)
 ```
 
-Assume that we have the following model: start from the dots, project to the y-axis. This corresponds to the model xxx that we've fit. 
+# Replicating Mortiz Exp 2
 
-We will first read in the stimuli data from Mortiz experiment 2: 
+Here are the details of the original experiment: 
+
+- **Hypothesis:** “the effect of variability will be smaller for graphs with points spaced along the x-axis than graphs with points spaced along the arc” ([Moritz et al., 2023, p. 5](zotero://select/library/items/ZPTBTRIF)) ([pdf](zotero://open-pdf/library/items/AZRSTSWZ?page=5&annotation=4IPHWX8I))
+- **Experiment Design**:
+  - 2 variability: `0` and `0.4`
+  - 2 flipped: `upper` and `lower` (i.e., whether the plot was flipped or not)
+  - 3 mark type: `line`, `cartesian spaced points`, `arc spaced points` -> between-subjects
+    - In our experiment we will only use cartesian spaced points and arc spaced points. 
+  - 12 different seeds -> `2 * 2 * 12 = 48` trials per participant.
+
+
+## Read in Stimuli Data
+
+First, read in the stimuli data from Mortiz experiment 2: 
 
 ```{r}
 exp_json_data <- jsonlite::fromJSON(here("data", "moritz", "stimuli", "exp2-stimuli.json" )) %>% as_tibble(.)
 
 stimuli_df <- exp_json_data %>% select(index, seed, noise, flip, type, data) %>% 
     mutate(noise = as.character(noise))
+
+stimuli_df %>% head(5)
 ```
 
-We will then save the part of it where the type is not line: 
+<!-- We will then save the part of it where the `type` is not line, to serve as the `json` input for our experiment:  -->
 
 ```{r}
+#| eval: false
+#| echo: false
 # list of index to pull things from 
 stimuli_df %>% filter(type!= "line") %>% 
   pull(index)
 ```
 
-Let us from the simple case where index == 0, which will be the case that we will use: 
+We will start from a toy example, when `index == 4`: 
 
 ```{r}
-stimuli_df %>% filter(index == 0) %>% 
+ex_df <- stimuli_df %>% filter(index == 4) %>% 
     unnest(data) %>% 
     rename(data_x = x, data_y = y)
+ex_df %>% head(5)
 ```
 
-# TODO we need to translate from the data space to visual angle space 
+## Translate btw spaces
 
-The following code was obtained from the original analysis and therefore needs to be changed. 
+
 
 ```{r}
 #| label: define-function
@@ -70,6 +89,17 @@ vis_angle <- function(size, distance){
 tolerance <- 1e-10
 ```
 
+
+## Read in fitted model 
+
+Assume that we have the following model: start from the dots, project to the y-axis. This corresponds to the model xxx that we've fit. 
+
+# TODO we need to translate from the data space to visual angle space 
+
+The following code was obtained from the original analysis and therefore needs to be changed. 
+
+
+
 In terms of the models that projected to y-axis, we want to look at the model we fitted for task 5, where we projected to y-axis. This is the math model: 
 
 $$
@@ -85,15 +115,15 @@ $$
 (Again, copied and pasted from stuff...)
 
 ```{r}
-f <- bf(error_va ~ (1 | participantId), 
-        sigma ~ (1|participantId) + offset(log(va.ans.x)))
+# f <- bf(error_va ~ (1 | participantId), 
+#         sigma ~ (1|participantId) + offset(log(va.ans.x)))
 
-p <- c(
-  prior(normal(0, 1), class = Intercept),
-  prior(normal(0, 1), class = sd, group = participantId, lb = 0), 
-  prior(normal(0, 1), class = Intercept, dpar = "sigma"), 
-  prior(normal(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
-)
+# p <- c(
+#   prior(normal(0, 1), class = Intercept),
+#   prior(normal(0, 1), class = sd, group = participantId, lb = 0), 
+#   prior(normal(0, 1), class = Intercept, dpar = "sigma"), 
+#   prior(normal(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
+# )
 ```
 
 Since we have a model fitted before, now we just need to read in the fitted rds file. 
