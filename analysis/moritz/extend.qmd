@@ -9,6 +9,7 @@ library(tidyverse)
 library(tidybayes)
 library(here)
 library(jsonlite)
+library(brms)
 ```
 
 # Replicating Mortiz Exp 2
@@ -56,13 +57,47 @@ ex_df <- stimuli_df %>% filter(index == 4) %>%
 ex_df %>% head(5)
 ```
 
+Let's also read in the data collected from pilot: 
+
+```{r}
+raw_df <- read_csv(here("data", "part_2", "part2_pilot.csv")) %>% as_tibble(.) 
+
+pilot_df <- raw_df %>% select(participantId, trialId, trialOrder, responseId, answer, duration, parameters_taskid, parameters_params)
+
+# responses
+pilot_df %>% filter(responseId %in% c("numericResponse", "pixelResponse")) %>%
+  select(participantId, trialId, responseId, answer) %>%
+  separate_wider_delim(col = trialId, delim = "_", names = c("taskType", NA, "index")) %>% 
+  pivot_wider(names_from = "responseId", values_from = "answer") %>% 
+  mutate(numericResponse = as.numeric(numericResponse), 
+    pixelResponse = as.numeric(pixelResponse), 
+    index = as.integer(index)
+  ) %>% 
+  mutate(pixelResponse = 200 - pixelResponse + 5)
+  # TODO: 1) px to physical; 2) find out the correct numeric ans
+
+# visual angle related 
+pilot_df %>% filter(!responseId %in% c("numericResponse", "pixelResponse")) %>% 
+  group_by(participantId) %>% 
+  filter(responseId %in% c("prolificId", "pixelsPerMM", "dist-calibration-MM", "dist-calibration-CM", "ball-positions", "square-position"))
+```
+
 ## Translate btw spaces
 
+The goal is to translate from the pixel space to the physical space, and then to the visual angle space. 
+In the previous study, since we built the x-axis and y-axis using custom d3 scale, we had to hard code the information. 
+This time, we used `VegaEmbed` so the translation would be a bit more natural.
 
+```{r}
+# y-axis: numerical [0, 1] -> pixel [0, 200] -> phys [...?] 
+# for some reason, the pixel response seems to be on the 210 scale and not the 200 scale ...? 
+```
 
 ```{r}
 #| label: define-function
 #| code-fold: true
+
+# TODO 
 
 # origin is top left  
 data_to_pixel_y <- function(data_y) {
@@ -90,17 +125,9 @@ tolerance <- 1e-10
 ```
 
 
-## Read in fitted model 
+## Read in fitted model
 
-Assume that we have the following model: start from the dots, project to the y-axis. This corresponds to the model xxx that we've fit. 
-
-# TODO we need to translate from the data space to visual angle space 
-
-The following code was obtained from the original analysis and therefore needs to be changed. 
-
-
-
-In terms of the models that projected to y-axis, we want to look at the model we fitted for task 5, where we projected to y-axis. This is the math model: 
+We assume that the baseline model is this: participants project from each of the dots to the y-axis, and then perform an averaging. We will use the **Project to Y-Axis Model**. 
 
 $$
 \begin{align*}
@@ -108,292 +135,37 @@ $$
 \log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.x}_i) \\ 
 \alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
 \mu_\alpha &\sim N(0, 1) \\ 
-\sigma_\alpha &\sim \text{Half-Cauchy}(0, 1)
+\sigma_\alpha &\sim \mathcal{N}^+(0, 1)
 \end{align*}
 $$
 
-(Again, copied and pasted from stuff...)
+Read in the fitted model by first reading in its formula and prior specification: 
 
 ```{r}
-# f <- bf(error_va ~ (1 | participantId), 
-#         sigma ~ (1|participantId) + offset(log(va.ans.x)))
+f <- bf(error_va ~ (1 | participantId), 
+        sigma ~ (1|participantId) + offset(log(va.ans.x)))
 
-# p <- c(
-#   prior(normal(0, 1), class = Intercept),
-#   prior(normal(0, 1), class = sd, group = participantId, lb = 0), 
-#   prior(normal(0, 1), class = Intercept, dpar = "sigma"), 
-#   prior(normal(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
-# )
+p <- c(
+  prior(normal(0, 1), class = Intercept),
+  prior(normal(0, 1), class = sd, group = participantId, lb = 0), 
+  prior(normal(0, 1), class = Intercept, dpar = "sigma"), 
+  prior(normal(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
+)
 ```
-
-Since we have a model fitted before, now we just need to read in the fitted rds file. 
-
 
 ```{r}
-# TODO 
+model <- brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p,
+    chains = 4, 
+    cores = 4,
+    control = list(adapt_delta = 0.99),
+    iter = 6000, 
+    file = here("analysis", "fitted_models", "task5.y"), 
+    file_refit = "on_change", 
+    save_pars = save_pars(all = TRUE)
+)
 ```
 
----
-
-Example vega-lite config: 
-
-```
-{
-  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
-  "description": "A simple bar chart with embedded data.",
-  "data": {
-    "values": [
-    {
-      "x": 0,
-      "y": 0.8303027032037189
-    },
-    {
-      "x": 2,
-      "y": 0.7933579863898285
-    },
-    {
-      "x": 4,
-      "y": 0.7323336215851782
-    },
-    {
-      "x": 6,
-      "y": 0.6792478913612636
-    },
-    {
-      "x": 8,
-      "y": 0.6266749399986509
-    },
-    {
-      "x": 10,
-      "y": 0.5874960907002436
-    },
-    {
-      "x": 12,
-      "y": 0.5131307369088348
-    },
-    {
-      "x": 14,
-      "y": 0.4530739601959595
-    },
-    {
-      "x": 16,
-      "y": 0.3949372090732871
-    },
-    {
-      "x": 18,
-      "y": 0.33654483050205275
-    },
-    {
-      "x": 20,
-      "y": 0.2807749889916027
-    },
-    {
-      "x": 22,
-      "y": 0.2457998243565798
-    },
-    {
-      "x": 24,
-      "y": 0.23461030068322902
-    },
-    {
-      "x": 26,
-      "y": 0.237901653192568
-    },
-    {
-      "x": 28,
-      "y": 0.25535590539690317
-    },
-    {
-      "x": 30,
-      "y": 0.27752864575624153
-    },
-    {
-      "x": 32,
-      "y": 0.28725630720455464
-    },
-    {
-      "x": 34,
-      "y": 0.29940586367576155
-    },
-    {
-      "x": 36,
-      "y": 0.3121498733033438
-    },
-    {
-      "x": 38,
-      "y": 0.32504969820670915
-    },
-    {
-      "x": 40,
-      "y": 0.3192286583323132
-    },
-    {
-      "x": 42,
-      "y": 0.3363265756201552
-    },
-    {
-      "x": 44,
-      "y": 0.3625566706335878
-    },
-    {
-      "x": 46,
-      "y": 0.40486026425783006
-    },
-    {
-      "x": 48,
-      "y": 0.44377845412846856
-    },
-    {
-      "x": 50,
-      "y": 0.49445047261015856
-    },
-    {
-      "x": 52,
-      "y": 0.5467532210258335
-    },
-    {
-      "x": 54,
-      "y": 0.6146711781236365
-    },
-    {
-      "x": 56,
-      "y": 0.6640100223872704
-    },
-    {
-      "x": 58,
-      "y": 0.6961895797548191
-    },
-    {
-      "x": 60,
-      "y": 0.7360024431605858
-    },
-    {
-      "x": 62,
-      "y": 0.766210868669597
-    },
-    {
-      "x": 64,
-      "y": 0.7773871415383563
-    },
-    {
-      "x": 66,
-      "y": 0.7908152399999402
-    },
-    {
-      "x": 68,
-      "y": 0.7916199390452369
-    },
-    {
-      "x": 70,
-      "y": 0.814623481209869
-    },
-    {
-      "x": 72,
-      "y": 0.8257722434051891
-    },
-    {
-      "x": 74,
-      "y": 0.8155876631354766
-    },
-    {
-      "x": 76,
-      "y": 0.7950448716026716
-    },
-    {
-      "x": 78,
-      "y": 0.7797881633092574
-    },
-    {
-      "x": 80,
-      "y": 0.7892118660712901
-    },
-    {
-      "x": 82,
-      "y": 0.7872880517478441
-    },
-    {
-      "x": 84,
-      "y": 0.7506101327948177
-    },
-    {
-      "x": 86,
-      "y": 0.7262035585897042
-    },
-    {
-      "x": 88,
-      "y": 0.6878298851943453
-    },
-    {
-      "x": 90,
-      "y": 0.6424837175176794
-    },
-    {
-      "x": 92,
-      "y": 0.6157889552795547
-    },
-    {
-      "x": 94,
-      "y": 0.5997331854414678
-    },
-    {
-      "x": 96,
-      "y": 0.5720235188234739
-    },
-    {
-      "x": 98,
-      "y": 0.5522607637076893
-    },
-    {
-      "x": 100,
-      "y": 0.5082117520782833
-    },
-    {
-      "x": 102,
-      "y": 0.4592010851079365
-    },
-    {
-      "x": 104,
-      "y": 0.41532372517972366
-    },
-    {
-      "x": 106,
-      "y": 0.36720108171038296
-    },
-    {
-      "x": 108,
-      "y": 0.306623132752718
-    },
-    {
-      "x": 110,
-      "y": 0.21383714339601448
-    },
-    {
-      "x": 112,
-      "y": 0.13789091135114828
-    },
-    {
-      "x": 114,
-      "y": 0.09298387485943124
-    },
-    {
-      "x": 116,
-      "y": 0.044019550695727
-    },
-    {
-      "x": 118,
-      "y": 0.01469670080080308
-    }
-  ]
-  },
-  "mark": "point",
-  "encoding": {
-    "x": {"field": "x", "axis": {"ticks": false, "labels": false}},
-    "y": {"field": "y", "axis": {"ticks": false, "labels": false}}
-  },
-  "width": 500,
-  "height": 200,
-  "autosize": "none",
-  "padding": 50
-}
-
-```
