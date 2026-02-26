@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/revisit-studies/study/v2.3.1/src/parser/StudyConfigSchema.json",
+  "$schema": "https://raw.githubusercontent.com/revisit-studies/study/v2.4.0/src/parser/StudyConfigSchema.json",
   "studyMetadata": {
     "title": "Visual Decoding Operators — Average Estimation in Line Graphs",
     "version": "pilot",
@@ -25,7 +25,7 @@
   "studyRules": {
     "display": {
       "minHeight": 400,
-      "minWidth": 800
+      "minWidth": 935
     },
     "browsers": {
       "allowed": [
@@ -123,13 +123,21 @@
       "type": "markdown",
       "path": "vis-decode-retrieve-value/assets/training_intro.md",
       "response": [],
-      "nextButtonEnableTime": 3000
+      "nextButtonEnableTime": 3000,
+      "style": {
+        "margin": "0 auto",
+        "width": "50%"
+      }
     },
     "testing_intro": {
       "type": "markdown",
       "path": "vis-decode-retrieve-value/assets/testing_intro.md",
       "response": [],
-      "nextButtonEnableTime": 3000
+      "nextButtonEnableTime": 3000,
+      "style": {
+        "margin": "0 auto",
+        "width": "50%"
+      }
     },
     "point_task_1": {
       "baseComponent": "Moritz",

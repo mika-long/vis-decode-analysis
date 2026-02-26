@@ -41,8 +41,6 @@ ui_config = list(
   withProgressBar = TRUE, 
   autoDownloadStudy = FALSE,
   withSidebar = FALSE,
-  # minHeightSize = 400,
-  # minWidthSize = 400, 
   urlParticipantIdParam = "PROLIFIC_PID",
   studyEndMsg = "**Thank you for completing the study.** \n\n You may click this link and return to Prolific: [https://app.prolific.com/submissions/complete?cc=C1O3ZUHV](https://app.prolific.com/submissions/complete?cc=C1O3ZUHV)"
 )
@@ -207,7 +205,11 @@ training_intro = list(
     type = "markdown",
     path = "vis-decode-retrieve-value/assets/training_intro.md", 
     response = list(),
-    nextButtonEnableTime = 3000
+    nextButtonEnableTime = 3000,
+    style = list(
+      margin = "0 auto",
+      width = "50%"
+    )
   )
 )
 
@@ -216,7 +218,11 @@ testing_intro = list(
     type = "markdown",
     path = "vis-decode-retrieve-value/assets/testing_intro.md", 
     response = list(),
-    nextButtonEnableTime = 3000
+    nextButtonEnableTime = 3000,
+    style = list(
+      margin = "0 auto",
+      width = "50%"
+    )
   )
 )
 
@@ -365,7 +371,7 @@ sequence %>% convert_to_json(.)
 studyRules = list(
   display = list(
     minHeight = 400, 
-    minWidth = 800
+    minWidth = 935 # has to be this for the calibration thing to work 
   ), 
   browsers = list(
     allowed = list(
@@ -397,7 +403,7 @@ studyRules %>% convert_to_json(.)
 # 7. sequence 
 
 final_output = list(
-  `$schema` = "https://raw.githubusercontent.com/revisit-studies/study/v2.3.1/src/parser/StudyConfigSchema.json",
+  `$schema` = "https://raw.githubusercontent.com/revisit-studies/study/v2.4.0/src/parser/StudyConfigSchema.json",
   studyMetadata = metadata, 
   uiConfig = ui_config,
   studyRules = studyRules,

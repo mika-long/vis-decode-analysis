@@ -175,7 +175,6 @@ model
 
 Get the posterior draw: 
 
-
 ```{r}
 draws <- as_draws_df(model)
 ```
