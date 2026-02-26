@@ -294,7 +294,7 @@ $$
 Formula and prior: 
 
 ```{r}
-f <- bf(error_va ~ 0 + (1 | participantId), # NEW CHANGE! 
+f <- bf(error_va ~ 1 + (1 | participantId), # NEW CHANGE! 
         sigma ~ (1|participantId) + offset(log(va.ans.x)))
 
 p <- c(
