@@ -19,8 +19,6 @@
     "withProgressBar": true,
     "autoDownloadStudy": false,
     "withSidebar": false,
-    "minHeightSize": 400,
-    "minWidthSize": 400,
     "urlParticipantIdParam": "PROLIFIC_PID",
     "studyEndMsg": "**Thank you for completing the study.** \n\n You may click this link and return to Prolific: [https://app.prolific.com/submissions/complete?cc=C1O3ZUHV](https://app.prolific.com/submissions/complete?cc=C1O3ZUHV)"
   },
@@ -784,14 +782,8 @@
           "prompt": "## Thank you! \n\n Please answer the following demographics related questions: \n\n Gender",
           "location": "belowStimulus",
           "type": "radio",
-          "options": ["Male", "Female", "Prefer to self describe", "Prefer not to say"]
-        },
-        {
-          "id": "self-gender",
-          "prompt": "If you have selected 'Prefer to self describe', what is your gender?",
-          "location": "belowStimulus",
-          "type": "shortText",
-          "required": false
+          "options": ["Male", "Female", "Prefer not to say"],
+          "withOther": true
         },
         {
           "id": "age",

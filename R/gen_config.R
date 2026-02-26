@@ -41,8 +41,8 @@ ui_config = list(
   withProgressBar = TRUE, 
   autoDownloadStudy = FALSE,
   withSidebar = FALSE,
-  minHeightSize = 400,
-  minWidthSize = 400, 
+  # minHeightSize = 400,
+  # minWidthSize = 400, 
   urlParticipantIdParam = "PROLIFIC_PID",
   studyEndMsg = "**Thank you for completing the study.** \n\n You may click this link and return to Prolific: [https://app.prolific.com/submissions/complete?cc=C1O3ZUHV](https://app.prolific.com/submissions/complete?cc=C1O3ZUHV)"
 )
@@ -230,15 +230,17 @@ post_study_component = list(
       prompt = "## Thank you! \n\n Please answer the following demographics related questions: \n\n Gender",
       location = "belowStimulus",
       type = "radio",
-      options = c("Male", "Female", "Prefer to self describe", "Prefer not to say")
+      # options = c("Male", "Female", "Prefer to self describe", "Prefer not to say"),
+      options = c("Male", "Female", "Prefer not to say"),
+      withOther = TRUE
     ), 
-    list(
-      id = "self-gender", 
-      prompt = "If you have selected 'Prefer to self describe', what is your gender?",
-      location = "belowStimulus",
-      type = "shortText",
-      required = FALSE
-    ), 
+    # list(
+    #   id = "self-gender", 
+    #   prompt = "If you have selected 'Prefer to self describe', what is your gender?",
+    #   location = "belowStimulus",
+    #   type = "shortText",
+    #   required = FALSE
+    # ), 
     list(
       id = "age",
       prompt = "What is your age?",
