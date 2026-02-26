@@ -115,10 +115,11 @@ moritz_component <- BaseComponent(
   instruction= "***Experiment Instructions.*** Please read the following paragraphs carefully. You will be asked questions about the information in the paragraphs. \n\n***Scenario:*** Assume that you are a stock market investor. You are investing your own money in stocks, and you want to determine the average price of a stock over time in order to pick the best investment.\n\n***Task:*** In this experiment, you will be shown graphs of stock prices over a one-year period like the one below. Your task is to determine the average stock price for that year. **What is the average stock price?** \n\n***Response:*** To indicate the average stock price, use your mouse to click and drag the handle on the slider, which will show a dotted red line. Move the line to where you think the average stock price is for that year. You can readjust the line by clicking, dragging, or using the left and right arrow keys. Once you are happy with your judgment of the average stock price, click the next button.",
   instructionLocation = "aboveStimulus",
   nextButtonLocation = "belowStimulus",
-  parameters = list(
-    taskid = "Moritz",
-    taskType = "moritz"
-  ),
+  # commetning these out
+  # parameters = list(
+  #   taskid = "Moritz",
+  #   taskType = "moritz"
+  # ),
   response_list = list(moritz_num_response, moritz_px_response)
 )
 
@@ -275,14 +276,16 @@ post_study_component %>% convert_to_json(.)
 # for point 
 components <- point_ids %>% imap(~ Component(
   baseComponent = "Moritz", 
-  parameters = list(params = list(index = .x, type = "point"))
+  # parameters = list(params = list(index = .x, type = "point"))
+  parameters = list(taskIndex = .x, taskType = "point")
 )) %>% 
   set_names(paste0("point_task_", seq_along(point_ids)))
 # creating a sequence of components 
 # for point arcs 
 point_arc_components <- pointArc_ids %>% imap(~ Component(
   baseComponent = "Moritz", 
-  parameters = list(params = list(index = .x, type = "pointArc"))
+  # parameters = list(params = list(index = .x, type = "pointArc"))
+  parameters = list(taskIndex = .x, taskType = "pointArc")
 )) %>% 
   set_names(paste0("pointArc_task_", seq_along(pointArc_ids)))
 
