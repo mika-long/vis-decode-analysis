@@ -51,6 +51,8 @@ stimuli_df %>% filter(type!= "line") %>%
 We will start from a toy example, when `index == 4`: 
 
 ```{r}
+stimuli_df <- stimuli_df %>% filter(type != "line")
+
 ex_df <- stimuli_df %>% filter(index == 4) %>% 
     unnest(data) %>% 
     rename(data_x = x, data_y = y)
@@ -79,7 +81,7 @@ pilot_df %>% filter(responseId %in% c("numericResponse", "pixelResponse")) %>%
 # visual angle related 
 pilot_df %>% filter(!responseId %in% c("numericResponse", "pixelResponse")) %>% 
   group_by(participantId) %>% 
-  filter(responseId %in% c("prolificId", "pixelsPerMM", "dist-calibration-MM", "dist-calibration-CM", "ball-positions", "square-position"))
+  filter(responseId %in% c("prolificId", "pixelsPerMM", "dist-calibration-MM", "dist-calibration-CM", "ball-positions", "square-position")) %>% View(.)
 ```
 
 ## Translate btw spaces
@@ -154,18 +156,94 @@ p <- c(
 ```
 
 ```{r}
-model <- brm(
-    formula = f,
-    data = .,
-    family = gaussian(),
-    prior = p,
-    chains = 4, 
-    cores = 4,
-    control = list(adapt_delta = 0.99),
-    iter = 6000, 
-    file = here("analysis", "fitted_models", "task5.y"), 
-    file_refit = "on_change", 
-    save_pars = save_pars(all = TRUE)
-)
+# model <- brm(
+#     formula = f,
+#     data = .,
+#     family = gaussian(),
+#     prior = p,
+#     chains = 4, 
+#     cores = 4,
+#     control = list(adapt_delta = 0.99),
+#     iter = 6000, 
+#     file = here("analysis", "fitted_models", "task5.y"), 
+#     file_refit = "on_change", 
+#     save_pars = save_pars(all = TRUE)
+# )
+model <- readRDS(here("analysis", "fitted_models", "task5.y.rds"))
+model
 ```
 
+Get the posterior draw: 
+
+
+```{r}
+draws <- as_draws_df(model)
+```
+
+# What does an average participant see? 
+
+Assume the pixels to MM ratio is `3.25`. 
+
+```{r}
+# know which one it's making back to 
+pixelToMM <- 3.25
+screenDist <- 612
+
+stimuli_df <- stimuli_df %>% mutate(expIndex = 1:nrow(.))
+ex_df <- stimuli_df %>% filter(index == 4) %>% unnest(col = data) %>% 
+  rename(numX = x, numY = y) %>%
+  # calculate pixel values from numerical values
+  mutate(pxX = 500 / 120 * numX,
+         pxY = 200 * numY) %>% 
+  # calcuate physical values (in MM) from pixel values
+  mutate(phyX = pxX / pixelToMM, 
+         phyY = pxY / pixelToMM
+  ) %>%
+  # calculate visual angle 
+  mutate(va.ans.x = vis_angle(phyX, screenDist),
+         va.ans.y = vis_angle(phyY, screenDist)
+  )
+
+ex_df
+```
+
+What would the posterior prediction look like? 
+
+```{r}
+# define function for turning vis angle to phy size 
+phys_size <- function(va, distance) {
+  return(2 * distance * tan(va * pi / 360))
+}
+```
+
+```{r}
+ex_df %>% select(index, va.ans.x, va.ans.y) %>% 
+  mutate(participantId = "extend") %>% 
+  tidybayes::add_predicted_draws(newdata = ., model, re_formula = NA) %>% 
+  mutate(va.pred.y = va.ans.y + .prediction) %>% 
+  group_by(.draw) %>%
+  summarise(va.pred.y.avg = mean(va.pred.y)) %>%
+  mutate(phy.pred.y.avg = phys_size(va.pred.y.avg, screenDist), 
+    px.pred.y.avg = phy.pred.y.avg * pixelToMM, 
+    num.pred.y.avg = px.pred.y.avg / 200
+  ) -> pred_df
+
+pred_df
+```
+
+```{r}
+pred_df %>% median_qi(num.pred.y.avg) 
+```
+
+Let's also try to plot this uncertainty: 
+
+```{r}
+library(ggplot2)
+library(tidybayes)
+library(ggdist)
+
+pred_df %>% ggplot(data = ., aes(y = num.pred.y.avg)) +
+  stat_halfeye() + 
+  theme_minimal() + 
+  coord_cartesian(ylim = c(0, 1))
+```
