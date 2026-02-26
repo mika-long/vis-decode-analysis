@@ -22,6 +22,35 @@
     "urlParticipantIdParam": "PROLIFIC_PID",
     "studyEndMsg": "**Thank you for completing the study.** \n\n You may click this link and return to Prolific: [https://app.prolific.com/submissions/complete?cc=C1O3ZUHV](https://app.prolific.com/submissions/complete?cc=C1O3ZUHV)"
   },
+  "studyRules": {
+    "display": {
+      "minHeight": 400,
+      "minWidth": 800
+    },
+    "browsers": {
+      "allowed": [
+        {
+          "name": "chrome",
+          "minVersion": 100
+        },
+        {
+          "name": "firefox",
+          "minVersion": 100
+        },
+        {
+          "name": "safari",
+          "minVersion": 10
+        }
+      ],
+      "blockedMessage": "You must be on a relatively modern browser, Chrome > 100, Firefox > 100, Safari > 10."
+    },
+    "devices": {
+      "allowed": [
+        "desktop"
+      ],
+      "blockedMessage": "This study requires a desktop device."
+    }
+  },
   "importedLibraries": [
     "virtual-chinrest"
   ],

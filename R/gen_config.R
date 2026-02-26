@@ -7,7 +7,7 @@ library(tidyverse)
 
 # --- initialize json validator
 # --- only works when one have access to the internet 
-schema_url <- "https://raw.githubusercontent.com/revisit-studies/study/v2.3.1/src/parser/StudyConfigSchema.json"
+schema_url <- "https://raw.githubusercontent.com/revisit-studies/study/v2.4.0/src/parser/StudyConfigSchema.json"
 schema <- content(GET(schema_url), as = "text")
 validator <- json_validator(schema, engine = "ajv")
 
@@ -360,11 +360,37 @@ sequence <- list(
 # test 
 sequence %>% convert_to_json(.)
 
+# --- create the new study rules 
+
+studyRules = list(
+  display = list(
+    minHeight = 400, 
+    minWidth = 800
+  ), 
+  browsers = list(
+    allowed = list(
+      list(name = "chrome", minVersion = 100),
+      list(name = "firefox", minVersion = 100),
+      list(name = "safari", minVersion = 10)
+    ), 
+    blockedMessage = "You must be on a relatively modern browser, Chrome > 100, Firefox > 100, Safari > 10."
+  ), 
+  devices = list(
+    allowed = list("desktop"),
+    blockedMessage = "This study requires a desktop device."
+  )
+)
+
+# --- test 
+studyRules %>% convert_to_json(.)
+
+
 # 4. RENDER
 # the final output has the following components: 
 # 1. schema 
 # 2. studyMetadata 
 # 3. uiConfig, 
+# 3.1 (new) studyRules
 # 4. importedLibraries 
 # 5. baseComponents 
 # 6. components 
@@ -374,6 +400,7 @@ final_output = list(
   `$schema` = "https://raw.githubusercontent.com/revisit-studies/study/v2.3.1/src/parser/StudyConfigSchema.json",
   studyMetadata = metadata, 
   uiConfig = ui_config,
+  studyRules = studyRules,
   importedLibraries = list("virtual-chinrest"), 
   baseComponents = list(
     Moritz = moritz_component
