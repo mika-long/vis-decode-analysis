@@ -35,8 +35,8 @@
       "instructionLocation": "aboveStimulus",
       "nextButtonLocation": "belowStimulus",
       "parameters": {
-        "taskid": "Moritz",
-        "taskType": "moritz"
+        "taskIndex": "",
+        "taskType": ""
       },
       "response": [
         {
@@ -107,865 +107,673 @@
     "point_task_1": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 4,
-          "type": "point"
-        }
+        "taskIndex": 4,
+        "taskType": "point"
       }
     },
     "point_task_2": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 5,
-          "type": "point"
-        }
+        "taskIndex": 5,
+        "taskType": "point"
       }
     },
     "point_task_3": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 6,
-          "type": "point"
-        }
+        "taskIndex": 6,
+        "taskType": "point"
       }
     },
     "point_task_4": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 7,
-          "type": "point"
-        }
+        "taskIndex": 7,
+        "taskType": "point"
       }
     },
     "point_task_5": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 16,
-          "type": "point"
-        }
+        "taskIndex": 16,
+        "taskType": "point"
       }
     },
     "point_task_6": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 17,
-          "type": "point"
-        }
+        "taskIndex": 17,
+        "taskType": "point"
       }
     },
     "point_task_7": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 18,
-          "type": "point"
-        }
+        "taskIndex": 18,
+        "taskType": "point"
       }
     },
     "point_task_8": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 19,
-          "type": "point"
-        }
+        "taskIndex": 19,
+        "taskType": "point"
       }
     },
     "point_task_9": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 28,
-          "type": "point"
-        }
+        "taskIndex": 28,
+        "taskType": "point"
       }
     },
     "point_task_10": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 29,
-          "type": "point"
-        }
+        "taskIndex": 29,
+        "taskType": "point"
       }
     },
     "point_task_11": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 30,
-          "type": "point"
-        }
+        "taskIndex": 30,
+        "taskType": "point"
       }
     },
     "point_task_12": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 31,
-          "type": "point"
-        }
+        "taskIndex": 31,
+        "taskType": "point"
       }
     },
     "point_task_13": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 40,
-          "type": "point"
-        }
+        "taskIndex": 40,
+        "taskType": "point"
       }
     },
     "point_task_14": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 41,
-          "type": "point"
-        }
+        "taskIndex": 41,
+        "taskType": "point"
       }
     },
     "point_task_15": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 42,
-          "type": "point"
-        }
+        "taskIndex": 42,
+        "taskType": "point"
       }
     },
     "point_task_16": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 43,
-          "type": "point"
-        }
+        "taskIndex": 43,
+        "taskType": "point"
       }
     },
     "point_task_17": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 52,
-          "type": "point"
-        }
+        "taskIndex": 52,
+        "taskType": "point"
       }
     },
     "point_task_18": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 53,
-          "type": "point"
-        }
+        "taskIndex": 53,
+        "taskType": "point"
       }
     },
     "point_task_19": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 54,
-          "type": "point"
-        }
+        "taskIndex": 54,
+        "taskType": "point"
       }
     },
     "point_task_20": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 55,
-          "type": "point"
-        }
+        "taskIndex": 55,
+        "taskType": "point"
       }
     },
     "point_task_21": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 64,
-          "type": "point"
-        }
+        "taskIndex": 64,
+        "taskType": "point"
       }
     },
     "point_task_22": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 65,
-          "type": "point"
-        }
+        "taskIndex": 65,
+        "taskType": "point"
       }
     },
     "point_task_23": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 66,
-          "type": "point"
-        }
+        "taskIndex": 66,
+        "taskType": "point"
       }
     },
     "point_task_24": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 67,
-          "type": "point"
-        }
+        "taskIndex": 67,
+        "taskType": "point"
       }
     },
     "point_task_25": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 76,
-          "type": "point"
-        }
+        "taskIndex": 76,
+        "taskType": "point"
       }
     },
     "point_task_26": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 77,
-          "type": "point"
-        }
+        "taskIndex": 77,
+        "taskType": "point"
       }
     },
     "point_task_27": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 78,
-          "type": "point"
-        }
+        "taskIndex": 78,
+        "taskType": "point"
       }
     },
     "point_task_28": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 79,
-          "type": "point"
-        }
+        "taskIndex": 79,
+        "taskType": "point"
       }
     },
     "point_task_29": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 88,
-          "type": "point"
-        }
+        "taskIndex": 88,
+        "taskType": "point"
       }
     },
     "point_task_30": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 89,
-          "type": "point"
-        }
+        "taskIndex": 89,
+        "taskType": "point"
       }
     },
     "point_task_31": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 90,
-          "type": "point"
-        }
+        "taskIndex": 90,
+        "taskType": "point"
       }
     },
     "point_task_32": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 91,
-          "type": "point"
-        }
+        "taskIndex": 91,
+        "taskType": "point"
       }
     },
     "point_task_33": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 100,
-          "type": "point"
-        }
+        "taskIndex": 100,
+        "taskType": "point"
       }
     },
     "point_task_34": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 101,
-          "type": "point"
-        }
+        "taskIndex": 101,
+        "taskType": "point"
       }
     },
     "point_task_35": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 102,
-          "type": "point"
-        }
+        "taskIndex": 102,
+        "taskType": "point"
       }
     },
     "point_task_36": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 103,
-          "type": "point"
-        }
+        "taskIndex": 103,
+        "taskType": "point"
       }
     },
     "point_task_37": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 112,
-          "type": "point"
-        }
+        "taskIndex": 112,
+        "taskType": "point"
       }
     },
     "point_task_38": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 113,
-          "type": "point"
-        }
+        "taskIndex": 113,
+        "taskType": "point"
       }
     },
     "point_task_39": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 114,
-          "type": "point"
-        }
+        "taskIndex": 114,
+        "taskType": "point"
       }
     },
     "point_task_40": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 115,
-          "type": "point"
-        }
+        "taskIndex": 115,
+        "taskType": "point"
       }
     },
     "point_task_41": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 124,
-          "type": "point"
-        }
+        "taskIndex": 124,
+        "taskType": "point"
       }
     },
     "point_task_42": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 125,
-          "type": "point"
-        }
+        "taskIndex": 125,
+        "taskType": "point"
       }
     },
     "point_task_43": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 126,
-          "type": "point"
-        }
+        "taskIndex": 126,
+        "taskType": "point"
       }
     },
     "point_task_44": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 127,
-          "type": "point"
-        }
+        "taskIndex": 127,
+        "taskType": "point"
       }
     },
     "point_task_45": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 136,
-          "type": "point"
-        }
+        "taskIndex": 136,
+        "taskType": "point"
       }
     },
     "point_task_46": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 137,
-          "type": "point"
-        }
+        "taskIndex": 137,
+        "taskType": "point"
       }
     },
     "point_task_47": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 138,
-          "type": "point"
-        }
+        "taskIndex": 138,
+        "taskType": "point"
       }
     },
     "point_task_48": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 139,
-          "type": "point"
-        }
+        "taskIndex": 139,
+        "taskType": "point"
       }
     },
     "pointArc_task_1": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 8,
-          "type": "pointArc"
-        }
+        "taskIndex": 8,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_2": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 9,
-          "type": "pointArc"
-        }
+        "taskIndex": 9,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_3": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 10,
-          "type": "pointArc"
-        }
+        "taskIndex": 10,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_4": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 11,
-          "type": "pointArc"
-        }
+        "taskIndex": 11,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_5": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 20,
-          "type": "pointArc"
-        }
+        "taskIndex": 20,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_6": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 21,
-          "type": "pointArc"
-        }
+        "taskIndex": 21,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_7": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 22,
-          "type": "pointArc"
-        }
+        "taskIndex": 22,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_8": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 23,
-          "type": "pointArc"
-        }
+        "taskIndex": 23,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_9": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 32,
-          "type": "pointArc"
-        }
+        "taskIndex": 32,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_10": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 33,
-          "type": "pointArc"
-        }
+        "taskIndex": 33,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_11": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 34,
-          "type": "pointArc"
-        }
+        "taskIndex": 34,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_12": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 35,
-          "type": "pointArc"
-        }
+        "taskIndex": 35,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_13": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 44,
-          "type": "pointArc"
-        }
+        "taskIndex": 44,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_14": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 45,
-          "type": "pointArc"
-        }
+        "taskIndex": 45,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_15": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 46,
-          "type": "pointArc"
-        }
+        "taskIndex": 46,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_16": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 47,
-          "type": "pointArc"
-        }
+        "taskIndex": 47,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_17": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 56,
-          "type": "pointArc"
-        }
+        "taskIndex": 56,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_18": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 57,
-          "type": "pointArc"
-        }
+        "taskIndex": 57,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_19": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 58,
-          "type": "pointArc"
-        }
+        "taskIndex": 58,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_20": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 59,
-          "type": "pointArc"
-        }
+        "taskIndex": 59,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_21": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 68,
-          "type": "pointArc"
-        }
+        "taskIndex": 68,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_22": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 69,
-          "type": "pointArc"
-        }
+        "taskIndex": 69,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_23": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 70,
-          "type": "pointArc"
-        }
+        "taskIndex": 70,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_24": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 71,
-          "type": "pointArc"
-        }
+        "taskIndex": 71,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_25": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 80,
-          "type": "pointArc"
-        }
+        "taskIndex": 80,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_26": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 81,
-          "type": "pointArc"
-        }
+        "taskIndex": 81,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_27": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 82,
-          "type": "pointArc"
-        }
+        "taskIndex": 82,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_28": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 83,
-          "type": "pointArc"
-        }
+        "taskIndex": 83,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_29": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 92,
-          "type": "pointArc"
-        }
+        "taskIndex": 92,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_30": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 93,
-          "type": "pointArc"
-        }
+        "taskIndex": 93,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_31": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 94,
-          "type": "pointArc"
-        }
+        "taskIndex": 94,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_32": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 95,
-          "type": "pointArc"
-        }
+        "taskIndex": 95,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_33": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 104,
-          "type": "pointArc"
-        }
+        "taskIndex": 104,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_34": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 105,
-          "type": "pointArc"
-        }
+        "taskIndex": 105,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_35": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 106,
-          "type": "pointArc"
-        }
+        "taskIndex": 106,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_36": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 107,
-          "type": "pointArc"
-        }
+        "taskIndex": 107,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_37": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 116,
-          "type": "pointArc"
-        }
+        "taskIndex": 116,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_38": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 117,
-          "type": "pointArc"
-        }
+        "taskIndex": 117,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_39": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 118,
-          "type": "pointArc"
-        }
+        "taskIndex": 118,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_40": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 119,
-          "type": "pointArc"
-        }
+        "taskIndex": 119,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_41": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 128,
-          "type": "pointArc"
-        }
+        "taskIndex": 128,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_42": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 129,
-          "type": "pointArc"
-        }
+        "taskIndex": 129,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_43": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 130,
-          "type": "pointArc"
-        }
+        "taskIndex": 130,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_44": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 131,
-          "type": "pointArc"
-        }
+        "taskIndex": 131,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_45": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 140,
-          "type": "pointArc"
-        }
+        "taskIndex": 140,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_46": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 141,
-          "type": "pointArc"
-        }
+        "taskIndex": 141,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_47": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 142,
-          "type": "pointArc"
-        }
+        "taskIndex": 142,
+        "taskType": "pointArc"
       }
     },
     "pointArc_task_48": {
       "baseComponent": "Moritz",
       "parameters": {
-        "params": {
-          "index": 143,
-          "type": "pointArc"
-        }
+        "taskIndex": 143,
+        "taskType": "pointArc"
       }
     },
     "post_study": {

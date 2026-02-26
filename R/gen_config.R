@@ -106,7 +106,8 @@ moritz_px_response = StudyResponse(
   hidden = TRUE
 )
 # --- test 
-moritz_response %>% convert_to_json(.)
+moritz_num_response %>% convert_to_json(.)
+moritz_px_response %>% convert_to_json(.)
 
 # --- construct basecomponent 
 moritz_component <- BaseComponent(
@@ -120,6 +121,7 @@ moritz_component <- BaseComponent(
   #   taskid = "Moritz",
   #   taskType = "moritz"
   # ),
+  parameters = list(taskIndex = "", taskType = ""),
   response_list = list(moritz_num_response, moritz_px_response)
 )
 
