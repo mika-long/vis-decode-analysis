@@ -242,8 +242,28 @@ library(ggplot2)
 library(tidybayes)
 library(ggdist)
 
+actual_mean <- ex_df %>% pull(numY) %>% mean(.)
+
 pred_df %>% ggplot(data = ., aes(y = num.pred.y.avg)) +
   stat_halfeye() + 
   theme_minimal() + 
-  coord_cartesian(ylim = c(0, 1))
+  geom_hline(yintercept = actual_mean, color = "red", linetype = "dashed") # + 
+  # coord_cartesian(ylim = c(0, 1))
 ```
+
+What about the actual answers? 
+
+```{r}
+pilot_df %>% filter(responseId %in% c("numericResponse", "pixelResponse")) %>%
+  select(participantId, trialId, responseId, answer) %>%
+  separate_wider_delim(col = trialId, delim = "_", names = c("taskType", NA, "index")) %>% 
+  pivot_wider(names_from = "responseId", values_from = "answer") %>% 
+  mutate(numericResponse = as.numeric(numericResponse), 
+    pixelResponse = as.numeric(pixelResponse), 
+    index = as.integer(index)
+  ) %>% 
+  mutate(pixelResponse = 200 - pixelResponse + 5) %>% 
+  filter(index == 1)
+```
+
+Huh this is indeed quite close to the 
