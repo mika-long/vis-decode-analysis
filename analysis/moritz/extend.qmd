@@ -195,24 +195,28 @@ p <- c(
 )
 ```
 
+Load the previously fitted model: 
+
 ```{r}
-# model <- brm(
-#     formula = f,
-#     data = .,
-#     family = gaussian(),
-#     prior = p,
-#     chains = 4, 
-#     cores = 4,
-#     control = list(adapt_delta = 0.99),
-#     iter = 6000, 
-#     file = here("analysis", "fitted_models", "task5.y"), 
-#     file_refit = "on_change", 
-#     save_pars = save_pars(all = TRUE)
-# )
 model <- readRDS(here("analysis", "fitted_models", "task5.y.rds"))
 model
-model %>% get_variables(.)
 ```
+
+### How do things map to each other?
+
+```{r}
+model %>% get_variables(.) %>% head(4)
+```
+
+- `b_Intercept` corresponds to $\beta_0$ 
+- `b_sigma_Intercept` corresponds to $\alpha_0$
+- `sd_participantId__Intercept` and `sd_participantId__sigma_Intercept` corresponds to $\tau_\mu$ and $\tau_\alpha$
+- `r_participantId[<id>, Intercept]`, `r_participantId__sigma[<id>, Intercept]` correspond to $u_j$ and $v_j$ respectively. 
+
+
+### Data conversion
+
+Here we go from `num -> px -> MM -> VA` 
 
 ```{r}
 # assume that the value of pixelToMM and distToScreen is fixed
@@ -242,7 +246,11 @@ draws <- model %>% spread_draws(b_Intercept, b_sigma_Intercept) %>%
   as_draws_df(.) %>% 
   thin_draws(thin = 2) # start with some aggressive thinning 
 # draws has 1200 rows
+```
 
+Here we go from `VA -> mm -> px -> num`:
+
+```{r}
 pred <- draws %>% expand_grid(nd) %>% # every draw * every dot
   mutate(mu = b_Intercept, 
     sigma = exp(b_sigma_Intercept + log(va.ans.x)), 
@@ -255,7 +263,11 @@ pred <- draws %>% expand_grid(nd) %>% # every draw * every dot
     px.pred.y = phy.pred.y * pixelToMM,
     num.pred.y = px.pred.y / 200
   )
+```
 
+Validity (plotting) checks: 
+
+```{r}
 # plot for some validity checks
 pred %>% filter(expIndex == 10) %>% 
   group_by(.draw) %>% 
@@ -264,13 +276,6 @@ pred %>% filter(expIndex == 10) %>%
   stat_halfeye() + 
   theme_minimal() #  + 
   coord_cartesian(ylim=c(0, 1))
-```
-
-```{r}
-model %>% add_epred_draws(newdata = filter(stimuli_1_df, ogIndex == 4), dpar="sigma", re_formula = NA, 
-allow_new_levels = TRUE) %>% 
-  ggplot(data = ., aes(x = exp(.epred))) + 
-  stat_halfeye()
 ```
 
 We have 4 chains `*` 3000 iteration per chain = 12,000 draws.
