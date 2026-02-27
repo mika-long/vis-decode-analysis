@@ -10,6 +10,7 @@ library(tidybayes)
 library(here)
 library(jsonlite)
 library(brms)
+library(posterior)
 ```
 
 # Replicating Mortiz Exp 2
@@ -35,8 +36,6 @@ exp_json_data <- jsonlite::fromJSON(here("data", "moritz", "stimuli", "exp2-stim
 stimuli_df <- exp_json_data %>% select(index, seed, noise, flip, type, data) %>% 
     mutate(noise = as.character(noise))
 
-stimuli_df %>% head(5)
-
 # get the mapping between og index and the index used in exp
 stimuli_df %>% filter(type == "point") %>% 
   mutate(expIndex = 1:nrow(.)) %>% 
@@ -48,12 +47,13 @@ stimuli_df %>% filter(type == "point_arc") %>%
 # calculate the answer
 stimuli_df %>% filter(type != "line") %>% 
   unnest(data) %>% 
-  group_by(index, type) %>% 
-  summarise(y.avg = mean(y)) %>% 
   left_join(point_map, by = join_by(index, type)) %>% 
   left_join(pointArc_map, by = join_by(index, type)) %>% 
   mutate(expIndex = coalesce(expIndex.x, expIndex.y)) %>% 
-  select(index, expIndex, type, y.avg) %>% ungroup(.) -> ans_df
+  select(index, expIndex, type, x, y) %>% ungroup(.) %>% 
+  rename(num.x = x, num.y = y) -> stimuli_df
+
+stimuli_df %>% head(5)
 ```
 
 Let's also read in the data collected from pilot: 
@@ -172,8 +172,9 @@ For an average participant, the posterior prediction is going to
 
 $$
 \begin{align*}
-\texttt{error}_i &\sim \mathcal{N}(0, \sigma_{i, \text{PID}[i]}) \\ 
+\texttt{error}_i &\sim \mathcal{N}(\beta_0 + u_{\text{PID[i]}}, \sigma_{i, \text{PID}[i]}) \\ 
 \log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.x}_i) \\ 
+\text{or:} \log(\sigma_{i, j}) &\sim \mathcal{N}(\mu_\alpha + \log(\texttt{va.ans.x}_i), \sigma_\alpha)\\ 
 \alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
 \mu_\alpha &\sim N(0, 1) \\ 
 \sigma_\alpha &\sim \mathcal{N}^+(0, 1)
@@ -214,32 +215,58 @@ model %>% get_variables(.)
 ```
 
 ```{r}
-draws_df <- model %>% spread_draws(b_Intercept, b_sigma_Intercept)
-draws_df %>% head(5)
-```
+# assume that the value of pixelToMM and distToScreen is fixed
+# we get the new_data to be crossed with posterior draws 
 
-```{r}
-# assume we have fixed pixelToMM
 pixelToMM <- 5.12
 screenDist <- 473
 
-stimuli_1_df <- stimuli_df %>% filter(type != "line") %>% 
-  rename(ogIndex = index) %>% 
-  unnest(col = data) %>% 
-  rename(ans.num.x = x, ans.num.y = y) %>%
+new_data <- stimuli_df %>% rename(ogIndex = index) %>% 
   # calculate pixel values from numerical values
-  mutate(ans.px.x = 500 / 120 * ans.num.x,
-         ans.px.y = 200 * ans.num.y) %>% 
+  mutate(px.x = 500 / 120 * num.x, 
+         px.y = 200 * num.y) %>% 
   # calcuate physical values (in MM) from pixel values
-  mutate(ans.phy.x = ans.px.x / pixelToMM, 
-         ans.phy.y = ans.px.y / pixelToMM
+  mutate(phy.x = px.x / pixelToMM, 
+         phy.y = px.y / pixelToMM
   ) %>% 
   # calculate visual angle 
-  mutate(va.ans.x = vis_angle(ans.phy.x, screenDist),
-         va.ans.y = vis_angle(ans.phy.y, screenDist)
-  ) %>% 
-  select(ogIndex, va.ans.x, va.ans.y)
+  mutate(va.ans.x = vis_angle(phy.x, screenDist),
+         va.ans.y = vis_angle(phy.y, screenDist)
+  )
 
+# get a smaller version of this 
+nd <- new_data %>% select(ogIndex, expIndex, type, va.ans.x, va.ans.y) %>% 
+  filter(type == "point") # consider only one kind of graph type
+
+draws <- model %>% spread_draws(b_Intercept, b_sigma_Intercept) %>% 
+  as_draws_df(.) %>% 
+  thin_draws(thin = 2) # start with some aggressive thinning 
+# draws has 1200 rows
+
+pred <- draws %>% expand_grid(nd) %>% # every draw * every dot
+  mutate(mu = b_Intercept, 
+    sigma = exp(b_sigma_Intercept + log(va.ans.x)), 
+    va.pred.error = rnorm(n(), mean = mu, sd = sigma),
+    va.pred.y = va.pred.error + va.ans.y
+  ) %>% 
+  # turn vis angle back to numerical values 
+  mutate(
+    phy.pred.y = phys_size(va.pred.y, screenDist), 
+    px.pred.y = phy.pred.y * pixelToMM,
+    num.pred.y = px.pred.y / 200
+  )
+
+# plot for some validity checks
+pred %>% filter(expIndex == 10) %>% 
+  group_by(.draw) %>% 
+  summarise(num.pred.avg.y = mean(num.pred.y)) %>% 
+  ggplot(data = ., aes(y = num.pred.avg.y)) + 
+  stat_halfeye() + 
+  theme_minimal() #  + 
+  coord_cartesian(ylim=c(0, 1))
+```
+
+```{r}
 model %>% add_epred_draws(newdata = filter(stimuli_1_df, ogIndex == 4), dpar="sigma", re_formula = NA, 
 allow_new_levels = TRUE) %>% 
   ggplot(data = ., aes(x = exp(.epred))) + 
@@ -248,4 +275,9 @@ allow_new_levels = TRUE) %>%
 
 We have 4 chains `*` 3000 iteration per chain = 12,000 draws.
 For each graph, we have 60 data points, i.e., 60 pairwise coordinates. 
+
+Advice from Matt: thin the draws to something like 3000 instead of 12000, using the [posterior](https://mc-stan.org/posterior/reference/thin_draws.html) package. 
+
+
+
 What does this actually amount to ...? The calculations are kind of crazy here ...??? 
