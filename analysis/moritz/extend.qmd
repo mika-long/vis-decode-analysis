@@ -50,7 +50,7 @@ stimuli_df %>% filter(type != "line") %>%
   left_join(point_map, by = join_by(index, type)) %>% 
   left_join(pointArc_map, by = join_by(index, type)) %>% 
   mutate(expIndex = coalesce(expIndex.x, expIndex.y)) %>% 
-  select(index, expIndex, type, x, y) %>% ungroup(.) %>% 
+  select(index, expIndex, type, noise, x, y) %>% ungroup(.) %>% 
   rename(num.x = x, num.y = y) -> stimuli_df
 
 stimuli_df %>% head(5)
@@ -252,7 +252,8 @@ Here we go from `VA -> mm -> px -> num`:
 
 ```{r}
 pred <- draws %>% expand_grid(nd) %>% # every draw * every dot
-  mutate(mu = b_Intercept, 
+  mutate(
+    mu = b_Intercept, 
     sigma = exp(b_sigma_Intercept + log(va.ans.x)), 
     va.pred.error = rnorm(n(), mean = mu, sd = sigma),
     va.pred.y = va.pred.error + va.ans.y
@@ -263,26 +264,39 @@ pred <- draws %>% expand_grid(nd) %>% # every draw * every dot
     px.pred.y = phy.pred.y * pixelToMM,
     num.pred.y = px.pred.y / 200
   )
+
+pred %>% head(5)
 ```
 
-Validity (plotting) checks: 
+Plotting: 
 
 ```{r}
-# plot for some validity checks
 pred %>% filter(expIndex == 10) %>% 
-  group_by(.draw) %>% 
-  summarise(num.pred.avg.y = mean(num.pred.y)) %>% 
-  ggplot(data = ., aes(y = num.pred.avg.y)) + 
+  ggplot(data = ., aes(y = num.pred.y)) + 
   stat_halfeye() + 
-  theme_minimal() #  + 
-  coord_cartesian(ylim=c(0, 1))
+  theme_minimal() + 
+  coord_cartesian(ylim=c(0, 1)) + 
+  labs(title="Unaveraged Posterior prediction for graph 10")
 ```
 
-We have 4 chains `*` 3000 iteration per chain = 12,000 draws.
-For each graph, we have 60 data points, i.e., 60 pairwise coordinates. 
+**Averaging Strategy vs. Median Strategy**: 
 
-Advice from Matt: thin the draws to something like 3000 instead of 12000, using the [posterior](https://mc-stan.org/posterior/reference/thin_draws.html) package. 
+“Equal number of points or line below and above. A strategy we did not anticipate was ensuring an equal number of points or line lengths above and below the judgment indicator. To indicate their responses, participants drug a line on the graph. By allowing participants to place a line directly on the graphs, participants could then easily count the number of points above and below the line. One participant simply wrote, “I tried to have the number of points above and below the line be approximately equal.” Unsurprisingly, this strategy was most common for participants who viewed graphs with points equally spaced along the x-axis (24%).” ([Moritz et al., 2023, p. 7](zotero://select/library/items/ZPTBTRIF)) ([pdf](zotero://open-pdf/library/items/AZRSTSWZ?page=7&annotation=4AENLNDJ))
 
+```{r}
+real_mean <- new_data %>% filter(expIndex == 10 & type == "point") %>% 
+  pull(num.y) %>% mean(.)
 
-
-What does this actually amount to ...? The calculations are kind of crazy here ...??? 
+pred %>% filter(expIndex == 10) %>% 
+  group_by(.draw) %>% 
+  summarise(
+    num.pred.avg.y = mean(num.pred.y), 
+    num.pred.median.y = median(num.pred.y)
+  ) %>% 
+  ggplot(data = ., aes(y = num.pred.avg.y)) + 
+  stat_halfeye() + 
+  stat_halfeye(aes(y = num.pred.median.y), color = "blue", x = 0) +
+  theme_minimal() + 
+  geom_hline(yintercept = real_mean, color = "red") + 
+  labs(title = "No noise, median vs. mean")
+```
