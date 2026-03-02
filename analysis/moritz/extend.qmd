@@ -105,6 +105,25 @@ ggplot(aes(x = `x...10`, y = `y...11`)) +
   coord_cartesian(ylim = c(0, 1))
 ```
 
+```{r}
+# function definitions
+get_og_stimuli <- function(i) {
+  mean <- stimuli_df %>%
+    filter(ogIndex == i) %>%
+    pull(num.y) %>%
+    mean(.)
+
+  stimuli_df %>%
+    filter(ogIndex == i) %>%
+    ggplot(aes(x = num.x, y = num.y)) +
+    geom_point() +
+    coord_cartesian(ylim = c(0, 1)) +
+    geom_hline(yintercept = mean, color = "gray", linetype = "dashed") +
+    annotate("text", x = 120, y = mean, label = mean) +
+    labs(title = paste0("ogIndex", " ", i))
+}
+```
+
 Let's also read in the data collected from pilot. First we get participant's numerical and pixel responses: 
 
 ```{r}
@@ -359,21 +378,24 @@ Let's see using one graph as an example, the following is the stimuli we're deal
 
 # see 11 and 15 for examples of more variability
 
-p1 <- stimuli_df %>%
-  filter(ogIndex == "30") %>% # expIndex == 11 & type == "point"
-  ggplot(aes(x = num.x, y = num.y)) +
-  geom_point() +
-  scale_x_continuous(limits = c(0, 120)) +
-  scale_y_continuous(limits = c(0, 1)) +
-  labs(title = "point")
+p1 <- get_og_stimuli(30)
+p2 <- get_og_stimuli(34)
 
-p2 <- stimuli_df %>%
-  filter(ogIndex == "34") %>% # expIndex == 11 & type == "point_arc"
-  ggplot(aes(x = num.x, y = num.y)) +
-  geom_point() +
-  scale_x_continuous(limits = c(0, 120)) +
-  scale_y_continuous(limits = c(0, 1)) +
-  labs(title = "point arc")
+# p1 <- stimuli_df %>%
+#   filter(ogIndex == "30") %>% # expIndex == 11 & type == "point"
+#   ggplot(aes(x = num.x, y = num.y)) +
+#   geom_point() +
+#   scale_x_continuous(limits = c(0, 120)) +
+#   scale_y_continuous(limits = c(0, 1)) +
+#   labs(title = "point")
+
+# p2 <- stimuli_df %>%
+#   filter(ogIndex == "34") %>% # expIndex == 11 & type == "point_arc"
+#   ggplot(aes(x = num.x, y = num.y)) +
+#   geom_point() +
+#   scale_x_continuous(limits = c(0, 120)) +
+#   scale_y_continuous(limits = c(0, 1)) +
+#   labs(title = "point arc")
 
 p1
 p2
@@ -460,6 +482,7 @@ pred %>%
 ```
 
 ```{r}
+# with no filtering
 avg_pred <- pred %>%
   group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
   summarise(
@@ -467,24 +490,14 @@ avg_pred <- pred %>%
     num.pred.median.y = median(num.pred.y),
   )
 
-avg_pred %>% left_join(ans_df) %>% count(expIndex, type, flip, noise, num.ans.y)
-# calculate the normalized error,
-# which is that when flip = TRUE we flip the sign of the error
-mutate(
-  error.avg.y = ifelse(
-    flip == FALSE,
-    num.pred.avg.y - num.ans.y,
-    num.ans.y - num.pred.avg.y
-  ),
-  error.median.y = ifelse(
-    flip == FALSE,
-    num.pred.median.y - num.ans.y,
-    num.ans.y - num.pred.median.y
+# with filtering
+filter_avg_pred <- pred %>%
+  filter(num.pred.y <= 1, num.pred.y >= 0) %>%
+  group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
+  summarise(
+    num.pred.avg.y = mean(num.pred.y),
+    num.pred.median.y = median(num.pred.y),
   )
-) %>%
-  ggplot(aes(x = error.avg.y, y = noise, fill = type)) +
-  stat_halfeye(alpha = 0.5)
-
 ```
 
 Ok the above graph is not making ANY SENSE so we will look at the first four: 
@@ -497,13 +510,13 @@ The following is the same dataset but flipped:
 ```{r}
 #| layout-ncol: 2
 
-avg_pred %>%
+filter_avg_pred %>%
   filter(ogIndex == 4) %>%
   ggplot(aes(x = num.pred.avg.y)) +
   stat_halfeye() +
   geom_vline(xintercept = 0.513, color = "red")
 
-avg_pred %>%
+filter_avg_pred %>%
   filter(ogIndex == 5) %>%
   ggplot(aes(x = num.pred.avg.y)) +
   stat_halfeye() +
@@ -516,23 +529,16 @@ Same mean but bigger variance for point:
 #| layout-ncol: 2
 # OG graphs
 # ogIndex == 4 and ogIndex == 6
-stimuli_df %>%
-  filter(ogIndex == 4) %>%
-  ggplot(aes(x = num.x, y = num.y)) +
-  geom_point() +
-  coord_cartesian(ylim = c(0, 1))
-
-stimuli_df %>%
-  filter(ogIndex == 6) %>%
-  ggplot(aes(x = num.x, y = num.y)) +
-  geom_point() +
-  coord_cartesian(ylim = c(0, 1))
+get_og_stimuli(4)
+get_og_stimuli(6)
 ```
 
 For the "same" data set on points but with more noise: 
 
 ```{r}
-avg_pred %>%
+#| code-fold: true
+#| layout-ncol: 2
+filter_avg_pred %>%
   filter(ogIndex %in% c(4, 6)) %>%
   mutate(ogIndex = as.factor(ogIndex)) %>%
   ggplot(aes(x = num.pred.avg.y, y = ogIndex)) +
@@ -540,7 +546,7 @@ avg_pred %>%
   geom_vline(xintercept = 0.513, color = "red") +
   labs(title = "4: point, no noise; 6: point, noise; using mean strategy")
 
-avg_pred %>%
+filter_avg_pred %>%
   filter(ogIndex %in% c(4, 6)) %>%
   mutate(ogIndex = as.factor(ogIndex)) %>%
   ggplot(aes(x = num.pred.median.y, y = ogIndex)) +
@@ -552,8 +558,12 @@ avg_pred %>%
 What about flipping? What is the effect of flipping here? 
 
 ```{r}
+#| layout-ncol: 3
+#| code-fold: true
+get_og_stimuli(4)
+get_og_stimuli(5)
 # 4 vs 5 for no noise version
-avg_pred %>%
+filter_avg_pred %>%
   filter(ogIndex %in% c(4, 5)) %>%
   mutate(ogIndex = as.factor(ogIndex)) %>%
   ggplot(aes(x = num.pred.median.y, y = ogIndex)) +
@@ -563,9 +573,16 @@ avg_pred %>%
   labs(
     title = "4: point, no noise; 5: point, no noise flipped; using median strategy"
   )
+```
+
+```{r}
+#| layout-ncol: 3
+#| code-fold: true
 
 # 6 vs 7 for noise version
-avg_pred %>%
+get_og_stimuli(6)
+get_og_stimuli(7)
+filter_avg_pred %>%
   filter(ogIndex %in% c(6, 7)) %>%
   mutate(ogIndex = as.factor(ogIndex)) %>%
   ggplot(aes(x = num.pred.median.y, y = ogIndex)) +
@@ -577,11 +594,9 @@ avg_pred %>%
   )
 ```
 
-So the error for 6 and 7 should look both positive? 
-
 
 ```{r}
-avg_pred %>%
+filter_avg_pred %>%
   filter(ogIndex %in% c(10, 11)) %>%
   ungroup(.) %>%
   left_join(ans_df) %>%
@@ -596,10 +611,12 @@ avg_pred %>%
   stat_halfeye()
 ```
 
-If looking at pairs it seems to be correct ...??? 
+---
+
+If we use the "flip" and normalize approach that the og paper uses, then we get negative errors, regardless of whether we use the rejection sampled version or not: 
 
 ```{r}
-avg_pred %>%
+filter_avg_pred %>%
   ungroup(.) %>%
   left_join(ans_df) %>%
   mutate(
@@ -613,10 +630,12 @@ avg_pred %>%
   stat_halfeye()
 ```
 
-But then this looks awfully kind of wrong ... Like based on this definition things should be positive ... 
-
+... which is weird ... 
 
 ```{r}
+#| code-fold: true
+#| layout-ncol: 2
+
 avg_pred %>%
   ungroup(.) %>%
   left_join(ans_df) %>%
@@ -639,12 +658,41 @@ avg_pred %>%
   )) +
   geom_pointinterval() +
   geom_vline(xintercept = 0, linetype = "dashed") +
-  facet_wrap(~noise)
+  facet_wrap(~noise) +
+  lab(title = "avg_pred")
+
+filter_avg_pred %>%
+  ungroup(.) %>%
+  left_join(ans_df) %>%
+  mutate(
+    error = ifelse(
+      flip == FALSE,
+      num.pred.median.y - num.ans.y,
+      num.ans.y - num.pred.median.y
+      # num.pred.median.y - num.ans.y # symmetric outcome
+    )
+  ) %>%
+  group_by(ogIndex, expIndex, type, flip, noise) %>%
+  median_qi(error) %>%
+  ggplot(aes(
+    y = ogIndex,
+    x = error,
+    xmin = .lower,
+    xmax = .upper,
+    color = type
+  )) +
+  geom_pointinterval() +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  facet_wrap(~noise) +
+  lab(title = "rejection sampling avg_pred")
 ```
 
 Ok this is suggesting to me that some of the errors are really quite off ... 
 If we don't flip things, what would it look like? -> very symmetric ... 
 
+---
+
+Let's look at the cases where the the normalized error is negative: 
 
 ```{r}
 avg_pred %>%
@@ -660,15 +708,10 @@ avg_pred %>%
   ) %>%
   group_by(ogIndex, expIndex, type, flip, noise) %>%
   median_qi(error) %>%
-  filter(error < 0, .upper < 0) %>%
-  View(.)
+  filter(error < 0, .upper < 0)
 ```
 
-Hmm it appears that 38 out of 96 cases have this problem ... 
-
-```{r}
-
-```
+Hmm it appears that 38 out of 96 cases have this problem ... or 5 out of 12 seeds ...
 
 Let's check out some of these, e.g., ogIndex in 28 through 32. 
 
@@ -676,22 +719,6 @@ Let's check out some of these, e.g., ogIndex in 28 through 32.
 ```{r}
 #| code-fold: true
 #| layout-ncol: 2
-get_og_stimuli <- function(i) {
-  mean <- stimuli_df %>%
-    filter(ogIndex == i) %>%
-    pull(num.y) %>%
-    mean(.)
-
-  stimuli_df %>%
-    filter(ogIndex == i) %>%
-    ggplot(aes(x = num.x, y = num.y)) +
-    geom_point() +
-    coord_cartesian(ylim = c(0, 1)) +
-    geom_hline(yintercept = mean, color = "gray", linetype = "dashed") +
-    annotate("text", x = 120, y = mean, label = mean) +
-    labs(title = paste0("ogIndex", " ", i))
-}
-
 get_og_stimuli(28)
 get_og_stimuli(29)
 ```
