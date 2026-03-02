@@ -31,27 +31,37 @@ Here are the details of the original experiment:
 First, read in the stimuli data from Mortiz experiment 2: 
 
 ```{r}
-exp_json_data <- jsonlite::fromJSON(here("data", "moritz", "stimuli", "exp2-stimuli.json" )) %>% as_tibble(.)
+exp_json_data <- jsonlite::fromJSON(here(
+  "data",
+  "moritz",
+  "stimuli",
+  "exp2-stimuli.json"
+)) %>%
+  as_tibble(.)
 
-stimuli_df <- exp_json_data %>% select(index, seed, noise, flip, type, data) %>% 
-    mutate(noise = as.character(noise))
+stimuli_df <- exp_json_data %>%
+  select(index, seed, noise, flip, type, data) %>%
+  mutate(noise = as.character(noise))
 
 # get the mapping between og index and the index used in exp
-stimuli_df %>% filter(type == "point") %>% 
-  mutate(expIndex = 1:nrow(.)) %>% 
+stimuli_df %>%
+  filter(type == "point") %>%
+  mutate(expIndex = 1:nrow(.)) %>%
   select(index, type, expIndex) -> point_map
-stimuli_df %>% filter(type == "point_arc") %>% 
-  mutate(expIndex = 1:nrow(.)) %>% 
+stimuli_df %>%
+  filter(type == "point_arc") %>%
+  mutate(expIndex = 1:nrow(.)) %>%
   select(index, type, expIndex) -> pointArc_map
 
 # calculate the answer
-stimuli_df %>% filter(type != "line") %>% 
-  unnest(data) %>% 
-  left_join(point_map, by = join_by(index, type)) %>% 
-  left_join(pointArc_map, by = join_by(index, type)) %>% 
-  mutate(expIndex = coalesce(expIndex.x, expIndex.y)) %>% 
-  select(index, expIndex, type, noise, x, y) %>% 
-  ungroup(.) %>% 
+stimuli_df %>%
+  filter(type != "line") %>%
+  unnest(data) %>%
+  left_join(point_map, by = join_by(index, type)) %>%
+  left_join(pointArc_map, by = join_by(index, type)) %>%
+  mutate(expIndex = coalesce(expIndex.x, expIndex.y)) %>%
+  select(index, expIndex, type, noise, x, y) %>%
+  ungroup(.) %>%
   rename(ogIndex = index, num.x = x, num.y = y) -> stimuli_df
 
 stimuli_df %>% head(5)
@@ -60,22 +70,37 @@ stimuli_df %>% head(5)
 Let's also read in the data collected from pilot. First we get participant's numerical and pixel responses: 
 
 ```{r}
-raw_df <- read_csv(here("data", "part_2", "part2_pilot.csv")) %>% as_tibble(.) 
+raw_df <- read_csv(here("data", "part_2", "part2_pilot.csv")) %>% as_tibble(.)
 
-pilot_df <- raw_df %>% select(participantId, trialId, trialOrder, responseId, answer, duration, parameters_taskid, parameters_params)
+pilot_df <- raw_df %>%
+  select(
+    participantId,
+    trialId,
+    trialOrder,
+    responseId,
+    answer,
+    duration,
+    parameters_taskid,
+    parameters_params
+  )
 
 # responses
-pilot_df %>% filter(responseId %in% c("numericResponse", "pixelResponse")) %>%
+pilot_df %>%
+  filter(responseId %in% c("numericResponse", "pixelResponse")) %>%
   select(participantId, trialId, responseId, answer) %>%
-  separate_wider_delim(col = trialId, delim = "_", names = c("type", NA, "index")) %>% 
-  pivot_wider(names_from = "responseId", values_from = "answer") %>% 
+  separate_wider_delim(
+    col = trialId,
+    delim = "_",
+    names = c("type", NA, "index")
+  ) %>%
+  pivot_wider(names_from = "responseId", values_from = "answer") %>%
   mutate(
-    numericResponse = as.numeric(numericResponse), 
-    pixelResponse = as.numeric(pixelResponse), 
+    numericResponse = as.numeric(numericResponse),
+    pixelResponse = as.numeric(pixelResponse),
     index = as.integer(index)
-  ) %>% 
-  rename(expIndex = index) %>% 
-  mutate(pixelResponse = 200 - pixelResponse + 5) -> resp_df  
+  ) %>%
+  rename(expIndex = index) %>%
+  mutate(pixelResponse = 200 - pixelResponse + 5) -> resp_df
 
 resp_df %>% head(5)
 ```
@@ -83,18 +108,29 @@ resp_df %>% head(5)
 Then we also get a dataset that documents how far away they're sitting from the screen: 
 
 ```{r}
-# visual angle related 
-pilot_df %>% filter(!responseId %in% c("numericResponse", "pixelResponse")) %>% 
-  group_by(participantId) %>% 
-  filter(responseId %in% c("prolificId", "pixelsPerMM", "dist-calibration-MM", "dist-calibration-CM", "ball-positions", "square-position")) %>% 
-  select(participantId, responseId, answer) %>% 
-  pivot_wider(names_from = responseId, values_from = answer) %>% 
-  # we will not use participants who have distance calibration < 250 mm 
-  mutate(`dist-calibration-MM` = as.numeric(`dist-calibration-MM`)) %>% 
-  filter(`dist-calibration-MM` >= 250) %>% 
-  select(1, 3, 4) %>% 
+# visual angle related
+pilot_df %>%
+  filter(!responseId %in% c("numericResponse", "pixelResponse")) %>%
+  group_by(participantId) %>%
+  filter(
+    responseId %in%
+      c(
+        "prolificId",
+        "pixelsPerMM",
+        "dist-calibration-MM",
+        "dist-calibration-CM",
+        "ball-positions",
+        "square-position"
+      )
+  ) %>%
+  select(participantId, responseId, answer) %>%
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  # we will not use participants who have distance calibration < 250 mm
+  mutate(`dist-calibration-MM` = as.numeric(`dist-calibration-MM`)) %>%
+  filter(`dist-calibration-MM` >= 250) %>%
+  select(1, 3, 4) %>%
   rename(distToScreen = `dist-calibration-MM`) -> participant_df
-  
+
 # only keep people whose ans are somewhat useful
 keep_id <- participant_df %>% pull(participantId)
 
@@ -106,61 +142,43 @@ participant_df %>% head(5)
 The goal is to translate from the pixel space to the physical space, and then to the visual angle space. 
 
 1. Data to Pixel: This should be given by the custom `VegaEmbed` component we built (directly fetching)
-2. Pixel to Physical: need to know the pixel to MM ratio
-3. Physical to Vis Angle: need to know the distance to screen
-
-```{r}
-# y-axis: numerical [0, 1] -> pixel [0, 200] -> phys [...?] 
-# for some reason, the pixel response seems to be on the 210 scale and not the 200 scale ...? 
-```
+  - In this case, data is from $x \in [0, 120]$ and $y \in [0, 1]$ with the x-axis mapping to `500 px` and y-axis to `200 px`.
+2. Pixel to Physical: need to know the pixel to MM ratio, which is *different per Participant*.
+3. Physical to Vis Angle: need to know the distance to screen, again, which is *different per Participant*. 
 
 ```{r}
 #| label: define-function
 #| code-fold: true
 
-# origin is top left  
-# data_to_pixel_y <- function(data_y) {
-#   return(-395 * data_y + 410)
-# }
-# data_to_pixel_x <- function(data_x) {
-#   return (53.5 * data_x + 317.5)
-# }
-
-# origin is bottom left 
-# pixel_to_phy_x <- function(pixel, pxMM){
-#   (pixel - 50) / pxMM
-# }
-# pixel_to_phy_y <- function(pixel, pxMM){
-#   (410 - pixel) / pxMM
-# }
-
 # return visual angle in degrees and not radian
-vis_angle <- function(size, distance){
+vis_angle <- function(size, distance) {
   return(2 * atan(size / (2 * distance)) * 180 / pi)
 }
 
-# define function for turning vis angle to phy size 
+# define function for turning vis angle to phy size
 phys_size <- function(va, distance) {
   return(2 * distance * tan(va * pi / 360))
 }
 
-# tolerance for numerical precision 
+# tolerance for numerical precision
 tolerance <- 1e-10
 ```
 
 Process the response df given the new info about participants: 
 
 ```{r}
-resp_df <- resp_df %>% filter(participantId %in% keep_id) %>% 
-  left_join(participant_df) %>% 
+resp_df <- resp_df %>%
+  filter(participantId %in% keep_id) %>%
+  left_join(participant_df) %>%
   rename(
-    num.y = numericResponse, 
-    px.y = pixelResponse, 
-  ) %>% mutate(
+    num.y = numericResponse,
+    px.y = pixelResponse,
+  ) %>%
+  mutate(
     pixelsPerMM = as.numeric(pixelsPerMM),
     phy.y = px.y / pixelsPerMM,
     va.y = vis_angle(phy.y, distToScreen)
-  ) 
+  )
 resp_df %>% head(5)
 ```
 
@@ -188,13 +206,15 @@ $$
 Read in the fitted model by first reading in its formula and prior specification: 
 
 ```{r}
-f <- bf(error_va ~ (1 | participantId), 
-        sigma ~ (1|participantId) + offset(log(va.ans.x)))
+f <- bf(
+  error_va ~ (1 | participantId),
+  sigma ~ (1 | participantId) + offset(log(va.ans.x))
+)
 
 p <- c(
   prior(normal(0, 1), class = Intercept),
-  prior(normal(0, 1), class = sd, group = participantId, lb = 0), 
-  prior(normal(0, 1), class = Intercept, dpar = "sigma"), 
+  prior(normal(0, 1), class = sd, group = participantId, lb = 0),
+  prior(normal(0, 1), class = Intercept, dpar = "sigma"),
   prior(normal(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
 )
 ```
@@ -217,54 +237,62 @@ model %>% get_variables(.) %>% head(4)
 - `sd_participantId__Intercept` and `sd_participantId__sigma_Intercept` corresponds to $\tau_\mu$ and $\tau_\alpha$
 - `r_participantId[<id>, Intercept]`, `r_participantId__sigma[<id>, Intercept]` correspond to $u_j$ and $v_j$ respectively. 
 
+## Generate Predictions 
 
-### Data conversion
+### For an "average" participant with fixed `pixelToMM` and `distToScreen`. 
 
-Here we go from `num -> px -> MM -> VA` 
+We will make the predictions for an average participant, conditioning on specific values of `pixelToMM` and `distToScreen`. 
+
+First, we calculate the visual angle values for all the stimuli. 
+This is the route from `num -> px -> MM -> VA`. This will allow us to make predictions of error in the visual angle space. 
 
 ```{r}
 # assume that the value of pixelToMM and distToScreen is fixed
-# we get the new_data to be crossed with posterior draws 
+# we get the new_data to be crossed with posterior draws
 
 pixelToMM <- 5.12
-screenDist <- 473
+distToScreen <- 473
 
-new_data <- stimuli_df %>% 
+# 5760 rows = 2 (plot type) * 2 (noise type) * 2 (flipped or not) * 12 repeated measures * 60 points per graph
+new_data <- stimuli_df %>%
   # calculate pixel values from numerical values
-  mutate(px.x = 500 / 120 * num.x, 
-         px.y = 200 * num.y) %>% 
+  mutate(px.x = 500 / 120 * num.x, px.y = 200 * num.y) %>%
   # calcuate physical values (in MM) from pixel values
-  mutate(phy.x = px.x / pixelToMM, 
-         phy.y = px.y / pixelToMM
-  ) %>% 
-  # calculate visual angle 
-  mutate(va.ans.x = vis_angle(phy.x, screenDist),
-         va.ans.y = vis_angle(phy.y, screenDist)
+  mutate(phy.x = px.x / pixelToMM, phy.y = px.y / pixelToMM) %>%
+  # calculate visual angle
+  mutate(
+    va.ans.x = vis_angle(phy.x, distToScreen),
+    va.ans.y = vis_angle(phy.y, distToScreen)
   )
 
-# get a smaller version of this 
-nd <- new_data %>% select(ogIndex, expIndex, type, va.ans.x, va.ans.y) %>% 
-  filter(type == "point") # consider only one kind of graph type
+# get a smaller version of this
+# consider only one kind of graph type
+nd <- new_data %>%
+  select(ogIndex, expIndex, type, va.ans.x, va.ans.y) %>%
+  filter(type == "point")
 
-draws <- model %>% spread_draws(b_Intercept, b_sigma_Intercept) %>% 
-  as_draws_df(.) # %>% 
-  # thin_draws(thin = 1) # start with some aggressive thinning 
-# draws has 1200 rows
+# 3000 iterations per chain * 4 chains = 12,000 rows
+# if we thin by k, then we get 12,000 / k rows 
+draws <- model %>%
+  spread_draws(b_Intercept, b_sigma_Intercept) %>%
+  as_draws_df(.) %>%
+  thin_draws(thin = 4) # if too much we can also do thinning
 ```
-
+  
 Here we go from `VA -> mm -> px -> num`:
-
+  
 ```{r}
-pred <- draws %>% expand_grid(nd) %>% # every draw * every dot
+pred <- draws %>%
+  expand_grid(new_data) %>% # every draw * every dot; will result in 5760 * 3000 (thinned version) row s 
   mutate(
-    mu = b_Intercept, 
-    sigma = exp(b_sigma_Intercept + log(va.ans.x)), 
+    mu = b_Intercept,
+    sigma = exp(b_sigma_Intercept + log(va.ans.x)),
     va.pred.error = rnorm(n(), mean = mu, sd = sigma),
     va.pred.y = va.pred.error + va.ans.y
-  ) %>% 
-  # turn vis angle back to numerical values 
+  ) %>%
+  # turn vis angle back to numerical values
   mutate(
-    phy.pred.y = phys_size(va.pred.y, screenDist), 
+    phy.pred.y = phys_size(va.pred.y, distToScreen),
     px.pred.y = phy.pred.y * pixelToMM,
     num.pred.y = px.pred.y / 200
   )
@@ -272,81 +300,175 @@ pred <- draws %>% expand_grid(nd) %>% # every draw * every dot
 pred %>% head(5)
 ```
 
+### ... for a single trial 
+
 Plotting: 
 
 ```{r}
-pred %>% filter(expIndex == 10) %>% 
-  ggplot(data = ., aes(y = num.pred.y)) + 
-  stat_halfeye() + 
-  theme_minimal() + 
-  coord_cartesian(ylim=c(0, 1)) + 
-  labs(title="Unaveraged Posterior prediction for graph 10")
+pred %>%
+  filter(expIndex == 10, type == "point") %>%
+  ggplot(data = ., aes(y = num.pred.y)) +
+  stat_halfeye() +
+  theme_minimal() +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(title = "Unaveraged Posterior prediction for graph 10")
 ```
 
 **Averaging Strategy vs. Median Strategy**: 
 
 “Equal number of points or line below and above. A strategy we did not anticipate was ensuring an equal number of points or line lengths above and below the judgment indicator. To indicate their responses, participants drug a line on the graph. By allowing participants to place a line directly on the graphs, participants could then easily count the number of points above and below the line. One participant simply wrote, “I tried to have the number of points above and below the line be approximately equal.” Unsurprisingly, this strategy was most common for participants who viewed graphs with points equally spaced along the x-axis (24%).” ([Moritz et al., 2023, p. 7](zotero://select/library/items/ZPTBTRIF)) ([pdf](zotero://open-pdf/library/items/AZRSTSWZ?page=7&annotation=4AENLNDJ))
 
-```{r}
-real_mean <- new_data %>% filter(expIndex == 10 & type == "point") %>% 
-  pull(num.y) %>% mean(.)
+Let's see using one graph as an example, the following is the stimuli we're dealing with: 
 
-pred %>% filter(expIndex == 10) %>% 
-  group_by(.draw) %>% 
-  summarise(
-    num.pred.avg.y = mean(num.pred.y), 
-    num.pred.median.y = median(num.pred.y)
-  ) %>% 
-  ggplot(data = ., aes(y = num.pred.avg.y)) + 
-  stat_halfeye() + 
-  stat_halfeye(aes(y = num.pred.median.y), color = "blue", x = 0) +
-  theme_minimal() + 
-  geom_hline(yintercept = real_mean, color = "red") + 
-  labs(title = "No noise, median vs. mean")
+```{r}
+#| layout-ncol: 2
+#| code-fold: true 
+
+p1 <- stimuli_df %>% filter(expIndex == 10 & type == "point") %>% 
+  ggplot(aes(x = num.x, y = num.y)) + 
+  geom_point() + 
+  scale_x_continuous(limits = c(0, 120)) +
+  scale_y_continuous(limits = c(0, 1)) + 
+  labs(title = "point")
+
+p2 <- stimuli_df %>% filter(expIndex == 10 & type == "point_arc") %>% 
+  ggplot(aes(x = num.x, y = num.y)) + 
+  geom_point() + 
+  scale_x_continuous(limits = c(0, 120)) +
+  scale_y_continuous(limits = c(0, 1)) + 
+  labs(title = "point arc")
+
+p1
+p2
 ```
 
-## Doing this for not just one 
+The following is the predictions we make, for an average participant with fixed `pixelToMM` and `distToScreen`: 
+
+```{r}
+#| code-fold: true 
+#| layout-ncol: 2
+
+mean_point <- new_data %>%
+  filter(expIndex == 10 & type == "point") %>%
+  pull(num.y) %>%
+  mean(.)
+
+mean_point_arc <- new_data %>%
+  filter(expIndex == 10 & type == "point_arc") %>%
+  pull(num.y) %>%
+  mean(.)
+
+pred %>%
+  filter(expIndex == 10 & type == "point") %>%
+  group_by(.draw) %>%
+  summarise(
+    num.pred.avg.y = mean(num.pred.y),
+    num.pred.median.y = median(num.pred.y)
+  ) %>%
+  ggplot(data = ., aes(y = num.pred.avg.y)) +
+  stat_halfeye() +
+  stat_halfeye(aes(y = num.pred.median.y), color = "blue", x = 0) +
+  theme_minimal() +
+  geom_hline(yintercept = mean_point, color = "red") +
+  labs(title = "No noise, median vs. mean for graph id 10, point ver")
+
+pred %>%
+  filter(expIndex == 10 & type == "point_arc") %>%
+  group_by(.draw) %>%
+  summarise(
+    num.pred.avg.y = mean(num.pred.y),
+    num.pred.median.y = median(num.pred.y)
+  ) %>%
+  ggplot(data = ., aes(y = num.pred.avg.y)) +
+  stat_halfeye() +
+  stat_halfeye(aes(y = num.pred.median.y), color = "blue", x = 0) +
+  theme_minimal() +
+  geom_hline(yintercept = mean_point_arc, color = "red") +
+  labs(title = "No noise, median vs. mean for graph id 10, point_arc version")
+```
+
+### Doing this for not just one 
+
+First we get the average predictions to prevent ourselves from calculating this all the time: 
+- `.draw`: 3000 draws per dot 
+- `type`: 2 types 
+- `expIndex`: 48 unique values 
+- so the total is `3000 * 2 * 48` groups 
+
+```{r}
+# if we want to know the error, we need to first know the actual average 
+ans_df <- stimuli_df %>% group_by(ogIndex, expIndex, type, noise) %>% 
+  summarise(num.ans.y = mean(num.y)) %>% 
+  ungroup(.)
+
+# join into the ans 
+pred <- pred %>% left_join(ans_df, by=join_by("ogIndex", "expIndex", "type", "noise"))
+```
+
+Let's do a sanity check with the error distribution: 
+
+```{r}
+pred %>%
+  filter(expIndex == 10 & type == "point") %>%
+  group_by(expIndex, type, .draw, num.ans.y) %>%
+  summarise(
+    num.pred.avg.y = mean(num.pred.y),
+    num.pred.median.y = median(num.pred.y)
+  ) %>%
+  ggplot(data = ., aes(y = num.pred.avg.y - num.ans.y)) +
+  stat_halfeye() +
+  stat_halfeye(aes(y = num.pred.median.y - num.ans.y), color = "blue", x = 0) +
+  theme_minimal() +
+  # geom_hline(yintercept = mean_point, color = "red") +
+  labs(title = "Error for No noise, median vs. mean for graph id 10, point ver")
+```
 
 
 ```{r}
-avg_pred <- pred %>% group_by(expIndex, type, .draw) %>% 
-    summarise(
-    num.pred.avg.y = mean(num.pred.y), 
-    num.pred.median.y = median(num.pred.y),
-    .groups = "drop_last"
-  )
+# avg_pred <- pred %>%
+#   group_by(expIndex, type, .draw) %>%
+#   summarise(
+#     num.pred.avg.y = mean(num.pred.y),
+#     num.pred.median.y = median(num.pred.y),
+#     .groups = "drop_last"
+#   )
 
-ans_df <- stimuli_df %>% group_by(ogIndex, expIndex, type, noise) %>% 
-  summarise(num.ans.y = mean(num.y)) %>% 
-  filter(type == "point") %>% 
-  ungroup(.)
+# ans_df <- stimuli_df %>%
+#   group_by(ogIndex, expIndex, type, noise) %>%
+#   summarise(num.ans.y = mean(num.y)) %>%
+#   filter(type == "point") %>%
+#   ungroup(.)
 ```
 
 Error for a particular answer: 
 
 ```{r}
-avg_pred %>% left_join(ans_df, by = join_by("expIndex", "type")) %>% 
-  mutate(error.y.avg = num.pred.avg.y - num.ans.y, 
-    error.y.median = num.pred.median.y - num.ans.y
-  ) %>% 
-  filter(expIndex == 1) %>% 
-  ggplot(data = ., aes(y = error.y.median)) + 
-  stat_halfeye() 
+# avg_pred %>%
+#   left_join(ans_df, by = join_by("expIndex", "type")) %>%
+#   mutate(
+#     error.y.avg = num.pred.avg.y - num.ans.y,
+#     error.y.median = num.pred.median.y - num.ans.y
+#   ) %>%
+#   filter(expIndex == 1) %>%
+#   ggplot(data = ., aes(y = error.y.median)) +
+#   stat_halfeye()
 ```
 
 
 ```{r}
-avg_pred %>% left_join(ans_df, by = join_by("expIndex", "type")) %>% 
-  mutate(error.y.avg = num.pred.avg.y - num.ans.y, 
-    error.y.median = num.pred.median.y - num.ans.y
-  ) %>%
-  group_by(.draw, noise) %>%
-  summarise(
-    error.y.avg = mean(error.y.avg),
-    error.y.median = mean(error.y.median),
-    # .groups = "drop"
-  ) %>% 
-  # pivot_longer(cols = 3:4) # %>% 
-  ggplot(aes(x = error.y.median, fill = noise)) + 
-  stat_halfeye()
+# avg_pred %>%
+#   left_join(ans_df, by = join_by("expIndex", "type")) %>%
+#   mutate(
+#     error.y.avg = num.pred.avg.y - num.ans.y,
+#     error.y.median = num.pred.median.y - num.ans.y
+#   ) %>%
+#   group_by(.draw, noise) %>%
+#   summarise(
+#     error.y.avg = mean(error.y.avg),
+#     error.y.median = mean(error.y.median),
+#     # .groups = "drop"
+#   ) %>%
+#   # pivot_longer(cols = 3:4) # %>%
+#   ggplot(aes(x = error.y.median, fill = noise)) +
+#   stat_halfeye()
 ```
