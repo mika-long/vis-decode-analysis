@@ -334,18 +334,11 @@ draws <- model %>%
   spread_draws(b_Intercept, b_sigma_Intercept) %>%
   as_draws_df(.) %>%
   thin_draws(thin = 4) # if too much we can also do thinning
-``
-`
+```
   
-Here we go from `
-VA -> mm -> px -> num
-`:
+Here we go from `VA -> mm -> px -> num`:
   
-`
-``
-{
-  r
-}
+```{r}
 pred <- draws %>%
   expand_grid(new_data) %>% # every draw * every dot; will result in 5760 * 3000 (thinned version) row s
   mutate(
@@ -370,7 +363,7 @@ pred %>% head(5)
 
 “Equal number of points or line below and above. A strategy we did not anticipate was ensuring an equal number of points or line lengths above and below the judgment indicator. To indicate their responses, participants drug a line on the graph. By allowing participants to place a line directly on the graphs, participants could then easily count the number of points above and below the line. One participant simply wrote, “I tried to have the number of points above and below the line be approximately equal.” Unsurprisingly, this strategy was most common for participants who viewed graphs with points equally spaced along the x-axis (24%).” ([Moritz et al., 2023, p. 7](zotero://select/library/items/ZPTBTRIF)) ([pdf](zotero://open-pdf/library/items/AZRSTSWZ?page=7&annotation=4AENLNDJ))
 
-Let's see using one graph as an example, the following is the stimuli we're dealing with: 
+Let's see using one graph as an example, the following is the stimuli we're dealing with --- noise `c(0, 0.4)`, not flipped (meaning the high variability part is in the top part), and then `30` corresponds to `point` and `34` corresponds to `pointArc`. `30` and `34` do not share the same mean.
 
 ```{r}
 #| layout-ncol: 2
@@ -380,26 +373,19 @@ Let's see using one graph as an example, the following is the stimuli we're deal
 
 p1 <- get_og_stimuli(30)
 p2 <- get_og_stimuli(34)
-
-# p1 <- stimuli_df %>%
-#   filter(ogIndex == "30") %>% # expIndex == 11 & type == "point"
-#   ggplot(aes(x = num.x, y = num.y)) +
-#   geom_point() +
-#   scale_x_continuous(limits = c(0, 120)) +
-#   scale_y_continuous(limits = c(0, 1)) +
-#   labs(title = "point")
-
-# p2 <- stimuli_df %>%
-#   filter(ogIndex == "34") %>% # expIndex == 11 & type == "point_arc"
-#   ggplot(aes(x = num.x, y = num.y)) +
-#   geom_point() +
-#   scale_x_continuous(limits = c(0, 120)) +
-#   scale_y_continuous(limits = c(0, 1)) +
-#   labs(title = "point arc")
+p3 <- get_og_stimuli(32)
+p4 <- get_og_stimuli(28)
 
 p1
 p2
+p3
+p4
 ```
+
+Note that 
+
+- `28` and `30` share the same mean, same type, same flip, but difference noise level. 
+- `30` and `34` share different mean, different type, sane flip, same noise level 
 
 The following is the predictions we make, for an average participant with fixed `pixelToMM` and `distToScreen`: 
 
@@ -500,6 +486,67 @@ filter_avg_pred <- pred %>%
   )
 ```
 
+---
+
+```{r}
+#| code-fold: true
+#| layout-ncol: 2
+
+avg_pred %>%
+  ungroup(.) %>%
+  left_join(ans_df) %>%
+  mutate(
+    error = ifelse(
+      flip == FALSE,
+      num.pred.avg.y - num.ans.y,
+      num.ans.y - num.pred.avg.y
+      # num.pred.median.y - num.ans.y # symmetric outcome
+    )
+  ) %>%
+  group_by(ogIndex, expIndex, type, flip, noise) %>%
+  median_qi(error) %>%
+  ggplot(aes(
+    y = ogIndex,
+    x = error,
+    xmin = .lower,
+    xmax = .upper,
+    color = type
+  )) +
+  geom_pointinterval() +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  facet_wrap(~noise) +
+  labs(title = "avg_pred")
+
+filter_avg_pred %>%
+  ungroup(.) %>%
+  left_join(ans_df) %>%
+  mutate(
+    error = ifelse(
+      flip == FALSE,
+      num.pred.median.y - num.ans.y,
+      num.ans.y - num.pred.median.y
+      # num.pred.median.y - num.ans.y # symmetric outcome
+    )
+  ) %>%
+  group_by(ogIndex, expIndex, type, flip, noise) %>%
+  median_qi(error) %>%
+  ggplot(aes(
+    y = ogIndex,
+    x = error,
+    xmin = .lower,
+    xmax = .upper,
+    color = type
+  )) +
+  geom_pointinterval() +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  facet_wrap(~noise) +
+  labs(title = "rejection sampling avg_pred")
+```
+
+
+
+---
+
 Ok the above graph is not making ANY SENSE so we will look at the first four: 
 - ogIndex == 4, expIndex == 1, type == point, flip == False, noise == c(0, 0)
 - ogIndex == 4, expIndex == 1, type == point, flip == False, noise == c(0, 0)ans
@@ -596,8 +643,8 @@ filter_avg_pred %>%
 
 
 ```{r}
-filter_avg_pred %>%
-  filter(ogIndex %in% c(10, 11)) %>%
+avg_pred %>%
+  # filter(ogIndex %in% c(10, 11)) %>%
   ungroup(.) %>%
   left_join(ans_df) %>%
   mutate(
@@ -607,7 +654,7 @@ filter_avg_pred %>%
       num.ans.y - num.pred.median.y
     )
   ) %>%
-  ggplot(aes(x = error, y = as.factor(ogIndex))) +
+  ggplot(aes(x = error, y = as.factor(ogIndex), color = noise)) +
   stat_halfeye()
 ```
 
@@ -632,61 +679,6 @@ filter_avg_pred %>%
 
 ... which is weird ... 
 
-```{r}
-#| code-fold: true
-#| layout-ncol: 2
-
-avg_pred %>%
-  ungroup(.) %>%
-  left_join(ans_df) %>%
-  mutate(
-    error = ifelse(
-      flip == FALSE,
-      num.pred.median.y - num.ans.y,
-      num.ans.y - num.pred.median.y
-      # num.pred.median.y - num.ans.y # symmetric outcome
-    )
-  ) %>%
-  group_by(ogIndex, expIndex, type, flip, noise) %>%
-  median_qi(error) %>%
-  ggplot(aes(
-    y = ogIndex,
-    x = error,
-    xmin = .lower,
-    xmax = .upper,
-    color = type
-  )) +
-  geom_pointinterval() +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  facet_wrap(~noise) +
-  lab(title = "avg_pred")
-
-filter_avg_pred %>%
-  ungroup(.) %>%
-  left_join(ans_df) %>%
-  mutate(
-    error = ifelse(
-      flip == FALSE,
-      num.pred.median.y - num.ans.y,
-      num.ans.y - num.pred.median.y
-      # num.pred.median.y - num.ans.y # symmetric outcome
-    )
-  ) %>%
-  group_by(ogIndex, expIndex, type, flip, noise) %>%
-  median_qi(error) %>%
-  ggplot(aes(
-    y = ogIndex,
-    x = error,
-    xmin = .lower,
-    xmax = .upper,
-    color = type
-  )) +
-  geom_pointinterval() +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  facet_wrap(~noise) +
-  lab(title = "rejection sampling avg_pred")
-```
-
 Ok this is suggesting to me that some of the errors are really quite off ... 
 If we don't flip things, what would it look like? -> very symmetric ... 
 
@@ -710,6 +702,17 @@ avg_pred %>%
   median_qi(error) %>%
   filter(error < 0, .upper < 0)
 ```
+
+```{r}
+avg_pred %>% filter(ogIndex == 28) %>% 
+  ggplot(aes(x = num.pred.median.y)) + 
+  stat_halfeye()
+```
+
+```{r}
+
+```
+
 
 Hmm it appears that 38 out of 96 cases have this problem ... or 5 out of 12 seeds ...
 
@@ -763,11 +766,24 @@ avg_pred %>%
   ungroup(.) %>%
   left_join(ans_df) %>%
   mutate(
-    error = abs(num.pred.median.y - num.ans.y) # turning this into num.pred.avg.y leaves very symmetric stuff ...
+    error = ifelse(flip == TRUE, num.pred.avg.y - num.ans.y, num.ans.y - num.pred.avg.y) # turning this into num.pred.avg.y leaves very symmetric stuff ...
   ) %>%
+  group_by(type, noise, .draw) %>% 
+  summarise(error = mean(error)) %>% 
   ggplot(aes(x = error, y = noise, fill = type)) +
   stat_halfeye(alpha = 0.5)
 ```
 
 What is the next step here? This is for all trials, but for a fixed value of pixelToMM and distToScreen. 
 If we want to produce something like Mortiz's result, do we need to do the above for every pixelToMM and distToScreen combo that the participant pool had ...? 
+
+---
+
+
+```{r}
+get_og_stimuli(28)
+
+stimuli_df %>% filter(ogIndex == 28)
+
+stimuli_df %>% count(flip, noise)
+```
