@@ -11,6 +11,7 @@ library(here)
 library(jsonlite)
 library(brms)
 library(posterior)
+theme_set(theme_minimal())
 ```
 
 # Replicating Mortiz Exp 2
@@ -24,7 +25,6 @@ Here are the details of the original experiment:
   - 3 mark type: `line`, `cartesian spaced points`, `arc spaced points` -> between-subjects
     - In our experiment we will only use cartesian spaced points and arc spaced points. 
   - 12 different seeds -> `2 * 2 * 12 = 48` trials per participant.
-
 
 ## Read in Stimuli Data
 
@@ -50,13 +50,14 @@ stimuli_df %>% filter(type != "line") %>%
   left_join(point_map, by = join_by(index, type)) %>% 
   left_join(pointArc_map, by = join_by(index, type)) %>% 
   mutate(expIndex = coalesce(expIndex.x, expIndex.y)) %>% 
-  select(index, expIndex, type, noise, x, y) %>% ungroup(.) %>% 
-  rename(num.x = x, num.y = y) -> stimuli_df
+  select(index, expIndex, type, noise, x, y) %>% 
+  ungroup(.) %>% 
+  rename(ogIndex = index, num.x = x, num.y = y) -> stimuli_df
 
 stimuli_df %>% head(5)
 ```
 
-Let's also read in the data collected from pilot: 
+Let's also read in the data collected from pilot. First we get participant's numerical and pixel responses: 
 
 ```{r}
 raw_df <- read_csv(here("data", "part_2", "part2_pilot.csv")) %>% as_tibble(.) 
@@ -68,16 +69,18 @@ pilot_df %>% filter(responseId %in% c("numericResponse", "pixelResponse")) %>%
   select(participantId, trialId, responseId, answer) %>%
   separate_wider_delim(col = trialId, delim = "_", names = c("type", NA, "index")) %>% 
   pivot_wider(names_from = "responseId", values_from = "answer") %>% 
-  mutate(numericResponse = as.numeric(numericResponse), 
+  mutate(
+    numericResponse = as.numeric(numericResponse), 
     pixelResponse = as.numeric(pixelResponse), 
     index = as.integer(index)
   ) %>% 
   rename(expIndex = index) %>% 
-  mutate(pixelResponse = 200 - pixelResponse + 5) %>%
-  left_join(ans_df) -> resp_df 
+  mutate(pixelResponse = 200 - pixelResponse + 5) -> resp_df  
 
 resp_df %>% head(5)
 ```
+
+Then we also get a dataset that documents how far away they're sitting from the screen: 
 
 ```{r}
 # visual angle related 
@@ -94,6 +97,8 @@ pilot_df %>% filter(!responseId %in% c("numericResponse", "pixelResponse")) %>%
   
 # only keep people whose ans are somewhat useful
 keep_id <- participant_df %>% pull(participantId)
+
+participant_df %>% head(5)
 ```
 
 ## Translate btw spaces
@@ -148,10 +153,9 @@ Process the response df given the new info about participants:
 ```{r}
 resp_df <- resp_df %>% filter(participantId %in% keep_id) %>% 
   left_join(participant_df) %>% 
-  rename(num.y = numericResponse, 
+  rename(
+    num.y = numericResponse, 
     px.y = pixelResponse, 
-    ans.num.y = y.avg,
-    ogIndex = index
   ) %>% mutate(
     pixelsPerMM = as.numeric(pixelsPerMM),
     phy.y = px.y / pixelsPerMM,
@@ -225,7 +229,7 @@ Here we go from `num -> px -> MM -> VA`
 pixelToMM <- 5.12
 screenDist <- 473
 
-new_data <- stimuli_df %>% rename(ogIndex = index) %>% 
+new_data <- stimuli_df %>% 
   # calculate pixel values from numerical values
   mutate(px.x = 500 / 120 * num.x, 
          px.y = 200 * num.y) %>% 
@@ -243,8 +247,8 @@ nd <- new_data %>% select(ogIndex, expIndex, type, va.ans.x, va.ans.y) %>%
   filter(type == "point") # consider only one kind of graph type
 
 draws <- model %>% spread_draws(b_Intercept, b_sigma_Intercept) %>% 
-  as_draws_df(.) %>% 
-  thin_draws(thin = 2) # start with some aggressive thinning 
+  as_draws_df(.) # %>% 
+  # thin_draws(thin = 1) # start with some aggressive thinning 
 # draws has 1200 rows
 ```
 
@@ -299,4 +303,50 @@ pred %>% filter(expIndex == 10) %>%
   theme_minimal() + 
   geom_hline(yintercept = real_mean, color = "red") + 
   labs(title = "No noise, median vs. mean")
+```
+
+## Doing this for not just one 
+
+
+```{r}
+avg_pred <- pred %>% group_by(expIndex, type, .draw) %>% 
+    summarise(
+    num.pred.avg.y = mean(num.pred.y), 
+    num.pred.median.y = median(num.pred.y),
+    .groups = "drop_last"
+  )
+
+ans_df <- stimuli_df %>% group_by(ogIndex, expIndex, type, noise) %>% 
+  summarise(num.ans.y = mean(num.y)) %>% 
+  filter(type == "point") %>% 
+  ungroup(.)
+```
+
+Error for a particular answer: 
+
+```{r}
+avg_pred %>% left_join(ans_df, by = join_by("expIndex", "type")) %>% 
+  mutate(error.y.avg = num.pred.avg.y - num.ans.y, 
+    error.y.median = num.pred.median.y - num.ans.y
+  ) %>% 
+  filter(expIndex == 1) %>% 
+  ggplot(data = ., aes(y = error.y.median)) + 
+  stat_halfeye() 
+```
+
+
+```{r}
+avg_pred %>% left_join(ans_df, by = join_by("expIndex", "type")) %>% 
+  mutate(error.y.avg = num.pred.avg.y - num.ans.y, 
+    error.y.median = num.pred.median.y - num.ans.y
+  ) %>%
+  group_by(.draw, noise) %>%
+  summarise(
+    error.y.avg = mean(error.y.avg),
+    error.y.median = mean(error.y.median),
+    # .groups = "drop"
+  ) %>% 
+  # pivot_longer(cols = 3:4) # %>% 
+  ggplot(aes(x = error.y.median, fill = noise)) + 
+  stat_halfeye()
 ```
