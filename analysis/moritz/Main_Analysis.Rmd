@@ -1,0 +1,654 @@
+---
+title: "Average Estimates in Line Graphs are Biased Towards Variability"
+author: "Anonymous"
+date: "June 28th, 2023"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    fig_height: 6
+    fig_width: 8
+    highlight: pygments
+    theme: yeti
+    toc: yes
+    toc_float: yes
+    self_contained: yes
+  word_document:
+    toc: yes
+always_allow_html: yes
+---
+<br>
+
+
+This is the code used for the analysis reported in 'Average Estimates in Line Graphs are Biased Towards Variability'.
+
+# Data wrangling
+
+Load packages used and functions:
+
+```{r packages, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(tidyverse) # Data wrangling/pipe (%>%)
+require(tidybayes) # Visualizing model output
+require(kableExtra) # Make nice tables
+require(lme4) # Regression analysis 
+require(irr) #Inter-Rater Reliability with Coehn's Kappa
+source("Functions.R") # Calculating CI for mixed designs
+```
+
+Reading in data from Exp 1 and 2
+
+```{r data}
+#Exp 1
+exp1 <- read.csv("data/exp1.csv", check.names=FALSE) #main study
+exp1_demog <- read.csv("data/exp1-demographics.csv", check.names=FALSE) #exp 1 demographics
+
+#Exp 2
+exp2_line <- read.csv("data/exp2-line.csv", check.names=FALSE) #line
+exp2_dotArc <- read.csv("data/exp2-point-arc.csv", check.names=FALSE) #point arc
+exp2_dotX <- read.csv("data/exp2-point.csv", check.names=FALSE) #point
+exp2_demog <- read.csv("data/exp2-demographics.csv", check.names=FALSE) #exp 2 demographics
+
+#strategy codes
+strategies <- read.csv("data/strategies.csv", check.names=FALSE)
+```
+
+Combining conditions in Exp 2
+
+```{r combine_exp2}
+exp2 <- rbind(exp2_line, exp2_dotArc, exp2_dotX)
+```
+
+Fixing the naming and coding from various conditions  
+
+```{r naming}
+#fixing variability coding for Exp 1
+exp1$variability <- 
+  factor(ifelse(exp1$variability=="0,0.15", "0.15",
+         ifelse(exp1$variability=="0,0.4", "0.4", 999)))
+
+
+#fixing variability coding for Exp 2
+exp2$variability <- 
+  factor(ifelse(exp2$variability=="0,0", "0",
+         ifelse(exp2$variability=="0,0.4", "0.4", 999)))
+
+#fixing the flip naming for Exp 1
+exp1$flipped <- factor(ifelse(exp1$flip=="TRUE", "Flipped", "Unflipped"))
+exp1$flipped <- factor(exp1$flipped, levels=c("Unflipped", "Flipped"))
+
+#fixing the flip naming for Exp 2
+exp2$flipped <- factor(ifelse(exp2$flip=="TRUE", "Flipped", "Unflipped"))
+exp2$flipped <- factor(exp2$flipped, levels=c("Unflipped", "Flipped"))
+
+#fixing the overestimation naming for Exp 1-2
+exp1$estimation <- factor(ifelse(exp1$overestimated=="TRUE", "overestimated", "underestimated"))
+exp2$estimation <- factor(ifelse(exp2$overestimated=="TRUE", "overestimated", "underestimated"))
+
+#adding biased towards variability code
+exp1$bias_towards_variability <- ifelse(exp1$normalized_error > "0", "True", "False")
+exp2$bias_towards_variability <- ifelse(exp2$normalized_error > "0", "True", "False")
+```
+
+
+# Analyses
+
+## Exp 1
+
+### Descriptive Statistics
+
+We now perform the analyses for Experiment 1.
+
+Look at the demographics data first
+
+```{r demographics exp1}
+# Age
+exp1_demog$age <- as.numeric(exp1_demog$age) # Make numeric
+range(exp1_demog$age) # Range
+round(mean(exp1_demog$age), 0) # Mean
+round(sd(exp1_demog$age), 0) # SD
+
+# Gender
+(xtab <- table(exp1_demog$gender)) #Raw stats
+round(prop.table(xtab), 3) * 100 # Proportions (in order)
+```
+
+We now create a plot showing the descriptive statistics for over and underestimation 
+
+```{r Descriptive Plot}
+#creating a theme
+line_theme <- function() {
+  theme(axis.text.y = element_blank(), 
+      axis.title.y = element_blank(), 
+      legend.position="top", 
+      legend.justification="left",
+      legend.direction="horizontal",
+      legend.title = element_blank(), 
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(), 
+      strip.background = element_blank(),
+      strip.text.x = element_text(size = 15, face ="bold", hjust = 0))
+    }
+
+#plot 
+expDesc1 <- ggplot(exp1, aes(estimation, fill = estimation))+
+  geom_bar()+ #adding bar
+  coord_flip()+ #flipping axis
+  facet_wrap('flipped', ncol = 1)+ #breaking up by flip
+  geom_text(stat='count', aes(label=..count..), hjust=-.15)+ #adding count text
+  theme(legend.position="top")+ #moving legend
+  scale_fill_manual(values=c("#4e79a7", "#F28e2b"))+ #color
+  scale_y_continuous(breaks=seq(0, 3000, by = 500), expand = expansion(mult = c(0, 0.12)))+ #scale
+  theme_classic() + #theme
+  guides(y = "none")+ #removing guides
+  line_theme() # adding theme
+expDesc1 #print plot
+
+#export plot
+ggsave(plot=expDesc1,height=2.5,width=4.2,dpi=200, filename="plots/expDesc1.pdf", useDingbats=FALSE)
+```
+
+### Statistical Analysis
+
+Regression Analysis for Exp 1
+
+```{r Regression exp1}
+#ordering the factors
+exp1$flipped <- factor(exp1$flipped, levels=c("Unflipped", "Flipped"))
+
+#Pre-registered regression model (updated from lm)
+m.exp1.1 = lmer(error ~ variability*flipped + (1 | assignmentid), data=exp1)
+
+#approximating coefficients
+c.exp1.1 <- cbind(data.frame(coef(summary(m.exp1.1))) %>% #summary of coefficients 
+  mutate(p.z = 2 * (1 - pnorm(abs(t.value)))), #p-value estimation 
+  as_tibble(confint(m.exp1.1, method="Wald", level = 0.95))[-c(1:2),]) #CIs 
+
+
+#creating a table printout 
+knitr::kable(c.exp1.1,  
+             align = "l",
+             booktabs = T, 
+             linesep = "", 
+             digits = 3)%>%
+    row_spec(0, bold = T)%>%
+    kable_styling(latex_options = "striped", font_size = 12)
+```
+
+Test of H1: estimation error will be significantly different than zero. The results revealed a significant intercept of the model (b = -0.036, t(6811) = -6.6, p < .001, 95% CI [-.047, -.025]), providing evidence that the absolute estimation error (3.6%) for the referent conditions was meaningfully different than zero (supporting H1).
+
+Test of H2: significantly more estimation error for trials with higher variability. The results also revealed a significant main effect of variability (b = -.022, t(6811) = -6.5, p < .001, 95% CI [-.029, -.016]). This finding supports H2, suggesting significantly more estimation error for trials with higher variability than lower variability
+
+Test of H3: estimation error will occur in the direction of the increased variability. There was also a significant interaction between variability .15 vs .4 and variability upper vs. lower (b = .034, t(6811) = 7, p < .001, 95% CI [.025, .044]). To unpack the interaction, we ran the same model above but with the variability in the lower y-value graphs as the referent.
+
+
+```{r}
+#changing levels 
+exp1$flipped <- factor(exp1$flipped, levels=c("Flipped", "Unflipped"))
+
+#Pre-registered regression model (updated from lm)
+m.exp1.2 = lmer(error ~ variability*flipped + (1|assignmentid), data=exp1)
+
+#approximating coefficients
+c.exp1.2 <- cbind(data.frame(coef(summary(m.exp1.2))) %>% #summary of coefficients 
+  mutate(p.z = 2 * (1 - pnorm(abs(t.value)))), #p-value estimation 
+  as_tibble(confint(m.exp1.2, method="Wald", level = 0.95))[-c(1:2),]) #CIs 
+
+
+#creating a table printout 
+knitr::kable(c.exp1.2,  
+             align = "l",
+             booktabs = T, 
+             linesep = "", 
+             digits = 3)%>%
+    row_spec(0, bold = T)%>%
+    kable_styling(latex_options = "striped", font_size = 12)
+
+```
+
+This model yielded a significant effect of variability but in the opposite direction (b = .012, t(6811) = 3.39, p = .001, 95% CI [.005, .018]) compared to the prior model (b = -.022).  We found positive errors when the area of highest variability was above the average y-value and negative errors when the highest variability was lower on the y-axis than the average.
+
+### Plots
+Summery statistics for the plot 
+```{r}
+freq_sum <- summarySEwithin(data = exp1, measurevar = "error", #data and dependent measure
+                withinvars = c("variability", "flip"), #within subject variables 
+                idvar = "assignmentid") #participant id
+```
+
+```{r}
+#plot
+plot1_Exp1_freq<- freq_sum %>%
+  ggplot(aes(x = variability, y = error,  dist = "norm", arg1 = error, arg2 = se, fill = flip)) + #data and uncertainty
+  stat_dist_halfeye(show_interval = TRUE, position = position_dodge(width = 0.2), .width = 0.95, size = .5)+ #halfeye
+  coord_flip()+ #flip axis
+  theme_tidybayes()+ #add theme
+  scale_fill_manual(values=c("#EDC948", "#B07AA1"))+ #color
+  scale_y_continuous(breaks=seq(-.9, .08, by = .02), expand = expansion(mult = c(.1, 0.1))) #scale
+plot1_Exp1_freq #print plot
+
+#export PDF
+#ggsave(plot=plot1_Exp1_freq,height=4,width=7,dpi=200, filename="plots/Exp1Freq.pdf", useDingbats=FALSE)
+```
+
+### Replication of Xiong et al., 2020
+Here we check for an overall bias toward the bottom of the screen. We will check if the absolute difference from 0 is larger for Flipped stimui compared to the Unflipped stimui.   
+
+```{r}
+
+xionglm = lm(absolute_error ~ flipped, data=exp1)
+summary(xionglm)
+```
+
+The lack of significant difference between groups (p = .058) suggests we do not have sufficient evidence to conclude that significantly more people underestimated in the low condition (flipped) than those who overestimated in the high condition (unflipped). 
+
+## Exp 2
+
+We now perform the analyses for Experiment 2.
+
+### Descriptive Statistics
+
+First we look at the demographics data.
+
+```{r demographics exp2}
+# Age
+exp2_demog$age <- as.numeric(exp2_demog$age) # Make numeric
+range(exp2_demog$age) # Range
+round(mean(exp2_demog$age), 0) # Mean
+round(sd(exp2_demog$age), 0) # SD
+
+# Gender
+(xtab <- table(exp2_demog$gender)) #Raw stats
+round(prop.table(xtab), 3) * 100 # Proportions (in order)
+```
+
+Plot
+
+```{r}
+#specifying levels 
+exp2$mark <- factor(exp2$mark, levels=c("point_arc", "line", "point"))
+
+#plot 
+exp2Desc1 <- exp2%>%
+  filter(bias_towards_variability == "True")%>% #only show overestimation 
+  ggplot(aes(bias_towards_variability))+ #x value
+  geom_bar()+ #add bar
+  coord_flip()+ #flip axis
+  facet_wrap('mark', ncol = 1)+ #break up by mark type
+  geom_text(stat='count', aes(label=..count..), hjust=-.2)+ #add count text
+  theme(legend.position="top")+ #move legend
+  scale_y_continuous(breaks=seq(0, 7000, by = 1000), expand = expansion(mult = c(0, 0.12)))+ #scale
+  geom_hline(yintercept = 6720)+ #add horizontal line indicating the number of judgement 
+  theme_classic() + #theme
+  guides(y = "none")+ #remove guides
+  line_theme() #add theme
+exp2Desc1 #print plot
+
+#export plot
+ggsave(plot=exp2Desc1,height=2.5,width=4.2,dpi=200, filename="plots/exp2Desc1.pdf", useDingbats=FALSE)
+```
+
+### Statistical Analysis
+
+Regression Analysis for Exp 2
+
+```{r Exp 2}
+#converting mark to factor
+exp2$mark<- as.factor(exp2$mark)
+
+#ordering mark type
+exp2$mark <- factor(exp2$mark, levels = c("line", "point", "point_arc"))
+
+#Pre-registered regression model
+m.exp2.1 = lmer(normalized_error ~ mark*variability + (1 | assignmentid), data=exp2)
+
+#approximating coefficients
+c.exp2.1 <- cbind(data.frame(coef(summary(m.exp2.1))) %>% #summary of coefficients 
+  mutate(p.z = 2 * (1 - pnorm(abs(t.value)))), #p-value estimation 
+  as_tibble(confint(m.exp2.1, method="Wald", level = 0.95))[-c(1:2),]) #CIs 
+
+#creating a table printout 
+knitr::kable(c.exp2.1,  
+             align = "l",
+             booktabs = T, 
+             linesep = "", 
+             digits = 3)%>%
+    row_spec(0, bold = T)%>%
+    kable_styling(latex_options = "striped", font_size = 12)
+```
+
+
+Replicating Experiment 1, the model results revealed a main effect of variability (b = 0.03, t(20153) = 10.027, p < .00, 95% CI
+[0.024, 0.036]), indicating that graphs with more variability had greater estimation error.
+
+Our results revealed the change from low to high variability was meaningfully larger for Line vs. Point (b = -0.023, t(20153) = -5.451, p < .00, 95% CI [-0.015,-0.031]).
+
+To compare Point Arc vs. Point, we changed the referent of the model in the following analysis. 
+
+```{r}
+#ordering mark type
+exp2$mark <- factor(exp2$mark, levels = c("point", "point_arc", "line"))
+
+#Pre-registered regression model
+m.exp2.2 = lmer(normalized_error ~ mark*variability + (1 | assignmentid), data=exp2)
+
+#approximating coefficients
+c.exp2.2 <- cbind(data.frame(coef(summary(m.exp2.2))) %>% #summary of coefficients 
+  mutate(p.z = 2 * (1 - pnorm(abs(t.value)))), #p-value estimation 
+  as_tibble(confint(m.exp2.1, method="Wald", level = 0.95))[-c(1:2),]) #CIs 
+
+#creating a table printout 
+knitr::kable(c.exp2.2,  
+             align = "l",
+             booktabs = T, 
+             linesep = "", 
+             digits = 3)%>%
+    row_spec(0, bold = T)%>%
+    kable_styling(latex_options = "striped", font_size = 12)
+```
+
+The change in normalized error from low to high variability was also meaningfully larger for Point Arc vs. Point (b = 0.05, t(20153) =
+10.742, p < .00, 95% CI [-0.031	-0.015]).
+
+We conducted a follow-up regression analysis to determine if the small increase in normalized estimation error was meaningful for Point.
+
+Point only model
+```{r}
+#subsetting data for just point
+point <- filter(exp2, mark == "point") #making a data frame with point data
+
+#model
+ m.exp2.point = lm(normalized_error ~ variability, data=point) #regression equation with point data
+ summary(m.exp2.point) #print summary 
+```
+
+This analysis revealed a meaningful but small bias for Point (b = 0.007, t(6718) = 2.243, p = .025). 
+
+### Plot 
+First we visualize the main effect of variability, collapsed across mark type
+
+```{r}
+#calculating summery statistics 
+freq_sum <- summarySEwithin(data = exp2, #data
+                measurevar = "normalized_error", #dependent variable 
+                withinvars = "variability", #within subjects variable
+                idvar = "assignmentid") #participant id
+
+#plot
+plot1_Exp2_freq_sum<- freq_sum %>% #data
+  ggplot(aes(x = variability, y = normalized_error,  dist = "norm", arg1 = normalized_error, arg2 = se)) + #uncertainty
+  stat_dist_halfeye(show_interval = TRUE, position = position_dodge(width = 0.2), .width = 0.95, size = 4, alpha = .7)+ #adding halfeye
+  coord_flip()+ #flipping axis
+  theme_tidybayes()+ # adding theme
+  xlab("Variability") + #adding x label
+  ylab("Normalized Error")+  #adding y label
+  ylim(c(0, .06)) #specifying y limits
+plot1_Exp2_freq_sum #print plot
+
+#export plot
+ggsave(plot=plot1_Exp2_freq_sum,height=4,width=7,dpi=200, filename="plots/Exp2V2Freq_sum.pdf", useDingbats=FALSE)
+```
+Next we visualize the effect of variability for each mark type
+
+```{r}
+#calculating summery statistics 
+freq_sum <- summarySEwithin(data = exp2, #data
+                measurevar = "normalized_error",  #dependent variable 
+                withinvars = "variability", #within subjects variable
+                betweenvars = "mark", #between subject variable 
+                idvar = "assignmentid") #participant id
+
+#plot
+plot1_Exp2_freq<- freq_sum %>% #data
+  ggplot(aes(x = variability, y = normalized_error,  dist = "norm", arg1 = normalized_error, arg2 = se, fill = mark))+ #uncertainty
+  stat_dist_halfeye(show_interval = TRUE, position = position_dodge(width = 0.2), .width = 0.95, size = .5, alpha = .8)+ #adding halfeye
+  coord_flip()+ #flipping axis
+  theme_tidybayes()+ #theme
+  scale_fill_manual(values=c("#76B7B2", "#E15759", "#59A14F"))+ #adding color
+  scale_y_continuous(breaks=seq(0, .11, by = .01), expand = expansion(mult = c(0.01, 0.01)))+ #specifying scale
+  xlab("Variability") + #add x label
+  ylab("Normalized Error") #add y label
+plot1_Exp2_freq # print plot
+
+#export PDF
+ggsave(plot=plot1_Exp2_freq,height=6,width=7,dpi=200, filename="plots/Exp2Freq.pdf", useDingbats=FALSE)
+```
+
+
+# Open Responses for Exp 1 and 2 
+
+First, we calculate an inter-rater reliability score for the strategies.
+
+```{r IRR}
+#mentioned using high or low points
+kappa2(strategies[,c("r1_highlow","r2_highlow")],weight = "unweighted")
+#Kappa = 0.884 
+
+#did some type of mental averaging
+kappa2(strategies[,c("r1_mental_averaging","r2_mental_averaging")],weight = "unweighted")
+#Kappa = 0.83
+
+#mentioned using the begin or end points
+kappa2(strategies[,c("r1_start_end","r2_start_end")],weight = "unweighted")
+#Kappa = 0.828 
+
+#considered variability in some capacity
+kappa2(strategies[,c("r1_variability","r2_variability")],weight = "unweighted")
+#Kappa = 0.697 
+
+#equal number of points or line below and above the average line
+kappa2(strategies[,c("r1_number_of_points","r2_number_of_points")],weight = "unweighted")
+#Kappa = 0.87 
+
+#equal area above and below the line
+kappa2(strategies[,c("r1_equal_area","r2_equal_area")],weight = "unweighted")
+#Kappa = 0.889 
+
+#didn't know their strategy 
+kappa2(strategies[,c("r1_unknown","r2_unknown")],weight = "unweighted")
+#Kappa = 0.844 
+
+#other/na
+kappa2(strategies[,c("r1_other_na","r2_other_na")],weight = "unweighted")
+#Kappa = 0.893 
+```
+
+Table of counts of those who mentioned using high or low points
+```{r} 
+strategies %>%
+  dplyr::mutate(highlow = (r1_highlow+r2_highlow)/2) %>%
+  dplyr::group_by(Exp, Condition, highlow) %>%
+  dplyr::count()
+```
+
+Table of counts those who mentioned using mental averaging
+```{r} 
+strategies %>%
+  dplyr::mutate(mental_averaging = (r1_mental_averaging+r2_mental_averaging)/2) %>%
+  dplyr::group_by(Exp, Condition, mental_averaging) %>%
+  dplyr::count()
+```
+
+Table of counts those who mentioned using beginning or ending points
+```{r} 
+strategies %>%
+  dplyr::mutate(start_end = (r1_start_end+r1_start_end)/2) %>%
+  dplyr::group_by(Exp, Condition, start_end) %>%
+  dplyr::count()
+```
+
+Table of counts those who mentioned considering variability
+```{r} 
+strategies %>%
+  dplyr::mutate(variability = (r1_variability+r2_variability)/2) %>%
+  dplyr::group_by(Exp, Condition, variability) %>%
+  dplyr::count()
+```
+
+Table of counts those who mentioned making sure there were an equal number of points or line below and above the average line
+```{r} 
+strategies %>%
+  dplyr::mutate(number_of_points = (r1_number_of_points+r2_number_of_points)/2) %>%
+  dplyr::group_by(Exp, Condition, number_of_points) %>%
+  dplyr::count()
+```
+
+Table of counts those who mentioned making sure there were an equal area below and above the average line
+
+```{r} 
+strategies %>%
+  dplyr::mutate(equal_area = (r1_equal_area+r2_equal_area)/2) %>%
+  dplyr::group_by(Exp, Condition, equal_area) %>%
+  dplyr::count()
+```
+
+
+Participants who used the correct strategy 
+
+```{r}
+correct = c("32Q90QCQ1TLWMDCPHF1CL11UI7EEKK", "336YQZE83WERGIJZRQLPWKNLSMR5M0", "337RC3OW062O8UGTX52N052V5TFVLJ", "33CUSNVVNOCVIB0XVNI93MWH8ZJ88F", "33F859I567D7DKZX13WP71FHJ37BH3", "34YB12FSQZOPWF8J8M4G0HEAIYNGMH", "37Q970SNZF8VQVVLA0FZ539A62NS1C", "39DD6S19JQBRB8BBHG4M8GP7IRCEZ9", "39RP059MEITT5Y08S0C2Z6ND2BUBMA", "3CN4LGXD5YO9EG4DWOQQLN4EZT64Y0", "3EICBYG645WMEVMT33V5UY1EJP8CJ0", "3ERMJ6L4DZS63MXIFJ0MU41HHJV7M6", "3H8DHMCCWABRU7YPLKQSFJJ9EP3DK0", "3HUTX6F6VVNNHOLOMNY4QH9E1BNO21", "3IFS6Q0HJJJ6Q1RJI705X2QWSG6ISV", "3IRIK4HM3BKAQ07MJK1GLUW9WGH6CA", "3LEP4MGT3H0Q14UVF7DZGG0JRVSDBE", "3QJOXOW4XKRRC1CS2RES0ETY6UXMEK", "3ZPBJO59KQ10SHXHFZNV2R3HQUMDHV", "3ZSY5X72NYB4L8291DD5RPHMFDPROR")
+```
+
+
+Creating separate data frames for participants who reported correct and incorrect strategies 
+
+```{r}
+#code for not in
+"%ni%" <- Negate("%in%")
+
+#Filtering
+exp2.wrong = exp2 %>%
+  dplyr::filter(assignmentid %ni% correct)
+
+exp2.correct = exp2 %>%
+  dplyr::filter(assignmentid %in% correct)
+```
+
+Calculating summery statistics for each group
+
+```{r}
+freq_sum.wrong <- summarySEwithin(data = exp2.wrong, #data
+                measurevar = "normalized_error",  #dependent variable 
+                withinvars = "variability", #within subjects variable
+                betweenvars = "mark", #between subject variable 
+                idvar = "assignmentid") #participant id
+
+freq_sum.correct <- summarySEwithin(data = exp2.correct, #data
+                measurevar = "normalized_error",  #dependent variable 
+                withinvars = "variability", #within subjects variable
+                betweenvars = "mark", #between subject variable 
+                idvar = "assignmentid") #participant id
+
+
+freq_sum.correct.id <- summarySEwithin(data = exp2.correct, #data
+                measurevar = "normalized_error",  #dependent variable 
+                withinvars = "variability", #within subjects variable
+                betweenvars = c("mark","assignmentid"), #between subject variable 
+                idvar = "assignmentid") #participant id
+```
+
+
+Plot comparing strategies which was cleaned up in illustrator 
+
+```{r, warning=FALSE}
+good<-  ggplot()+ #uncertainty
+   stat_dist_halfeye(data = freq_sum.wrong, aes(x = 1, y = normalized_error,  dist = "norm", arg1 = normalized_error, arg2 = se, fill = mark, color=mark), show_interval = TRUE, position = position_dodge(width = 1.8), .width = 0.95, size = .5, alpha = .9)+
+  
+   stat_dist_halfeye(data = freq_sum.correct.id, aes(x = 1, y = normalized_error,  dist = "norm", arg1 = normalized_error, arg2 = se, fill = mark), show_interval = TRUE, position = position_dodge(width = 1.5), .width = 0.95, size = .5, alpha = .35)+
+    scale_y_continuous(limits = c(-.1, .15), breaks=seq(-.1, 5, by = .02), expand = expansion(mult = c(0.0, 0.01)))+ #specifying
+    facet_grid(variability~.)+
+    coord_flip()+ #flipping axis
+    theme_tidybayes()+ #theme
+    scale_fill_manual(values=c("#76B7B2", "#E15759", "#59A14F"))+ #adding color
+    scale_color_manual(values=c("#76B7B2", "#E15759", "#59A14F"))+ #adding color
+    xlab("Variability") + #add x label
+    ylab("Normalized Error")+ #add y label
+    theme(axis.text.y = element_blank(), 
+      axis.title.y = element_blank())
+good 
+
+#export PDF
+#ggsave(plot=good,height=8,width=8.5,dpi=200, filename="plots/Exp2_goodcompv1.pdf", useDingbats=FALSE)
+```
+
+# Sensitivity Analysis
+
+## People who guessed the exp 
+
+```{r}
+#People who guess the study in Exp 1
+Exp2_guessed = c("3LEP4MGT3H0Q14UVF7DZGG0JRVSDBE
+", "35K3O9HUACDL6RKBG4AF5O9P67CEFL", "3HHRAGRYX95YH86N7WDJ04HS7DSO9G", "3P59JYT76MK3UGQWI4K3KRF10QRT2T", 
+"37Q970SNZF8VQVVLA0FZ539A62NS1C", "39DD6S19JQBRB8BBHG4M8GP7IRCEZ9", "3VAR3R6G1Q1Y33ND247508MHOP78O9", "3TU5ZICBRE11OF0THHZ9PDHH4BJ8QI", "32Q90QCQ1TLWMDCPHF1CL11UI7EEKK", "3IFS6Q0HJJJ6Q1RJI705X2QWSG6ISV")
+
+#Filtering
+exp2.guess = exp2 %>%
+  dplyr::filter(assignmentid %in% Exp2_guessed)
+
+exp2.noguess = exp2 %>%
+  dplyr::filter(assignmentid %ni% Exp2_guessed)
+```
+
+Rerun regression equations without those people in Exp 2 
+
+```{r Regression exp1 guess}
+#ordering the factors
+exp2.noguess$flipped <- factor(exp2.noguess$flipped, levels=c("Unflipped", "Flipped"))
+
+#Pre-registered regression model
+m.exp1.1.noguess = lm(error ~ variability*flipped, data=exp2.noguess)
+
+#approximating coefficients
+c.exp1.1.noguess <- cbind(data.frame(coef(summary(m.exp1.1.noguess ))) %>% #summary of coefficients 
+  mutate(p.z = 2 * (1 - pnorm(abs(t.value)))), #p-value estimation 
+  as_tibble(confint(m.exp1.1.noguess , method="Wald", level = 0.95))) #CIs 
+
+#creating a table printout 
+knitr::kable(c.exp1.1.noguess,
+             align = "l",
+             booktabs = T, 
+             linesep = "", 
+             digits = 3)%>%
+    row_spec(0, bold = T)%>%
+    kable_styling(latex_options = "striped", font_size = 12)
+```
+
+Plot with and without those who guessed the purpose of the study. The density plots show the original data with everyone included. The quantile dotplot shows the data without those who guessed the purpose of the study. 
+
+```{r}
+#calculating summery statistics 
+freq_sum.noguess <- summarySEwithin(data = exp2.noguess, #data
+                measurevar = "normalized_error",  #dependent variable 
+                withinvars = "variability", #within subjects variable
+                betweenvars = "mark", #between subject variable 
+                idvar = "assignmentid") #participant id
+
+freq_sum <- summarySEwithin(data = exp2, #data
+                measurevar = "normalized_error",  #dependent variable 
+                withinvars = "variability", #within subjects variable
+                betweenvars = "mark", #between subject variable 
+                idvar = "assignmentid") #participant id
+
+#ordering the factors
+freq_sum.noguess$variability <- factor(freq_sum.noguess$variability, levels=c("0.4", "0"))
+freq_sum$variability <- factor(freq_sum$variability, levels=c("0.4", "0"))
+
+#plot
+sensitivity<-  ggplot()+ #uncertainty
+   stat_dist_dotsinterval(data = freq_sum.noguess, aes(x = 1, y = normalized_error,  dist = "norm", arg1 = normalized_error, arg2 = se, color = mark), show_interval = TRUE, position = position_dodge(width = -1.3), .width = 0.95, size = .5, alpha = .9)+
+  stat_dist_halfeye(data = freq_sum, aes(x = 1, y = normalized_error,  dist = "norm", arg1 = normalized_error, arg2 = se, fill = mark), show_interval = TRUE, position = position_dodge(width = -1.5), .width = 0.95, size = .5, alpha = .7)+
+   scale_y_continuous(breaks=seq(0, .11, by = .01), expand = expansion(mult = c(0.01, 0.01)))+ #specifying
+    facet_grid(variability~.)+
+    coord_flip()+ #flipping axis
+    theme_tidybayes()+ #theme
+    scale_fill_manual(values=c("#76B7B2", "#E15759", "#59A14F"))+ #adding color
+    scale_color_manual(values=c("#76B7B2", "#E15759", "#59A14F"))+ #adding color
+    xlab("Variability") + #add x label
+    ylab("Normalized Error")+ #add y label
+    theme(axis.text.y = element_blank(), 
+      axis.title.y = element_blank())
+sensitivity 
+
+#export PDF
+#ggsave(plot=sensitivity,height=6,width=7,dpi=200, filename="plots/Exp2sensitivity.pdf", useDingbats=FALSE)
+```
