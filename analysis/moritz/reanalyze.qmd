@@ -94,19 +94,17 @@ exp2_df <- exp2_df %>%
 Play with the dataset 
 
 ```{r}
-exp2_df %>%
-  mutate(calcError = reportedaverage - data_average) %>%
-  filter(calcError == error) %>%
-  count(mark)
-
-```
-
-```{r}
 exp2_df %>% count(trial) # ok trial is just the trial order
 exp2_df %>% count(seed) # TODO: confirm if this is the same as the one we did ...
 exp2_df %>% count(seed, stimuliindex) # stimuliindex is the actual index used in the json I think
 exp2_df %>%
   count(seed, stimuliindex, mark, flip, variability, data_average, average)
+```
+
+This tells us that for stimuli that share the same seed, same flip, they should also share the same average: 
+
+```{r}
+exp2_df %>% count(seed, flip, average)
 ```
 
 ---
