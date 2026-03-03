@@ -572,11 +572,24 @@ draws <- model %>%
 pred <- draws %>%
   # every draw * every dot; will result in 5760 * 3000 (thinned version) row
   expand_grid(new_data) %>% 
+  # this is the project to x = 60 
   mutate(
     mu = b_Intercept,
     sigma = exp(b_sigma_Intercept + log(va.ans.x)),
     va.pred.error = rnorm(n(), mean = mu, sd = sigma),
     va.pred.y = va.pred.error + va.ans.y
+  ) %>% 
+  group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
+  summarise(
+    va.pred.mid.y = mean(va.pred.y) # this becomes the new va.ans.y
+  )
+
+pred2 <- pred %>% ungroup(.) %>% 
+  left_join(as_tibble(draws)) %>% 
+  mutate(
+    sigma = exp(b_sigma_Intercept + log(vis_angle(x_ref, distToScreen))), 
+    va.pred.error = rnorm(n(), mean = b_Intercept, sd = sigma), 
+    va.pred.y = va.pred.error + va.pred.mid.y # <- NEW 
   ) %>%
   # turn vis angle back to numerical values
   mutate(
@@ -586,10 +599,23 @@ pred <- draws %>%
   )
 ```
 
+Check to see its's predicted stuff: 
+
+```{r}
+#| code-fold: true 
+#| layout-ncol: 2
+
+pred %>% filter(ogIndex == 4) %>% 
+  ggplot(aes(x = va.pred.mid.y, y = "x == 60")) + 
+  stat_halfeye() + 
+  stat_halfeye(data = filter(pred2, ogIndex == 4), aes(x = va.pred.y, y = "x == 0"), color = "blue", ) + 
+  labs(title = "visual angle y to x == 60")
+```
+
 ```{r}
 rm(avg_pred)
 
-avg_pred <- pred %>%
+avg_pred <- pred2 %>%
   group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
   summarise(
     num.pred.avg.y = mean(num.pred.y), # suppose participants can calculate mean
@@ -616,8 +642,10 @@ avg_pred %>%
     )
   ) %>%
   group_by(type, noise, .draw) %>% 
-  summarise(error = mean(norm.error.median)) %>% 
+  summarise(error = mean(error.median)) %>% 
   ggplot(aes(x = error, y = noise, fill = type)) +
   stat_halfeye(alpha = 0.8) +
   labs(title = "Posterior error when an average participant projects to middle, in data units")
 ```
+
+This is kind of giving us more various ...? But not to the same effect that we expected ...? Need to double check ... 
