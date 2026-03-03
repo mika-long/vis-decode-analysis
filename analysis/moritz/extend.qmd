@@ -605,12 +605,27 @@ Check to see its's predicted stuff:
 #| code-fold: true 
 #| layout-ncol: 2
 
-pred %>% filter(ogIndex == 4) %>% 
+pred2 %>% filter(ogIndex == 4) %>% 
   ggplot(aes(x = va.pred.mid.y, y = "x == 60")) + 
   stat_halfeye() + 
-  stat_halfeye(data = filter(pred2, ogIndex == 4), aes(x = va.pred.y, y = "x == 0"), color = "blue", ) + 
-  labs(title = "visual angle y to x == 60")
+  stat_halfeye(aes(x = va.pred.y, y = "x == 0")) + 
+  labs(title = "visual angle of y value at different xintercept values (og Index = 4)")
+
+pred2 %>% filter(ogIndex == 10) %>% 
+  ggplot(aes(x = va.pred.mid.y, y = "x == 60")) + 
+  stat_halfeye() + 
+  stat_halfeye(aes(x = va.pred.y, y = "x == 0")) + 
+  labs(title = "visual angle of y value at different xintercept values")
 ```
+
+This is kind of giving us more variation ...? But not to the same effect that we expected ...? 
+What would a difference of 0.3 in visual angle space translate to in numerical scale? 
+
+```{r}
+phys_size(0.3, distToScreen) * pixelToMM / 200
+```
+
+Turns out to be 0.06 out of a numerical scale of [0, 1] it appears ... 
 
 ```{r}
 rm(avg_pred)
@@ -648,4 +663,3 @@ avg_pred %>%
   labs(title = "Posterior error when an average participant projects to middle, in data units")
 ```
 
-This is kind of giving us more various ...? But not to the same effect that we expected ...? Need to double check ... 
