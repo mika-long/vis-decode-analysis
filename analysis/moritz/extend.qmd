@@ -1,9 +1,17 @@
 ---
 title: "Extend from current data to Moritz"
+author: "Anonymous"
+date: today
+date-format: "iso"
+format:
+  html:
+    reference-location: margin
 ---
 
 ```{r}
 #| code-fold: true
+
+# read in libraries 
 library(ggplot2)
 library(tidyverse)
 library(tidybayes)
@@ -20,11 +28,13 @@ Here are the details of the original experiment:
 
 - **Hypothesis:** “the effect of variability will be smaller for graphs with points spaced along the x-axis than graphs with points spaced along the arc” ([Moritz et al., 2023, p. 5](zotero://select/library/items/ZPTBTRIF)) ([pdf](zotero://open-pdf/library/items/AZRSTSWZ?page=5&annotation=4IPHWX8I))
 - **Experiment Design**:
-  - 2 variability: `0` and `0.4`
-  - 2 flipped: `upper` and `lower` (i.e., whether the plot was flipped or not)
-  - 3 mark type: `line`, `cartesian spaced points`, `arc spaced points` -> between-subjects
-    - In our experiment we will only use cartesian spaced points and arc spaced points. 
-  - 12 different seeds -> `2 * 2 * 12 = 48` trials per participant.
+  - *Within Subject*: 
+    - 2 variability: `0` and `0.4`
+    - 2 flipped: `upper` and `lower` (i.e., whether the plot was flipped or not, where `flip == FALSE` implies that upper-y region has more variability, and `flip == TRUE` implies that the lower-y region has more variability)
+  - *Between Subject*: 
+    - 3 mark type: `line`, `cartesian spaced points`, `arc spaced points`
+      - Note that we will only use cartesian spaced points and arc spaced points for replication.
+  - 12 different seeds for randomization -> `2 * 2 * 12 = 48` trials per participant.
 
 ## Read in Stimuli Data
 
@@ -340,7 +350,8 @@ Here we go from `VA -> mm -> px -> num`:
   
 ```{r}
 pred <- draws %>%
-  expand_grid(new_data) %>% # every draw * every dot; will result in 5760 * 3000 (thinned version) row s
+  # every draw * every dot; will result in 5760 * 3000 (thinned version) row
+  expand_grid(new_data) %>% 
   mutate(
     mu = b_Intercept,
     sigma = exp(b_sigma_Intercept + log(va.ans.x)),
@@ -357,94 +368,36 @@ pred <- draws %>%
 pred %>% head(5)
 ```
 
-### ... for a single trial 
+To calculate how many rows that `pred` has we need to look at these two other dataframes: 
 
+- The `draws` dataframe has 3000 iterations / chain $\times$ 4 chains $\div k = 2$ = 6000 rows 
+- The `new_data` dataframe has 96 trials $\times$ 60 dots per trial = 5760 rows
+- Therefore `pred` is going to be 6000 $\times$ 5760 = 34560000 rows 
+
+---
+
+For now we will not think about things such as rejection sampling, and just calculate the average across all 60 dots for each trial^[This implies that we wil have 34560000/60 = 576000 rows for `avg_pred`]:  
+
+```{r}
+avg_pred <- pred %>%
+  group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
+  summarise(
+    num.pred.avg.y = mean(num.pred.y), # suppose participants can calculate mean
+    num.pred.median.y = median(num.pred.y), # suppor participants use the median instead
+  )
+```
+
+:::{.callout-note}
 **Averaging Strategy vs. Median Strategy**: 
 
 “Equal number of points or line below and above. A strategy we did not anticipate was ensuring an equal number of points or line lengths above and below the judgment indicator. To indicate their responses, participants drug a line on the graph. By allowing participants to place a line directly on the graphs, participants could then easily count the number of points above and below the line. One participant simply wrote, “I tried to have the number of points above and below the line be approximately equal.” Unsurprisingly, this strategy was most common for participants who viewed graphs with points equally spaced along the x-axis (24%).” ([Moritz et al., 2023, p. 7](zotero://select/library/items/ZPTBTRIF)) ([pdf](zotero://open-pdf/library/items/AZRSTSWZ?page=7&annotation=4AENLNDJ))
+:::
 
-Let's see using one graph as an example, the following is the stimuli we're dealing with --- noise `c(0, 0.4)`, not flipped (meaning the high variability part is in the top part), and then `30` corresponds to `point` and `34` corresponds to `pointArc`. `30` and `34` do not share the same mean.
-
-```{r}
-#| layout-ncol: 2
-#| code-fold: true
-
-# see 11 and 15 for examples of more variability
-
-p1 <- get_og_stimuli(30)
-p2 <- get_og_stimuli(34)
-p3 <- get_og_stimuli(32)
-p4 <- get_og_stimuli(28)
-
-p1
-p2
-p3
-p4
-```
-
-Note that 
-
-- `28` and `30` share the same mean, same type, same flip, but difference noise level. 
-- `30` and `34` share different mean, different type, sane flip, same noise level 
-
-The following is the predictions we make, for an average participant with fixed `pixelToMM` and `distToScreen`: 
+Using the same strategy that Moritz et al. used to calculate **error** and **normalized error**^[... which is, instead of calculating the actual mean for the actual dataset, for trials that share the same value for `seed` and `flip`, they share the same "default mean", i.e., the mean of the `point` type, instead of its actual mean.], we need to first calculate the answer for each trial: 
 
 ```{r}
-#| code-fold: true
-#| layout-ncol: 2
+#| code-fold: true 
 
-mean_point <- new_data %>%
-  filter(expIndex == 11 & type == "point") %>%
-  pull(num.y) %>%
-  mean(.)
-
-mean_point_arc <- new_data %>%
-  filter(expIndex == 11 & type == "point_arc") %>%
-  pull(num.y) %>%
-  mean(.)
-
-pred %>%
-  filter(expIndex == 11 & type == "point") %>%
-  group_by(.draw) %>%
-  summarise(
-    num.pred.avg.y = mean(num.pred.y),
-    num.pred.median.y = median(num.pred.y)
-  ) %>%
-  ggplot(data = ., aes(y = num.pred.avg.y)) +
-  stat_halfeye() +
-  stat_halfeye(aes(y = num.pred.median.y), color = "blue", x = 0) +
-  theme_minimal() +
-  geom_hline(yintercept = mean_point, color = "red") +
-  labs(title = "No noise, median vs. mean for graph id 11, point ver")
-
-pred %>%
-  filter(expIndex == 11 & type == "point_arc") %>%
-  group_by(.draw) %>%
-  summarise(
-    num.pred.avg.y = mean(num.pred.y),
-    num.pred.median.y = median(num.pred.y)
-  ) %>%
-  ggplot(data = ., aes(y = num.pred.avg.y)) +
-  stat_halfeye() +
-  stat_halfeye(aes(y = num.pred.median.y), color = "blue", x = 0) +
-  theme_minimal() +
-  geom_hline(yintercept = mean_point_arc, color = "red") +
-  labs(title = "No noise, median vs. mean for graph id 11, point_arc version")
-```
-
-### Doing this for not just one 
-
-First we get the average predictions to prevent ourselves from calculating this all the time: 
-- `.draw`: 3000 draws per dot 
-- `type`: 2 types 
-- `expIndex`: 48 unique values 
-- so the total is `3000 * 2 * 48` groups 
-
-A very important thing here to note is that error is calculated using the "default mean", i.e., the mean with the same seed and flip. 
-
-NOTE: the following is the REAL ans_df that follows in the style of Mortiz et al. for analysis. 
-
-```{r}
 temp_df <- stimuli_df %>% filter(type == "point") %>% 
   group_by(seed, flip) %>% 
   summarise(num.ans.y = mean(num.y)) %>%
@@ -458,299 +411,31 @@ ans_df <- stimuli_df %>% select(-num.x, -num.y) %>%
 ans_df
 ```
 
-```{r}
-# with no rejection sampling 
-avg_pred <- pred %>%
-  group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
-  summarise(
-    num.pred.avg.y = mean(num.pred.y),
-    num.pred.median.y = median(num.pred.y),
-  )
-```
 
----
 I think this is the very reasonable next step here: 
 
 ```{r}
+#| code-fold: true 
+
 avg_pred %>%
   ungroup(.) %>%
   left_join(ans_df) %>%
   mutate(
-    # error = ifelse(flip == TRUE, num.pred.median.y - num.ans.y, num.ans.y - num.pred.median.y) 
-    # error.median = abs(num.pred.median.y - num.ans.y), 
-    error.median = ifelse(flip == FALSE, 
+    error.median = num.pred.median.y - num.ans.y,
+    norm.error.median = ifelse(flip == FALSE, 
       num.pred.median.y - num.ans.y, 
       num.ans.y - num.pred.median.y
     ),
-    # error.avg = abs(num.pred.avg.y - num.ans.y),
-    error.avg = ifelse(flip == FALSE, 
+    error.avg = num.pred.avg.y - num.ans.y,
+    norm.error.avg = ifelse(flip == FALSE, 
       num.pred.avg.y - num.ans.y, 
       num.ans.y - num.pred.avg.y
     )
   ) %>%
   group_by(type, noise, .draw) %>% 
-  summarise(error = mean(error.avg)) %>% 
+  summarise(error = mean(norm.error.avg)) %>% 
   ggplot(aes(x = error, y = noise, fill = type)) +
-  stat_halfeye(alpha = 0.5) +
+  stat_halfeye(alpha = 0.8) +
   labs(title = "Posterior error when an average participant use mean strategy, in data units")
 ```
 
-
----
-
-Let's do a sanity check with the error distribution: 
-
-```{r}
-pred %>%
-  filter(expIndex == 11 & type == "point") %>%
-  group_by(expIndex, type, .draw, noise, flip) %>%
-  summarise(
-    num.pred.avg.y = mean(num.pred.y),
-    num.pred.median.y = median(num.pred.y)
-  ) %>%
-  left_join(ans_df) %>%
-  ggplot(data = ., aes(y = num.pred.avg.y - num.ans.y)) +
-  stat_halfeye() +
-  stat_halfeye(aes(y = num.pred.median.y - num.ans.y), color = "blue", x = 0) +
-  theme_minimal() +
-  # geom_hline(yintercept = mean_point, color = "red") +
-  labs(title = "Error for No noise, median vs. mean for graph id 11, point ver")
-```
-
-
-```{r}
-#| code-fold: true
-#| layout-ncol: 2
-
-avg_pred %>%
-  ungroup(.) %>%
-  left_join(ans_df) %>%
-  mutate(
-    error = ifelse(
-      flip == FALSE,
-      num.pred.avg.y - num.ans.y,
-      num.ans.y - num.pred.avg.y
-      # num.pred.median.y - num.ans.y # symmetric outcome
-    )
-  ) %>%
-  group_by(ogIndex, expIndex, type, flip, noise) %>%
-  median_qi(error) %>%
-  ggplot(aes(
-    y = ogIndex,
-    x = error,
-    xmin = .lower,
-    xmax = .upper,
-    color = type
-  )) +
-  geom_pointinterval() +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  facet_wrap(~noise) +
-  labs(title = "avg_pred")
-```
-
-
-
----
-
-Ok the above graph is not making ANY SENSE so we will look at the first four: 
-- ogIndex == 4, expIndex == 1, type == point, flip == False, noise == c(0, 0)
-- ogIndex == 4, expIndex == 1, type == point, flip == False, noise == c(0, 0)ans
-- ogIndex == 8, expIndex == 1, type == point_arc, flipe == False, noise == c(0, 0)
-
-The following is the same dataset but flipped: 
-
-```{r}
-#| layout-ncol: 2
-
-filter_avg_pred %>%
-  filter(ogIndex == 4) %>%
-  ggplot(aes(x = num.pred.avg.y)) +
-  stat_halfeye() +
-  geom_vline(xintercept = 0.513, color = "red")
-
-filter_avg_pred %>%
-  filter(ogIndex == 5) %>%
-  ggplot(aes(x = num.pred.avg.y)) +
-  stat_halfeye() +
-  geom_vline(xintercept = 0.487, color = "red")
-```
-
-Same mean but bigger variance for point: 
-
-```{r}
-#| layout-ncol: 2
-# OG graphs
-# ogIndex == 4 and ogIndex == 6
-get_og_stimuli(4)
-get_og_stimuli(6)
-```
-
-For the "same" data set on points but with more noise: 
-
-```{r}
-#| code-fold: true
-#| layout-ncol: 2
-filter_avg_pred %>%
-  filter(ogIndex %in% c(4, 6)) %>%
-  mutate(ogIndex = as.factor(ogIndex)) %>%
-  ggplot(aes(x = num.pred.avg.y, y = ogIndex)) +
-  stat_halfeye() +
-  geom_vline(xintercept = 0.513, color = "red") +
-  labs(title = "4: point, no noise; 6: point, noise; using mean strategy")
-
-filter_avg_pred %>%
-  filter(ogIndex %in% c(4, 6)) %>%
-  mutate(ogIndex = as.factor(ogIndex)) %>%
-  ggplot(aes(x = num.pred.median.y, y = ogIndex)) +
-  stat_halfeye() +
-  geom_vline(xintercept = 0.513, color = "red") +
-  labs(title = "4: point, no noise; 6: point, noise; using median strategy")
-```
-
-What about flipping? What is the effect of flipping here? 
-
-```{r}
-#| layout-ncol: 3
-#| code-fold: true
-get_og_stimuli(4)
-get_og_stimuli(5)
-# 4 vs 5 for no noise version
-filter_avg_pred %>%
-  filter(ogIndex %in% c(4, 5)) %>%
-  mutate(ogIndex = as.factor(ogIndex)) %>%
-  ggplot(aes(x = num.pred.median.y, y = ogIndex)) +
-  stat_halfeye() +
-  geom_vline(xintercept = 0.513, color = "red") +
-  geom_vline(xintercept = 1 - 0.513, color = "red") +
-  labs(
-    title = "4: point, no noise; 5: point, no noise flipped; using median strategy"
-  )
-```
-
-```{r}
-#| layout-ncol: 3
-#| code-fold: true
-
-# 6 vs 7 for noise version
-get_og_stimuli(6)
-get_og_stimuli(7)
-filter_avg_pred %>%
-  filter(ogIndex %in% c(6, 7)) %>%
-  mutate(ogIndex = as.factor(ogIndex)) %>%
-  ggplot(aes(x = num.pred.median.y, y = ogIndex)) +
-  stat_halfeye() +
-  geom_vline(xintercept = 0.513, color = "red") +
-  geom_vline(xintercept = 1 - 0.513, color = "red") +
-  labs(
-    title = "6: point, no noise; 7: point, no noise flipped; using median strategy"
-  )
-```
-
-
-```{r}
-avg_pred %>%
-  # filter(ogIndex %in% c(10, 11)) %>%
-  ungroup(.) %>%
-  left_join(ans_df) %>%
-  mutate(
-    error = ifelse(
-      flip == FALSE,
-      num.pred.median.y - num.ans.y,
-      num.ans.y - num.pred.median.y
-    )
-  ) %>%
-  ggplot(aes(x = error, y = as.factor(ogIndex), color = noise)) +
-  stat_halfeye()
-```
-
-
-Ok this is suggesting to me that some of the errors are really quite off ... 
-If we don't flip things, what would it look like? -> very symmetric ... 
-
----
-
-Let's look at the cases where the the normalized error is negative: 
-
-```{r}
-avg_pred %>%
-  ungroup(.) %>%
-  left_join(ans_df) %>%
-  mutate(
-    error = ifelse(
-      flip == FALSE,
-      num.pred.median.y - num.ans.y,
-      num.ans.y - num.pred.median.y
-      # num.pred.median.y - num.ans.y # symmetric outcome
-    )
-  ) %>%
-  group_by(ogIndex, expIndex, type, flip, noise) %>%
-  median_qi(error) %>%
-  filter(error < 0, .upper < 0)
-```
-
-```{r}
-avg_pred %>% filter(ogIndex == 28) %>% 
-  ggplot(aes(x = num.pred.median.y)) + 
-  stat_halfeye()
-```
-
-Let's check out some of these, e.g., ogIndex in 28 through 32. 
-
-
-```{r}
-#| code-fold: true
-#| layout-ncol: 2
-get_og_stimuli(28)
-get_og_stimuli(29)
-```
-
-What does the actual posterior prediction look like for this? 
-
-```{r}
-pred %>%
-  filter(ogIndex == 28) %>%
-  group_by(.draw) %>%
-  summarise(num.avg.y = mean(num.pred.y), num.median.y = median(num.pred.y)) %>%
-  ggplot(aes(x = num.median.y)) +
-  stat_halfeye()
-
-pred %>%
-  filter(ogIndex == 29) %>%
-  group_by(.draw) %>%
-  summarise(num.avg.y = mean(num.pred.y), num.median.y = median(num.pred.y)) %>%
-  ggplot(aes(x = num.median.y)) +
-  stat_halfeye()
-```
-
-I don't understand how "variability" in which region is determined ... Like variability upper and lower and density are kind of correlated but not necessarily ...??? 
-
-
-```{r}
-pred %>%
-  filter(ogIndex == 35) %>%
-  group_by(.draw) %>%
-  summarise(num.avg.y = mean(num.pred.y), num.median.y = median(num.pred.y)) %>%
-  ggplot(aes(x = num.median.y)) +
-  stat_halfeye()
-
-get_og_stimuli(35)
-```
-
-If we just do absolute value of error, how would that change things, if any? 
-
-
-
-
-What is the next step here? This is for all trials, but for a fixed value of pixelToMM and distToScreen. 
-If we want to produce something like Mortiz's result, do we need to do the above for every pixelToMM and distToScreen combo that the participant pool had ...? 
-
----
-
-
-```{r}
-get_og_stimuli(28)
-
-stimuli_df %>% filter(ogIndex == 28)
-
-stimuli_df %>% count(flip, noise)
-```
