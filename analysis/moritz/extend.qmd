@@ -333,7 +333,7 @@ nd <- new_data %>%
 draws <- model %>%
   spread_draws(b_Intercept, b_sigma_Intercept) %>%
   as_draws_df(.) %>%
-  thin_draws(thin = 4) # if too much we can also do thinning
+  thin_draws(thin = 2) # if too much we can also do thinning
 ```
   
 Here we go from `VA -> mm -> px -> num`:
@@ -454,25 +454,8 @@ ans_df <- stimuli_df %>% select(-num.x, -num.y) %>%
   group_by(ogIndex, expIndex, type, flip, noise, seed) %>% 
   summarise(.) %>% ungroup(.) %>% 
   left_join(temp_df)
-```
 
-Let's do a sanity check with the error distribution: 
-
-```{r}
-pred %>%
-  filter(expIndex == 11 & type == "point") %>%
-  group_by(expIndex, type, .draw, noise, flip) %>%
-  summarise(
-    num.pred.avg.y = mean(num.pred.y),
-    num.pred.median.y = median(num.pred.y)
-  ) %>%
-  left_join(ans_df) %>%
-  ggplot(data = ., aes(y = num.pred.avg.y - num.ans.y)) +
-  stat_halfeye() +
-  stat_halfeye(aes(y = num.pred.median.y - num.ans.y), color = "blue", x = 0) +
-  theme_minimal() +
-  # geom_hline(yintercept = mean_point, color = "red") +
-  labs(title = "Error for No noise, median vs. mean for graph id 11, point ver")
+ans_df
 ```
 
 ```{r}
@@ -506,13 +489,34 @@ avg_pred %>%
     )
   ) %>%
   group_by(type, noise, .draw) %>% 
-  summarise(error = mean(error.median)) %>% 
+  summarise(error = mean(error.avg)) %>% 
   ggplot(aes(x = error, y = noise, fill = type)) +
-  stat_halfeye(alpha = 0.5)
+  stat_halfeye(alpha = 0.5) +
+  labs(title = "Posterior error when an average participant use mean strategy, in data units")
 ```
 
 
 ---
+
+Let's do a sanity check with the error distribution: 
+
+```{r}
+pred %>%
+  filter(expIndex == 11 & type == "point") %>%
+  group_by(expIndex, type, .draw, noise, flip) %>%
+  summarise(
+    num.pred.avg.y = mean(num.pred.y),
+    num.pred.median.y = median(num.pred.y)
+  ) %>%
+  left_join(ans_df) %>%
+  ggplot(data = ., aes(y = num.pred.avg.y - num.ans.y)) +
+  stat_halfeye() +
+  stat_halfeye(aes(y = num.pred.median.y - num.ans.y), color = "blue", x = 0) +
+  theme_minimal() +
+  # geom_hline(yintercept = mean_point, color = "red") +
+  labs(title = "Error for No noise, median vs. mean for graph id 11, point ver")
+```
+
 
 ```{r}
 #| code-fold: true
