@@ -22,7 +22,7 @@ library(posterior)
 theme_set(theme_minimal())
 ```
 
-# Replicating Mortiz Exp 2
+# Replicating Mortiz et al. Exp 2
 
 Here are the details of the original experiment: 
 
@@ -30,9 +30,9 @@ Here are the details of the original experiment:
 - **Experiment Design**:
   - *Within Subject*: 
     - 2 variability: `0` and `0.4`
-    - 2 flipped: `upper` and `lower` (i.e., whether the plot was flipped or not, where `flip == FALSE` implies that upper-y region has more variability, and `flip == TRUE` implies that the lower-y region has more variability)
+    - 2 flipped^[i.e., whether the plot was flipped or not, where `flip == FALSE` implies that upper-y region has more variability, and `flip == TRUE` implies that the lower-y region has more variability]: `upper` and `lower` 
   - *Between Subject*: 
-    - 3 mark type: `line`, `cartesian spaced points`, `arc spaced points`
+    - 3 mark type: ~~`line`~~, `cartesian spaced points`, `arc spaced points`
       - Note that we will only use cartesian spaced points and arc spaced points for replication.
   - 12 different seeds for randomization -> `2 * 2 * 12 = 48` trials per participant.
 
@@ -41,6 +41,8 @@ Here are the details of the original experiment:
 First, read in the stimuli data from Mortiz experiment 2: 
 
 ```{r}
+#| code-fold: true 
+
 exp_json_data <- jsonlite::fromJSON(here(
   "data",
   "moritz",
@@ -64,7 +66,7 @@ stimuli_df %>%
   select(index, type, expIndex) -> pointArc_map
 
 # calculate the answer
-stimuli_df %>%
+stimuli_df <- stimuli_df %>%
   filter(type != "line") %>%
   unnest(data) %>%
   left_join(point_map, by = join_by(index, type)) %>%
@@ -72,9 +74,11 @@ stimuli_df %>%
   mutate(expIndex = coalesce(expIndex.x, expIndex.y)) %>%
   select(index, expIndex, type, flip, noise, seed, x, y) %>%
   ungroup(.) %>%
-  rename(ogIndex = index, num.x = x, num.y = y) -> stimuli_df
+  rename(ogIndex = index, num.x = x, num.y = y)
+```
 
-stimuli_df %>% head(5)
+```{r}
+stimuli_df 
 ```
 
 **TODO**: Double check whether `data` is the correct column we should be pulling and rendering from ... I think it is correct but one can never be too careful with these things ... 
@@ -115,7 +119,11 @@ ggplot(aes(x = `x...10`, y = `y...11`)) +
   coord_cartesian(ylim = c(0, 1))
 ```
 
+Define the following function for quickly pulling out data, given the index of the experiment stimuli: 
+
 ```{r}
+#| code-fold: true 
+
 # function definitions
 get_og_stimuli <- function(i) {
   mean <- stimuli_df %>%
@@ -152,7 +160,7 @@ pilot_df <- raw_df %>%
   )
 
 # responses
-pilot_df %>%
+resp_df <- pilot_df %>%
   filter(responseId %in% c("numericResponse", "pixelResponse")) %>%
   select(participantId, trialId, responseId, answer) %>%
   separate_wider_delim(
@@ -167,9 +175,11 @@ pilot_df %>%
     index = as.integer(index)
   ) %>%
   rename(expIndex = index) %>%
-  mutate(pixelResponse = 200 - pixelResponse + 5) -> resp_df
+  mutate(pixelResponse = 200 - pixelResponse + 5)
+```
 
-resp_df %>% head(5)
+```{r}
+resp_df %>% count(participantId, type)
 ```
 
 Then we also get a dataset that documents how far away they're sitting from the screen: 
@@ -197,14 +207,15 @@ participant_df <- pilot_df %>%
   filter(`dist-calibration-MM` >= 250) %>%
   select(1, 3, 4) %>%
   rename(distToScreen = `dist-calibration-MM`) %>% 
-  mutate(pixelsPerMM = as.numeric(pixelsPerMM),
+  mutate(
+    pixelsPerMM = as.numeric(pixelsPerMM),
     distToScreen = as.numeric(distToScreen)
   )
 
 # only keep people whose ans are somewhat useful
 keep_id <- participant_df %>% pull(participantId)
 
-participant_df %>% head(5)
+participant_df # %>% head(5)
 ```
 
 ## Translate btw spaces
