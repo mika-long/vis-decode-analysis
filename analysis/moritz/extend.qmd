@@ -11,7 +11,7 @@ format:
 ```{r}
 #| code-fold: true
 
-# read in libraries 
+# read in libraries
 library(ggplot2)
 library(tidyverse)
 library(tidybayes)
@@ -41,7 +41,7 @@ Here are the details of the original experiment:
 First, read in the stimuli data from Mortiz experiment 2: 
 
 ```{r}
-#| code-fold: true 
+#| code-fold: true
 
 exp_json_data <- jsonlite::fromJSON(here(
   "data",
@@ -78,7 +78,7 @@ stimuli_df <- stimuli_df %>%
 ```
 
 ```{r}
-stimuli_df 
+stimuli_df
 ```
 
 **TODO**: Double check whether `data` is the correct column we should be pulling and rendering from ... I think it is correct but one can never be too careful with these things ... 
@@ -119,12 +119,12 @@ ggplot(aes(x = `x...10`, y = `y...11`)) +
   coord_cartesian(ylim = c(0, 1))
 ```
 
-Define the following function for quickly pulling out data, given the index of the experiment stimuli: 
+Define helper functions: 
 
 ```{r}
-#| code-fold: true 
+#| code-fold: true
+#| label: define-functions
 
-# function definitions
 get_og_stimuli <- function(i) {
   mean <- stimuli_df %>%
     filter(ogIndex == i) %>%
@@ -140,11 +140,34 @@ get_og_stimuli <- function(i) {
     annotate("text", x = 120, y = mean, label = mean) +
     labs(title = paste0("ogIndex", " ", i))
 }
+
+# return visual angle in degrees and not radian
+vis_angle <- function(size, distance) {
+  return(2 * atan(size / (2 * distance)) * 180 / pi)
+}
+
+# define function for turning vis angle to phy size
+phys_size <- function(va, distance) {
+  return(2 * distance * tan(va * pi / 360))
+}
 ```
 
-Let's also read in the data collected from pilot. First we get participant's numerical and pixel responses: 
+Let's also read in the data collected from pilot: 
+
+:::{.callout-note}
+## Translate between spaces 
+The goal is to translate from the pixel space to the physical space, and then to the visual angle space. 
+
+1. Data to Pixel: This should be given by the custom `VegaEmbed` component we built (directly fetching)
+  - In this case, data is from $x \in [0, 120]$ and $y \in [0, 1]$ with the x-axis mapping to `500 px` and y-axis to `200 px`.
+2. Pixel to Physical: need to know the pixel to MM ratio, which is *different per Participant*.
+3. Physical to Vis Angle: need to know the distance to screen, again, which is *different per Participant*. 
+:::
 
 ```{r}
+#| code-fold: true
+#| label: read-in-pilot-df
+
 raw_df <- read_csv(here("data", "part_2", "part2_pilot.csv")) %>% as_tibble(.)
 
 pilot_df <- raw_df %>%
@@ -159,33 +182,7 @@ pilot_df <- raw_df %>%
     parameters_params
   )
 
-# responses
-resp_df <- pilot_df %>%
-  filter(responseId %in% c("numericResponse", "pixelResponse")) %>%
-  select(participantId, trialId, responseId, answer) %>%
-  separate_wider_delim(
-    col = trialId,
-    delim = "_",
-    names = c("type", NA, "index")
-  ) %>%
-  pivot_wider(names_from = "responseId", values_from = "answer") %>%
-  mutate(
-    numericResponse = as.numeric(numericResponse),
-    pixelResponse = as.numeric(pixelResponse),
-    index = as.integer(index)
-  ) %>%
-  rename(expIndex = index) %>%
-  mutate(pixelResponse = 200 - pixelResponse + 5)
-```
-
-```{r}
-resp_df %>% count(participantId, type)
-```
-
-Then we also get a dataset that documents how far away they're sitting from the screen: 
-
-```{r}
-# visual angle related participant-level data 
+# visual angle related participant-level data
 participant_df <- pilot_df %>%
   filter(!responseId %in% c("numericResponse", "pixelResponse")) %>%
   group_by(participantId) %>%
@@ -206,7 +203,7 @@ participant_df <- pilot_df %>%
   mutate(`dist-calibration-MM` = as.numeric(`dist-calibration-MM`)) %>%
   filter(`dist-calibration-MM` >= 250) %>%
   select(1, 3, 4) %>%
-  rename(distToScreen = `dist-calibration-MM`) %>% 
+  rename(distToScreen = `dist-calibration-MM`) %>%
   mutate(
     pixelsPerMM = as.numeric(pixelsPerMM),
     distToScreen = as.numeric(distToScreen)
@@ -215,40 +212,24 @@ participant_df <- pilot_df %>%
 # only keep people whose ans are somewhat useful
 keep_id <- participant_df %>% pull(participantId)
 
-participant_df # %>% head(5)
-```
-
-## Translate btw spaces
-
-The goal is to translate from the pixel space to the physical space, and then to the visual angle space. 
-
-1. Data to Pixel: This should be given by the custom `VegaEmbed` component we built (directly fetching)
-  - In this case, data is from $x \in [0, 120]$ and $y \in [0, 1]$ with the x-axis mapping to `500 px` and y-axis to `200 px`.
-2. Pixel to Physical: need to know the pixel to MM ratio, which is *different per Participant*.
-3. Physical to Vis Angle: need to know the distance to screen, again, which is *different per Participant*. 
-
-```{r}
-#| label: define-function
-#| code-fold: true
-
-# return visual angle in degrees and not radian
-vis_angle <- function(size, distance) {
-  return(2 * atan(size / (2 * distance)) * 180 / pi)
-}
-
-# define function for turning vis angle to phy size
-phys_size <- function(va, distance) {
-  return(2 * distance * tan(va * pi / 360))
-}
-
-# tolerance for numerical precision
-tolerance <- 1e-10
-```
-
-Process the response df given the new info about participants: 
-
-```{r}
-resp_df <- resp_df %>%
+# responses
+resp_df <- pilot_df %>%
+  filter(responseId %in% c("numericResponse", "pixelResponse")) %>%
+  select(participantId, trialId, responseId, answer) %>%
+  separate_wider_delim(
+    col = trialId,
+    delim = "_",
+    names = c("type", NA, "index")
+  ) %>%
+  pivot_wider(names_from = "responseId", values_from = "answer") %>%
+  mutate(
+    numericResponse = as.numeric(numericResponse),
+    pixelResponse = as.numeric(pixelResponse),
+    index = as.integer(index)
+  ) %>%
+  rename(expIndex = index) %>%
+  mutate(pixelResponse = 200 - pixelResponse + 5) %>%
+  # only keep the ones that matter
   filter(participantId %in% keep_id) %>%
   left_join(participant_df) %>%
   rename(
@@ -260,18 +241,41 @@ resp_df <- resp_df %>%
     phy.y = px.y / pixelsPerMM,
     va.y = vis_angle(phy.y, distToScreen)
   )
-resp_df %>% head(5)
 ```
 
+And then we also calculate the answer dataframe `ans_df`. **Note that we are using the same strategy that Mortiz et al.** used to calculate **error** and **normalized error**^[... which is, instead of calculating the actual mean across 60 points for each trial, for trials that share the same value for `seed` and `flip`, they share the same "default mean", i.e., the mean of the `point` type, instead of its actual mean.]. 
 
-## Read in fitted model
+```{r}
+#| code-fold: true
+#| label: get-ans-df
 
-We assume that the baseline model is this: participants project from each of the dots to the y-axis, and then perform an averaging. We will use the **Project to Y-Axis Model**. 
-Recall that we defined `error = resp - ans`. 
+temp_df <- stimuli_df %>%
+  filter(type == "point") %>%
+  group_by(seed, flip) %>%
+  summarise(num.ans.y = mean(num.y)) %>%
+  ungroup(.)
 
-For an average participant, the posterior prediction is going to
-- define $\log(\sigma_{i, j}) = \mu_\alpha + \log(\texttt{va.ans.x}_i) $ 
-- then $\text{error}_i \sim \mathcal{N}(0, \sigma_{i, j})$ where $\sigma_{i, j}$ is already defined above.  
+ans_df <- stimuli_df %>%
+  select(-num.x, -num.y) %>%
+  group_by(ogIndex, expIndex, type, flip, noise, seed) %>%
+  summarise(.) %>%
+  ungroup(.) %>%
+  left_join(temp_df)
+
+ans_df
+```
+
+Here are the processed dataframes: 
+
+```{r}
+participant_df
+ans_df
+resp_df %>% count(participantId, type)
+```
+
+## Read in fitted model for `project_to_y_axis`
+
+Recall the we defined the following model for the "project from dot to axis" operator: 
 
 $$
 \begin{align*}
@@ -284,9 +288,12 @@ $$
 \end{align*}
 $$
 
-Read in the fitted model by first reading in its formula and prior specification: 
+Here is the specification we used for fitting: 
 
 ```{r}
+#| eval: false
+
+# Recall that we defined error = resp - ans
 f <- bf(
   error_va ~ (1 | participantId),
   sigma ~ (1 | participantId) + offset(log(va.ans.x))
@@ -300,13 +307,14 @@ p <- c(
 )
 ```
 
-Load the previously fitted model: 
+And here we load the actual fitted model: 
 
 ```{r}
 model <- readRDS(here("analysis", "fitted_models", "task5.y.rds"))
 model
 ```
 
+:::{.callout-note}
 ### How do things map to each other?
 
 ```{r}
@@ -317,12 +325,18 @@ model %>% get_variables(.) %>% head(4)
 - `b_sigma_Intercept` corresponds to $\alpha_0$
 - `sd_participantId__Intercept` and `sd_participantId__sigma_Intercept` corresponds to $\tau_\mu$ and $\tau_\alpha$
 - `r_participantId[<id>, Intercept]`, `r_participantId__sigma[<id>, Intercept]` correspond to $u_j$ and $v_j$ respectively. 
+:::
 
-## Generate Predictions 
+<!-- We assume that the baseline model is this: participants project from each of the dots to the y-axis, and then perform an averaging. 
+We will use the **Project to Y-Axis Model**.  -->
 
-### For an "average" participant with fixed `pixelToMM` and `distToScreen`. 
+## Generate predictions for an "average" participant with fixed `pixelToMM` and `distToScreen` 
 
 We will make the predictions for an average participant, conditioning on specific values of `pixelToMM` and `distToScreen`. 
+
+### Strategy 1 --- Project to vertical line `x==0`
+
+For a baseline strategy, we assume that the participant projects from the dot to the y-axis, and then performs some mental averaging. 
 
 First, we calculate the visual angle values for all the stimuli. 
 This is the route from `num -> px -> MM -> VA`. This will allow us to make predictions of error in the visual angle space. 
@@ -334,7 +348,8 @@ This is the route from `num -> px -> MM -> VA`. This will allow us to make predi
 pixelToMM <- 5.12
 distToScreen <- 473
 
-# 5760 rows = 2 (plot type) * 2 (noise type) * 2 (flipped or not) * 12 repeated measures * 60 points per graph
+# 5760 rows = 2 (plot type) * 2 (noise type) * 2 (flipped or not) *
+#  12 repeated measures * 60 points per graph
 new_data <- stimuli_df %>%
   # calculate pixel values from numerical values
   mutate(px.x = 500 / 120 * num.x, px.y = 200 * num.y) %>%
@@ -345,13 +360,11 @@ new_data <- stimuli_df %>%
     va.ans.x = vis_angle(phy.x, distToScreen),
     va.ans.y = vis_angle(phy.y, distToScreen)
   )
+```
 
-# get a smaller version of this
-# consider only one kind of graph type
-nd <- new_data %>%
-  select(ogIndex, expIndex, type, va.ans.x, va.ans.y) %>%
-  filter(type == "point")
+Get (thinned) posterior draws: 
 
+```{r}
 # 3000 iterations per chain * 4 chains = 12,000 rows
 # if we thin by k, then we get 12,000 / k rows
 draws <- model %>%
@@ -359,17 +372,19 @@ draws <- model %>%
   as_draws_df(.) %>%
   thin_draws(thin = 2) # if too much we can also do thinning
 ```
-  
-Here we go from `VA -> mm -> px -> num`:
+
+Then we go the prediction route: `VA -> mm -> px -> num`:
   
 ```{r}
 pred <- draws %>%
-  # every draw * every dot; will result in 5760 * 3000 (thinned version) row
-  expand_grid(new_data) %>% 
+  # every draw * every dot;
+  # will result in 5760 * 3000 (thinned version) row
+  expand_grid(new_data) %>%
   mutate(
-    mu = b_Intercept,
+    # mu = b_Intercept,
     sigma = exp(b_sigma_Intercept + log(va.ans.x)),
-    va.pred.error = rnorm(n(), mean = mu, sd = sigma),
+    # va.pred.error = rnorm(n(), mean = mu, sd = sigma),
+    va.pred.error = rnorm(n(), mean = b_Intercept, sd = sigma),
     va.pred.y = va.pred.error + va.ans.y
   ) %>%
   # turn vis angle back to numerical values
@@ -378,22 +393,202 @@ pred <- draws %>%
     px.pred.y = phy.pred.y * pixelToMM,
     num.pred.y = px.pred.y / 200
   )
-
-pred %>% head(5)
 ```
 
+Now we "average"^[**Averaging Strategy vs. Median Strategy**: “Equal number of points or line below and above. A strategy we did not anticipate was ensuring an equal number of points or line lengths above and below the judgment indicator. To indicate their responses, participants drug a line on the graph. By allowing participants to place a line directly on the graphs, participants could then easily count the number of points above and below the line. One participant simply wrote, “I tried to have the number of points above and below the line be approximately equal.” Unsurprisingly, this strategy was most common for participants who viewed graphs with points equally spaced along the x-axis (24%).” ([Moritz et al., 2023, p. 7](zotero://select/library/items/ZPTBTRIF)) ([pdf](zotero://open-pdf/library/items/AZRSTSWZ?page=7&annotation=4AENLNDJ))
+] across the 60 dots for each trial: 
+
+```{r}
+avg_pred <- pred %>%
+  group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
+  summarise(
+    # suppose participants can calculate mean
+    num.pred.avg.y = mean(num.pred.y),
+    # suppor participants use the median instead
+    num.pred.median.y = median(num.pred.y),
+  )
+```
+
+:::{.callout-note}
+## How many rows? 
 To calculate how many rows that `pred` has we need to look at these two other dataframes: 
 
 - The `draws` dataframe has 3000 iterations / chain $\times$ 4 chains $\div k = 2$ = 6000 rows 
 - The `new_data` dataframe has 96 trials $\times$ 60 dots per trial = 5760 rows
 - Therefore `pred` is going to be 6000 $\times$ 5760 = 34560000 rows 
 
----
+If we don't consider _rejection sampling_, and just calculate the average across all 60 dots for each trial, we will have 34560000/60 = 576000 rows for `avg_pred`. 
 
-For now we will not think about things such as rejection sampling, and just calculate the average across all 60 dots for each trial^[This implies that we wil have 34560000/60 = 576000 rows for `avg_pred`]:  
+:::
+
+And now we plot the results: 
 
 ```{r}
-avg_pred <- pred %>%
+#| code-fold: true
+#| layout-ncol: 2
+#| label: plot-check-strategy1
+
+plot_df <- avg_pred %>%
+  ungroup(.) %>%
+  left_join(ans_df) %>%
+  mutate(
+    error.median = num.pred.median.y - num.ans.y,
+    norm.error.median = ifelse(
+      flip == FALSE,
+      num.pred.median.y - num.ans.y,
+      num.ans.y - num.pred.median.y
+    ),
+    error.avg = num.pred.avg.y - num.ans.y,
+    norm.error.avg = ifelse(
+      flip == FALSE,
+      num.pred.avg.y - num.ans.y,
+      num.ans.y - num.pred.avg.y
+    )
+  )
+
+plot_df %>%
+  group_by(type, noise, .draw) %>%
+  summarise(error = mean(norm.error.avg)) %>%
+  ggplot(aes(x = error, y = noise, fill = type)) +
+  stat_halfeye(alpha = 0.8) +
+  labs(
+    title = "Posterior normalized error (mean strategy)"
+  )
+
+plot_df %>%
+  group_by(type, noise, .draw) %>%
+  summarise(error = mean(norm.error.median)) %>%
+  ggplot(aes(x = error, y = noise, fill = type)) +
+  stat_halfeye(alpha = 0.8) +
+  labs(
+    title = "Posterior normalized error (median strategy)"
+  )
+```
+
+As one can see, the above posterior error has very small variance. 
+
+### Strategy 2 --- Project to vertical line where `xintercept == 60` and then `xintercept == 0`
+
+Instead of trying to sum over the results projected to the y-axis, we could have a result projecting to the middle point, i.e., where everyone projects to $x = 60$, and then use that as an input to then project to the y-axis in order to potentially introduce more variance into the results. 
+
+Again, assume that we have fixed values for `pixelToMM` and `distToScreen`: 
+
+```{r}
+pixelToMM <- 5.12
+distToScreen <- 473
+
+# physical distance between vertical line with xintercept == 60 and xintercept == 0
+phy.x_ref <- (500 / 120 * 60) / pixelToMM
+
+# 5760 rows = 2 (plot type) * 2 (noise type) * 2 (flipped or not) *
+# 12 repeated measures * 60 points per graph
+new_data <- stimuli_df %>%
+  # calculate pixel values from numerical values
+  mutate(px.x = 500 / 120 * abs(60 - num.x), px.y = 200 * num.y) %>% # <- OR NEW (?)
+  # calcuate physical values (in MM) from pixel values
+  mutate(phy.x = px.x / pixelToMM, phy.y = px.y / pixelToMM) %>%
+  # calculate visual angle
+  mutate(
+    # va.ans.x = vis_angle(abs(phy.x - phy.x_ref), distToScreen), # <- NEW STUFF
+    va.ans.x = vis_angle(phy.x, distToScreen),
+    va.ans.y = vis_angle(phy.y, distToScreen)
+  )
+```
+
+Create the posterior draws: 
+
+```{r}
+rm(draws)
+
+draws <- model %>%
+  spread_draws(b_Intercept, b_sigma_Intercept) %>%
+  as_draws_df(.) %>%
+  # thin parameter set to 4 instead of 2
+  # for more aggressive thinning
+  thin_draws(thin = 4)
+```
+
+Combine the posterior with new data: 
+
+```{r}
+#| label: strategy2-project-twice
+rm(pred)
+
+# project to the middle axis
+pred <- draws %>%
+  # every draw * every dot;
+  # will result in 5760 * 3000 (thinned version) row
+  expand_grid(new_data) %>%
+  mutate(
+    # mu = b_Intercept,
+    sigma = exp(b_sigma_Intercept + log(va.ans.x)),
+    # va.pred.error = rnorm(n(), mean = mu, sd = sigma),
+    va.pred.error = rnorm(n(), mean = b_Intercept, sd = sigma),
+    va.pred.y = va.pred.error + va.ans.y
+  ) %>%
+  group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
+  summarise(
+    va.mid_pred.y.avg = mean(va.pred.y),
+    va.mid_pred.y.median = median(va.pred.y),
+    .groups = "drop_last"
+  )
+
+# project from middle to the left axis
+pred2 <- pred %>%
+  left_join(draws) %>%
+  mutate(
+    sigma = exp(b_sigma_Intercept + log(vis_angle(phy.x_ref, distToScreen))),
+    va.pred.error = rnorm(n(), mean = b_Intercept, sd = sigma),
+    va.pred.y.avg = va.pred.error + va.mid_pred.y.avg,
+    va.pred.y.median = va.pred.error + va.mid_pred.y.median
+  ) %>%
+  # turn vis angle back to numerical values
+  mutate(
+    phy.pred.y = phys_size(va.pred.y.avg, distToScreen),
+    px.pred.y = phy.pred.y * pixelToMM,
+    num.pred.y = px.pred.y / 200
+  )
+```
+
+Check to see the posterior prediction of one graph (`ogIndex == 4`): 
+
+```{r}
+#| code-fold: true
+#| layout-ncol: 2
+#| label: strategy2-check-singlegraph
+
+pred2 %>%
+  filter(ogIndex == 4) %>%
+  ggplot(aes(x = va.mid_pred.y.avg, y = "x == 60")) +
+  stat_halfeye() +
+  stat_halfeye(aes(x = va.pred.y.avg, y = "x == 0")) +
+  labs(
+    title = "Mean strategy; project to x == 60, then to x == 0"
+  )
+
+pred2 %>%
+  filter(ogIndex == 4) %>%
+  ggplot(aes(x = va.mid_pred.y.median, y = "x == 60")) +
+  stat_halfeye() +
+  stat_halfeye(aes(x = va.pred.y.median, y = "x == 0")) +
+  labs(
+    title = "Mean strategy; project to x == 60, then to x == 0"
+  )
+```
+
+So we are indeed seeing more variations^[What would this variation result in changes in the numerical space? 
+```{r}
+phys_size(0.25, distToScreen) * pixelToMM / 200
+```
+So 5% on the [0, 1] scale. 
+].
+
+Let's also see what the average looks like across trials: 
+
+```{r}
+rm(avg_pred)
+
+avg_pred <- pred2 %>%
   group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
   summarise(
     num.pred.avg.y = mean(num.pred.y), # suppose participants can calculate mean
@@ -401,31 +596,7 @@ avg_pred <- pred %>%
   )
 ```
 
-:::{.callout-note}
-**Averaging Strategy vs. Median Strategy**: 
-
-“Equal number of points or line below and above. A strategy we did not anticipate was ensuring an equal number of points or line lengths above and below the judgment indicator. To indicate their responses, participants drug a line on the graph. By allowing participants to place a line directly on the graphs, participants could then easily count the number of points above and below the line. One participant simply wrote, “I tried to have the number of points above and below the line be approximately equal.” Unsurprisingly, this strategy was most common for participants who viewed graphs with points equally spaced along the x-axis (24%).” ([Moritz et al., 2023, p. 7](zotero://select/library/items/ZPTBTRIF)) ([pdf](zotero://open-pdf/library/items/AZRSTSWZ?page=7&annotation=4AENLNDJ))
-:::
-
-Using the same strategy that Moritz et al. used to calculate **error** and **normalized error**^[... which is, instead of calculating the actual mean for the actual dataset, for trials that share the same value for `seed` and `flip`, they share the same "default mean", i.e., the mean of the `point` type, instead of its actual mean.], we need to first calculate the answer for each trial: 
-
-```{r}
-#| code-fold: true 
-
-temp_df <- stimuli_df %>% filter(type == "point") %>% 
-  group_by(seed, flip) %>% 
-  summarise(num.ans.y = mean(num.y)) %>%
-  ungroup(.)
-
-ans_df <- stimuli_df %>% select(-num.x, -num.y) %>% 
-  group_by(ogIndex, expIndex, type, flip, noise, seed) %>% 
-  summarise(.) %>% ungroup(.) %>% 
-  left_join(temp_df)
-
-ans_df
-```
-
-And now we plot the results: 
+Plotting: 
 
 ```{r}
 #| code-fold: true 
@@ -435,29 +606,35 @@ avg_pred %>%
   left_join(ans_df) %>%
   mutate(
     error.median = num.pred.median.y - num.ans.y,
-    norm.error.median = ifelse(flip == FALSE, 
-      num.pred.median.y - num.ans.y, 
+    norm.error.median = ifelse(
+      flip == FALSE,
+      num.pred.median.y - num.ans.y,
       num.ans.y - num.pred.median.y
     ),
     error.avg = num.pred.avg.y - num.ans.y,
-    norm.error.avg = ifelse(flip == FALSE, 
-      num.pred.avg.y - num.ans.y, 
+    norm.error.avg = ifelse(
+      flip == FALSE,
+      num.pred.avg.y - num.ans.y,
       num.ans.y - num.pred.avg.y
     )
   ) %>%
-  group_by(type, noise, .draw) %>% 
-  summarise(error = mean(norm.error.avg)) %>% 
+  group_by(type, noise, .draw) %>%
+  summarise(error = mean(norm.error.avg)) %>% # TODO: for some reason norm.error.avg and norm.error.median looks very similar ...??? 
   ggplot(aes(x = error, y = noise, fill = type)) +
-  stat_halfeye(alpha = 0.8) +
-  labs(title = "Posterior error when an average participant use mean strategy, in data units")
+  stat_halfeye(alpha = 0.8) # +
+  # labs(
+#     title = "Posterior error when an average participant projects to middle, in data units"
+#   )
 ```
 
+<!-- Check to see its's predicted stuff: 
 # Extending the model to all participants 
 
 Recall this is the list of participants we have from pilot: 
 
 ```{r}
-total_data <- stimuli_df %>% expand_grid(participant_df) %>% 
+total_data <- stimuli_df %>%
+  expand_grid(participant_df) %>%
   # calculate pixel values from numerical values
   mutate(px.x = 500 / 120 * num.x, px.y = 200 * num.y) %>%
   # calcuate physical values (in MM) from pixel values
@@ -477,14 +654,14 @@ Then we will expand the `total_data` frame to consider the posterior draws, but 
 draws <- model %>%
   spread_draws(b_Intercept, b_sigma_Intercept) %>%
   as_draws_df(.) %>%
-  thin_draws(thin = 8) # changed from thin = 2 to thin = 8 
+  thin_draws(thin = 8) # changed from thin = 2 to thin = 8
 ```
 
 ```{r}
-# TODO: check the logic here 
+# TODO: check the logic here
 total_pred <- draws %>%
   # every draw * every dot; will result in 34560 * 3000 (thinned version) row
-  expand_grid(total_data) %>% 
+  expand_grid(total_data) %>%
   mutate(
     mu = b_Intercept,
     sigma = exp(b_sigma_Intercept + log(va.ans.x)),
@@ -500,7 +677,7 @@ total_pred <- draws %>%
 ```
 
 ```{r}
-# TODO: check the logic here 
+# TODO: check the logic here
 avg_pred <- total_pred %>%
   group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
   summarise(
@@ -517,160 +694,30 @@ plot_df <- avg_pred %>%
   left_join(ans_df) %>%
   mutate(
     error.median = num.pred.median.y - num.ans.y,
-    norm.error.median = ifelse(flip == FALSE, 
-      num.pred.median.y - num.ans.y, 
+    norm.error.median = ifelse(
+      flip == FALSE,
+      num.pred.median.y - num.ans.y,
       num.ans.y - num.pred.median.y
     ),
     error.avg = num.pred.avg.y - num.ans.y,
-    norm.error.avg = ifelse(flip == FALSE, 
-      num.pred.avg.y - num.ans.y, 
+    norm.error.avg = ifelse(
+      flip == FALSE,
+      num.pred.avg.y - num.ans.y,
       num.ans.y - num.pred.avg.y
     )
   )
 ```
 
 ```{r}
-#| code-fold: true 
- plot_df %>% group_by(type, noise, .draw) %>% 
-  summarise(error = mean(norm.error.avg)) %>% 
+#| code-fold: true
+plot_df %>%
+  group_by(type, noise, .draw) %>%
+  summarise(error = mean(norm.error.avg)) %>%
   ggplot(aes(x = error, y = noise, fill = type)) +
   stat_halfeye(alpha = 0.8) +
-  labs(title = "Posterior error across participants use mean strategy, in data units")
-```
-
-It appears that the only thing that doing the above style analysis averaged across participants is giving us, is the fact that error for both noise levels, for the `point` chart type, is now negative. 
-
-## Trying a different projection strategy 
-
-Instead of trying to sum over the results projected to the y-axis, we could have a result projecting to the middle point, i.e., where everyone projects to $x = 60$, and then use that as an input to then project to the y-axis in order to potentially introduce more variance into the results. 
-
-### For a single participant 
-
-**TODO**: the following only does one level of projection and not two levels of projections. Need to double check. 
-
-Again, assume that we have fixed values for `pixelToMM` and `distToScreen`: 
-
-```{r}
-pixelToMM <- 5.12
-distToScreen <- 473
-
-x_ref <- (500 / 120 * 60) / pixelToMM
-
-# 5760 rows = 2 (plot type) * 2 (noise type) * 2 (flipped or not) * 12 repeated measures * 60 points per graph
-new_data <- stimuli_df %>%
-  # calculate pixel values from numerical values
-  mutate(px.x = 500 / 120 * num.x, px.y = 200 * num.y) %>%
-  # calcuate physical values (in MM) from pixel values
-  mutate(phy.x = px.x / pixelToMM, phy.y = px.y / pixelToMM) %>%
-  # calculate visual angle
-  mutate(
-    va.ans.x = vis_angle(abs(phy.x - x_ref), distToScreen), # <- NEW STUFF 
-    va.ans.y = vis_angle(phy.y, distToScreen)
+  labs(
+    title = "Posterior error across participants use mean strategy, in data units"
   )
 ```
 
-Create the posterior draws: 
-
-```{r}
-rm(draws)
-rm(pred)
-
-draws <- model %>%
-  spread_draws(b_Intercept, b_sigma_Intercept) %>%
-  as_draws_df(.) %>%
-  thin_draws(thin = 4) # if too much we can also do thinning
-
-pred <- draws %>%
-  # every draw * every dot; will result in 5760 * 3000 (thinned version) row
-  expand_grid(new_data) %>% 
-  # this is the project to x = 60 
-  mutate(
-    mu = b_Intercept,
-    sigma = exp(b_sigma_Intercept + log(va.ans.x)),
-    va.pred.error = rnorm(n(), mean = mu, sd = sigma),
-    va.pred.y = va.pred.error + va.ans.y
-  ) %>% 
-  group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
-  summarise(
-    va.pred.mid.y = mean(va.pred.y) # this becomes the new va.ans.y
-  )
-
-pred2 <- pred %>% ungroup(.) %>% 
-  left_join(as_tibble(draws)) %>% 
-  mutate(
-    sigma = exp(b_sigma_Intercept + log(vis_angle(x_ref, distToScreen))), 
-    va.pred.error = rnorm(n(), mean = b_Intercept, sd = sigma), 
-    va.pred.y = va.pred.error + va.pred.mid.y # <- NEW 
-  ) %>%
-  # turn vis angle back to numerical values
-  mutate(
-    phy.pred.y = phys_size(va.pred.y, distToScreen),
-    px.pred.y = phy.pred.y * pixelToMM,
-    num.pred.y = px.pred.y / 200
-  )
-```
-
-Check to see its's predicted stuff: 
-
-```{r}
-#| code-fold: true 
-#| layout-ncol: 2
-
-pred2 %>% filter(ogIndex == 4) %>% 
-  ggplot(aes(x = va.pred.mid.y, y = "x == 60")) + 
-  stat_halfeye() + 
-  stat_halfeye(aes(x = va.pred.y, y = "x == 0")) + 
-  labs(title = "visual angle of y value at different xintercept values (og Index = 4)")
-
-pred2 %>% filter(ogIndex == 10) %>% 
-  ggplot(aes(x = va.pred.mid.y, y = "x == 60")) + 
-  stat_halfeye() + 
-  stat_halfeye(aes(x = va.pred.y, y = "x == 0")) + 
-  labs(title = "visual angle of y value at different xintercept values")
-```
-
-This is kind of giving us more variation ...? But not to the same effect that we expected ...? 
-What would a difference of 0.3 in visual angle space translate to in numerical scale? 
-
-```{r}
-phys_size(0.3, distToScreen) * pixelToMM / 200
-```
-
-Turns out to be 0.06 out of a numerical scale of [0, 1] it appears ... 
-
-```{r}
-rm(avg_pred)
-
-avg_pred <- pred2 %>%
-  group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
-  summarise(
-    num.pred.avg.y = mean(num.pred.y), # suppose participants can calculate mean
-    num.pred.median.y = median(num.pred.y), # suppor participants use the median instead
-  )
-```
-
-Plotting: 
-
-```{r}
-avg_pred %>%
-  ungroup(.) %>%
-  left_join(ans_df) %>%
-  mutate(
-    error.median = num.pred.median.y - num.ans.y,
-    norm.error.median = ifelse(flip == FALSE, 
-      num.pred.median.y - num.ans.y, 
-      num.ans.y - num.pred.median.y
-    ),
-    error.avg = num.pred.avg.y - num.ans.y,
-    norm.error.avg = ifelse(flip == FALSE, 
-      num.pred.avg.y - num.ans.y, 
-      num.ans.y - num.pred.avg.y
-    )
-  ) %>%
-  group_by(type, noise, .draw) %>% 
-  summarise(error = mean(error.median)) %>% 
-  ggplot(aes(x = error, y = noise, fill = type)) +
-  stat_halfeye(alpha = 0.8) +
-  labs(title = "Posterior error when an average participant projects to middle, in data units")
-```
-
+It appears that the only thing that doing the above style analysis averaged across participants is giving us, is the fact that error for both noise levels, for the `point` chart type, is now negative.  -->
