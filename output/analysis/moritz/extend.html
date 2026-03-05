@@ -256,7 +256,7 @@ window.Quarto = {
 <span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
 <span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(</span>
 <span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> variability,</span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> mu, <span class="co"># normalized_erro</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> mu, </span>
 <span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">dist =</span> <span class="st">"norm"</span>,</span>
 <span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">arg1 =</span> mu,</span>
 <span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">arg2 =</span> se,</span>
@@ -272,7 +272,7 @@ window.Quarto = {
 <span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span> <span class="co">#flipping axis</span></span>
 <span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_tidybayes</span>() <span class="sc">+</span> <span class="co">#theme</span></span>
 <span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>) <span class="sc">+</span></span>
-<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"#76B7B2"</span>, <span class="st">"#E15759"</span>)) <span class="sc">+</span> <span class="co">#adding color # "#59A14F"</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"#76B7B2"</span>, <span class="st">"#E15759"</span>)) <span class="sc">+</span> <span class="co"># take out "#59A14F"</span></span>
 <span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(</span>
 <span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">0</span>, .<span class="dv">11</span>, <span class="at">by =</span> .<span class="dv">01</span>),</span>
 <span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">expand =</span> <span class="fu">expansion</span>(<span class="at">mult =</span> <span class="fu">c</span>(<span class="fl">0.01</span>, <span class="fl">0.01</span>))</span>
@@ -782,7 +782,7 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
-{"columns":[{"label":["type"],"name":[1],"type":["chr"],"align":["left"]},{"label":["noise"],"name":[2],"type":["chr"],"align":["left"]},{"label":["error"],"name":[3],"type":["dbl"],"align":["right"]},{"label":[".lower"],"name":[4],"type":["dbl"],"align":["right"]},{"label":[".upper"],"name":[5],"type":["dbl"],"align":["right"]},{"label":[".width"],"name":[6],"type":["dbl"],"align":["right"]},{"label":[".point"],"name":[7],"type":["chr"],"align":["left"]},{"label":[".interval"],"name":[8],"type":["chr"],"align":["left"]}],"data":[{"1":"point","2":"c(0, 0.4)","3":"-0.015798788","4":"-0.018550548","5":"-0.013066869","6":"0.95","7":"median","8":"qi"},{"1":"point","2":"c(0, 0)","3":"-0.007839430","4":"-0.010082582","5":"-0.005618577","6":"0.95","7":"median","8":"qi"},{"1":"point_arc","2":"c(0, 0.4)","3":"0.074900480","4":"0.072176124","5":"0.077909588","6":"0.95","7":"median","8":"qi"},{"1":"point_arc","2":"c(0, 0)","3":"0.006450735","4":"0.003838273","5":"0.008987114","6":"0.95","7":"median","8":"qi"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":["type"],"name":[1],"type":["chr"],"align":["left"]},{"label":["noise"],"name":[2],"type":["chr"],"align":["left"]},{"label":["error"],"name":[3],"type":["dbl"],"align":["right"]},{"label":[".lower"],"name":[4],"type":["dbl"],"align":["right"]},{"label":[".upper"],"name":[5],"type":["dbl"],"align":["right"]},{"label":[".width"],"name":[6],"type":["dbl"],"align":["right"]},{"label":[".point"],"name":[7],"type":["chr"],"align":["left"]},{"label":[".interval"],"name":[8],"type":["chr"],"align":["left"]}],"data":[{"1":"point","2":"c(0, 0.4)","3":"-0.015792456","4":"-0.018524301","5":"-0.012992628","6":"0.95","7":"median","8":"qi"},{"1":"point","2":"c(0, 0)","3":"-0.007812166","4":"-0.010096605","5":"-0.005611910","6":"0.95","7":"median","8":"qi"},{"1":"point_arc","2":"c(0, 0.4)","3":"0.074921641","4":"0.072157014","5":"0.077920596","6":"0.95","7":"median","8":"qi"},{"1":"point_arc","2":"c(0, 0)","3":"0.006429553","4":"0.003866401","5":"0.009060935","6":"0.95","7":"median","8":"qi"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 </div>
@@ -988,7 +988,7 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
-{"columns":[{"label":["type"],"name":[1],"type":["chr"],"align":["left"]},{"label":["noise"],"name":[2],"type":["chr"],"align":["left"]},{"label":["error.avg"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["error.avg.lower"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["error.avg.upper"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["error.median"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["error.median.lower"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["error.median.upper"],"name":[8],"type":["dbl"],"align":["right"]},{"label":[".width"],"name":[9],"type":["dbl"],"align":["right"]},{"label":[".point"],"name":[10],"type":["chr"],"align":["left"]},{"label":[".interval"],"name":[11],"type":["chr"],"align":["left"]}],"data":[{"1":"point","2":"c(0, 0.4)","3":"-5.138117e-05","4":"-0.005057783","5":"0.004808508","6":"-0.015750165","7":"-0.020851456","8":"-0.010593053","9":"0.95","10":"median","11":"qi"},{"1":"point","2":"c(0, 0)","3":"-1.812625e-05","4":"-0.004947689","5":"0.004995225","6":"-0.007524807","7":"-0.012672663","8":"-0.002362288","9":"0.95","10":"median","11":"qi"},{"1":"point_arc","2":"c(0, 0.4)","3":"8.125188e-02","4":"0.076290687","5":"0.086089079","6":"0.073362765","7":"0.068302391","8":"0.078377780","9":"0.95","10":"median","11":"qi"},{"1":"point_arc","2":"c(0, 0)","3":"1.093326e-02","4":"0.006031118","5":"0.015818733","6":"0.006991280","7":"0.001900982","8":"0.012048145","9":"0.95","10":"median","11":"qi"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":["type"],"name":[1],"type":["chr"],"align":["left"]},{"label":["noise"],"name":[2],"type":["chr"],"align":["left"]},{"label":["error.avg"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["error.avg.lower"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["error.avg.upper"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["error.median"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["error.median.lower"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["error.median.upper"],"name":[8],"type":["dbl"],"align":["right"]},{"label":[".width"],"name":[9],"type":["dbl"],"align":["right"]},{"label":[".point"],"name":[10],"type":["chr"],"align":["left"]},{"label":[".interval"],"name":[11],"type":["chr"],"align":["left"]}],"data":[{"1":"point","2":"c(0, 0.4)","3":"4.558051e-05","4":"-0.004917249","5":"0.004931521","6":"-0.015629624","7":"-0.020662041","8":"-0.010621858","9":"0.95","10":"median","11":"qi"},{"1":"point","2":"c(0, 0)","3":"-8.547258e-05","4":"-0.005056644","5":"0.004871757","6":"-0.007577069","7":"-0.012669012","8":"-0.002486586","9":"0.95","10":"median","11":"qi"},{"1":"point_arc","2":"c(0, 0.4)","3":"8.124225e-02","4":"0.076323497","5":"0.086203161","6":"0.073376871","7":"0.068204113","8":"0.078552736","9":"0.95","10":"median","11":"qi"},{"1":"point_arc","2":"c(0, 0)","3":"1.097014e-02","4":"0.005935850","5":"0.015876767","6":"0.007043889","7":"0.001896458","8":"0.012147294","9":"0.95","10":"median","11":"qi"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 </div>
@@ -1134,22 +1134,119 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <h3 class="anchored" data-anchor-id="strategy-2-project-twice">Strategy 2 – project twice</h3>
 <p>This time we will build the posterior prediction a bit differently:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># rm(pred)</span></span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a><span class="co"># # 17280 rows * 600 draws per row </span></span>
-<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a><span class="co"># # 1036800 </span></span>
-<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a><span class="co"># pred &lt;- new_data %&gt;% </span></span>
-<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a><span class="co">#   expand_grid(draws) %&gt;%</span></span>
-<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a><span class="co">#   mutate(</span></span>
-<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a><span class="co">#     sigma = exp(b_sigma_Intercept + log(va.ans.x)),</span></span>
-<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a><span class="co">#     va.pred.error = rnorm(n(), mean = b_Intercept, sd = sigma),</span></span>
-<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a><span class="co">#     va.pred.y = va.pred.error + va.ans.y,</span></span>
-<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a><span class="co">#     # back-convert using this participant's pixelToMM</span></span>
-<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a><span class="co">#     phy.pred.y = phys_size(va.pred.y, distToScreen),</span></span>
-<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a><span class="co">#     px.pred.y = phy.pred.y * pixelToMM,</span></span>
-<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a><span class="co">#     num.pred.y = px.pred.y / 200</span></span>
-<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a><span class="co">#   )</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 6 participant * 48 trials per participant * 60 dots per trial</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="co"># 17280 rows </span></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>new_data <span class="ot">&lt;-</span> participant_df <span class="sc">%&gt;%</span></span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(stimuli_df, <span class="at">relationship =</span> <span class="st">"many-to-many"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># calculate pixel values from numerical values</span></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">px.x =</span> <span class="dv">500</span> <span class="sc">/</span> <span class="dv">120</span> <span class="sc">*</span> <span class="fu">abs</span>(num.x <span class="sc">-</span> <span class="dv">60</span>), <span class="at">px.y =</span> <span class="dv">200</span> <span class="sc">*</span> num.y) <span class="sc">%&gt;%</span> <span class="co"># &lt;- DIFF </span></span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># calcuate physical values (in MM) from pixel values</span></span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phy.x =</span> px.x <span class="sc">/</span> pixelsPerMM, <span class="at">phy.y =</span> px.y <span class="sc">/</span> pixelsPerMM) <span class="sc">%&gt;%</span></span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># calculate visual angle</span></span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">va.ans.x =</span> <span class="fu">vis_angle</span>(phy.x, distToScreen),</span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">va.ans.y =</span> <span class="fu">vis_angle</span>(phy.y, distToScreen)</span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a><span class="co"># 17280 rows * 600 draws per row </span></span>
+<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a><span class="co"># 1036800 </span></span>
+<span id="cb39-17"><a href="#cb39-17" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> new_data <span class="sc">%&gt;%</span> </span>
+<span id="cb39-18"><a href="#cb39-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expand_grid</span>(draws) <span class="sc">%&gt;%</span></span>
+<span id="cb39-19"><a href="#cb39-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb39-20"><a href="#cb39-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">sigma =</span> <span class="fu">exp</span>(b_sigma_Intercept <span class="sc">+</span> <span class="fu">log</span>(va.ans.x)),</span>
+<span id="cb39-21"><a href="#cb39-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">va.pred.error =</span> <span class="fu">rnorm</span>(<span class="fu">n</span>(), <span class="at">mean =</span> b_Intercept, <span class="at">sd =</span> sigma),</span>
+<span id="cb39-22"><a href="#cb39-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># first projection to x == 60 </span></span>
+<span id="cb39-23"><a href="#cb39-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">va.pred.y =</span> va.pred.error <span class="sc">+</span> va.ans.y,</span>
+<span id="cb39-24"><a href="#cb39-24" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb39-25"><a href="#cb39-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(participantId, expIndex, type, flip, noise, .draw) <span class="sc">%&gt;%</span> </span>
+<span id="cb39-26"><a href="#cb39-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb39-27"><a href="#cb39-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">va.pred.avg.y =</span> <span class="fu">mean</span>(va.pred.y),</span>
+<span id="cb39-28"><a href="#cb39-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">va.pred.median.y =</span> <span class="fu">median</span>(va.pred.y), </span>
+<span id="cb39-29"><a href="#cb39-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop_last"</span></span>
+<span id="cb39-30"><a href="#cb39-30" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb39-31"><a href="#cb39-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-32"><a href="#cb39-32" aria-hidden="true" tabindex="-1"></a><span class="co"># project from middle to left axis </span></span>
+<span id="cb39-33"><a href="#cb39-33" aria-hidden="true" tabindex="-1"></a>pred2 <span class="ot">&lt;-</span> pred <span class="sc">%&gt;%</span></span>
+<span id="cb39-34"><a href="#cb39-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(draws) <span class="sc">%&gt;%</span></span>
+<span id="cb39-35"><a href="#cb39-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb39-36"><a href="#cb39-36" aria-hidden="true" tabindex="-1"></a>    <span class="co"># distance to y-axis is vis angle distance from x == 60</span></span>
+<span id="cb39-37"><a href="#cb39-37" aria-hidden="true" tabindex="-1"></a>    <span class="at">sigma =</span> <span class="fu">exp</span>(b_sigma_Intercept <span class="sc">+</span> <span class="fu">log</span>(<span class="fu">vis_angle</span>(phy.x_ref, distToScreen))),</span>
+<span id="cb39-38"><a href="#cb39-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">va.pred.error =</span> <span class="fu">rnorm</span>(<span class="fu">n</span>(), <span class="at">mean =</span> b_Intercept, <span class="at">sd =</span> sigma),</span>
+<span id="cb39-39"><a href="#cb39-39" aria-hidden="true" tabindex="-1"></a>    <span class="at">va.pred.y.avg =</span> va.pred.error <span class="sc">+</span> va.pred.avg.y,</span>
+<span id="cb39-40"><a href="#cb39-40" aria-hidden="true" tabindex="-1"></a>    <span class="at">va.pred.y.median =</span> va.pred.error <span class="sc">+</span> va.pred.median.y</span>
+<span id="cb39-41"><a href="#cb39-41" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb39-42"><a href="#cb39-42" aria-hidden="true" tabindex="-1"></a>  <span class="co"># turn vis angle back to numerical values</span></span>
+<span id="cb39-43"><a href="#cb39-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb39-44"><a href="#cb39-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">phy.pred.y.avg =</span> <span class="fu">phys_size</span>(va.pred.y.avg, distToScreen),</span>
+<span id="cb39-45"><a href="#cb39-45" aria-hidden="true" tabindex="-1"></a>    <span class="at">phy.pred.y.median =</span> <span class="fu">phys_size</span>(va.pred.y.median, distToScreen),</span>
+<span id="cb39-46"><a href="#cb39-46" aria-hidden="true" tabindex="-1"></a>    <span class="at">px.pred.y.avg =</span> phy.pred.y.avg <span class="sc">*</span> pixelToMM,</span>
+<span id="cb39-47"><a href="#cb39-47" aria-hidden="true" tabindex="-1"></a>    <span class="at">px.pred.y.median =</span> phy.pred.y.median <span class="sc">*</span> pixelToMM,</span>
+<span id="cb39-48"><a href="#cb39-48" aria-hidden="true" tabindex="-1"></a>    <span class="at">num.pred.y.avg =</span> px.pred.y.avg <span class="sc">/</span> <span class="dv">200</span>,</span>
+<span id="cb39-49"><a href="#cb39-49" aria-hidden="true" tabindex="-1"></a>    <span class="at">num.pred.y.median =</span> px.pred.y.median <span class="sc">/</span> <span class="dv">200</span></span>
+<span id="cb39-50"><a href="#cb39-50" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
+<p>Then we go through the same process:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>avg_pred <span class="ot">&lt;-</span> pred2 <span class="sc">%&gt;%</span> </span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(expIndex, type, flip, noise, .draw) <span class="sc">%&gt;%</span> </span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">num.pred.avg.y =</span> <span class="fu">mean</span>(num.pred.y.avg), </span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">num.pred.median.y =</span> <span class="fu">mean</span>(num.pred.y.median)</span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Then get dataframe used for plotting error:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>plot_df <span class="ot">&lt;-</span> avg_pred <span class="sc">%&gt;%</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>(.) <span class="sc">%&gt;%</span></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(ans_df) <span class="sc">%&gt;%</span></span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">error.median =</span> num.pred.median.y <span class="sc">-</span> num.ans.y,</span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">norm.error.median =</span> <span class="fu">ifelse</span>(</span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>      flip <span class="sc">==</span> <span class="cn">FALSE</span>,</span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a>      num.pred.median.y <span class="sc">-</span> num.ans.y,</span>
+<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a>      num.ans.y <span class="sc">-</span> num.pred.median.y</span>
+<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">error.avg =</span> num.pred.avg.y <span class="sc">-</span> num.ans.y,</span>
+<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">norm.error.avg =</span> <span class="fu">ifelse</span>(</span>
+<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a>      flip <span class="sc">==</span> <span class="cn">FALSE</span>,</span>
+<span id="cb41-14"><a href="#cb41-14" aria-hidden="true" tabindex="-1"></a>      num.pred.avg.y <span class="sc">-</span> num.ans.y,</span>
+<span id="cb41-15"><a href="#cb41-15" aria-hidden="true" tabindex="-1"></a>      num.ans.y <span class="sc">-</span> num.pred.avg.y</span>
+<span id="cb41-16"><a href="#cb41-16" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb41-17"><a href="#cb41-17" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Then plot:</p>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>plot_df <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(type, noise, .draw) <span class="sc">%&gt;%</span> </span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">error =</span> <span class="fu">mean</span>(norm.error.median)) <span class="sc">%&gt;%</span></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> error, <span class="at">y =</span> noise, <span class="at">fill =</span> type)) <span class="sc">+</span></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>(<span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Across participants (median)"</span>,</span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"median(norm.error.median)"</span></span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>plot_df <span class="sc">%&gt;%</span></span>
+<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(type, noise, .draw) <span class="sc">%&gt;%</span></span>
+<span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">error =</span> <span class="fu">mean</span>(norm.error.avg)) <span class="sc">%&gt;%</span></span>
+<span id="cb42-12"><a href="#cb42-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> error, <span class="at">y =</span> noise, <span class="at">fill =</span> type)) <span class="sc">+</span></span>
+<span id="cb42-13"><a href="#cb42-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>(<span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb42-14"><a href="#cb42-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb42-15"><a href="#cb42-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Across participants (mean)"</span>,</span>
+<span id="cb42-16"><a href="#cb42-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"mean(norm.error.mean)"</span></span>
+<span id="cb42-17"><a href="#cb42-17" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="extend_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="extend_files/figure-html/unnamed-chunk-23-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</div>
+<p>Alright, this one has slightly bigger variance (for all mean strategies), but still, we are seeing negative values for the <code>point</code> case … It’s like if we shift the whole distributions to the right by 0.02 or something then the results will look really quite similar …</p>
+<p>I need to ask Matt to clarify exactly what he meant by making “comparisons” here …</p>
 </section>
 </section>
 </section>
