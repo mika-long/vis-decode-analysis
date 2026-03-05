@@ -88,7 +88,7 @@ exp2 %>%
   ) %>%
   ggplot(aes(
     x = variability,
-    y = mu, # normalized_erro
+    y = mu, 
     dist = "norm",
     arg1 = mu,
     arg2 = se,
@@ -104,7 +104,7 @@ exp2 %>%
   coord_flip() + #flipping axis
   theme_tidybayes() + #theme
   theme(legend.position = "top") +
-  scale_fill_manual(values = c("#76B7B2", "#E15759")) + #adding color # "#59A14F"
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) + # take out "#59A14F"
   scale_y_continuous(
     breaks = seq(0, .11, by = .01),
     expand = expansion(mult = c(0.01, 0.01))
@@ -867,81 +867,124 @@ plot_df %>%
   )
 ```
 
-Ok I'm at a loss here in terms of improving upon this, but I guess we could move on to the next step here. 
+We are getting errors going negative for point in this case. 
 
-# Calculate participant's actual error: 
+### Strategy 2 -- project twice 
 
-... in the numerical space. First let's see the empirical distribution of error: 
+This time we will build the posterior prediction a bit differently: 
 
 ```{r}
-exp2_df <- resp_df %>%
+# 6 participant * 48 trials per participant * 60 dots per trial
+# 17280 rows 
+new_data <- participant_df %>%
+  left_join(stimuli_df, relationship = "many-to-many") %>% 
+  # calculate pixel values from numerical values
+  mutate(px.x = 500 / 120 * abs(num.x - 60), px.y = 200 * num.y) %>% # <- DIFF 
+  # calcuate physical values (in MM) from pixel values
+  mutate(phy.x = px.x / pixelsPerMM, phy.y = px.y / pixelsPerMM) %>%
+  # calculate visual angle
   mutate(
-    type = ifelse(type == "point", "point", "point_arc")
-  ) %>%
-  left_join(ans_df) %>%
-  mutate(
-    error = num.y - num.ans.y,
-    normalized_error = ifelse(flip == FALSE, error, num.ans.y - num.y)
+    va.ans.x = vis_angle(phy.x, distToScreen),
+    va.ans.y = vis_angle(phy.y, distToScreen)
   )
 
-exp2_df %>% count(participantId, type, flip, noise)
+# 17280 rows * 600 draws per row 
+# 1036800 
+pred <- new_data %>% 
+  expand_grid(draws) %>%
+  mutate(
+    sigma = exp(b_sigma_Intercept + log(va.ans.x)),
+    va.pred.error = rnorm(n(), mean = b_Intercept, sd = sigma),
+    # first projection to x == 60 
+    va.pred.y = va.pred.error + va.ans.y,
+  ) %>% 
+  group_by(participantId, expIndex, type, flip, noise, .draw) %>% 
+  summarise(
+    va.pred.avg.y = mean(va.pred.y),
+    va.pred.median.y = median(va.pred.y), 
+    .groups = "drop_last"
+  )
+
+# project from middle to left axis 
+pred2 <- pred %>%
+  left_join(draws) %>%
+  mutate(
+    # distance to y-axis is vis angle distance from x == 60
+    sigma = exp(b_sigma_Intercept + log(vis_angle(phy.x_ref, distToScreen))),
+    va.pred.error = rnorm(n(), mean = b_Intercept, sd = sigma),
+    va.pred.y.avg = va.pred.error + va.pred.avg.y,
+    va.pred.y.median = va.pred.error + va.pred.median.y
+  ) %>%
+  # turn vis angle back to numerical values
+  mutate(
+    phy.pred.y.avg = phys_size(va.pred.y.avg, distToScreen),
+    phy.pred.y.median = phys_size(va.pred.y.median, distToScreen),
+    px.pred.y.avg = phy.pred.y.avg * pixelToMM,
+    px.pred.y.median = phy.pred.y.median * pixelToMM,
+    num.pred.y.avg = px.pred.y.avg / 200,
+    num.pred.y.median = px.pred.y.median / 200
+  )
 ```
 
+Then we go through the same process: 
+
+```{r}
+avg_pred <- pred2 %>% 
+  group_by(expIndex, type, flip, noise, .draw) %>% 
+  summarise(
+    num.pred.avg.y = mean(num.pred.y.avg), 
+    num.pred.median.y = mean(num.pred.y.median)
+  )
+```
+
+Then get dataframe used for plotting error: 
+
+
+```{r}
+plot_df <- avg_pred %>%
+  ungroup(.) %>%
+  left_join(ans_df) %>%
+  mutate(
+    error.median = num.pred.median.y - num.ans.y,
+    norm.error.median = ifelse(
+      flip == FALSE,
+      num.pred.median.y - num.ans.y,
+      num.ans.y - num.pred.median.y
+    ),
+    error.avg = num.pred.avg.y - num.ans.y,
+    norm.error.avg = ifelse(
+      flip == FALSE,
+      num.pred.avg.y - num.ans.y,
+      num.ans.y - num.pred.avg.y
+    )
+  )
+```
+
+Then plot: 
 ```{r}
 #| code-fold: true
-exp2_df %>%
-  ggplot(aes(x = error, fill = type, y = noise)) +
-  stat_halfeye(alpha = 0.75)
+#| layout-ncol: 2
+
+plot_df %>% group_by(type, noise, .draw) %>% 
+  summarise(error = mean(norm.error.median)) %>%
+  ggplot(aes(x = error, y = noise, fill = type)) +
+  stat_halfeye(alpha = 0.8) +
+  labs(
+    title = "Across participants (median)",
+    x = "median(norm.error.median)"
+  )
+
+plot_df %>%
+  group_by(type, noise, .draw) %>%
+  summarise(error = mean(norm.error.avg)) %>%
+  ggplot(aes(x = error, y = noise, fill = type)) +
+  stat_halfeye(alpha = 0.8) +
+  labs(
+    title = "Across participants (mean)",
+    x = "mean(norm.error.mean)"
+  )
 ```
 
-Then let's see the empirical distribution of normalized error: 
+Alright, this one has slightly bigger variance (for all mean strategies), but still, we are seeing negative values for the `point` case ... It's like if we shift the whole distributions to the right by 0.02 or something then the results will look really quite similar ... 
 
-```{r}
-exp2_df %>%
-  ggplot(aes(x = normalized_error, fill = type, y = noise)) +
-  stat_halfeye(alpha = 0.75)
-```
-
-TODO: 
-```{r}
-# TODO
-
-# 1. For each participant (6) × condition (48) × draw, get predicted mean error
-# (this is inside the pmap_dfr loop where you already aggregated across dots)
-
-# 2. Collapse across draws to get one point estimate per participant × condition
-participant_means <- pred %>%
-  group_by(participantId, type, noise) %>%
-  summarise(normalized_error = mean(norm.error.avg), .groups = "drop")
-
-# 3. Feed into their exact function
-freq_sum_pred <- summarySEwithin(
-  data = participant_means,
-  measurevar = "normalized_error",
-  withinvars = "noise",
-  betweenvars = "type",
-  idvar = "participantId"
-)
-
-# 4. Plot with identical code
-freq_sum_pred %>%
-  ggplot(aes(
-    x = noise,
-    y = normalized_error,
-    dist = "norm",
-    arg1 = normalized_error,
-    arg2 = se,
-    fill = type
-  )) +
-  stat_dist_halfeye(
-    show_interval = TRUE,
-    position = position_dodge(width = 0.2),
-    .width = 0.95,
-    size = 0.5,
-    alpha = 0.8
-  ) +
-  coord_flip() +
-  theme_tidybayes() +
-  xlab("Variability") +
-  ylab("Normalized Error")
-```
+I need to ask Matt to clarify exactly what he meant by making "comparisons" here ... 
