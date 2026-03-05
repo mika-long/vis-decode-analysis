@@ -795,3 +795,25 @@ plot_df %>%
 ```
 
 The geometric mean is really quite powerful here ... 
+
+But why?? Let's open this up a bit: 
+
+```{r}
+#| layout-ncol: 2
+plot_df %>%
+  ggplot(aes(x = norm.error.avg, y = noise, fill = type)) +
+  stat_halfeye(alpha = 0.8) +
+  labs(
+    title = "Across participants (mean)",
+  )
+
+plot_df %>%
+  ggplot(aes(x = norm.error.median, y = noise, fill = type)) +
+  stat_halfeye(alpha = 0.8) +
+  labs(
+    title = "Across participants (median)"
+  )
+```
+
+Why is the mean so symmetric ...? 
+
