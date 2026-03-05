@@ -89,44 +89,6 @@ stimuli_df <- stimuli_df %>%
 stimuli_df
 ```
 
-**TODO**: Double check whether `data` is the correct column we should be pulling and rendering from ... I think it is correct but one can never be too careful with these things ... 
-
-```{r}
-#| eval: false
-#| echo: false
-#| code-fold: true
-
-# there are three columns, data, lineData, and highNoiseData.
-# when the type is `point`, data is equivalent to lineData.
-# when the type if `pointArc`,  data is NOT equivalent to lineData.
-
-check <- exp_json_data %>%
-  unnest(c(data, lineData, highNoiseData), names_repair = "unique") %>%
-  mutate(
-    dataEqLineData = `x...6` == `x...8` & `y...7` == `y...9`,
-    dataEqHighNoisedata = `x...6` == `x...10` & `y...7` == `y...11`,
-    LineDataEqHighNoiseData = `x...8` == `x...10` & `y...9` == `y...11`
-  ) %>%
-  filter(type != "line") %>%
-  mutate(noise = as.character(noise))
-
-check %>%
-  count(
-    noise,
-    type,
-    dataEqLineData,
-    dataEqHighNoisedata,
-    LineDataEqHighNoiseData
-  )
-
-check %>%
-  filter(dataEqLineData == TRUE, dataEqHighNoisedata == FALSE) %>%
-  filter(index == 4) # %>%
-ggplot(aes(x = `x...10`, y = `y...11`)) +
-  geom_point() +
-  coord_cartesian(ylim = c(0, 1))
-```
-
 Define helper functions: 
 
 ```{r}
@@ -706,14 +668,30 @@ draws <- model %>%
   spread_draws(b_Intercept, b_sigma_Intercept) %>%
   as_draws_df(.) %>%
   thin_draws(thin = 20)
+
+pixelToMM <- 5.12
+distToScreen <- 473
+
+# 5760 rows = 2 (plot type) * 2 (noise type) * 2 (flipped or not) *
+#  12 repeated measures * 60 points per graph
+new_data <- stimuli_df %>%
+  # calculate pixel values from numerical values
+  mutate(px.x = 500 / 120 * num.x, px.y = 200 * num.y) %>%
+  # calcuate physical values (in MM) from pixel values
+  mutate(phy.x = px.x / pixelToMM, phy.y = px.y / pixelToMM) %>%
+  # calculate visual angle
+  mutate(
+    va.ans.x = vis_angle(phy.x, distToScreen),
+    va.ans.y = vis_angle(phy.y, distToScreen)
+  )
 ```
 
-### Strategt 1 -- Project once to y-axis 
+### Strategy 1 -- Project once to y-axis 
 
 Build the posterior prediction: 
 
 ```{r}
-rm(pred)
+# rm(pred)
 
 pred <- draws %>%
   expand_grid(new_data) %>%
@@ -802,7 +780,7 @@ plot_df %>%
 
 Ok I'm at a loss here in terms of improving upon this, but I guess we could move on to the next step here. 
 
-## Calculate participant's actual error: 
+# Calculate participant's actual error: 
 
 ... in the numerical space. First let's see the empirical distribution of error: 
 
@@ -897,6 +875,8 @@ freq_sum %>%
   ) +
   coord_flip() +
   theme_tidybayes() +
+  # TODO: figure out the right colors for each
+  # scale_fill_manual(values = c("#76B7B2", "#E15759", "#59A14F")) + #adding color
   xlab("Variability") +
   ylab("Normalized Error")
 ```
@@ -906,7 +886,7 @@ TODO:
 ```{r}
 # TODO
 
-# 1. For each participant × condition × draw, get predicted mean error
+# 1. For each participant (6) × condition (48) × draw, get predicted mean error
 # (this is inside the pmap_dfr loop where you already aggregated across dots)
 
 # 2. Collapse across draws to get one point estimate per participant × condition
