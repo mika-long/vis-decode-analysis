@@ -466,6 +466,13 @@ plot_df %>%
 
 As one can see, the above posterior error has very small variance. Median has slightly larger variance, but the "normalized error" goes negative. 
 
+```{r}
+plot_df %>%
+  group_by(type, noise, .draw) %>%
+  summarise(error = mean(norm.error.median)) %>%
+  median_qi()
+```
+
 ### Strategy 2 --- Project to vertical line where `xintercept == 60` and then `xintercept == 0`
 
 Instead of trying to sum over the results projected to the y-axis, we could have a result projecting to the middle point, i.e., where everyone projects to $x = 60$, and then use that as an input to then project to the y-axis in order to potentially introduce more variance into the results. 
@@ -497,6 +504,8 @@ new_data <- stimuli_df %>%
 Create the posterior draws: 
 
 ```{r}
+#| label: strategy 2 thin dr aws
+
 rm(draws)
 
 draws <- model %>%
@@ -504,7 +513,7 @@ draws <- model %>%
   as_draws_df(.) %>%
   # thin parameter set to 4 instead of 2
   # for more aggressive thinning
-  thin_draws(thin = 4)
+  thin_draws(thin = 2)
 ```
 
 Combine the posterior with new data: 
@@ -585,7 +594,7 @@ pred2 %>%
   )
 ```
 
-So we are indeed seeing more variations
+So we are indeed seeing more variations. The median at `x == 60` is just a bit wider than the mean at `x == 60` but when projected to `x == 0` they result in a. similarly shaped distribution. 
 
 :::{.column-margin}
 What would this variation result in changes in the numerical space? 
@@ -602,16 +611,12 @@ Let's also see what the average looks like across trials:
 ```{r}
 rm(avg_pred)
 
-# unclear why, but this new avg_pred only has 288000
-# and not 576000
-# maybe the thinning was wrong ...?
 avg_pred <- pred2 %>%
   group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
   summarise(
-    num.pred.avg.avg.y = mean(num.pred.y.avg), # suppose participants can calculate mean
-    # num.pred.median.avg.y = median(num.pred.y.avg), # suppor participants use the median instead
-    num.pred.avg.median.y = mean(num.pred.y.median),
-    # num.pred.median.median.y = median(num.pred.y.median),
+    # suppose participants can calculate mean
+    num.pred.avg.avg.y = mean(num.pred.y.avg),
+    num.pred.avg.median.y = median(num.pred.y.median),
   )
 ```
 
@@ -650,75 +655,93 @@ plot_df %>%
   stat_halfeye(alpha = 0.8) +
   labs(
     title = "Mean Strategy on twice projected value on y-axis",
-    x = "Numerical Error on y-axis"
-  )
+    x = "Numerical Normalized Error on y-axis"
+  ) +
+  coord_cartesian(xlim = c(-0.03, 0.09)) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "black")
+
 plot_df %>%
   ggplot(aes(x = error.median, y = noise, fill = type)) +
   stat_halfeye(alpha = 0.8) +
   labs(
     title = "Median Strategy on twice projected value on y-axis",
-    x = "Numerical Error on y-axis"
-  )
+    x = "Numerical Normalized Error on y-axis"
+  ) +
+  coord_cartesian(xlim = c(-0.03, 0.09)) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "black")
 ```
 
 The results are very similiar, except that the median strategy reads like the mean strategy but shifted to the left of the x-axis for a bit ... 
 
-<!-- Check to see its's predicted stuff: 
-# Extending the model to all participants 
+Compared to strategy 1, I think the variance here is a big bigger ... 
+
+```{r}
+plot_df %>% median_qi()
+```
+
+---
+
+Recall that all the above is for a particular participant with a particular value for `pixelToMM` and `distToScreen`. We should also be able to calculate it for all participants in the pilot. 
+
+## Extending the above strategies for all participants 
 
 Recall this is the list of participants we have from pilot: 
 
 ```{r}
-total_data <- stimuli_df %>%
-  expand_grid(participant_df) %>%
-  # calculate pixel values from numerical values
-  mutate(px.x = 500 / 120 * num.x, px.y = 200 * num.y) %>%
-  # calcuate physical values (in MM) from pixel values
-  mutate(phy.x = px.x / pixelsPerMM, phy.y = px.y / pixelsPerMM) %>%
-  # calculate visual angle
-  mutate(
-    va.ans.x = vis_angle(phy.x, distToScreen),
-    va.ans.y = vis_angle(phy.y, distToScreen)
-  )
-
-total_data %>% head(5)
+participant_df
 ```
 
-Then we will expand the `total_data` frame to consider the posterior draws, but we will also incorporate a more thinned down versions: 
+Let us first do more aggressive thinning: 
 
 ```{r}
+#| label: all participant thin draws
 draws <- model %>%
   spread_draws(b_Intercept, b_sigma_Intercept) %>%
   as_draws_df(.) %>%
-  thin_draws(thin = 8) # changed from thin = 2 to thin = 8
+  thin_draws(thin = 20)
 ```
 
+### Strategt 1 -- Project once to y-axis 
+
+Build the posterior prediction: 
+
 ```{r}
-# TODO: check the logic here
-total_pred <- draws %>%
-  # every draw * every dot; will result in 34560 * 3000 (thinned version) row
-  expand_grid(total_data) %>%
+rm(pred)
+
+pred <- draws %>%
+  expand_grid(new_data) %>%
+  expand_grid(participant_df) %>% # now each row has its own distToScreen, pixelToMM
   mutate(
-    mu = b_Intercept,
+    # recalculate physical and VA values per-participant
+    phy.x = px.x / pixelsPerMM,
+    phy.y = px.y / pixelsPerMM,
+    va.ans.x = vis_angle(phy.x, distToScreen),
+    va.ans.y = vis_angle(phy.y, distToScreen),
     sigma = exp(b_sigma_Intercept + log(va.ans.x)),
-    va.pred.error = rnorm(n(), mean = mu, sd = sigma),
-    va.pred.y = va.pred.error + va.ans.y
-  ) %>%
-  # turn vis angle back to numerical values
-  mutate(
+    va.pred.error = rnorm(n(), mean = b_Intercept, sd = sigma),
+    va.pred.y = va.pred.error + va.ans.y,
+    # back-convert using this participant's pixelToMM
     phy.pred.y = phys_size(va.pred.y, distToScreen),
     px.pred.y = phy.pred.y * pixelToMM,
     num.pred.y = px.pred.y / 200
   )
 ```
 
+Calculate average across participants: 
+
 ```{r}
-# TODO: check the logic here
-avg_pred <- total_pred %>%
+avg_pred <- pred %>%
+  # first: each participant's response to each stimulus
+  group_by(participantId, ogIndex, expIndex, type, flip, noise, .draw) %>%
+  summarise(
+    num.pred.avg.y = mean(num.pred.y),
+    num.pred.median.y = median(num.pred.y)
+  ) %>%
+  # then: average across participants
   group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
   summarise(
-    num.pred.avg.y = mean(num.pred.y), # suppose participants can calculate mean
-    num.pred.median.y = median(num.pred.y), # suppor participants use the median instead
+    num.pred.avg.y = mean(num.pred.avg.y),
+    num.pred.median.y = median(num.pred.median.y)
   )
 ```
 
@@ -744,16 +767,31 @@ plot_df <- avg_pred %>%
   )
 ```
 
+Check with plots: 
+
 ```{r}
 #| code-fold: true
+#| layout-ncol: 2
+
+plot_df %>%
+  group_by(type, noise, .draw) %>%
+  summarise(error = median(norm.error.median)) %>%
+  ggplot(aes(x = error, y = noise, fill = type)) +
+  stat_halfeye(alpha = 0.8) +
+  labs(
+    title = "Across participants (median)",
+    x = "median(norm.error.median)"
+  )
+
 plot_df %>%
   group_by(type, noise, .draw) %>%
   summarise(error = mean(norm.error.avg)) %>%
   ggplot(aes(x = error, y = noise, fill = type)) +
   stat_halfeye(alpha = 0.8) +
   labs(
-    title = "Posterior error across participants use mean strategy, in data units"
+    title = "Across participants (mean)",
+    x = "mean(norm.error.mean)"
   )
 ```
 
-It appears that the only thing that doing the above style analysis averaged across participants is giving us, is the fact that error for both noise levels, for the `point` chart type, is now negative.  -->
+The geometric mean is really quite powerful here ... 
