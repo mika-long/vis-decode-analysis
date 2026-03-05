@@ -731,18 +731,17 @@ Calculate average across participants:
 
 ```{r}
 avg_pred <- pred %>%
-  # first: each participant's response to each stimulus
-  group_by(participantId, ogIndex, expIndex, type, flip, noise, .draw) %>%
+  group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
   summarise(
     num.pred.avg.y = mean(num.pred.y),
     num.pred.median.y = median(num.pred.y)
-  ) %>%
-  # then: average across participants
-  group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
-  summarise(
-    num.pred.avg.y = mean(num.pred.avg.y),
-    num.pred.median.y = median(num.pred.median.y)
-  )
+  ) # %>%
+# then: average across participants
+# group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
+#   summarise(
+#     num.pred.avg.y = mean(num.pred.avg.y),
+#     num.pred.median.y = median(num.pred.median.y)
+#   )
 ```
 
 Now we plot the result averaged across all participants: 
@@ -794,26 +793,41 @@ plot_df %>%
   )
 ```
 
-The geometric mean is really quite powerful here ... 
+Ok I'm at a loss here in terms of improving upon this, but I guess we could move on to the next step here. 
 
-But why?? Let's open this up a bit: 
+## Calculate participant's actual error: 
+
+... in the numerical space. First let's see the empirical distribution of error: 
 
 ```{r}
-#| layout-ncol: 2
-plot_df %>%
-  ggplot(aes(x = norm.error.avg, y = noise, fill = type)) +
-  stat_halfeye(alpha = 0.8) +
-  labs(
-    title = "Across participants (mean)",
-  )
-
-plot_df %>%
-  ggplot(aes(x = norm.error.median, y = noise, fill = type)) +
-  stat_halfeye(alpha = 0.8) +
-  labs(
-    title = "Across participants (median)"
-  )
+#| code-fold: true
+resp_df %>%
+  mutate(
+    type = ifelse(type == "point", "point", "point_arc")
+  ) %>%
+  left_join(ans_df) %>%
+  mutate(
+    error = num.y - num.ans.y,
+    normalized_error = ifelse(flip == FALSE, error, num.ans.y - num.y)
+  ) %>%
+  ggplot(aes(x = error, fill = type, y = noise)) +
+  stat_halfeye(alpha = 0.75)
 ```
 
-Why is the mean so symmetric ...? 
+Then let's see the empirical distribution of normalized error: 
 
+```{r}
+resp_df %>%
+  mutate(
+    type = ifelse(type == "point", "point", "point_arc")
+  ) %>%
+  left_join(ans_df) %>%
+  mutate(
+    error = num.y - num.ans.y,
+    normalized_error = ifelse(flip == FALSE, error, num.ans.y - num.y)
+  ) %>%
+  ggplot(aes(x = normalized_error, fill = type, y = noise)) +
+  stat_halfeye(alpha = 0.75)
+```
+
+How are they actually getting at the graph ...?? Like do I need to use `lmer` here ...??? 
