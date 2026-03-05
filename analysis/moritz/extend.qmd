@@ -800,8 +800,7 @@ Ok I'm at a loss here in terms of improving upon this, but I guess we could move
 ... in the numerical space. First let's see the empirical distribution of error: 
 
 ```{r}
-#| code-fold: true
-resp_df %>%
+exp2_df <- resp_df %>%
   mutate(
     type = ifelse(type == "point", "point", "point_arc")
   ) %>%
@@ -809,7 +808,14 @@ resp_df %>%
   mutate(
     error = num.y - num.ans.y,
     normalized_error = ifelse(flip == FALSE, error, num.ans.y - num.y)
-  ) %>%
+  )
+
+exp2_df %>% count(participantId, type, flip, noise)
+```
+
+```{r}
+#| code-fold: true
+exp2_df %>%
   ggplot(aes(x = error, fill = type, y = noise)) +
   stat_halfeye(alpha = 0.75)
 ```
@@ -817,17 +823,118 @@ resp_df %>%
 Then let's see the empirical distribution of normalized error: 
 
 ```{r}
-resp_df %>%
-  mutate(
-    type = ifelse(type == "point", "point", "point_arc")
-  ) %>%
-  left_join(ans_df) %>%
-  mutate(
-    error = num.y - num.ans.y,
-    normalized_error = ifelse(flip == FALSE, error, num.ans.y - num.y)
-  ) %>%
+exp2_df %>%
   ggplot(aes(x = normalized_error, fill = type, y = noise)) +
   stat_halfeye(alpha = 0.75)
 ```
 
-How are they actually getting at the graph ...?? Like do I need to use `lmer` here ...??? 
+How are they actually getting at the graph ...?? Like do I need to use `lmer` here ...??? Like should I just try to copy what they did with their analysis, and see what that produces on my set of pilot data ...? 
+
+
+```{r}
+library(lme4)
+
+# make columns factor
+lmer_model <- exp2_df %>%
+  mutate(
+    mark = as.factor(type),
+    noise = as.factor(noise)
+  ) %>%
+  lmer(
+    # normalized_error ~ mark * variability + (1 | assignmentid),
+    normalized_error ~ mark * noise + (1 | participantId),
+    data = .
+  )
+```
+
+Check `lmer` fitted model: 
+
+```{r}
+lmer_model
+```
+
+Note that this is purely for $p$-interval and hypothesis testing. 
+
+```{r}
+source(here("analysis", "moritz", "Functions.R"))
+```
+
+```{r}
+freq_sum <- summarySEwithin(
+  data = exp2_df,
+  measurevar = "normalized_error",
+  withinvars = "noise",
+  betweenvars = "type",
+  idvar = "participantId"
+)
+```
+
+Plot this: 
+
+```{r}
+freq_sum %>%
+  ggplot(aes(
+    x = noise,
+    y = normalized_error,
+    dist = "norm",
+    arg1 = normalized_error,
+    arg2 = se,
+    fill = type
+  )) +
+  stat_dist_halfeye(
+    show_interval = TRUE,
+    position = position_dodge(width = 0.2),
+    .width = 0.95,
+    size = 0.5,
+    alpha = 0.8
+  ) +
+  coord_flip() +
+  theme_tidybayes() +
+  xlab("Variability") +
+  ylab("Normalized Error")
+```
+
+TODO: 
+
+```{r}
+# TODO
+
+# 1. For each participant × condition × draw, get predicted mean error
+# (this is inside the pmap_dfr loop where you already aggregated across dots)
+
+# 2. Collapse across draws to get one point estimate per participant × condition
+participant_means <- pred %>%
+  group_by(participantId, type, noise) %>%
+  summarise(normalized_error = mean(norm.error.avg), .groups = "drop")
+
+# 3. Feed into their exact function
+freq_sum_pred <- summarySEwithin(
+  data = participant_means,
+  measurevar = "normalized_error",
+  withinvars = "noise",
+  betweenvars = "type",
+  idvar = "participantId"
+)
+
+# 4. Plot with identical code
+freq_sum_pred %>%
+  ggplot(aes(
+    x = noise,
+    y = normalized_error,
+    dist = "norm",
+    arg1 = normalized_error,
+    arg2 = se,
+    fill = type
+  )) +
+  stat_dist_halfeye(
+    show_interval = TRUE,
+    position = position_dodge(width = 0.2),
+    .width = 0.95,
+    size = 0.5,
+    alpha = 0.8
+  ) +
+  coord_flip() +
+  theme_tidybayes() +
+  xlab("Variability") +
+  ylab("Normalized Error")
+```
