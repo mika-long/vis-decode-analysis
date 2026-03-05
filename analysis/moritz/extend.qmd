@@ -10,8 +10,8 @@ format:
 
 ```{r}
 #| code-fold: true
+#| label: read in libraries
 
-# read in libraries
 library(ggplot2)
 library(tidyverse)
 library(tidybayes)
@@ -78,6 +78,7 @@ stimuli_df <- stimuli_df %>%
 ```
 
 ```{r}
+#| label: show stimuli dataframe
 stimuli_df
 ```
 
@@ -123,7 +124,7 @@ Define helper functions:
 
 ```{r}
 #| code-fold: true
-#| label: define-functions
+#| label: define functions
 
 get_og_stimuli <- function(i) {
   mean <- stimuli_df %>%
@@ -155,7 +156,7 @@ phys_size <- function(va, distance) {
 Let's also read in the data collected from pilot: 
 
 :::{.callout-note}
-## Translate between spaces 
+## A note on translating between spaces 
 The goal is to translate from the pixel space to the physical space, and then to the visual angle space. 
 
 1. Data to Pixel: This should be given by the custom `VegaEmbed` component we built (directly fetching)
@@ -166,7 +167,7 @@ The goal is to translate from the pixel space to the physical space, and then to
 
 ```{r}
 #| code-fold: true
-#| label: read-in-pilot-df
+#| label: read in pilot df
 
 raw_df <- read_csv(here("data", "part_2", "part2_pilot.csv")) %>% as_tibble(.)
 
@@ -247,7 +248,7 @@ And then we also calculate the answer dataframe `ans_df`. **Note that we are usi
 
 ```{r}
 #| code-fold: true
-#| label: get-ans-df
+#| label: get ans df
 
 temp_df <- stimuli_df %>%
   filter(type == "point") %>%
@@ -292,6 +293,7 @@ Here is the specification we used for fitting:
 
 ```{r}
 #| eval: false
+#| label: brms specs
 
 # Recall that we defined error = resp - ans
 f <- bf(
@@ -326,9 +328,6 @@ model %>% get_variables(.) %>% head(4)
 - `sd_participantId__Intercept` and `sd_participantId__sigma_Intercept` corresponds to $\tau_\mu$ and $\tau_\alpha$
 - `r_participantId[<id>, Intercept]`, `r_participantId__sigma[<id>, Intercept]` correspond to $u_j$ and $v_j$ respectively. 
 :::
-
-<!-- We assume that the baseline model is this: participants project from each of the dots to the y-axis, and then perform an averaging. 
-We will use the **Project to Y-Axis Model**.  -->
 
 ## Generate predictions for an "average" participant with fixed `pixelToMM` and `distToScreen` 
 
@@ -465,7 +464,7 @@ plot_df %>%
   )
 ```
 
-As one can see, the above posterior error has very small variance. 
+As one can see, the above posterior error has very small variance. Median has slightly larger variance, but the "normalized error" goes negative. 
 
 ### Strategy 2 --- Project to vertical line where `xintercept == 60` and then `xintercept == 0`
 
@@ -528,7 +527,9 @@ pred <- draws %>%
   ) %>%
   group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
   summarise(
+    # assume participants use the mean for second projection
     va.mid_pred.y.avg = mean(va.pred.y),
+    # assume participants use the median for second projection
     va.mid_pred.y.median = median(va.pred.y),
     .groups = "drop_last"
   )
@@ -537,6 +538,7 @@ pred <- draws %>%
 pred2 <- pred %>%
   left_join(draws) %>%
   mutate(
+    # distance to y-axis is vis angle distance from x == 60
     sigma = exp(b_sigma_Intercept + log(vis_angle(phy.x_ref, distToScreen))),
     va.pred.error = rnorm(n(), mean = b_Intercept, sd = sigma),
     va.pred.y.avg = va.pred.error + va.mid_pred.y.avg,
@@ -544,13 +546,16 @@ pred2 <- pred %>%
   ) %>%
   # turn vis angle back to numerical values
   mutate(
-    phy.pred.y = phys_size(va.pred.y.avg, distToScreen),
-    px.pred.y = phy.pred.y * pixelToMM,
-    num.pred.y = px.pred.y / 200
+    phy.pred.y.avg = phys_size(va.pred.y.avg, distToScreen),
+    phy.pred.y.median = phys_size(va.pred.y.median, distToScreen),
+    px.pred.y.avg = phy.pred.y.avg * pixelToMM,
+    px.pred.y.median = phy.pred.y.median * pixelToMM,
+    num.pred.y.avg = px.pred.y.avg / 200,
+    num.pred.y.median = px.pred.y.median / 200
   )
 ```
 
-Check to see the posterior prediction of one graph (`ogIndex == 4`): 
+Check to see the posterior prediction for one graph (`ogIndex == 4`): 
 
 ```{r}
 #| code-fold: true
@@ -562,8 +567,10 @@ pred2 %>%
   ggplot(aes(x = va.mid_pred.y.avg, y = "x == 60")) +
   stat_halfeye() +
   stat_halfeye(aes(x = va.pred.y.avg, y = "x == 0")) +
+  coord_cartesian(xlim = c(2.2, 2.8)) +
   labs(
-    title = "Mean strategy; project to x == 60, then to x == 0"
+    title = "Mean strategy; project to x == 60, then to x == 0",
+    x = "Visual Angle of Predicted Y value"
   )
 
 pred2 %>%
@@ -571,61 +578,90 @@ pred2 %>%
   ggplot(aes(x = va.mid_pred.y.median, y = "x == 60")) +
   stat_halfeye() +
   stat_halfeye(aes(x = va.pred.y.median, y = "x == 0")) +
+  coord_cartesian(xlim = c(2.2, 2.8)) +
   labs(
-    title = "Mean strategy; project to x == 60, then to x == 0"
+    title = "Median strategy; project to x == 60, then to x == 0",
+    x = "Visual Angle of Predicted Y value"
   )
 ```
 
-So we are indeed seeing more variations^[What would this variation result in changes in the numerical space? 
+So we are indeed seeing more variations
+
+:::{.column-margin}
+What would this variation result in changes in the numerical space? 
+
 ```{r}
 phys_size(0.25, distToScreen) * pixelToMM / 200
 ```
+
 So 5% on the [0, 1] scale. 
-].
+:::
 
 Let's also see what the average looks like across trials: 
 
 ```{r}
 rm(avg_pred)
 
+# unclear why, but this new avg_pred only has 288000
+# and not 576000
+# maybe the thinning was wrong ...?
 avg_pred <- pred2 %>%
   group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
   summarise(
-    num.pred.avg.y = mean(num.pred.y), # suppose participants can calculate mean
-    num.pred.median.y = median(num.pred.y), # suppor participants use the median instead
+    num.pred.avg.avg.y = mean(num.pred.y.avg), # suppose participants can calculate mean
+    # num.pred.median.avg.y = median(num.pred.y.avg), # suppor participants use the median instead
+    num.pred.avg.median.y = mean(num.pred.y.median),
+    # num.pred.median.median.y = median(num.pred.y.median),
   )
 ```
 
 Plotting: 
 
 ```{r}
-#| code-fold: true 
+#| code-fold: true
+#| layout-ncol: 2
+#| label: strategy 2 plot check
 
-avg_pred %>%
+plot_df <- avg_pred %>%
   ungroup(.) %>%
   left_join(ans_df) %>%
   mutate(
-    error.median = num.pred.median.y - num.ans.y,
+    error.median = num.pred.avg.median.y - num.ans.y,
     norm.error.median = ifelse(
       flip == FALSE,
-      num.pred.median.y - num.ans.y,
-      num.ans.y - num.pred.median.y
+      num.pred.avg.median.y - num.ans.y,
+      num.ans.y - num.pred.avg.median.y
     ),
-    error.avg = num.pred.avg.y - num.ans.y,
+    error.avg = num.pred.avg.avg.y - num.ans.y,
     norm.error.avg = ifelse(
       flip == FALSE,
-      num.pred.avg.y - num.ans.y,
-      num.ans.y - num.pred.avg.y
+      num.pred.avg.avg.y - num.ans.y,
+      num.ans.y - num.pred.avg.avg.y
     )
   ) %>%
   group_by(type, noise, .draw) %>%
-  summarise(error = mean(norm.error.avg)) %>% # TODO: for some reason norm.error.avg and norm.error.median looks very similar ...??? 
-  ggplot(aes(x = error, y = noise, fill = type)) +
-  stat_halfeye(alpha = 0.8) # +
-  # labs(
-#     title = "Posterior error when an average participant projects to middle, in data units"
-#   )
+  summarise(
+    error.avg = mean(norm.error.avg),
+    error.median = mean(norm.error.median),
+  )
+
+plot_df %>%
+  ggplot(aes(x = error.avg, y = noise, fill = type)) +
+  stat_halfeye(alpha = 0.8) +
+  labs(
+    title = "Mean Strategy on twice projected value on y-axis",
+    x = "Numerical Error on y-axis"
+  )
+plot_df %>%
+  ggplot(aes(x = error.median, y = noise, fill = type)) +
+  stat_halfeye(alpha = 0.8) +
+  labs(
+    title = "Median Strategy on twice projected value on y-axis",
+    x = "Numerical Error on y-axis"
+  )
 ```
+
+The results are very similiar, except that the median strategy reads like the mean strategy but shifted to the left of the x-axis for a bit ... 
 
 <!-- Check to see its's predicted stuff: 
 # Extending the model to all participants 
