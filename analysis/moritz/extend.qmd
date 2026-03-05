@@ -24,12 +24,96 @@ theme_set(theme_minimal())
 
 # TLDR (and TODO)
 
-- What is the goal here 
+- **High-level goal**: Our previous experiment gave us some decoding operators. We want to showcase its capabilities. For that purpose, we've picked the Moritz et al. paper. 
+- **How did Mortiz et al. perform analysis**? 
+  - the `lmer` code is for calculating $p$-values for hypothesis testing. 
+  - the graphs are actually **descriptive summary statistics in distributional form**.  
 - What is Mortiz's plan of analysis here (as in, are they trying to model an average participant? Something else??)
 - What is the "apples-to-apples" comparison we need to show here 
 - What does this reveal about their modeling choice, and how could we potentially improve on top of it 
 
-# Replicating Mortiz et al. Exp 2
+# Repeating Mortiz's analysis 
+
+```{r}
+#| label: read in Mortiz data
+
+#point arc
+exp2_dotArc <- read.csv(
+  here("data", "moritz", "exp", "exp2-point-arc.csv"),
+  ,
+  check.names = FALSE
+)
+#point
+exp2_dotX <- read.csv(
+  here("data", "moritz", "exp", "exp2-point.csv"),
+  check.names = FALSE
+)
+exp2 <- rbind(exp2_dotArc, exp2_dotX) %>%
+  as_tibble(.) %>%
+  select(assignmentid, mark, flip, variability, normalized_error)
+```
+
+Perform the correction: 
+
+```{r}
+#| code-fold: true
+exp2 %>%
+  group_by(assignmentid, mark) %>%
+  mutate(subj_mean = mean(normalized_error)) %>%
+  ungroup() %>%
+  mutate(grand_mean = mean(normalized_error)) %>%
+  mutate(corrected = normalized_error - subj_mean + grand_mean) %>%
+  group_by(mark, variability) %>%
+  summarise(
+    mu = mean(normalized_error),
+    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2
+    .groups = "drop"
+  )
+```
+
+```{r}
+#| label: plot Mortiz
+#| code-fold: true
+exp2 %>%
+  group_by(assignmentid, mark) %>%
+  mutate(subj_mean = mean(normalized_error)) %>%
+  ungroup() %>%
+  mutate(grand_mean = mean(normalized_error)) %>%
+  mutate(corrected = normalized_error - subj_mean + grand_mean) %>%
+  group_by(mark, variability) %>%
+  summarise(
+    mu = mean(normalized_error),
+    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2
+    .groups = "drop"
+  ) %>%
+  ggplot(aes(
+    x = variability,
+    y = mu, # normalized_erro
+    dist = "norm",
+    arg1 = mu,
+    arg2 = se,
+    fill = mark
+  )) + #uncertainty
+  stat_dist_halfeye(
+    show_interval = TRUE,
+    position = position_dodge(width = 0.2), # <- WHY THIS???
+    .width = 0.95,
+    size = .5,
+    alpha = .8
+  ) + #adding halfeye
+  coord_flip() + #flipping axis
+  theme_tidybayes() + #theme
+  theme(legend.position = "top") +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) + #adding color # "#59A14F"
+  scale_y_continuous(
+    breaks = seq(0, .11, by = .01),
+    expand = expansion(mult = c(0.01, 0.01))
+  ) + #specifying scale
+  xlab("Variability") + #add x label
+  ylab("Normalized Error") #add y label
+```
+
+# Generate posterior predictions for an "average" participant 
 
 Here are the details of the original experiment: 
 
@@ -211,6 +295,12 @@ resp_df <- pilot_df %>%
     phy.y = px.y / pixelsPerMM,
     va.y = vis_angle(phy.y, distToScreen)
   )
+
+participant_df <- resp_df %>%
+  count(participantId, type) %>%
+  select(-n) %>%
+  left_join(participant_df) %>%
+  mutate(type = ifelse(type == "point", type, "point_arc"))
 ```
 
 And then we also calculate the answer dataframe `ans_df`. **Note that we are using the same strategy that Mortiz et al.** used to calculate **error** and **normalized error**^[... which is, instead of calculating the actual mean across 60 points for each trial, for trials that share the same value for `seed` and `flip`, they share the same "default mean", i.e., the mean of the `point` type, instead of its actual mean.]. 
@@ -298,9 +388,11 @@ model %>% get_variables(.) %>% head(4)
 - `r_participantId[<id>, Intercept]`, `r_participantId__sigma[<id>, Intercept]` correspond to $u_j$ and $v_j$ respectively. 
 :::
 
-## Generate predictions for an "average" participant with fixed `pixelToMM` and `distToScreen` 
+## ... with specific fixed `pixelToMM` and `distToScreen` 
 
 We will make the predictions for an average participant, conditioning on specific values of `pixelToMM` and `distToScreen`. 
+
+**Note here that we are also implicitly making the assumption that the same participant saw both the `point` type condition and the `point_arc` type condition, which is NOT the case for the actual study.** 
 
 ### Strategy 1 --- Project to vertical line `x==0`
 
@@ -563,7 +655,7 @@ pred2 %>%
   )
 ```
 
-So we are indeed seeing more variations. The median at `x == 60` is just a bit wider than the mean at `x == 60` but when projected to `x == 0` they result in a. similarly shaped distribution. 
+So we are indeed seeing more variations. The median at `x == 60` is just a bit wider than the mean at `x == 60` but when projected to `x == 0` they result in a similarly shaped distribution. 
 
 :::{.column-margin}
 What would this variation result in changes in the numerical space? 
@@ -642,7 +734,7 @@ plot_df %>%
 
 The results are very similiar, except that the median strategy reads like the mean strategy but shifted to the left of the x-axis for a bit ... 
 
-Compared to strategy 1, I think the variance here is a big bigger ... 
+Compared to strategy 1, I think the variance here is a bit bigger ... 
 
 ```{r}
 plot_df %>% median_qi()
@@ -650,9 +742,9 @@ plot_df %>% median_qi()
 
 ---
 
-Recall that all the above is for a particular participant with a particular value for `pixelToMM` and `distToScreen`. We should also be able to calculate it for all participants in the pilot. 
+Recall that all the above is for a single participant with a particular value for `pixelToMM` and `distToScreen`. We should also be able to calculate it for all participants in the pilot. 
 
-## Extending the above strategies for all participants 
+## Generate posterior predictions and average across participants  
 
 Recall this is the list of participants we have from pilot: 
 
@@ -663,45 +755,43 @@ participant_df
 Let us first do more aggressive thinning: 
 
 ```{r}
-#| label: all participant thin draws
+#| label: thin posterior draws for all participants 
+#| code-fold: true 
+
 draws <- model %>%
   spread_draws(b_Intercept, b_sigma_Intercept) %>%
   as_draws_df(.) %>%
   thin_draws(thin = 20)
 
-pixelToMM <- 5.12
-distToScreen <- 473
-
-# 5760 rows = 2 (plot type) * 2 (noise type) * 2 (flipped or not) *
-#  12 repeated measures * 60 points per graph
-new_data <- stimuli_df %>%
+# 6 participant * 48 trials per participant * 60 dots per trial
+# 17280 rows 
+new_data <- participant_df %>%
+  left_join(stimuli_df, relationship = "many-to-many") %>% 
   # calculate pixel values from numerical values
   mutate(px.x = 500 / 120 * num.x, px.y = 200 * num.y) %>%
   # calcuate physical values (in MM) from pixel values
-  mutate(phy.x = px.x / pixelToMM, phy.y = px.y / pixelToMM) %>%
+  mutate(phy.x = px.x / pixelsPerMM, phy.y = px.y / pixelsPerMM) %>%
   # calculate visual angle
   mutate(
     va.ans.x = vis_angle(phy.x, distToScreen),
     va.ans.y = vis_angle(phy.y, distToScreen)
   )
+
+new_data
 ```
-
+  
 ### Strategy 1 -- Project once to y-axis 
-
+  
 Build the posterior prediction: 
-
+  
 ```{r}
-# rm(pred)
+rm(pred)
 
-pred <- draws %>%
-  expand_grid(new_data) %>%
-  expand_grid(participant_df) %>% # now each row has its own distToScreen, pixelToMM
+# 17280 rows * 600 draws per row 
+# 1036800 
+pred <- new_data %>% 
+  expand_grid(draws) %>%
   mutate(
-    # recalculate physical and VA values per-participant
-    phy.x = px.x / pixelsPerMM,
-    phy.y = px.y / pixelsPerMM,
-    va.ans.x = vis_angle(phy.x, distToScreen),
-    va.ans.y = vis_angle(phy.y, distToScreen),
     sigma = exp(b_sigma_Intercept + log(va.ans.x)),
     va.pred.error = rnorm(n(), mean = b_Intercept, sd = sigma),
     va.pred.y = va.pred.error + va.ans.y,
@@ -712,24 +802,24 @@ pred <- draws %>%
   )
 ```
 
-Calculate average across participants: 
+Again, the above number of rows is obtained by participant (6) * trials/participant (48) * dots/trial (60) * draws/dot (600). First, we want to get a sense of average value per trial, that is, now the dataframe should have participant (6) * trials/participant (48) * draw/trial (600). 
+
+To then average across participants mean that we have distinct trials (48 * 2) * draw/trial (600): 
 
 ```{r}
-avg_pred <- pred %>%
-  group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
+avg_pred <- pred %>% group_by(participantId, expIndex, type, flip, noise, .draw) %>% 
   summarise(
     num.pred.avg.y = mean(num.pred.y),
     num.pred.median.y = median(num.pred.y)
-  ) # %>%
-# then: average across participants
-# group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
-#   summarise(
-#     num.pred.avg.y = mean(num.pred.avg.y),
-#     num.pred.median.y = median(num.pred.median.y)
-#   )
+  ) %>% 
+  group_by(expIndex, type, flip, noise, .draw) %>% 
+  summarise(
+    num.pred.avg.y = mean(num.pred.avg.y), 
+    num.pred.median.y = mean(num.pred.median.y)
+  )
 ```
 
-Now we plot the result averaged across all participants: 
+The next step then is to get the data that is used to plot error: 
 
 ```{r}
 plot_df <- avg_pred %>%
@@ -751,15 +841,14 @@ plot_df <- avg_pred %>%
   )
 ```
 
-Check with plots: 
+Finally let's plot to see if we can get similar results: 
 
 ```{r}
 #| code-fold: true
 #| layout-ncol: 2
 
-plot_df %>%
-  group_by(type, noise, .draw) %>%
-  summarise(error = median(norm.error.median)) %>%
+plot_df %>% group_by(type, noise, .draw) %>% 
+  summarise(error = mean(norm.error.median)) %>%
   ggplot(aes(x = error, y = noise, fill = type)) +
   stat_halfeye(alpha = 0.8) +
   labs(
@@ -813,76 +902,7 @@ exp2_df %>%
   stat_halfeye(alpha = 0.75)
 ```
 
-How are they actually getting at the graph ...?? Like do I need to use `lmer` here ...??? Like should I just try to copy what they did with their analysis, and see what that produces on my set of pilot data ...? 
-
-
-```{r}
-library(lme4)
-
-# make columns factor
-lmer_model <- exp2_df %>%
-  mutate(
-    mark = as.factor(type),
-    noise = as.factor(noise)
-  ) %>%
-  lmer(
-    # normalized_error ~ mark * variability + (1 | assignmentid),
-    normalized_error ~ mark * noise + (1 | participantId),
-    data = .
-  )
-```
-
-Check `lmer` fitted model: 
-
-```{r}
-lmer_model
-```
-
-Note that this is purely for $p$-interval and hypothesis testing. 
-
-```{r}
-source(here("analysis", "moritz", "Functions.R"))
-```
-
-```{r}
-freq_sum <- summarySEwithin(
-  data = exp2_df,
-  measurevar = "normalized_error",
-  withinvars = "noise",
-  betweenvars = "type",
-  idvar = "participantId"
-)
-```
-
-Plot this: 
-
-```{r}
-freq_sum %>%
-  ggplot(aes(
-    x = noise,
-    y = normalized_error,
-    dist = "norm",
-    arg1 = normalized_error,
-    arg2 = se,
-    fill = type
-  )) +
-  stat_dist_halfeye(
-    show_interval = TRUE,
-    position = position_dodge(width = 0.2),
-    .width = 0.95,
-    size = 0.5,
-    alpha = 0.8
-  ) +
-  coord_flip() +
-  theme_tidybayes() +
-  # TODO: figure out the right colors for each
-  # scale_fill_manual(values = c("#76B7B2", "#E15759", "#59A14F")) + #adding color
-  xlab("Variability") +
-  ylab("Normalized Error")
-```
-
 TODO: 
-
 ```{r}
 # TODO
 
