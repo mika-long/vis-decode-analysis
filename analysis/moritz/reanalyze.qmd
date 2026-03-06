@@ -8,9 +8,11 @@ title: "Reanalyze Mortiz"
 library(tidyverse)
 library(tidybayes)
 library(here)
+library(ggplot2)
+theme_set(theme_tidybayes())
 ```
 
-# TLDR 
+## TLDR 
 
 The goal of this file is to (1) recreate the analysis that Moritz et al. produced for their second experiment, and (2) perform a different kind of error analysis, as well as analyze particpant's whose strategies are closely mapped to the mental averaging and median strategy. 
 
@@ -65,28 +67,49 @@ Where do they agree?
 strategy_df %>%
   filter(r1_mental_averaging == r2_mental_averaging) %>%
   filter(r1_mental_averaging == TRUE) %>%
-  pull(ResponseId)
+  pull(ResponseId) -> mental_average_id
 # for equal number of points -- 44 participants where both raters agree
 strategy_df %>%
   filter(r1_number_of_points == r2_number_of_points) %>%
   filter(r1_number_of_points == TRUE) %>%
-  pull(ResponseId)
+  pull(ResponseId) -> equal_points_id
 ```
 
+## Calculate Error and plot empirical error distributions 
 
+Read in the stimuli and calculate the answer for each `index` * `seed` 
 
----
-Check how the data relates to each other 
-  
 ```{r}
-exp2_df <- exp2 %>% as_tibble(.)
+#| code-fold: true
+exp_json_data <- jsonlite::fromJSON(here(
+  "data",
+  "moritz",
+  "stimuli",
+  "exp2-stimuli.json"
+)) %>%
+  as_tibble(.)
 
-exp2_df %>% count(xdomain)
+stimuli_df <- exp_json_data %>%
+  select(index, seed, noise, flip, type, data) %>%
+  mutate(noise = as.character(noise)) %>%
+  filter(type != "line") %>%
+  unnest(col = data)
 
-raw_data <- exp2_df %>% select(xdomain, ydomain)
+ans_df <- stimuli_df %>%
+  group_by(index, seed, noise, flip, type) %>%
+  summarise(ans.mean.y = mean(y), ans.median.y = median(y))
+```
 
-# filter to only keep the ones that matter
-exp2_df <- exp2_df %>%
+```{r}
+ans_df
+```
+
+Use the `data_average` to calculate error, and this is what we in terms of empirical distribution of error: 
+
+```{r}
+#| code-fold: true
+#| layout-ncol: 2
+exp2 %>%
   select(
     assignmentid,
     mark,
@@ -94,33 +117,57 @@ exp2_df <- exp2_df %>%
     seed,
     stimuliindex,
     flip,
-    trial,
     variability,
-    data_average,
-    average,
-    normalized_average,
-    error,
-    normalized_error
-  )
+    data_average
+  ) %>%
+  mutate(error = reportedaverage - data_average) %>%
+  ggplot(aes(x = error, y = variability, fill = mark)) +
+  stat_halfeye(alpha = 0.8)
+
+exp2 %>%
+  select(
+    assignmentid,
+    mark,
+    reportedaverage,
+    seed,
+    stimuliindex,
+    flip,
+    variability,
+    data_average
+  ) %>%
+  mutate(
+    norm.error = ifelse(
+      flip == FALSE,
+      reportedaverage - data_average,
+      data_average - reportedaverage
+    )
+  ) %>%
+  ggplot(aes(x = norm.error, y = variability, fill = mark)) +
+  stat_halfeye(alpha = 0.8)
 ```
 
-Play with the dataset 
+We could also try to facet things so they're not all on the same thing: 
 
 ```{r}
-exp2_df %>% count(trial) # ok trial is just the trial order
-exp2_df %>% count(seed) # TODO: confirm if this is the same as the one we did ...
-exp2_df %>% count(seed, stimuliindex) # stimuliindex is the actual index used in the json I think
-exp2_df %>%
-  count(seed, stimuliindex, mark, flip, variability, data_average, average)
+exp2 %>%
+  select(
+    assignmentid,
+    mark,
+    reportedaverage,
+    seed,
+    stimuliindex,
+    flip,
+    variability,
+    data_average
+  ) %>%
+  mutate(
+    error = reportedaverage - data_average,
+    variance_area = ifelse(flip == FALSE, "high", "low")
+  ) %>%
+  ggplot(aes(x = error, y = variability, fill = mark)) +
+  stat_halfeye(alpha = 0.8) +
+  facet_wrap(~variance_area)
 ```
-
-This tells us that for stimuli that share the same seed, same flip, they should also share the same average: 
-
-```{r}
-exp2_df %>% count(seed, flip, average)
-```
-
----
 
 
 # Analyses 
