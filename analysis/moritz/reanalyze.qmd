@@ -18,58 +18,66 @@ Reading in data from Exp 2 (excluding the `line` condition):
 
 ```{r}
 #Exp 2
+#point arc
 exp2_dotArc <- read.csv(
   here("data", "moritz", "exp", "exp2-point-arc.csv"),
   ,
   check.names = FALSE
-) #point arc
+)
+#point
 exp2_dotX <- read.csv(
   here("data", "moritz", "exp", "exp2-point.csv"),
   check.names = FALSE
-) #point
-```
-
-Combining conditions in Exp 2
-
-```{r combine_exp2}
-exp2 <- rbind(exp2_dotArc, exp2_dotX)
-```
-
-Fixing the naming and coding from various conditions
-
-```{r naming}
-#fixing variability coding for Exp 2
-exp2$variability <-
-  factor(ifelse(
-    exp2$variability == "0,0",
-    "0",
-    ifelse(exp2$variability == "0,0.4", "0.4", 999)
-  ))
-
-#fixing the flip naming for Exp 2
-exp2$flipped <- factor(ifelse(exp2$flip == "TRUE", "Flipped", "Unflipped"))
-exp2$flipped <- factor(exp2$flipped, levels = c("Unflipped", "Flipped"))
-
-#fixing the overestimation naming for Exp 2
-exp2$estimation <- factor(ifelse(
-  exp2$overestimated == "TRUE",
-  "overestimated",
-  "underestimated"
-))
-
-#adding biased towards variability code
-exp2$bias_towards_variability <- ifelse(
-  exp2$normalized_error > "0",
-  "True",
-  "False"
 )
-
+# Combining conditions in Exp 2
+exp2 <- rbind(exp2_dotArc, exp2_dotX) %>% as_tibble(.)
 ```
+
+Get a basic idea of the underlying dataset: 
+
+```{r}
+exp2 %>% count(assignmentid) # 277 participants altogether
+```
+
+## Read in data related to strategy 
+
+```{r}
+strategy_df <- read.csv(here("data", "moritz", "exp", "strategies.csv")) %>%
+  as_tibble(.) %>%
+  # keep only those related to experiment 2, and only related to point and point arc condition
+  filter(Exp == 2, Condition %in% c("point", "point_arc")) %>%
+  select(1:4, contains("mental_averaging"), contains("number_of_points"))
+```
+
+Where do the two raters (`r1` and `r2`) disagree? 
+
+```{r}
+# for mental averaging
+strategy_df %>% filter(r1_mental_averaging != r2_mental_averaging)
+# for equal number of points
+strategy_df %>% filter(r1_number_of_points != r2_number_of_points) %>% View(.)
+```
+
+Where do they agree? 
+
+```{r}
+# for mental averaging --- 98 participants where both raters agree
+strategy_df %>%
+  filter(r1_mental_averaging == r2_mental_averaging) %>%
+  filter(r1_mental_averaging == TRUE) %>%
+  pull(ResponseId)
+# for equal number of points -- 44 participants where both raters agree
+strategy_df %>%
+  filter(r1_number_of_points == r2_number_of_points) %>%
+  filter(r1_number_of_points == TRUE) %>%
+  pull(ResponseId)
+```
+
+
 
 ---
-
 Check how the data relates to each other 
-
+  
 ```{r}
 exp2_df <- exp2 %>% as_tibble(.)
 
