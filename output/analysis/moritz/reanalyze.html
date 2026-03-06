@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.26">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Reanalyze Mortiz</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="reanalyze_files/libs/clipboard/clipboard.min.js"></script>
+<script src="reanalyze_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="reanalyze_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="reanalyze_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="reanalyze_files/libs/quarto-html/popper.min.js"></script>
+<script src="reanalyze_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="reanalyze_files/libs/quarto-html/anchor.min.js"></script>
+<link href="reanalyze_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="reanalyze_files/libs/quarto-html/quarto-syntax-highlighting-587c61ba64f3a5504c4d52d930310e48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="reanalyze_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="reanalyze_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="reanalyze_files/libs/bootstrap/bootstrap-c62ef0501ae2f3adb684d0ab58cf61b7.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="reanalyze_files/libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet">
+<script src="reanalyze_files/libs/pagedtable-1.1/js/pagedtable.js"></script>
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#tldr" id="toc-tldr" class="nav-link active" data-scroll-target="#tldr">TLDR</a></li>
+  <li><a href="#read-in-data-related-to-strategy" id="toc-read-in-data-related-to-strategy" class="nav-link" data-scroll-target="#read-in-data-related-to-strategy">Read in data related to strategy</a></li>
+  <li><a href="#calculate-error-and-plot-empirical-error-distributions" id="toc-calculate-error-and-plot-empirical-error-distributions" class="nav-link" data-scroll-target="#calculate-error-and-plot-empirical-error-distributions">Calculate Error and plot empirical error distributions</a></li>
+  <li><a href="#analyses" id="toc-analyses" class="nav-link" data-scroll-target="#analyses">Analyses</a></li>
+  <li><a href="#do-participants-who-use-median-strategy-get-answer-closer-to-median-or-mean" id="toc-do-participants-who-use-median-strategy-get-answer-closer-to-median-or-mean" class="nav-link" data-scroll-target="#do-participants-who-use-median-strategy-get-answer-closer-to-median-or-mean">Do participants who use Median Strategy get answer closer to median or mean?</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Reanalyze Mortiz</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="tldr" class="level2">
+<h2 class="anchored" data-anchor-id="tldr">TLDR</h2>
+<p>The goal of this file is to (1) recreate the analysis that Moritz et al.&nbsp;produced for their second experiment, and (2) perform a different kind of error analysis, as well as analyze particpant’s whose strategies are closely mapped to the mental averaging and median strategy.</p>
+<p>Reading in data from Exp 2 (excluding the <code>line</code> condition):</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Exp 2</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#point arc</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>exp2_dotArc <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"moritz"</span>, <span class="st">"exp"</span>, <span class="st">"exp2-point-arc.csv"</span>),</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  ,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">check.names =</span> <span class="cn">FALSE</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">#point</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>exp2_dotX <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"moritz"</span>, <span class="st">"exp"</span>, <span class="st">"exp2-point.csv"</span>),</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">check.names =</span> <span class="cn">FALSE</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Combining conditions in Exp 2</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>exp2 <span class="ot">&lt;-</span> <span class="fu">rbind</span>(exp2_dotArc, exp2_dotX) <span class="sc">%&gt;%</span> <span class="fu">as_tibble</span>(.)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Get a basic idea of the underlying dataset:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span> <span class="fu">count</span>(assignmentid) <span class="co"># 277 participants altogether</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["assignmentid"],"name":[1],"type":["chr"],"align":["left"]},{"label":["n"],"name":[2],"type":["int"],"align":["right"]}],"data":[{"1":"30IQTZXKAL63FNW28RHMQ67SI5RX0S","2":"48"},{"1":"30LB5CDZNDASKIWH9957NRN3QGS0ZH","2":"48"},{"1":"30LSNF239VVDL2ALOSLZ6KDSR3H2IH","2":"48"},{"1":"30LSNF239VVDL2ALOSLZ6KDTVODI25","2":"48"},{"1":"30OG32W0SVBXUJXSESTSDTIZEQLNEG","2":"48"},{"1":"3180JW2OT5C1FADEOT8XGSV4OENJ59","2":"48"},{"1":"3180JW2OT5C1FADEOT8XGSV4OFV5J5","2":"48"},{"1":"31LVTDXBL8AWFNZCOLXDZ8DSKS7LRV","2":"48"},{"1":"31LVTDXBL8AWFNZCOLXDZ8DSM2ZLR9","2":"48"},{"1":"31UV0MXWNRC5KZT86BNX4RG4AWW5IA","2":"48"},{"1":"31UV0MXWNRC5KZT86BNX4RG4BD75IK","2":"48"},{"1":"31Z0PCVWULFAGHN2OG1YGIW9GIZ7T2","2":"48"},{"1":"320DUZ38G8MZV72Y5PROKPMTE1AGJP","2":"48"},{"1":"326O153BMJYO876FPYFPHO64W1YDER","2":"48"},{"1":"32AT8R96GM9BZSMJCOPJG5E7JTVSUC","2":"48"},{"1":"32KTQ2V7REFAH5LBUGY680SNEAMM94","2":"48"},{"1":"32Q90QCQ1TLWMDCPHF1CL11UGAVKEB","2":"48"},{"1":"32Q90QCQ1TLWMDCPHF1CL11UI7EEKK","2":"48"},{"1":"32SVAV9L3G9N02N6G47R8WU1M0S3AP","2":"48"},{"1":"32XVDSJFP0XZHL0C97JRYDK985HM2J","2":"48"},{"1":"32Z9ZLUT1MKRWEO6581BDLFGSRQHOT","2":"48"},{"1":"32ZKVD547GNSJCSYMI7N37E74FQ3BR","2":"48"},{"1":"3300DTYQT3HIXGAKUKL9HND3ETUEQT","2":"48"},{"1":"333U7HK6IAFWJNS73ZQGE4JW19UDJC","2":"48"},{"1":"333U7HK6IAFWJNS73ZQGE4JW3M3JDJ","2":"48"},{"1":"336YQZE83WERGIJZRQLPWKNLSMR5M0","2":"48"},{"1":"337RC3OW062O8UGTX52N052V5TFVLJ","2":"48"},{"1":"337RC3OW062O8UGTX52N052V5YKLVO","2":"48"},{"1":"33C7UALJVMYD7BGCW29UOC99YP081E","2":"48"},{"1":"33FBRBDW6PZXUEQACZYE58S00L88CH","2":"48"},{"1":"33FOTY3KENLFJE6PDEPZQY5TQE9C1C","2":"48"},{"1":"33JKGHPFYDUV67P5VQHBQ1N7JW0MNU","2":"48"},{"1":"33LK57MYLU5SLRGTIBORXXTMNZOSZT","2":"48"},{"1":"33NF62TLXK24XTYHVGC3IHEMLIXKJ2","2":"48"},{"1":"33SA9F9TRYUNHD666TKF9CVP1RBWE8","2":"48"},{"1":"33UKMF931AKXEFK91J4ZLEOR2QQTTJ","2":"48"},{"1":"34PGFRQONPBVSTSYKUV66S8HA2SJWB","2":"48"},{"1":"34QN5IT0T0RD0MVU0J5UA7QZRUY08Z","2":"48"},{"1":"34S9DKFK74PV0OEJET5MKWAEQRBYNX","2":"48"},{"1":"34X6J5FLPUYQ8WWC8LW0E3QVMWXJQJ","2":"48"},{"1":"34YB12FSQZOPWF8J8M4G0HEAIYNGMH","2":"48"},{"1":"352YTHGROWDNSLEOMOM2ZN9BEKK4H7","2":"48"},{"1":"358010RM5FTJ8OXIBO5BBZXICC6VX6","2":"48"},{"1":"358UUM7WR03X02AAKRW3G3VROAVR7O","2":"48"},{"1":"358UUM7WR03X02AAKRW3G3VRPFL7R5","2":"48"},{"1":"358UUM7WR03X02AAKRW3G3VRSVAR7D","2":"48"},{"1":"35BLDD71I7X8DJXXC6TW8KDTKC4VZ3","2":"48"},{"1":"35H6S234SB0PRFY74AE87OQZ2MC56Q","2":"48"},{"1":"35K3O9HUACDL6RKBG4AF5O9P7SYEFE","2":"48"},{"1":"35USIKEBNSGTH44D8AAU15QLUMUN6B","2":"48"},{"1":"369J354OFEAN7CNRL6XZBLHOSTK6GZ","2":"48"},{"1":"36NEMU28XGDLT1YJNR8YMK0YCJVMWY","2":"48"},{"1":"36V4Q8R5ZL0G942XBI9SUVICQU0MQ6","2":"48"},{"1":"374TNBHA8CVG3LRBULX3OQ5JXL9QYR","2":"48"},{"1":"378XPAWRUDD2Q55P17EEC2WQ3OOAI5","2":"48"},{"1":"37KGEN7NJ4Q1UVYV3LMVBUMXOC8PPD","2":"48"},{"1":"37Q970SNZF8VQVVLA0FZ539A8RR1S5","2":"48"},{"1":"37W3JXSD678LNINX6UW9GFN5LMPYW2","2":"48"},{"1":"37Z929RLGA8WZF7UCJZ9B9S507CTSU","2":"48"},{"1":"37ZHEEHM6XM5H0P891V7Y5SBJNY732","2":"48"},{"1":"382M9COHEIFAP9H1BT5EROASINLUEI","2":"48"},{"1":"384PI804XT1VJ6A3EHBZRYQ06LYS0H","2":"48"},{"1":"38F71OA9GUWJIFCOX2YYIWEYHG5MF0","2":"48"},{"1":"38SKSKU7R2XJMOWTYY34LGC1XRFIL5","2":"48"},{"1":"3907X2AHF1552OXP1NBJFHE4GL3P2I","2":"48"},{"1":"392CY0QWG2RNOGP8S64NZZAQAUC4I3","2":"48"},{"1":"39LOEL67OT59HEURJ6NDC5O6ULH83V","2":"48"},{"1":"39N5ACM9HFNG28IOMWQYP4MIJ9TP9N","2":"48"},{"1":"39OWYR0EPLRJCW12G5M9CR15QQJFYJ","2":"48"},{"1":"39RP059MEITT5Y08S0C2Z6ND2BUBMA","2":"48"},{"1":"39RP059MEITT5Y08S0C2Z6ND465MBO","2":"48"},{"1":"3A1COHJ8NKVOBM1QYRCFGZPGDBE8HN","2":"48"},{"1":"3A4NIXBJ77Z5I7MKJD1WD9JIE58LM7","2":"48"},{"1":"3AAJC4I4FHSZMOX3VHFD5W2ZPFDJZ2","2":"48"},{"1":"3ATPCQ38J9AOG5KU5P0HYQQESN7YAF","2":"48"},{"1":"3AZHRG4CU5KRZPPOO2AYJQIOBNZ03U","2":"48"},{"1":"3BEFOD78W7T9KZFZDL2FRSH7VV74MI","2":"48"},{"1":"3BV8HQ2ZZX1MXLAOZ65PFZ6LUY76AN","2":"48"},{"1":"3BXQMRHWK0Y81X9ESRTX4WF1R3KMUZ","2":"48"},{"1":"3C44YUNSI2PS5YV5YCV0B058A1HDPF","2":"48"},{"1":"3C44YUNSI2PS5YV5YCV0B058A80PDO","2":"48"},{"1":"3C5W7UE9CGQ0I139XW4KO3E5LAEMXI","2":"48"},{"1":"3C8HJ7UOP8UPNW3OYES5LOUGT91MZ2","2":"48"},{"1":"3C8HJ7UOP8UPNW3OYES5LOUGTLZMZO","2":"48"},{"1":"3CFVK00FWML3T41SWXUFODMWMMML6M","2":"48"},{"1":"3D4CH1LGEBTAPVPPJD0BVV8QKLF9GK","2":"48"},{"1":"3D4CH1LGEBTAPVPPJD0BVV8QKP9G9T","2":"48"},{"1":"3D8YOU6S9FK6CUOM5BMGF0IF1WM6UC","2":"48"},{"1":"3DHE4R9OCXBZPB4QY4LWL80CFT7G2U","2":"48"},{"1":"3DR23U6WE6EVPW2CBOF4MSOQYU9ETB","2":"48"},{"1":"3DUZQ9U6SNOBC7BJHEZOCRGQWAEVSX","2":"48"},{"1":"3DY4FPOOA2OZBSB62PZJMHBUDAXRVE","2":"48"},{"1":"3E47SOBEYRWQJK2NLLA5IXME275CI0","2":"48"},{"1":"3EFE17QCRD56U6GZCPIKXQPHPK0HS5","2":"48"},{"1":"3EFE17QCRD56U6GZCPIKXQPIT57HSO","2":"48"},{"1":"3EG49X351VCYTYIHAGX3Z7HJUWOX6F","2":"48"},{"1":"3EICBYG645WMEVMT33V5UY1EJP8CJ0","2":"48"},{"1":"3EO896NRAXV30CO4PPQVJ81I4TBTJ0","2":"48"},{"1":"3ERET4BTVN9FRHL894LQTN0JP0FK9B","2":"48"},{"1":"3ERMJ6L4DZS63MXIFJ0MU41HJSM7MH","2":"48"},{"1":"3EWIJTFFVP7U9N5LDMRU2HML2CPE0Z","2":"48"},{"1":"3EWIJTFFVP7U9N5LDMRU2HML2CQ0EM","2":"48"},{"1":"3F0BG9B9MQN6X3MWYMOXOZOOS207Y7","2":"48"},{"1":"3F6HPJW4JE0VMXUQD9PE7BM06C7W26","2":"48"},{"1":"3F6HPJW4JE0VMXUQD9PE7BM06EE2WN","2":"48"},{"1":"3F6KKYWMNC1S2DJSIXI87B0DAL1NDC","2":"48"},{"1":"3FE2ERCCZY8J9VMUOL9GMUH7CW6OP1","2":"48"},{"1":"3FFJ6VRIL2O6PS7795HLNWKDTIL0I8","2":"48"},{"1":"3FQ5JJ512MO0GJP2AE4VBOV3TFANK6","2":"48"},{"1":"3FTF2T8WLSI6MHFPYI4THYUECLF9WF","2":"48"},{"1":"3G0WWMR1UWKMRMNXNJOS7A7CVZVQNP","2":"48"},{"1":"3G5W44VEU8IU6R8GNAR0L4M6TQGKGY","2":"48"},{"1":"3GD6L00D3TXSS0IGQ3JDTUA4F1I1MZ","2":"48"},{"1":"3GD6L00D3TXSS0IGQ3JDTUA4GZ3M12","2":"48"},{"1":"3GFK2QRXXAHNLUDDVSRC5IPCP0R5W0","2":"48"},{"1":"3GGAI1SQEWYCF3SE608XAQTVIDQCMA","2":"48"},{"1":"3GNCZX450JNU7RSTE24YLZX2NFYAPK","2":"48"},{"1":"3GNCZX450JNU7RSTE24YLZX2O0KPAS","2":"48"},{"1":"3H8DHMCCWABRU7YPLKQSFJJ9GYUKDI","2":"48"},{"1":"3HL8HNGX4614BVTU8TUTDA8EHDK9F2","2":"48"},{"1":"3HMVI3QICKSSMH7U967ONPXBQW5Y13","2":"48"},{"1":"3HQUKB7LNGEH4X2J1V6LTCIFGYUHH9","2":"48"},{"1":"3HRMW88U17QSLBXYUKFDFPRUB7XM0Z","2":"48"},{"1":"3I2PTA7R3UULJG2UQ6WCFIQ8ZDJKQN","2":"48"},{"1":"3IFS6Q0HJJJ6Q1RJI705X2QWSG6ISV","2":"48"},{"1":"3IO1LGZLKAX8EXH928LBJ80Q4CJ861","2":"48"},{"1":"3IO1LGZLKAX8EXH928LBJ80Q4FV86J","2":"48"},{"1":"3IQ1VMJRYUK9F4CMXD81Z9XNN439A2","2":"48"},{"1":"3IRIK4HM3BKAQ07MJK1GLUW9WGH6CA","2":"48"},{"1":"3ITXP059PXJ2LCBP0PL5935W2CBJSJ","2":"96"},{"1":"3IXEICO793JRCH9X56W6A4WDIIF6TL","2":"48"},{"1":"3JAOYWH7VJ4QBN3QU4XR8NDYE619LW","2":"48"},{"1":"3JAOYWH7VJ4QBN3QU4XR8NDYEDKL95","2":"48"},{"1":"3JAOYWH7VJ4QBN3QU4XR8NDYG1B9LY","2":"48"},{"1":"3JCG6DTRV4Q7UJ0P3BG9B42HYAAQQ2","2":"48"},{"1":"3JPSL1DZ5TZU46GGYNR6HAS7PQ8ANH","2":"48"},{"1":"3JV9LGBJWUEDWITVL2JTSL3FDO1OGJ","2":"48"},{"1":"3K2755HG5T3GEL6BK9ZVZ6R5CN9FDJ","2":"48"},{"1":"3K3R2QNK8C3TUDQK3IPSZA9HTHZU9M","2":"48"},{"1":"3K4J6M3CXFTOUEZUBJEBRQJAOEGGA9","2":"48"},{"1":"3K4J6M3CXFTOUEZUBJEBRQJAOFJGAE","2":"48"},{"1":"3K5TEWLKGWBMIT8NC25A8PA3O19IV4","2":"48"},{"1":"3K5TEWLKGWBMIT8NC25A8PA3OUQIV7","2":"48"},{"1":"3KGTPGBS6YLIUT5LI9ADPN13KB2U24","2":"48"},{"1":"3KGTPGBS6YLIUT5LI9ADPN13LY4U2H","2":"48"},{"1":"3KIBXJ1WD6UIY4PEBT48QDV8KXQOKE","2":"48"},{"1":"3KKG4CDWKJYUDFW5OCYAM6BNV1J49C","2":"48"},{"1":"3KMS4QQVK3QOSRCLCQLI3JMURTXKFF","2":"48"},{"1":"3KRVW3HTZOLSMKHA3MYXPVXD68PMSD","2":"48"},{"1":"3KV0LJBBH3LGL5HXOXYSZLSHJHFRMO","2":"48"},{"1":"3KWTYT087137A01EREKAW78WSH1L5E","2":"48"},{"1":"3L70J4KAZHMLIUP39TD3L5GDBM0DAW","2":"48"},{"1":"3LJ7UR74RIDF2H0ZPMHF4767XG6N4D","2":"48"},{"1":"3LPW2N6LKU2ATQO80SCBNU4F3I15UH","2":"48"},{"1":"3LRKMWOKB6HZGSZVOW9L6FGINCHZ21","2":"48"},{"1":"3LUY3GC6300COPUV7ZSEB8VCOOXP7D","2":"48"},{"1":"3LWJHTCVCDMA3UAGPV5FZ5Y3R4WFQK","2":"48"},{"1":"3M23Y66PO37QXHWIG6RG0Z0RF1I6SG","2":"48"},{"1":"3M23Y66PO37QXHWIG6RG0Z0RGZ16SW","2":"48"},{"1":"3MAOD8E57RA60JO99XJK1I35QBBXN2","2":"48"},{"1":"3MB8LZR5BGTASJMHY1OGYWRESNJKLK","2":"48"},{"1":"3MRNMEIQW662EDG76K2TUJWO51HLDA","2":"48"},{"1":"3MYYFCXHJ479SPJD2I4KENXAWP74GF","2":"48"},{"1":"3NC5L260MPM7IIX0AIDBA033C1SFOM","2":"48"},{"1":"3NG53N1RLWJGO3ZEH4KKP8R72L4P8U","2":"48"},{"1":"3NG53N1RLWJGO3ZEH4KKP8R7ZC2P87","2":"48"},{"1":"3NGI5ARFTU5YD3FTIJB5AY4ZJLJP12","2":"48"},{"1":"3NKQQ8O39Z55X331FYUUL6S7H2YUDK","2":"48"},{"1":"3NKQQ8O39Z55X331FYUUL6S7IJYDU2","2":"48"},{"1":"3NL0RFNU0GNEUBFWS9PZCFP33L1K45","2":"48"},{"1":"3NPFYT4IZD40QR7NMT6PBYU8PK6GX0","2":"48"},{"1":"3NPFYT4IZD40QR7NMT6PBYU8PZVXG0","2":"48"},{"1":"3NXNZ5RS1BXRW2EOQAWHPIVXJOR79K","2":"48"},{"1":"3OE22WJIGJOZMC76KK0EL5Z61XYQUT","2":"48"},{"1":"3OE22WJIGJOZMC76KK0EL5Z6ZESUQN","2":"48"},{"1":"3OF2M9AATHOUX83LD2FP6B2C5WLZKA","2":"48"},{"1":"3OHYZ19UGD5CMRGSZ2RJWZSCF0DAOW","2":"48"},{"1":"3ON104KXQLW5PB9DHN820QJYT2X4WV","2":"48"},{"1":"3OS46CRSLGZ6P9DMA1WLBMKYDK4V6V","2":"48"},{"1":"3OS46CRSLGZ6P9DMA1WLBMKYF3V6V1","2":"48"},{"1":"3OVHNO1VE71MJ2XBLLT22Y7MKSDDZ9","2":"48"},{"1":"3OVR4I9USQJ05EDR5E9W811C01R4QX","2":"48"},{"1":"3OWEPKL08ACCL4IIRKFM7JQIS5TN7A","2":"48"},{"1":"3P1L2B7AD2PTIA7WWTG95D8N9YDLOY","2":"48"},{"1":"3P4MQ7TPPYCXM7WB1BMTLQCJQH3BB8","2":"48"},{"1":"3PH3VY7DJMXLS8X22GYSUMW7QYEZWE","2":"48"},{"1":"3PIWWX1FJK69M9SZDVCRH2E956VJJP","2":"48"},{"1":"3PIWWX1FJK69M9SZDVCRH2E98ALJJQ","2":"48"},{"1":"3PMBY0YE283X8J9KHR4S54NBJFKC9F","2":"48"},{"1":"3PQ8K71NHYKNKNMRPJM1V487QJ4AAS","2":"48"},{"1":"3PXX5PX6LYYS3XRJVXMXQFSD8ZIBAD","2":"48"},{"1":"3QAPZX2QN5D2E7T5K2WT0GDW44J02S","2":"48"},{"1":"3QAPZX2QN5D2E7T5K2WT0GDW5YK20K","2":"48"},{"1":"3QBD8R3Z22JXK20BQ1HSJW6CNSQ4OS","2":"48"},{"1":"3QEMNNSB2YZ3ZSR52Q1JBEENAEUD75","2":"48"},{"1":"3QJOXOW4XKRRC1CS2RES0ETY6UXMEK","2":"48"},{"1":"3QJOXOW4XKRRC1CS2RES0ETY7RDEMN","2":"48"},{"1":"3QL2OFSM97IIXLDEI1NXN5IVPTNNCQ","2":"48"},{"1":"3QY7M81QH8MBDYXFU7N6FR9DUNRK7P","2":"48"},{"1":"3R08VXYT7DV28YRWJL693238HU07W8","2":"48"},{"1":"3R3YRB5GRG37ZW0PVO3SV5K1XM1AU9","2":"48"},{"1":"3R6P78PK7LBT9AY3HJ5SMV92F6JGTL","2":"48"},{"1":"3R8YZBNQ9IIXO1VA7C73BDLMS4NQ7C","2":"48"},{"1":"3RRCEFRB7NCD18B2MWC6DC6DFF7B42","2":"48"},{"1":"3RRCEFRB7NCD18B2MWC6DC6DGRSB4C","2":"48"},{"1":"3RSDURM96BMR6I16LU23U9G5HTWYEN","2":"48"},{"1":"3RUIQRXJBCOLCP4ZJ10HDW4TDI1LLN","2":"48"},{"1":"3RUIQRXJBCOLCP4ZJ10HDW4TE0ILL5","2":"48"},{"1":"3RWE2M8QWIAY3TIY6LUDS4GUITHN04","2":"48"},{"1":"3RXPCZQMQQBS0QMUF0LIGPQ7KKAG1L","2":"48"},{"1":"3S4AW7T80CIPEHXED910RF2ISL6L49","2":"48"},{"1":"3S4AW7T80CIPEHXED910RF2ISUIL43","2":"48"},{"1":"3S96KQ6I9N4QXQOCFT4KGA663WGTD4","2":"48"},{"1":"3SB5N7Y3O44ST11CJHHI2K7XE5N0GA","2":"48"},{"1":"3SBEHTYCWO33MN3SHDSUFOEX8WCIY8","2":"48"},{"1":"3SKEMFQBZ45FDC2Y4CFCTR5857XK8C","2":"48"},{"1":"3SPJ0334223ZHYNYZVDURPTXJX1YJ6","2":"48"},{"1":"3SUWZRL0MZDPNYR0FB7BBIWCEQI6EK","2":"48"},{"1":"3SUWZRL0MZDPNYR0FB7BBIWCFD56EI","2":"48"},{"1":"3T3IWE1XG7NKMZSHKFA4G9D4G0KTQU","2":"48"},{"1":"3TAYZSBPLM82FGDHT4FDAMJFZZWS27","2":"48"},{"1":"3TE3O857318QE1D4EFF8KCEJH3T2RP","2":"48"},{"1":"3TESA3PJ32APOP45JP2BDMY7EHHMM7","2":"48"},{"1":"3TMFV4NEP9E68CWFTQYFH2Z3UQS8W8","2":"48"},{"1":"3TOK3KHVJUIU3PIUSZFZM8QMES17OW","2":"48"},{"1":"3TPZPLC3M1CUN6T85NPOYRJWJT53PU","2":"48"},{"1":"3TR2532VIQUXYEDSTCI28Y94KN96JF","2":"48"},{"1":"3TS1AR6UQRE0XC51TWW9ZEH8PVGF7Z","2":"48"},{"1":"3TU5ZICBRE11OF0THHZ9PDHH3N4Q88","2":"48"},{"1":"3TU5ZICBRE11OF0THHZ9PDHH4BJ8QI","2":"48"},{"1":"3TVRFO09GLFGCJLOXK35OQZGL9SLXR","2":"48"},{"1":"3TVSS0C0E20P6WO3WO9A8YVQ8EGWTA","2":"48"},{"1":"3TYCR1GOTDJ5HEL3Y2RQLBFRT9QLZO","2":"48"},{"1":"3U088ZLJVLTOQNRCYML0ONTL9AR0WM","2":"96"},{"1":"3U088ZLJVLTOQNRCYML0ONTL9GUW0X","2":"48"},{"1":"3U0SRXB7CE5M3N2X0YDSC0HHPOYRNW","2":"48"},{"1":"3UXUOQ9OKFX51LOTIGAHLD6HPW27A8","2":"48"},{"1":"3V5Q80FXIYRYVZS23PEC2EB38LU32S","2":"48"},{"1":"3VA45EW49ONGS33S3JYQLYZ9B61O1G","2":"96"},{"1":"3VAR3R6G1Q1Y33ND247508MHOP78O9","2":"48"},{"1":"3VHP9MDGROK69T0XKD4KF09MQCXFCU","2":"48"},{"1":"3VSOLARPKC99VJD1OYTRC1JHEDO93I","2":"48"},{"1":"3W8CV64QJ3ZOPRK03JITGVKRXPS9HP","2":"48"},{"1":"3W92K5RLWVHA65D85IMGJG6YJ6M5VI","2":"48"},{"1":"3W92K5RLWVHA65D85IMGJG6YJAC5VG","2":"48"},{"1":"3WEV0KO0ONSPIQBXQTZU65AJXJ4DS7","2":"48"},{"1":"3WLEIWSYHPHDP7Z1IA3E68CDRKZ2H9","2":"48"},{"1":"3WMOAN2SRCXEWUJE9II2DX6K9D3NVE","2":"48"},{"1":"3WQ3B2KGE9GW99EJZET4FEZA47IB1Z","2":"48"},{"1":"3WQQ9FUS6BUEK9Y4YZ2JUOMIIBIB89","2":"48"},{"1":"3WS1NTTKEZCMF15H8XB0KZ7LED50F4","2":"48"},{"1":"3WT783CTPCHGWCOHFBIOWAI18Q5CBU","2":"48"},{"1":"3WYGZ5XF3XFXWWH7IALHAI59H14KSC","2":"48"},{"1":"3WYP994K18RNT38RFCJ5ILOSY8NY65","2":"48"},{"1":"3WZ36BJEV4GXITQS1XDELKI5VM6TBE","2":"48"},{"1":"3X0H8UUIT2OORWBO7O4KYTZ440TWSK","2":"48"},{"1":"3X3OR7WPZ00QXIKGPCRD8RINTK28LS","2":"48"},{"1":"3X3OR7WPZ00QXIKGPCRD8RINU5W8LT","2":"48"},{"1":"3X65QVEQI1NS9LAT6O7IADE6MBICL0","2":"48"},{"1":"3X66WABAJXIOAT0924Z14I54I4OG3D","2":"48"},{"1":"3XC1O3LBOTM9V2C4SA28ZNEA8D4LT8","2":"48"},{"1":"3XIQGXAUMD8HXYWMTQ2V5LHFQW67X1","2":"48"},{"1":"3XM0HYN6NLZXX495U76KHINT9XLPEQ","2":"48"},{"1":"3XUHV3NRVLY5O4IO0T5C4FFPDS25HN","2":"48"},{"1":"3XXU1SWE8NVRJAO9XHP86YWUHIWA0B","2":"48"},{"1":"3YDGXNSEO0UUZADVJKSWMAGC8LD84G","2":"48"},{"1":"3YMTUJH0DTGDXU5JMI3RD6CZO11T41","2":"48"},{"1":"3Z3ZLGNNSJUFNIUN504DYW96OPR3QL","2":"48"},{"1":"3Z4GS9HPNWANIJQVBDYXBM4ROXY771","2":"48"},{"1":"3Z4XG4ZF49RLXC153VU1JLDA11VX83","2":"48"},{"1":"3Z7VU45IPZHSR7HZ5S971W6DXN4Z1L","2":"48"},{"1":"3ZPBJO59KQ10SHXHFZNV2R3HQUMDHV","2":"48"},{"1":"3ZPPDN2SLWWC5HTYDIANVSNE5GKE9C","2":"48"},{"1":"3ZSY5X72NYB4L8291DD5RPHMFDPROR","2":"48"},{"1":"assignmentIdNoResponse05HM2B2","2":"48"},{"1":"assignmentIdNoResponseZCVXDE1","2":"48"},{"1":"assignmentIdNoResponseZZCIZN1","2":"48"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+</section>
+<section id="read-in-data-related-to-strategy" class="level2">
+<h2 class="anchored" data-anchor-id="read-in-data-related-to-strategy">Read in data related to strategy</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>strategy_df <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"moritz"</span>, <span class="st">"exp"</span>, <span class="st">"strategies.csv"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(.) <span class="sc">%&gt;%</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># keep only those related to experiment 2, and only related to point and point arc condition</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Exp <span class="sc">==</span> <span class="dv">2</span>, Condition <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"point"</span>, <span class="st">"point_arc"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>, <span class="fu">contains</span>(<span class="st">"mental_averaging"</span>), <span class="fu">contains</span>(<span class="st">"number_of_points"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Where do the two raters (<code>r1</code> and <code>r2</code>) disagree?</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># for mental averaging</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>strategy_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(r1_mental_averaging <span class="sc">!=</span> r2_mental_averaging)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["ResponseId"],"name":[1],"type":["chr"],"align":["left"]},{"label":["Exp"],"name":[2],"type":["int"],"align":["right"]},{"label":["Condition"],"name":[3],"type":["chr"],"align":["left"]},{"label":["Strategy_Response"],"name":[4],"type":["chr"],"align":["left"]},{"label":["r1_mental_averaging"],"name":[5],"type":["lgl"],"align":["right"]},{"label":["r2_mental_averaging"],"name":[6],"type":["lgl"],"align":["right"]},{"label":["r1_number_of_points"],"name":[7],"type":["lgl"],"align":["right"]},{"label":["r2_number_of_points"],"name":[8],"type":["lgl"],"align":["right"]}],"data":[{"1":"31Z0PCVWULFAGHN2OG1YGIW9GIZ7T2","2":"2","3":"point_arc","4":"Picked the price between highest point and lowest point of the day","5":"FALSE","6":"TRUE","7":"FALSE","8":"FALSE"},{"1":"337RC3OW062O8UGTX52N052V5YKLVO","2":"2","3":"point","4":"I tried to determine what the middle, average range would be.","5":"FALSE","6":"TRUE","7":"FALSE","8":"FALSE"},{"1":"33NF62TLXK24XTYHVGC3IHEMLIXKJ2","2":"2","3":"point_arc","4":"I make my judgements based on the calculation of differences between highest price and lowest price.","5":"FALSE","6":"TRUE","7":"FALSE","8":"FALSE"},{"1":"34QN5IT0T0RD0MVU0J5UA7QZRUY08Z","2":"2","3":"point","4":"I just visually tried to pick the mean. I tried to weigh a bunch of points more than fewer points.","5":"FALSE","6":"TRUE","7":"FALSE","8":"FALSE"},{"1":"34YB12FSQZOPWF8J8M4G0HEAIYNGMH","2":"2","3":"point_arc","4":"I tried to position the marker so that half of the area under the curve was above the line and half was below","5":"TRUE","6":"FALSE","7":"FALSE","8":"FALSE"},{"1":"358UUM7WR03X02AAKRW3G3VROAVR7O","2":"2","3":"point","4":"I tried to find a point where I could get the most dots on or near the red line.","5":"FALSE","6":"TRUE","7":"FALSE","8":"FALSE"},{"1":"358UUM7WR03X02AAKRW3G3VRSVAR7D","2":"2","3":"point_arc","4":"high and low points and length of time at any one point","5":"TRUE","6":"FALSE","7":"FALSE","8":"FALSE"},{"1":"35K3O9HUACDL6RKBG4AF5O9P7SYEFE","2":"2","3":"point","4":"I tried to figured where average of the whole was and place the line there.","5":"FALSE","6":"TRUE","7":"FALSE","8":"FALSE"},{"1":"369J354OFEAN7CNRL6XZBLHOSTK6GZ","2":"2","3":"point","4":"i tried to look at the dots that was most prevalent on the lower end of the chart","5":"TRUE","6":"FALSE","7":"FALSE","8":"FALSE"},{"1":"378XPAWRUDD2Q55P17EEC2WQ3OOAI5","2":"2","3":"point","4":"The number of data points, the spread of values","5":"TRUE","6":"FALSE","7":"TRUE","8":"TRUE"},{"1":"3A1COHJ8NKVOBM1QYRCFGZPGDBE8HN","2":"2","3":"point","4":"I tried to find a median point between the highs and lows in the graph to help determine what an average would be.","5":"FALSE","6":"TRUE","7":"FALSE","8":"FALSE"},{"1":"3C5W7UE9CGQ0I139XW4KO3E5LAEMXI","2":"2","3":"point","4":"Just \"eyeballed\" it and made my best estimation.","5":"FALSE","6":"TRUE","7":"FALSE","8":"FALSE"},{"1":"3C8HJ7UOP8UPNW3OYES5LOUGT91MZ2","2":"2","3":"point","4":"1. trends of prices\\n 2. break even of prices\\n 3. up and down movements of stock","5":"FALSE","6":"TRUE","7":"FALSE","8":"FALSE"},{"1":"3D8YOU6S9FK6CUOM5BMGF0IF1WM6UC","2":"2","3":"point","4":"I took into consideration the high and lows points on the graph. I also considered which point on the graph has the most points. I considered if there was a slope or not or if the graph showed a line or a huge curve.","5":"TRUE","6":"FALSE","7":"FALSE","8":"FALSE"},{"1":"3EWIJTFFVP7U9N5LDMRU2HML2CQ0EM","2":"2","3":"point_arc","4":"Well I have had some investment experience but for this test I had found the average between the lowest and highest points of the graph while also considering sudden drops and raises.","5":"FALSE","6":"TRUE","7":"FALSE","8":"FALSE"},{"1":"3IFS6Q0HJJJ6Q1RJI705X2QWSG6ISV","2":"2","3":"point_arc","4":"I looked at the region between my average line and the data points. I tried to get it so the area above and below the lines was the equal. This seemed like a decent way to be able to visually judge things rather than trying to mentally \"compute\" an average directly from the dots.","5":"TRUE","6":"FALSE","7":"FALSE","8":"FALSE"},{"1":"3KKG4CDWKJYUDFW5OCYAM6BNV1J49C","2":"2","3":"point_arc","4":"I looked for the midpoint and then adjusted up or down depending on how dense the data points were.","5":"FALSE","6":"TRUE","7":"FALSE","8":"FALSE"},{"1":"3NC5L260MPM7IIX0AIDBA033C1SFOM","2":"2","3":"point","4":"The first thing I tried to do was determine the average price between the starting and ending point. Then I guesstimated how long the stock was under and/or over the average stock price based on year start v year end plus I took into consideration how steep the sell off or rally was.","5":"FALSE","6":"TRUE","7":"FALSE","8":"FALSE"},{"1":"3OS46CRSLGZ6P9DMA1WLBMKYDK4V6V","2":"2","3":"point","4":"I was looking at the dips.","5":"TRUE","6":"FALSE","7":"FALSE","8":"FALSE"},{"1":"3QAPZX2QN5D2E7T5K2WT0GDW44J02S","2":"2","3":"point","4":"The high and low and long time staying points.","5":"TRUE","6":"FALSE","7":"FALSE","8":"FALSE"},{"1":"3QAPZX2QN5D2E7T5K2WT0GDW5YK20K","2":"2","3":"point","4":"how many dots there were\\n how tightly they were grouped or spread\\n how high or low they were","5":"TRUE","6":"FALSE","7":"FALSE","8":"FALSE"},{"1":"3TS1AR6UQRE0XC51TWW9ZEH8PVGF7Z","2":"2","3":"point_arc","4":"Tried to split the graphs into 2 or 3 equal length segments on the X-axis and estimate the average for each of the segments then the average of those means. Noticed i was estimating too high on first pass, so tried to be careful of that bias","5":"FALSE","6":"TRUE","7":"FALSE","8":"FALSE"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># for equal number of points</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>strategy_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(r1_number_of_points <span class="sc">!=</span> r2_number_of_points)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["ResponseId"],"name":[1],"type":["chr"],"align":["left"]},{"label":["Exp"],"name":[2],"type":["int"],"align":["right"]},{"label":["Condition"],"name":[3],"type":["chr"],"align":["left"]},{"label":["Strategy_Response"],"name":[4],"type":["chr"],"align":["left"]},{"label":["r1_mental_averaging"],"name":[5],"type":["lgl"],"align":["right"]},{"label":["r2_mental_averaging"],"name":[6],"type":["lgl"],"align":["right"]},{"label":["r1_number_of_points"],"name":[7],"type":["lgl"],"align":["right"]},{"label":["r2_number_of_points"],"name":[8],"type":["lgl"],"align":["right"]}],"data":[{"1":"33UKMF931AKXEFK91J4ZLEOR2QQTTJ","2":"2","3":"point","4":"I mainly tried to do some math in my head and find the average that way. Tried to strike a balance with the dots, have a similar amount above the line as below it because that is essentially what the average is.","5":"FALSE","6":"FALSE","7":"FALSE","8":"TRUE"},{"1":"3D4CH1LGEBTAPVPPJD0BVV8QKLF9GK","2":"2","3":"point_arc","4":"i viewed the graph and tried to notice any type of pattern or trends of similar prices. I tried to visually average all of the prices and went for a middle ground as my choice for the price to pick.","5":"TRUE","6":"TRUE","7":"FALSE","8":"TRUE"},{"1":"3GGAI1SQEWYCF3SE608XAQTVIDQCMA","2":"2","3":"point","4":"I considered the overall arc of the prices as well as where they spent most of the time within the graph.","5":"FALSE","6":"FALSE","7":"TRUE","8":"FALSE"},{"1":"3M23Y66PO37QXHWIG6RG0Z0RGZ16SW","2":"2","3":"point","4":"Just tried to be as accurate as possible. A good rule of thumb is to select a line closest to the midpoint of the graph. I tried to find the level at which half the points were above or below.","5":"TRUE","6":"TRUE","7":"FALSE","8":"TRUE"},{"1":"3NG53N1RLWJGO3ZEH4KKP8R72L4P8U","2":"2","3":"point_arc","4":"ABout half above and half lower","5":"FALSE","6":"FALSE","7":"FALSE","8":"TRUE"},{"1":"3RSDURM96BMR6I16LU23U9G5HTWYEN","2":"2","3":"point_arc","4":"Looked for half of the points above and below the line.\\n But also raised a bit if it was going up at the end, or lowered it a bit if it was going down. \\n If they were a big mass of them I just put it in the middle.","5":"TRUE","6":"TRUE","7":"FALSE","8":"TRUE"},{"1":"3TU5ZICBRE11OF0THHZ9PDHH3N4Q88","2":"2","3":"point","4":"Im not quite sure I did this well. I tried to visualize a center line between the top and bottom points on the graph then move up or down depending on the amount of dots above/below on each and how much the value varied.","5":"TRUE","6":"TRUE","7":"FALSE","8":"TRUE"},{"1":"3UXUOQ9OKFX51LOTIGAHLD6HPW27A8","2":"2","3":"point","4":"I considered a level line to be neutral and however much it went up or down to be the main factor in my decisions. If I didnt work I just counted the amount of time it spent above the line that I was putting down or below the line.","5":"FALSE","6":"FALSE","7":"FALSE","8":"TRUE"},{"1":"3VAR3R6G1Q1Y33ND247508MHOP78O9","2":"2","3":"point","4":"I mostly tried to imagine a reasonable average based on the trend of the graph. I wasnt sure the best way to do it so I mostly went on intuition but I also tried to get an equal number of dots below and above my estimate line when I didnt have a good intuitive feel of what to guess.","5":"TRUE","6":"TRUE","7":"FALSE","8":"TRUE"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+<p>Where do they agree?</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># for mental averaging --- 98 participants where both raters agree</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>strategy_df <span class="sc">%&gt;%</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(r1_mental_averaging <span class="sc">==</span> r2_mental_averaging) <span class="sc">%&gt;%</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(r1_mental_averaging <span class="sc">==</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(ResponseId) <span class="ot">-&gt;</span> mental_average_id</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co"># for equal number of points -- 44 participants where both raters agree</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>strategy_df <span class="sc">%&gt;%</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(r1_number_of_points <span class="sc">==</span> r2_number_of_points) <span class="sc">%&gt;%</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(r1_number_of_points <span class="sc">==</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(ResponseId) <span class="ot">-&gt;</span> equal_points_id</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="calculate-error-and-plot-empirical-error-distributions" class="level2">
+<h2 class="anchored" data-anchor-id="calculate-error-and-plot-empirical-error-distributions">Calculate Error and plot empirical error distributions</h2>
+<p>Read in the stimuli and calculate the answer for each <code>index</code> * <code>seed</code></p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>exp_json_data <span class="ot">&lt;-</span> jsonlite<span class="sc">::</span><span class="fu">fromJSON</span>(<span class="fu">here</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"data"</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"moritz"</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"stimuli"</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"exp2-stimuli.json"</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>)) <span class="sc">%&gt;%</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(.)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>stimuli_df <span class="ot">&lt;-</span> exp_json_data <span class="sc">%&gt;%</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(index, seed, noise, flip, type, data) <span class="sc">%&gt;%</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">noise =</span> <span class="fu">as.character</span>(noise)) <span class="sc">%&gt;%</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(type <span class="sc">!=</span> <span class="st">"line"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(<span class="at">col =</span> data)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>ans_df <span class="ot">&lt;-</span> stimuli_df <span class="sc">%&gt;%</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(index, seed, noise, flip, type) <span class="sc">%&gt;%</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">ans.mean.y =</span> <span class="fu">mean</span>(y), <span class="at">ans.median.y =</span> <span class="fu">median</span>(y))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>ans_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["index"],"name":[1],"type":["int"],"align":["right"]},{"label":["seed"],"name":[2],"type":["int"],"align":["right"]},{"label":["noise"],"name":[3],"type":["chr"],"align":["left"]},{"label":["flip"],"name":[4],"type":["lgl"],"align":["right"]},{"label":["type"],"name":[5],"type":["chr"],"align":["left"]},{"label":["ans.mean.y"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["ans.median.y"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"4","2":"1","3":"c(0, 0)","4":"FALSE","5":"point","6":"0.5127005","7":"0.5299420"},{"1":"5","2":"1","3":"c(0, 0)","4":"TRUE","5":"point","6":"0.4872995","7":"0.4700580"},{"1":"6","2":"1","3":"c(0, 0.4)","4":"FALSE","5":"point","6":"0.5127005","7":"0.5460892"},{"1":"7","2":"1","3":"c(0, 0.4)","4":"TRUE","5":"point","6":"0.4872995","7":"0.4539108"},{"1":"8","2":"1","3":"c(0, 0)","4":"FALSE","5":"point_arc","6":"0.4947709","7":"0.5040651"},{"1":"9","2":"1","3":"c(0, 0)","4":"TRUE","5":"point_arc","6":"0.5052291","7":"0.4959349"},{"1":"10","2":"1","3":"c(0, 0.4)","4":"FALSE","5":"point_arc","6":"0.5831573","7":"0.6274723"},{"1":"11","2":"1","3":"c(0, 0.4)","4":"TRUE","5":"point_arc","6":"0.4168427","7":"0.3725277"},{"1":"16","2":"2","3":"c(0, 0)","4":"FALSE","5":"point","6":"0.4287062","7":"0.4838520"},{"1":"17","2":"2","3":"c(0, 0)","4":"TRUE","5":"point","6":"0.5712938","7":"0.5161480"},{"1":"18","2":"2","3":"c(0, 0.4)","4":"FALSE","5":"point","6":"0.4287062","7":"0.4407580"},{"1":"19","2":"2","3":"c(0, 0.4)","4":"TRUE","5":"point","6":"0.5712938","7":"0.5592420"},{"1":"20","2":"2","3":"c(0, 0)","4":"FALSE","5":"point_arc","6":"0.4295730","7":"0.4817295"},{"1":"21","2":"2","3":"c(0, 0)","4":"TRUE","5":"point_arc","6":"0.5704270","7":"0.5182705"},{"1":"22","2":"2","3":"c(0, 0.4)","4":"FALSE","5":"point_arc","6":"0.5233633","7":"0.5466355"},{"1":"23","2":"2","3":"c(0, 0.4)","4":"TRUE","5":"point_arc","6":"0.4766367","7":"0.4533645"},{"1":"28","2":"3","3":"c(0, 0)","4":"FALSE","5":"point","6":"0.4015207","7":"0.3437069"},{"1":"29","2":"3","3":"c(0, 0)","4":"TRUE","5":"point","6":"0.5984793","7":"0.6562931"},{"1":"30","2":"3","3":"c(0, 0.4)","4":"FALSE","5":"point","6":"0.4015207","7":"0.3419295"},{"1":"31","2":"3","3":"c(0, 0.4)","4":"TRUE","5":"point","6":"0.5984793","7":"0.6580705"},{"1":"32","2":"3","3":"c(0, 0)","4":"FALSE","5":"point_arc","6":"0.4235269","7":"0.3932993"},{"1":"33","2":"3","3":"c(0, 0)","4":"TRUE","5":"point_arc","6":"0.5764731","7":"0.6067007"},{"1":"34","2":"3","3":"c(0, 0.4)","4":"FALSE","5":"point_arc","6":"0.4832300","7":"0.4839731"},{"1":"35","2":"3","3":"c(0, 0.4)","4":"TRUE","5":"point_arc","6":"0.5167700","7":"0.5160269"},{"1":"40","2":"17","3":"c(0, 0)","4":"FALSE","5":"point","6":"0.4001189","7":"0.4171620"},{"1":"41","2":"17","3":"c(0, 0)","4":"TRUE","5":"point","6":"0.5998811","7":"0.5828380"},{"1":"42","2":"17","3":"c(0, 0.4)","4":"FALSE","5":"point","6":"0.4001189","7":"0.3987408"},{"1":"43","2":"17","3":"c(0, 0.4)","4":"TRUE","5":"point","6":"0.5998811","7":"0.6012592"},{"1":"44","2":"17","3":"c(0, 0)","4":"FALSE","5":"point_arc","6":"0.4390840","7":"0.4284073"},{"1":"45","2":"17","3":"c(0, 0)","4":"TRUE","5":"point_arc","6":"0.5609160","7":"0.5715927"},{"1":"46","2":"17","3":"c(0, 0.4)","4":"FALSE","5":"point_arc","6":"0.4987331","7":"0.4896238"},{"1":"47","2":"17","3":"c(0, 0.4)","4":"TRUE","5":"point_arc","6":"0.5012669","7":"0.5103762"},{"1":"52","2":"18","3":"c(0, 0)","4":"FALSE","5":"point","6":"0.5642450","7":"0.6430801"},{"1":"53","2":"18","3":"c(0, 0)","4":"TRUE","5":"point","6":"0.4357550","7":"0.3569199"},{"1":"54","2":"18","3":"c(0, 0.4)","4":"FALSE","5":"point","6":"0.5642450","7":"0.6062747"},{"1":"55","2":"18","3":"c(0, 0.4)","4":"TRUE","5":"point","6":"0.4357550","7":"0.3937253"},{"1":"56","2":"18","3":"c(0, 0)","4":"FALSE","5":"point_arc","6":"0.5455767","7":"0.6403893"},{"1":"57","2":"18","3":"c(0, 0)","4":"TRUE","5":"point_arc","6":"0.4544233","7":"0.3596107"},{"1":"58","2":"18","3":"c(0, 0.4)","4":"FALSE","5":"point_arc","6":"0.6388019","7":"0.6963846"},{"1":"59","2":"18","3":"c(0, 0.4)","4":"TRUE","5":"point_arc","6":"0.3611981","7":"0.3036154"},{"1":"64","2":"13","3":"c(0, 0)","4":"FALSE","5":"point","6":"0.4339269","7":"0.4440121"},{"1":"65","2":"13","3":"c(0, 0)","4":"TRUE","5":"point","6":"0.5660731","7":"0.5559879"},{"1":"66","2":"13","3":"c(0, 0.4)","4":"FALSE","5":"point","6":"0.4339269","7":"0.4716041"},{"1":"67","2":"13","3":"c(0, 0.4)","4":"TRUE","5":"point","6":"0.5660731","7":"0.5283959"},{"1":"68","2":"13","3":"c(0, 0)","4":"FALSE","5":"point_arc","6":"0.4474798","7":"0.4689872"},{"1":"69","2":"13","3":"c(0, 0)","4":"TRUE","5":"point_arc","6":"0.5525202","7":"0.5310128"},{"1":"70","2":"13","3":"c(0, 0.4)","4":"FALSE","5":"point_arc","6":"0.5337402","7":"0.6090630"},{"1":"71","2":"13","3":"c(0, 0.4)","4":"TRUE","5":"point_arc","6":"0.4662598","7":"0.3909370"},{"1":"76","2":"14","3":"c(0, 0)","4":"FALSE","5":"point","6":"0.2932492","7":"0.1836594"},{"1":"77","2":"14","3":"c(0, 0)","4":"TRUE","5":"point","6":"0.7067508","7":"0.8163406"},{"1":"78","2":"14","3":"c(0, 0.4)","4":"FALSE","5":"point","6":"0.2932492","7":"0.1974930"},{"1":"79","2":"14","3":"c(0, 0.4)","4":"TRUE","5":"point","6":"0.7067508","7":"0.8025070"},{"1":"80","2":"14","3":"c(0, 0)","4":"FALSE","5":"point_arc","6":"0.3218521","7":"0.2232464"},{"1":"81","2":"14","3":"c(0, 0)","4":"TRUE","5":"point_arc","6":"0.6781479","7":"0.7767536"},{"1":"82","2":"14","3":"c(0, 0.4)","4":"FALSE","5":"point_arc","6":"0.3924213","7":"0.2662909"},{"1":"83","2":"14","3":"c(0, 0.4)","4":"TRUE","5":"point_arc","6":"0.6075787","7":"0.7337091"},{"1":"88","2":"8","3":"c(0, 0)","4":"FALSE","5":"point","6":"0.4946805","7":"0.5426157"},{"1":"89","2":"8","3":"c(0, 0)","4":"TRUE","5":"point","6":"0.5053195","7":"0.4573843"},{"1":"90","2":"8","3":"c(0, 0.4)","4":"FALSE","5":"point","6":"0.4946805","7":"0.5093027"},{"1":"91","2":"8","3":"c(0, 0.4)","4":"TRUE","5":"point","6":"0.5053195","7":"0.4906973"},{"1":"92","2":"8","3":"c(0, 0)","4":"FALSE","5":"point_arc","6":"0.4823892","7":"0.5337908"},{"1":"93","2":"8","3":"c(0, 0)","4":"TRUE","5":"point_arc","6":"0.5176108","7":"0.4662092"},{"1":"94","2":"8","3":"c(0, 0.4)","4":"FALSE","5":"point_arc","6":"0.5614139","7":"0.5622552"},{"1":"95","2":"8","3":"c(0, 0.4)","4":"TRUE","5":"point_arc","6":"0.4385861","7":"0.4377448"},{"1":"100","2":"15","3":"c(0, 0)","4":"FALSE","5":"point","6":"0.2851815","7":"0.1674828"},{"1":"101","2":"15","3":"c(0, 0)","4":"TRUE","5":"point","6":"0.7148185","7":"0.8325172"},{"1":"102","2":"15","3":"c(0, 0.4)","4":"FALSE","5":"point","6":"0.2851815","7":"0.1703552"},{"1":"103","2":"15","3":"c(0, 0.4)","4":"TRUE","5":"point","6":"0.7148185","7":"0.8296448"},{"1":"104","2":"15","3":"c(0, 0)","4":"FALSE","5":"point_arc","6":"0.3283120","7":"0.2023131"},{"1":"105","2":"15","3":"c(0, 0)","4":"TRUE","5":"point_arc","6":"0.6716880","7":"0.7976869"},{"1":"106","2":"15","3":"c(0, 0.4)","4":"FALSE","5":"point_arc","6":"0.3684165","7":"0.1958564"},{"1":"107","2":"15","3":"c(0, 0.4)","4":"TRUE","5":"point_arc","6":"0.6315835","7":"0.8041436"},{"1":"112","2":"16","3":"c(0, 0)","4":"FALSE","5":"point","6":"0.3749413","7":"0.3033622"},{"1":"113","2":"16","3":"c(0, 0)","4":"TRUE","5":"point","6":"0.6250587","7":"0.6966378"},{"1":"114","2":"16","3":"c(0, 0.4)","4":"FALSE","5":"point","6":"0.3749413","7":"0.2915398"},{"1":"115","2":"16","3":"c(0, 0.4)","4":"TRUE","5":"point","6":"0.6250587","7":"0.7084602"},{"1":"116","2":"16","3":"c(0, 0)","4":"FALSE","5":"point_arc","6":"0.4004890","7":"0.3579625"},{"1":"117","2":"16","3":"c(0, 0)","4":"TRUE","5":"point_arc","6":"0.5995110","7":"0.6420375"},{"1":"118","2":"16","3":"c(0, 0.4)","4":"FALSE","5":"point_arc","6":"0.4606207","7":"0.4490710"},{"1":"119","2":"16","3":"c(0, 0.4)","4":"TRUE","5":"point_arc","6":"0.5393793","7":"0.5509290"},{"1":"124","2":"11","3":"c(0, 0)","4":"FALSE","5":"point","6":"0.5660820","7":"0.6336333"},{"1":"125","2":"11","3":"c(0, 0)","4":"TRUE","5":"point","6":"0.4339180","7":"0.3663667"},{"1":"126","2":"11","3":"c(0, 0.4)","4":"FALSE","5":"point","6":"0.5660820","7":"0.6125425"},{"1":"127","2":"11","3":"c(0, 0.4)","4":"TRUE","5":"point","6":"0.4339180","7":"0.3874575"},{"1":"128","2":"11","3":"c(0, 0)","4":"FALSE","5":"point_arc","6":"0.5479810","7":"0.6090723"},{"1":"129","2":"11","3":"c(0, 0)","4":"TRUE","5":"point_arc","6":"0.4520190","7":"0.3909277"},{"1":"130","2":"11","3":"c(0, 0.4)","4":"FALSE","5":"point_arc","6":"0.6222611","7":"0.6611437"},{"1":"131","2":"11","3":"c(0, 0.4)","4":"TRUE","5":"point_arc","6":"0.3777389","7":"0.3388563"},{"1":"136","2":"19","3":"c(0, 0)","4":"FALSE","5":"point","6":"0.2566047","7":"0.2239520"},{"1":"137","2":"19","3":"c(0, 0)","4":"TRUE","5":"point","6":"0.7433953","7":"0.7760480"},{"1":"138","2":"19","3":"c(0, 0.4)","4":"FALSE","5":"point","6":"0.2566047","7":"0.2372815"},{"1":"139","2":"19","3":"c(0, 0.4)","4":"TRUE","5":"point","6":"0.7433953","7":"0.7627185"},{"1":"140","2":"19","3":"c(0, 0)","4":"FALSE","5":"point_arc","6":"0.2823964","7":"0.2517626"},{"1":"141","2":"19","3":"c(0, 0)","4":"TRUE","5":"point_arc","6":"0.7176036","7":"0.7482374"},{"1":"142","2":"19","3":"c(0, 0.4)","4":"FALSE","5":"point_arc","6":"0.3208935","7":"0.3001670"},{"1":"143","2":"19","3":"c(0, 0.4)","4":"TRUE","5":"point_arc","6":"0.6791065","7":"0.6998330"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+<p>Use the <code>data_average</code> to calculate error, and this is what we in terms of empirical distribution of error:</p>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">error =</span> reportedaverage <span class="sc">-</span> data_average) <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> error, <span class="at">y =</span> variability, <span class="at">fill =</span> mark)) <span class="sc">+</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>(<span class="at">alpha =</span> <span class="fl">0.8</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">norm.error =</span> <span class="fu">ifelse</span>(</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>      flip <span class="sc">==</span> <span class="cn">FALSE</span>,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>      reportedaverage <span class="sc">-</span> data_average,</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>      data_average <span class="sc">-</span> reportedaverage</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> norm.error, <span class="at">y =</span> variability, <span class="at">fill =</span> mark)) <span class="sc">+</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>(<span class="at">alpha =</span> <span class="fl">0.8</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="reanalyze_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="reanalyze_files/figure-html/unnamed-chunk-8-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</div>
+<p>We could also try to facet by whether y-axis is flipped, and this will allow us to separate plotting:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">error =</span> reportedaverage <span class="sc">-</span> data_average,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">variance_area =</span> <span class="fu">ifelse</span>(flip <span class="sc">==</span> <span class="cn">FALSE</span>, <span class="st">"high"</span>, <span class="st">"low"</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> error, <span class="at">y =</span> variability, <span class="at">fill =</span> mark)) <span class="sc">+</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>(<span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>variance_area)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="reanalyze_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>If we use <code>average</code> instead of <code>data_average</code> to calculate error, this is what we will get:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">error =</span> reportedaverage <span class="sc">-</span> average,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">variance_area =</span> <span class="fu">ifelse</span>(flip <span class="sc">==</span> <span class="cn">FALSE</span>, <span class="st">"high"</span>, <span class="st">"low"</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> error, <span class="at">y =</span> variability, <span class="at">fill =</span> mark)) <span class="sc">+</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>(<span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>variance_area) <span class="sc">+</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"darkgray"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="reanalyze_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="analyses" class="level1">
+<h1>Analyses</h1>
+<p>Note that the plots produced in the paper, specifically, Figure 2, it was really a summary statistics plot. So we first try to replicate the original correction:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># when mark == "point", you get average == data_average</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co"># which makes sense, because for `point_arc`, the data average is NOT the actual average ...</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">error =</span> <span class="fu">round</span>(error, <span class="dv">5</span>),</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">normalized_error =</span> <span class="fu">round</span>(normalized_error, <span class="dv">5</span>)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># verified that this is how normalized error is calculated</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">calc_error =</span> <span class="fu">ifelse</span>(</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>      flip <span class="sc">==</span> <span class="cn">FALSE</span>,</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>      reportedaverage <span class="sc">-</span> average,</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>      average <span class="sc">-</span> reportedaverage</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>      <span class="fu">round</span>(., <span class="dv">5</span>),</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(calc_error <span class="sc">!=</span> normalized_error)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["id"],"name":[1],"type":["int"],"align":["right"]},{"label":["assignmentid"],"name":[2],"type":["chr"],"align":["left"]},{"label":["endtime"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["mark"],"name":[4],"type":["chr"],"align":["left"]},{"label":["pageheight"],"name":[5],"type":["int"],"align":["right"]},{"label":["pagewidth"],"name":[6],"type":["int"],"align":["right"]},{"label":["reportedaverage"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["seed"],"name":[8],"type":["int"],"align":["right"]},{"label":["starttime"],"name":[9],"type":["dbl"],"align":["right"]},{"label":["stimuliindex"],"name":[10],"type":["int"],"align":["right"]},{"label":["flip"],"name":[11],"type":["lgl"],"align":["right"]},{"label":["trial"],"name":[12],"type":["int"],"align":["right"]},{"label":["variability"],"name":[13],"type":["chr"],"align":["left"]},{"label":["useragent"],"name":[14],"type":["chr"],"align":["left"]},{"label":["xdomain"],"name":[15],"type":["chr"],"align":["left"]},{"label":["ydomain"],"name":[16],"type":["chr"],"align":["left"]},{"label":["batch"],"name":[17],"type":["chr"],"align":["left"]},{"label":["experiment"],"name":[18],"type":["chr"],"align":["left"]},{"label":["data_average"],"name":[19],"type":["dbl"],"align":["right"]},{"label":["average"],"name":[20],"type":["dbl"],"align":["right"]},{"label":["error"],"name":[21],"type":["dbl"],"align":["right"]},{"label":["normalized_average"],"name":[22],"type":["dbl"],"align":["right"]},{"label":["overestimated"],"name":[23],"type":["lgl"],"align":["right"]},{"label":["normalized_error"],"name":[24],"type":["dbl"],"align":["right"]},{"label":["average_along_arc"],"name":[25],"type":["dbl"],"align":["right"]},{"label":["calc_error"],"name":[26],"type":["dbl"],"align":["right"]}],"data":[],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span> <span class="fu">filter</span>(average <span class="sc">==</span> normalized_average) <span class="sc">%&gt;%</span> <span class="fu">count</span>(mark)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["mark"],"name":[1],"type":["chr"],"align":["left"]},{"label":["n"],"name":[2],"type":["int"],"align":["right"]}],"data":[{"1":"point","2":"3360"},{"1":"point_arc","2":"3360"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span> <span class="fu">count</span>(mark)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["mark"],"name":[1],"type":["chr"],"align":["left"]},{"label":["n"],"name":[2],"type":["int"],"align":["right"]}],"data":[{"1":"point","2":"6720"},{"1":"point_arc","2":"6720"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(mark <span class="sc">==</span> <span class="st">"point_arc"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(average, data_average, normalized_average)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["average"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["data_average"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["normalized_average"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["n"],"name":[4],"type":["int"],"align":["right"]}],"data":[{"1":"0.2566047","2":"0.2823964","3":"0.2566047","4":"140"},{"1":"0.2566047","2":"0.3208935","3":"0.2566047","4":"140"},{"1":"0.2851815","2":"0.3283120","3":"0.2851815","4":"140"},{"1":"0.2851815","2":"0.3684165","3":"0.2851815","4":"140"},{"1":"0.2932492","2":"0.3218521","3":"0.2932492","4":"140"},{"1":"0.2932492","2":"0.3924213","3":"0.2932492","4":"140"},{"1":"0.3749413","2":"0.4004890","3":"0.3749413","4":"140"},{"1":"0.3749413","2":"0.4606207","3":"0.3749413","4":"140"},{"1":"0.4001189","2":"0.4390840","3":"0.4001189","4":"140"},{"1":"0.4001189","2":"0.4987331","3":"0.4001189","4":"140"},{"1":"0.4015207","2":"0.4235269","3":"0.4015207","4":"140"},{"1":"0.4015207","2":"0.4832300","3":"0.4015207","4":"140"},{"1":"0.4287062","2":"0.4295730","3":"0.4287062","4":"140"},{"1":"0.4287062","2":"0.5233633","3":"0.4287062","4":"140"},{"1":"0.4339180","2":"0.3777389","3":"0.5660820","4":"140"},{"1":"0.4339180","2":"0.4520190","3":"0.5660820","4":"140"},{"1":"0.4339269","2":"0.4474798","3":"0.4339269","4":"140"},{"1":"0.4339269","2":"0.5337402","3":"0.4339269","4":"140"},{"1":"0.4357550","2":"0.3611981","3":"0.5642450","4":"140"},{"1":"0.4357550","2":"0.4544233","3":"0.5642450","4":"140"},{"1":"0.4872995","2":"0.4168427","3":"0.5127005","4":"140"},{"1":"0.4872995","2":"0.5052291","3":"0.5127005","4":"140"},{"1":"0.4946805","2":"0.4823892","3":"0.4946805","4":"140"},{"1":"0.4946805","2":"0.5614139","3":"0.4946805","4":"140"},{"1":"0.5053195","2":"0.4385861","3":"0.4946805","4":"140"},{"1":"0.5053195","2":"0.5176108","3":"0.4946805","4":"140"},{"1":"0.5127005","2":"0.4947709","3":"0.5127005","4":"140"},{"1":"0.5127005","2":"0.5831573","3":"0.5127005","4":"140"},{"1":"0.5642450","2":"0.5455767","3":"0.5642450","4":"140"},{"1":"0.5642450","2":"0.6388019","3":"0.5642450","4":"140"},{"1":"0.5660731","2":"0.4662598","3":"0.4339269","4":"140"},{"1":"0.5660731","2":"0.5525202","3":"0.4339269","4":"140"},{"1":"0.5660820","2":"0.5479810","3":"0.5660820","4":"140"},{"1":"0.5660820","2":"0.6222611","3":"0.5660820","4":"140"},{"1":"0.5712938","2":"0.4766367","3":"0.4287062","4":"140"},{"1":"0.5712938","2":"0.5704270","3":"0.4287062","4":"140"},{"1":"0.5984793","2":"0.5167700","3":"0.4015207","4":"140"},{"1":"0.5984793","2":"0.5764731","3":"0.4015207","4":"140"},{"1":"0.5998811","2":"0.5012669","3":"0.4001189","4":"140"},{"1":"0.5998811","2":"0.5609160","3":"0.4001189","4":"140"},{"1":"0.6250587","2":"0.5393793","3":"0.3749413","4":"140"},{"1":"0.6250587","2":"0.5995110","3":"0.3749413","4":"140"},{"1":"0.7067508","2":"0.6075787","3":"0.2932492","4":"140"},{"1":"0.7067508","2":"0.6781479","3":"0.2932492","4":"140"},{"1":"0.7148185","2":"0.6315835","3":"0.2851815","4":"140"},{"1":"0.7148185","2":"0.6716880","3":"0.2851815","4":"140"},{"1":"0.7433953","2":"0.6791065","3":"0.2566047","4":"140"},{"1":"0.7433953","2":"0.7176036","3":"0.2566047","4":"140"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># count(mark, stimuliindex, average, data_average, normalized_average)</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">calc_error =</span> <span class="fu">ifelse</span>(</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>      flip <span class="sc">==</span> <span class="cn">FALSE</span>,</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>      reportedaverage <span class="sc">-</span> average,</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>      average <span class="sc">-</span> reportedaverage</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(calc_error <span class="sc">==</span> normalized_error) <span class="sc">%&gt;%</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(mark)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["mark"],"name":[1],"type":["chr"],"align":["left"]},{"label":["n"],"name":[2],"type":["int"],"align":["right"]}],"data":[{"1":"point","2":"1039"},{"1":"point_arc","2":"1330"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(assignmentid, mark) <span class="sc">%&gt;%</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">subj_mean =</span> <span class="fu">mean</span>(normalized_error)) <span class="sc">%&gt;%</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">grand_mean =</span> <span class="fu">mean</span>(normalized_error)) <span class="sc">%&gt;%</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">corrected =</span> normalized_error <span class="sc">-</span> subj_mean <span class="sc">+</span> grand_mean) <span class="sc">%&gt;%</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(mark, variability) <span class="sc">%&gt;%</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">mu =</span> <span class="fu">mean</span>(normalized_error),</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">se =</span> <span class="fu">sd</span>(corrected) <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">n</span>()) <span class="sc">*</span> <span class="fu">sqrt</span>(<span class="dv">2</span> <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">-</span> <span class="dv">1</span>)), <span class="co"># k is 2</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["mark"],"name":[1],"type":["chr"],"align":["left"]},{"label":["variability"],"name":[2],"type":["chr"],"align":["left"]},{"label":["mu"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["se"],"name":[4],"type":["dbl"],"align":["right"]}],"data":[{"1":"point","2":"0,0","3":"0.00967116","4":"0.002942689"},{"1":"point","2":"0,0.4","3":"0.01655093","4":"0.002987090"},{"1":"point_arc","2":"0,0","3":"0.03284001","4":"0.003371558"},{"1":"point_arc","2":"0,0.4","3":"0.08480817","4":"0.003375684"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+<p>Plot original:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(assignmentid, mark) <span class="sc">%&gt;%</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">subj_mean =</span> <span class="fu">mean</span>(normalized_error)) <span class="sc">%&gt;%</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">grand_mean =</span> <span class="fu">mean</span>(normalized_error)) <span class="sc">%&gt;%</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">corrected =</span> normalized_error <span class="sc">-</span> subj_mean <span class="sc">+</span> grand_mean) <span class="sc">%&gt;%</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(mark, variability) <span class="sc">%&gt;%</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">mu =</span> <span class="fu">mean</span>(normalized_error),</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">se =</span> <span class="fu">sd</span>(corrected) <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">n</span>()) <span class="sc">*</span> <span class="fu">sqrt</span>(<span class="dv">2</span> <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">-</span> <span class="dv">1</span>)), <span class="co"># k is 2</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> variability,</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> mu,</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">dist =</span> <span class="st">"norm"</span>,</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">arg1 =</span> mu,</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">arg2 =</span> se,</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> mark</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">+</span> <span class="co">#uncertainty</span></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_dist_halfeye</span>(</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">show_interval =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.2</span>), <span class="co"># &lt;- WHY THIS???</span></span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">.width =</span> <span class="fl">0.95</span>,</span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> .<span class="dv">5</span>,</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> .<span class="dv">8</span></span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span> <span class="co">#adding halfeye</span></span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span> <span class="co">#flipping axis</span></span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_tidybayes</span>() <span class="sc">+</span> <span class="co">#theme</span></span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>) <span class="sc">+</span></span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"#76B7B2"</span>, <span class="st">"#E15759"</span>)) <span class="sc">+</span> <span class="co"># take out "#59A14F"</span></span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(</span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">0</span>, .<span class="dv">11</span>, <span class="at">by =</span> .<span class="dv">01</span>),</span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">expand =</span> <span class="fu">expansion</span>(<span class="at">mult =</span> <span class="fu">c</span>(<span class="fl">0.01</span>, <span class="fl">0.01</span>))</span>
+<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span> <span class="co">#specifying scale</span></span>
+<span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Variability"</span>) <span class="sc">+</span> <span class="co">#add x label</span></span>
+<span id="cb18-37"><a href="#cb18-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">"Normalized Error"</span>) <span class="co">#add y label</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="reanalyze_files/figure-html/plot%20Mortiz-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Plot the graph with <code>error</code> instead of <code>normalized_error</code> and also its facetted version:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(assignmentid, mark) <span class="sc">%&gt;%</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">subj_mean =</span> <span class="fu">mean</span>(error)) <span class="sc">%&gt;%</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">grand_mean =</span> <span class="fu">mean</span>(error)) <span class="sc">%&gt;%</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">corrected =</span> error <span class="sc">-</span> subj_mean <span class="sc">+</span> grand_mean) <span class="sc">%&gt;%</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(mark, variability) <span class="sc">%&gt;%</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">mu =</span> <span class="fu">mean</span>(error),</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">se =</span> <span class="fu">sd</span>(corrected) <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">n</span>()) <span class="sc">*</span> <span class="fu">sqrt</span>(<span class="dv">2</span> <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">-</span> <span class="dv">1</span>)), <span class="co"># k is 2</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> variability,</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> mu,</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">dist =</span> <span class="st">"norm"</span>,</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">arg1 =</span> mu,</span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">arg2 =</span> se,</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> mark</span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">+</span> <span class="co">#uncertainty</span></span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_dist_halfeye</span>(</span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">show_interval =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.2</span>), <span class="co"># &lt;- WHY THIS???</span></span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">.width =</span> <span class="fl">0.95</span>,</span>
+<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> .<span class="dv">5</span>,</span>
+<span id="cb19-26"><a href="#cb19-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> .<span class="dv">8</span></span>
+<span id="cb19-27"><a href="#cb19-27" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span> <span class="co">#adding halfeye</span></span>
+<span id="cb19-28"><a href="#cb19-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span> <span class="co">#flipping axis</span></span>
+<span id="cb19-29"><a href="#cb19-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_tidybayes</span>() <span class="sc">+</span> <span class="co">#theme</span></span>
+<span id="cb19-30"><a href="#cb19-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>) <span class="sc">+</span></span>
+<span id="cb19-31"><a href="#cb19-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"#76B7B2"</span>, <span class="st">"#E15759"</span>)) <span class="sc">+</span> <span class="co"># take out "#59A14F"</span></span>
+<span id="cb19-32"><a href="#cb19-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(</span>
+<span id="cb19-33"><a href="#cb19-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">0</span>, .<span class="dv">11</span>, <span class="at">by =</span> .<span class="dv">01</span>),</span>
+<span id="cb19-34"><a href="#cb19-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">expand =</span> <span class="fu">expansion</span>(<span class="at">mult =</span> <span class="fu">c</span>(<span class="fl">0.01</span>, <span class="fl">0.01</span>))</span>
+<span id="cb19-35"><a href="#cb19-35" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span> <span class="co">#specifying scale</span></span>
+<span id="cb19-36"><a href="#cb19-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Variability"</span>) <span class="sc">+</span> <span class="co">#add x label</span></span>
+<span id="cb19-37"><a href="#cb19-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">"Normalized Error"</span>) <span class="co">#add y label</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="reanalyze_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="do-participants-who-use-median-strategy-get-answer-closer-to-median-or-mean" class="level1">
+<h1>Do participants who use Median Strategy get answer closer to median or mean?</h1>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>median_df <span class="ot">&lt;-</span> exp2 <span class="sc">%&gt;%</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(assignmentid <span class="sc">%in%</span> equal_points_id) <span class="sc">%&gt;%</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">type =</span> mark, <span class="at">index =</span> stimuliindex)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>median_df <span class="sc">%&gt;%</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(ans_df) <span class="sc">%&gt;%</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">error_avg =</span> reportedaverage <span class="sc">-</span> ans.mean.y,</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">error_median =</span> reportedaverage <span class="sc">-</span> ans.median.y</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> error_avg, <span class="at">fill =</span> type, <span class="at">y =</span> noise)) <span class="sc">+</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>() <span class="sc">+</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"darkgray"</span>) <span class="sc">+</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"error calculated using mean"</span>)</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>median_df <span class="sc">%&gt;%</span></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(ans_df) <span class="sc">%&gt;%</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">error_avg =</span> reportedaverage <span class="sc">-</span> ans.mean.y,</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">error_median =</span> reportedaverage <span class="sc">-</span> ans.median.y</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> error_median, <span class="at">fill =</span> type, <span class="at">y =</span> noise)) <span class="sc">+</span></span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_halfeye</span>() <span class="sc">+</span></span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"darkgray"</span>) <span class="sc">+</span></span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"error calculated using median"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="reanalyze_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="reanalyze_files/figure-html/unnamed-chunk-14-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</div>
+<p>What if we do the same analysis as did before?</p>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>median_df <span class="sc">%&gt;%</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(ans_df) <span class="sc">%&gt;%</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">error =</span> <span class="fu">ifelse</span>(</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>      flip <span class="sc">==</span> <span class="cn">FALSE</span>,</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>      reportedaverage <span class="sc">-</span> ans.mean.y,</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>      ans.mean.y <span class="sc">-</span> reportedaverage</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(assignmentid, type) <span class="sc">%&gt;%</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">subj_mean =</span> <span class="fu">mean</span>(error)) <span class="sc">%&gt;%</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">grand_mean =</span> <span class="fu">mean</span>(error)) <span class="sc">%&gt;%</span></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">corrected =</span> error <span class="sc">-</span> subj_mean <span class="sc">+</span> grand_mean) <span class="sc">%&gt;%</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(type, variability) <span class="sc">%&gt;%</span></span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">mu =</span> <span class="fu">mean</span>(error),</span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">se =</span> <span class="fu">sd</span>(corrected) <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">n</span>()) <span class="sc">*</span> <span class="fu">sqrt</span>(<span class="dv">2</span> <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">-</span> <span class="dv">1</span>)), <span class="co"># k is 2</span></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(</span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> variability,</span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> mu,</span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">dist =</span> <span class="st">"norm"</span>,</span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">arg1 =</span> mu,</span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">arg2 =</span> se,</span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> type</span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">+</span> <span class="co">#uncertainty</span></span>
+<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_dist_halfeye</span>(</span>
+<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">show_interval =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb22-31"><a href="#cb22-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.2</span>), <span class="co"># &lt;- WHY THIS???</span></span>
+<span id="cb22-32"><a href="#cb22-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">.width =</span> <span class="fl">0.95</span>,</span>
+<span id="cb22-33"><a href="#cb22-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> .<span class="dv">5</span>,</span>
+<span id="cb22-34"><a href="#cb22-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> .<span class="dv">8</span></span>
+<span id="cb22-35"><a href="#cb22-35" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span> <span class="co">#adding halfeye</span></span>
+<span id="cb22-36"><a href="#cb22-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span> <span class="co">#flipping axis</span></span>
+<span id="cb22-37"><a href="#cb22-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_tidybayes</span>() <span class="sc">+</span> <span class="co">#theme</span></span>
+<span id="cb22-38"><a href="#cb22-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>) <span class="sc">+</span></span>
+<span id="cb22-39"><a href="#cb22-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"#76B7B2"</span>, <span class="st">"#E15759"</span>)) <span class="sc">+</span> <span class="co"># take out "#59A14F"</span></span>
+<span id="cb22-40"><a href="#cb22-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(</span>
+<span id="cb22-41"><a href="#cb22-41" aria-hidden="true" tabindex="-1"></a>    <span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">0</span>, .<span class="dv">11</span>, <span class="at">by =</span> .<span class="dv">01</span>),</span>
+<span id="cb22-42"><a href="#cb22-42" aria-hidden="true" tabindex="-1"></a>    <span class="at">expand =</span> <span class="fu">expansion</span>(<span class="at">mult =</span> <span class="fu">c</span>(<span class="fl">0.01</span>, <span class="fl">0.01</span>))</span>
+<span id="cb22-43"><a href="#cb22-43" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span> <span class="co">#specifying scale</span></span>
+<span id="cb22-44"><a href="#cb22-44" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Variability"</span>) <span class="sc">+</span> <span class="co">#add x label</span></span>
+<span id="cb22-45"><a href="#cb22-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">"Normalized Error"</span>) <span class="sc">+</span> <span class="co">#add y label</span></span>
+<span id="cb22-46"><a href="#cb22-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Error calculated using mean"</span>)</span>
+<span id="cb22-47"><a href="#cb22-47" aria-hidden="true" tabindex="-1"></a>median_df <span class="sc">%&gt;%</span></span>
+<span id="cb22-48"><a href="#cb22-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(ans_df) <span class="sc">%&gt;%</span></span>
+<span id="cb22-49"><a href="#cb22-49" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb22-50"><a href="#cb22-50" aria-hidden="true" tabindex="-1"></a>    <span class="at">error =</span> <span class="fu">ifelse</span>(</span>
+<span id="cb22-51"><a href="#cb22-51" aria-hidden="true" tabindex="-1"></a>      flip <span class="sc">==</span> <span class="cn">FALSE</span>,</span>
+<span id="cb22-52"><a href="#cb22-52" aria-hidden="true" tabindex="-1"></a>      reportedaverage <span class="sc">-</span> ans.median.y,</span>
+<span id="cb22-53"><a href="#cb22-53" aria-hidden="true" tabindex="-1"></a>      ans.median.y <span class="sc">-</span> reportedaverage</span>
+<span id="cb22-54"><a href="#cb22-54" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb22-55"><a href="#cb22-55" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb22-56"><a href="#cb22-56" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(assignmentid, type) <span class="sc">%&gt;%</span></span>
+<span id="cb22-57"><a href="#cb22-57" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">subj_mean =</span> <span class="fu">mean</span>(error)) <span class="sc">%&gt;%</span></span>
+<span id="cb22-58"><a href="#cb22-58" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb22-59"><a href="#cb22-59" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">grand_mean =</span> <span class="fu">mean</span>(error)) <span class="sc">%&gt;%</span></span>
+<span id="cb22-60"><a href="#cb22-60" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">corrected =</span> error <span class="sc">-</span> subj_mean <span class="sc">+</span> grand_mean) <span class="sc">%&gt;%</span></span>
+<span id="cb22-61"><a href="#cb22-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(type, variability) <span class="sc">%&gt;%</span></span>
+<span id="cb22-62"><a href="#cb22-62" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb22-63"><a href="#cb22-63" aria-hidden="true" tabindex="-1"></a>    <span class="at">mu =</span> <span class="fu">mean</span>(error),</span>
+<span id="cb22-64"><a href="#cb22-64" aria-hidden="true" tabindex="-1"></a>    <span class="at">se =</span> <span class="fu">sd</span>(corrected) <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">n</span>()) <span class="sc">*</span> <span class="fu">sqrt</span>(<span class="dv">2</span> <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">-</span> <span class="dv">1</span>)), <span class="co"># k is 2</span></span>
+<span id="cb22-65"><a href="#cb22-65" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb22-66"><a href="#cb22-66" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb22-67"><a href="#cb22-67" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(</span>
+<span id="cb22-68"><a href="#cb22-68" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> variability,</span>
+<span id="cb22-69"><a href="#cb22-69" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> mu,</span>
+<span id="cb22-70"><a href="#cb22-70" aria-hidden="true" tabindex="-1"></a>    <span class="at">dist =</span> <span class="st">"norm"</span>,</span>
+<span id="cb22-71"><a href="#cb22-71" aria-hidden="true" tabindex="-1"></a>    <span class="at">arg1 =</span> mu,</span>
+<span id="cb22-72"><a href="#cb22-72" aria-hidden="true" tabindex="-1"></a>    <span class="at">arg2 =</span> se,</span>
+<span id="cb22-73"><a href="#cb22-73" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> type</span>
+<span id="cb22-74"><a href="#cb22-74" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">+</span> <span class="co">#uncertainty</span></span>
+<span id="cb22-75"><a href="#cb22-75" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_dist_halfeye</span>(</span>
+<span id="cb22-76"><a href="#cb22-76" aria-hidden="true" tabindex="-1"></a>    <span class="at">show_interval =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb22-77"><a href="#cb22-77" aria-hidden="true" tabindex="-1"></a>    <span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.2</span>), <span class="co"># &lt;- WHY THIS???</span></span>
+<span id="cb22-78"><a href="#cb22-78" aria-hidden="true" tabindex="-1"></a>    <span class="at">.width =</span> <span class="fl">0.95</span>,</span>
+<span id="cb22-79"><a href="#cb22-79" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> .<span class="dv">5</span>,</span>
+<span id="cb22-80"><a href="#cb22-80" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> .<span class="dv">8</span></span>
+<span id="cb22-81"><a href="#cb22-81" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span> <span class="co">#adding halfeye</span></span>
+<span id="cb22-82"><a href="#cb22-82" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span> <span class="co">#flipping axis</span></span>
+<span id="cb22-83"><a href="#cb22-83" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_tidybayes</span>() <span class="sc">+</span> <span class="co">#theme</span></span>
+<span id="cb22-84"><a href="#cb22-84" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>) <span class="sc">+</span></span>
+<span id="cb22-85"><a href="#cb22-85" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"#76B7B2"</span>, <span class="st">"#E15759"</span>)) <span class="sc">+</span> <span class="co"># take out "#59A14F"</span></span>
+<span id="cb22-86"><a href="#cb22-86" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(</span>
+<span id="cb22-87"><a href="#cb22-87" aria-hidden="true" tabindex="-1"></a>    <span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">0</span>, .<span class="dv">11</span>, <span class="at">by =</span> .<span class="dv">01</span>),</span>
+<span id="cb22-88"><a href="#cb22-88" aria-hidden="true" tabindex="-1"></a>    <span class="at">expand =</span> <span class="fu">expansion</span>(<span class="at">mult =</span> <span class="fu">c</span>(<span class="fl">0.01</span>, <span class="fl">0.01</span>))</span>
+<span id="cb22-89"><a href="#cb22-89" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span> <span class="co">#specifying scale</span></span>
+<span id="cb22-90"><a href="#cb22-90" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Variability"</span>) <span class="sc">+</span> <span class="co">#add x label</span></span>
+<span id="cb22-91"><a href="#cb22-91" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">"Normalized Error"</span>) <span class="sc">+</span> <span class="co">#add y label</span></span>
+<span id="cb22-92"><a href="#cb22-92" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Error calculated using median"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="reanalyze_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: center;">
+<p><img src="reanalyze_files/figure-html/unnamed-chunk-15-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
