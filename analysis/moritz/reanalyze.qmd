@@ -161,6 +161,7 @@ Note that the plots produced in the paper, specifically, Figure 2, it was really
 
 ```{r}
 #| code-fold: true
+#| eval: false
 
 # when mark == "point", you get average == data_average
 # which makes sense, because for `point_arc`, the data average is NOT the actual average ...
@@ -180,26 +181,10 @@ exp2 %>%
       round(., 5),
   ) %>%
   filter(calc_error != normalized_error)
+```
 
-exp2 %>% filter(average == normalized_average) %>% count(mark)
-exp2 %>% count(mark)
-exp2 %>%
-  filter(mark == "point_arc") %>%
-  count(average, data_average, normalized_average)
-
-# count(mark, stimuliindex, average, data_average, normalized_average)
-
-exp2 %>%
-  mutate(
-    calc_error = ifelse(
-      flip == FALSE,
-      reportedaverage - average,
-      average - reportedaverage
-    )
-  ) %>%
-  filter(calc_error == normalized_error) %>%
-  count(mark)
-
+```{r}
+#| code-fold: true
 exp2 %>%
   group_by(assignmentid, mark) %>%
   mutate(subj_mean = mean(normalized_error)) %>%
@@ -258,20 +243,34 @@ exp2 %>%
   ylab("Normalized Error") #add y label
 ```
 
+---
+
 Plot the graph with `error` instead of `normalized_error` and also its facetted version: 
+
+`#TODO:` the following needs to be checked because it does not look right ....  
 
 ```{r}
 #| code-fold: true
 exp2 %>%
+  # Step 1: collapse to subject-level means per cell (now includes flipped)
+  group_by(assignmentid, mark, variability, flip) %>%
+  summarise(subj_cell_mean = mean(error), .groups = "drop") %>%
+
+  # Step 2: subject mean across ALL within-subject conditions
   group_by(assignmentid, mark) %>%
-  mutate(subj_mean = mean(error)) %>%
+  mutate(subj_mean = mean(subj_cell_mean)) %>%
   ungroup() %>%
-  mutate(grand_mean = mean(error)) %>%
-  mutate(corrected = error - subj_mean + grand_mean) %>%
-  group_by(mark, variability) %>%
+
+  # Step 3: normalize
+  mutate(grand_mean = mean(subj_cell_mean)) %>%
+  mutate(corrected = subj_cell_mean - subj_mean + grand_mean) %>%
+
+  # Step 4: SE per cell (now includes flipped)
+  group_by(mark, variability, flip) %>%
   summarise(
-    mu = mean(error),
-    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2
+    mu = mean(subj_cell_mean),
+    n_subj = n(),
+    se = sd(corrected) / sqrt(n_subj) * sqrt(4 / (4 - 1)),
     .groups = "drop"
   ) %>%
   ggplot(aes(
@@ -291,14 +290,16 @@ exp2 %>%
   ) + #adding halfeye
   coord_flip() + #flipping axis
   theme_tidybayes() + #theme
+  facet_grid(~ as.character(flip)) +
   theme(legend.position = "top") +
   scale_fill_manual(values = c("#76B7B2", "#E15759")) + # take out "#59A14F"
-  scale_y_continuous(
-    breaks = seq(0, .11, by = .01),
-    expand = expansion(mult = c(0.01, 0.01))
-  ) + #specifying scale
+  # scale_y_continuous(
+  #   breaks = seq(0, .11, by = .01),
+  #   expand = expansion(mult = c(0.01, 0.01))
+  # ) + #specifying scale
   xlab("Variability") + #add x label
-  ylab("Normalized Error") #add y label
+  ylab("Normalized Error") + #add y label +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "darkgray")
 ```
 
 # Do participants who use Median Strategy get answer closer to median or mean? 
