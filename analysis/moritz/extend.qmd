@@ -19,6 +19,9 @@ library(here)
 library(jsonlite)
 library(brms)
 library(posterior)
+library(distributional)
+library(lme4)
+library(emmeans)
 theme_set(theme_minimal())
 ```
 
@@ -114,31 +117,34 @@ exp2 %>%
     se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2
     .groups = "drop"
   ) %>%
-  ggplot(aes(
-    x = variability,
-    y = mu, 
-    dist = "norm",
-    arg1 = mu,
-    arg2 = se,
-    fill = mark
-  )) + #uncertainty
-  stat_dist_halfeye(
-    show_interval = TRUE,
+  ggplot() +
+  stat_halfeye(
+    aes(xdist = dist_normal(mu, se), y = variability, fill = mark, shape = "manual"),
     position = position_dodge(width = 0.2), # <- WHY THIS???
     .width = 0.95,
-    size = .5,
+    linewidth = .75,
     alpha = .8
   ) + #adding halfeye
-  coord_flip() + #flipping axis
+  stat_pointinterval(
+    aes(xdist = dist_normal(emmean, SE), y = variability, shape = "lmer"),
+    data = est_exp2_norm,
+    position = ggdist::position_dodgejust(width = 0.2),
+    justification = 0.3,
+    .width = .95,
+    linewidth = .75
+  ) +
   theme_tidybayes() + #theme
   theme(legend.position = "top") +
   scale_fill_manual(values = c("#76B7B2", "#E15759")) + # take out "#59A14F"
-  scale_y_continuous(
+  scale_x_continuous(
     breaks = seq(0, .11, by = .01),
     expand = expansion(mult = c(0.01, 0.01))
   ) + #specifying scale
-  xlab("Variability") + #add x label
-  ylab("Normalized Error") #add y label
+  labs(
+    x = "Variability",
+    y = "Normalized Error",
+    shape = "method"
+  )
 ```
 
 # Create answer data for Moritz
