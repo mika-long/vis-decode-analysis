@@ -188,16 +188,40 @@ We also calculate the answer dataframe `ans_df`. **Note that we are using the sa
 #| code-fold: true
 #| label: get ans df
 
-point_ans_df <- stimuli_df |>
-  select(expIndex, type, flip, noise, seed, num.y) |>
-  filter(type == "point") |>
-  summarise(num.ans.y = mean(num.y), .by = -c(type, num.y))
-
 ans_df <- stimuli_df |>
-  distinct(ogIndex, expIndex, type, flip, noise, seed) |>
-  left_join(point_ans_df, by = join_by(expIndex, flip, noise, seed))
+  summarise(
+    num.mean.y = mean(num.y),
+    num.median.y = median(num.y),
+    .by = c(ogIndex, expIndex, type, flip, noise, seed)
+  ) |>
+  mutate(
+    num.ans.y = num.mean.y[type == "point"][[1]],
+    .by = c(flip, noise, seed)
+  )
 
 ans_df
+```
+
+### Verify stimuli answers match Moritz
+
+We want to make sure we are correctly calculating stimuli answers the same way Moritz did,
+so we'll get the answers from the experimental response data frame and make sure they match.
+
+```{r}
+exp2_full |> 
+  transmute(
+    ogIndex = stimuliindex, 
+    type = mark, 
+    flip, 
+    noise = str_replace(variability, "^(.*),(.*)$", "c(\\1, \\2)"), 
+    seed, 
+    num.mean.y = data_average,
+    num.ans.y = average
+  ) |> 
+  distinct() |>
+  arrange(ogIndex) |>
+  all.equal(select(ans_df, -expIndex, -num.median.y)) |>
+  stopifnot()
 ```
 
 ## Define helper functions
