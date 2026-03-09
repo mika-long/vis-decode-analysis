@@ -180,7 +180,27 @@ stimuli_df <- stimuli_df %>%
 stimuli_df
 ```
 
-Define helper functions: 
+### Calculate stimuli answers
+
+We also calculate the answer dataframe `ans_df`. **Note that we are using the same strategy that Mortiz et al.** used to calculate **error** and **normalized error**^[... which is, instead of calculating the actual mean across 60 points for each trial, for trials that share the same value for `seed` and `flip`, they share the same "default mean", i.e., the mean of the `point` type, instead of its actual mean.]. 
+
+```{r}
+#| code-fold: true
+#| label: get ans df
+
+point_ans_df <- stimuli_df |>
+  select(expIndex, type, flip, noise, seed, num.y) |>
+  filter(type == "point") |>
+  summarise(num.ans.y = mean(num.y), .by = -c(type, num.y))
+
+ans_df <- stimuli_df |>
+  distinct(ogIndex, expIndex, type, flip, noise, seed) |>
+  left_join(point_ans_df, by = join_by(expIndex, flip, noise, seed))
+
+ans_df
+```
+
+## Define helper functions
 
 ```{r}
 #| code-fold: true
@@ -310,24 +330,6 @@ participant_df <- resp_df %>%
   select(-n) %>%
   left_join(participant_df) %>%
   mutate(type = ifelse(type == "point", type, "point_arc"))
-```
-
-And then we also calculate the answer dataframe `ans_df`. **Note that we are using the same strategy that Mortiz et al.** used to calculate **error** and **normalized error**^[... which is, instead of calculating the actual mean across 60 points for each trial, for trials that share the same value for `seed` and `flip`, they share the same "default mean", i.e., the mean of the `point` type, instead of its actual mean.]. 
-
-```{r}
-#| code-fold: true
-#| label: get ans df
-
-point_ans_df <- stimuli_df |>
-  select(expIndex, type, flip, noise, seed, num.y) |>
-  filter(type == "point") |>
-  summarise(num.ans.y = mean(num.y), .by = -c(type, num.y))
-
-ans_df <- stimuli_df |>
-  distinct(ogIndex, expIndex, type, flip, noise, seed) |>
-  left_join(point_ans_df, by = join_by(expIndex, flip, noise, seed))
-
-ans_df
 ```
 
 Here are the processed dataframes: 
