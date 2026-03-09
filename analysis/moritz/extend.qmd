@@ -48,8 +48,11 @@ exp2_dotX <- read.csv(
   here("data", "moritz", "exp", "exp2-point.csv"),
   check.names = FALSE
 )
-exp2 <- rbind(exp2_dotArc, exp2_dotX) %>%
-  as_tibble(.) %>%
+
+exp2_full <- bind_rows(exp2_dotArc, exp2_dotX) |>
+  as_tibble()
+
+exp2 <- exp2_full |>
   select(assignmentid, mark, flip, variability, normalized_error)
 ```
 
