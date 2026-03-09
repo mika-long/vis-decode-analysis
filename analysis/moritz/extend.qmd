@@ -60,7 +60,24 @@ exp2 <- exp2_full |>
 
 ## Re-create plots from Moritz
 
-Perform the correction: 
+### Mixed effects model
+
+First, get the means and intervals for estimated marginal means
+using a mixed effects model (for comparison):
+
+```{r}
+# "_norm" here means normalized error is used and `flip` is not included in the
+# model; this is how Moritz did it
+m_exp2_norm = lmer(normalized_error ~ variability * mark + (1 | assignmentid), data = exp2)
+est_exp2_norm = m_exp2_norm |>
+  emmeans(~ variability + mark) |>
+  as.data.frame()
+est_exp2_norm
+```
+
+### Manual calculation of means and uncertainty
+
+Essentially the same calculation, but done manually:
 
 ```{r}
 #| code-fold: true
@@ -77,6 +94,10 @@ exp2 %>%
     .groups = "drop"
   )
 ```
+
+(Compare this table to the previous table for `est_exp2_norm`, it is similar.)
+
+### Plot
 
 ```{r}
 #| label: plot Mortiz
@@ -120,7 +141,7 @@ exp2 %>%
   ylab("Normalized Error") #add y label
 ```
 
-# Generate posterior predictions for an "average" participant 
+# Create answer data for Moritz
 
 Here are the details of the original experiment: 
 
@@ -180,9 +201,15 @@ stimuli_df <- stimuli_df %>%
 stimuli_df
 ```
 
-### Calculate stimuli answers
+## Calculate stimuli answers
 
 We also calculate the answer dataframe `ans_df`. **Note that we are using the same strategy that Mortiz et al.** used to calculate **error** and **normalized error**^[... which is, instead of calculating the actual mean across 60 points for each trial, for trials that share the same value for `seed` and `flip`, they share the same "default mean", i.e., the mean of the `point` type, instead of its actual mean.]. 
+
+This leads to three possible answer types:
+
+- `num.mean.y`: the actual data mean
+- `num.median.y`: the actual data median
+- `num.ans.y`: the mean of the corresponding "point" mark type (regardless of the mark type actually seen by the participant). This is what Moritz compared answers to.
 
 ```{r}
 #| code-fold: true
@@ -202,7 +229,7 @@ ans_df <- stimuli_df |>
 ans_df
 ```
 
-### Verify stimuli answers match Moritz
+## Verify stimuli answers match Moritz
 
 We want to make sure we are correctly calculating stimuli answers the same way Moritz did,
 so we'll get the answers from the experimental response data frame and make sure they match.
@@ -223,6 +250,17 @@ exp2_full |>
   all.equal(select(ans_df, -expIndex, -num.median.y)) |>
   stopifnot()
 ```
+
+# Redo Moritz's analysis on the actual means of data people saw
+
+To simplify interpretation, we'll do two things differently from Moritz:
+
+1. Calculate error relative to the mean people actually saw.
+2. Not attempt to combine predictions from different variance levels / flip directions (instead we'll just group by these).
+
+### TBD
+
+# Generate posterior predictions for an "average" participant 
 
 ## Define helper functions
 
