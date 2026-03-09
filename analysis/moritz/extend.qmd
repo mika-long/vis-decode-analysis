@@ -303,6 +303,33 @@ est_exp2 |>
   geom_vline(xintercept = 0, linetype = "22", alpha = 0.25)
 ```
 
+# What is a flip?
+
+Closest I can come up with for "high variance" is something like "high variance in differences between adjacent points". These are the only stimuli where that definition doesn't work:
+
+```{r}
+stimuli_df |> 
+  arrange(num.x) |>
+  mutate(
+    in_top_half = num.y >= median(num.y),
+    runs_in_same_half = vctrs::vec_identify_runs(in_top_half),
+    .by = -c(num.x, num.y)
+  ) |>
+  reframe(
+    num.y.diff = diff(num.y),
+    .by = -c(num.x, num.y)
+  ) |>
+  summarise(
+    more_var_in_btm_half = sd(num.y.diff[in_top_half]) < sd(num.y.diff[!in_top_half]),
+    .by = -c(num.y.diff, in_top_half, runs_in_same_half)
+  ) |> 
+  filter(flip != more_var_in_btm_half) |>
+  left_join(stimuli_df) |>
+  ggplot(aes(num.x, num.y)) + 
+  geom_point() +
+  facet_wrap(flip ~ ogIndex)
+```
+
 
 # Generate posterior predictions for an "average" participant 
 
