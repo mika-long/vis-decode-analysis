@@ -55,10 +55,20 @@ exp2_dotX <- read.csv(
 )
 
 exp2_full <- bind_rows(exp2_dotArc, exp2_dotX) |>
-  as_tibble()
+  as_tibble() |>
+  rename(
+    ogIndex = stimuliindex, 
+    type = mark, 
+    noise = variability, 
+    num.mean.y = data_average,
+    num.ans.y = average
+  ) |>
+  mutate(
+    noise = str_replace(noise, "^(.*),(.*)$", "c(\\1, \\2)")
+  )
 
 exp2 <- exp2_full |>
-  select(assignmentid, mark, flip, variability, normalized_error)
+  select(assignmentid, type, flip, noise, normalized_error)
 ```
 
 ## Re-create plots from Moritz
@@ -71,9 +81,9 @@ using a mixed effects model (for comparison):
 ```{r}
 # "_norm" here means normalized error is used and `flip` is not included in the
 # model; this is how Moritz did it
-m_exp2_norm = lmer(normalized_error ~ variability * mark + (1 | assignmentid), data = exp2)
+m_exp2_norm = lmer(normalized_error ~ noise * type + (1 | assignmentid), data = exp2)
 est_exp2_norm = m_exp2_norm |>
-  emmeans(~ variability + mark) |>
+  emmeans(~ noise + type) |>
   as.data.frame()
 est_exp2_norm
 ```
@@ -85,12 +95,12 @@ Essentially the same calculation, but done manually:
 ```{r}
 #| code-fold: true
 exp2 %>%
-  group_by(assignmentid, mark) %>%
+  group_by(assignmentid, noise) %>%
   mutate(subj_mean = mean(normalized_error)) %>%
   ungroup() %>%
   mutate(grand_mean = mean(normalized_error)) %>%
   mutate(corrected = normalized_error - subj_mean + grand_mean) %>%
-  group_by(mark, variability) %>%
+  group_by(type, noise) %>%
   summarise(
     mu = mean(normalized_error),
     se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2
@@ -106,12 +116,12 @@ exp2 %>%
 #| label: plot Mortiz
 #| code-fold: true
 exp2 %>%
-  group_by(assignmentid, mark) %>%
+  group_by(assignmentid, type) %>%
   mutate(subj_mean = mean(normalized_error)) %>%
   ungroup() %>%
   mutate(grand_mean = mean(normalized_error)) %>%
   mutate(corrected = normalized_error - subj_mean + grand_mean) %>%
-  group_by(mark, variability) %>%
+  group_by(type, noise) %>%
   summarise(
     mu = mean(normalized_error),
     se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2
@@ -119,14 +129,14 @@ exp2 %>%
   ) %>%
   ggplot() +
   stat_halfeye(
-    aes(xdist = dist_normal(mu, se), y = variability, fill = mark, shape = "manual"),
+    aes(xdist = dist_normal(mu, se), y = noise, fill = type, shape = "manual"),
     position = position_dodge(width = 0.2), # <- WHY THIS???
     .width = 0.95,
     linewidth = .75,
     alpha = .8
   ) + #adding halfeye
   stat_pointinterval(
-    aes(xdist = dist_normal(emmean, SE), y = variability, shape = "lmer"),
+    aes(xdist = dist_normal(emmean, SE), y = noise, shape = "lmer"),
     data = est_exp2_norm,
     position = ggdist::position_dodgejust(width = 0.2),
     justification = 0.3,
@@ -242,14 +252,14 @@ so we'll get the answers from the experimental response data frame and make sure
 
 ```{r}
 exp2_full |> 
-  transmute(
-    ogIndex = stimuliindex, 
-    type = mark, 
+  distinct(
+    ogIndex,
+    type,
     flip, 
-    noise = str_replace(variability, "^(.*),(.*)$", "c(\\1, \\2)"), 
+    noise,
     seed, 
-    num.mean.y = data_average,
-    num.ans.y = average
+    num.mean.y,
+    num.ans.y
   ) |> 
   distinct() |>
   arrange(ogIndex) |>
@@ -271,9 +281,9 @@ First, get the means and intervals for estimated marginal means
 using a mixed effects model:
 
 ```{r}
-m_exp2 = lmer(I(reportedaverage - data_average) ~ variability * mark * flip + (1 | assignmentid), data = exp2_full)
+m_exp2 = lmer(I(reportedaverage - num.mean.y) ~ noise * type * flip + (1 | assignmentid), data = exp2_full)
 est_exp2 = m_exp2 |>
-  emmeans(~ variability + mark + flip) |>
+  emmeans(~ noise + type + flip) |>
   as.data.frame()
 est_exp2
 ```
@@ -287,7 +297,7 @@ est_exp2
 est_exp2 |>
   ggplot() +
   stat_halfeye(
-    aes(xdist = dist_normal(emmean, SE), y = variability, fill = mark),
+    aes(xdist = dist_normal(emmean, SE), y = noise, fill = type),
     position = ggdist::position_dodgejust(width = 0.2),
     .width = .95,
     linewidth = .75
