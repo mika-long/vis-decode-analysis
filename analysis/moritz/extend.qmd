@@ -267,6 +267,20 @@ exp2_full |>
   stopifnot()
 ```
 
+
+## Add medians to experiment 2 response data
+
+```{r}
+exp2_ans = exp2_full |>
+  left_join(
+    select(ans_df, -num.mean.y, -num.ans.y), 
+    by = join_by(type, seed, ogIndex, flip, noise)
+  )
+
+stopifnot(!is.na(exp2_ans$num.median.y))
+```
+
+
 # Redo Moritz's analysis on the actual means of data people saw
 
 To simplify interpretation, we'll do two things differently from Moritz:
@@ -281,7 +295,7 @@ First, get the means and intervals for estimated marginal means
 using a mixed effects model:
 
 ```{r}
-m_exp2 = lmer(I(reportedaverage - num.mean.y) ~ noise * type * flip + (1 | assignmentid), data = exp2_full)
+m_exp2 = lmer(I(reportedaverage - num.mean.y) ~ noise * type * flip + (1 | assignmentid), data = exp2_ans)
 est_exp2 = m_exp2 |>
   emmeans(~ noise + type + flip) |>
   as.data.frame()
