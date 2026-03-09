@@ -141,8 +141,8 @@ exp2 %>%
     expand = expansion(mult = c(0.01, 0.01))
   ) + #specifying scale
   labs(
-    x = "Variability",
-    y = "Normalized Error",
+    y = "Variability",
+    x = "Normalized Error",
     shape = "method"
   )
 ```
@@ -264,7 +264,45 @@ To simplify interpretation, we'll do two things differently from Moritz:
 1. Calculate error relative to the mean people actually saw.
 2. Not attempt to combine predictions from different variance levels / flip directions (instead we'll just group by these).
 
-### TBD
+
+### Mixed effects model
+
+First, get the means and intervals for estimated marginal means
+using a mixed effects model:
+
+```{r}
+m_exp2 = lmer(I(reportedaverage - data_average) ~ variability * mark * flip + (1 | assignmentid), data = exp2_full)
+est_exp2 = m_exp2 |>
+  emmeans(~ variability + mark + flip) |>
+  as.data.frame()
+est_exp2
+```
+
+### Plot
+
+```{r}
+#| label: plot Mortiz redo
+#| code-fold: true
+
+est_exp2 |>
+  ggplot() +
+  stat_halfeye(
+    aes(xdist = dist_normal(emmean, SE), y = variability, fill = mark),
+    position = ggdist::position_dodgejust(width = 0.2),
+    .width = .95,
+    linewidth = .75
+  ) +
+  theme_ggdist() +
+  theme(legend.position = "top") +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) +
+  facet_grid(rows = vars(flip)) +
+  labs(
+    y = "Variability",
+    x = "Signed error"
+  ) + 
+  geom_vline(xintercept = 0, linetype = "22", alpha = 0.25)
+```
+
 
 # Generate posterior predictions for an "average" participant 
 
