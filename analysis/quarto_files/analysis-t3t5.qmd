@@ -297,6 +297,7 @@ m.5.x.va %>%
 Plot existing data on top of prediction: 
 
 ```{r}
+#| label: Task 5 - X - Results
 # for an average participant
 
 prediction_grid <- task5_df %>%
@@ -322,11 +323,12 @@ ggplot(prediction_grid, aes(x = va.ans.y, y = .prediction)) +
     size = 0.5
   ) +
   labs(
-    title = "Project from dot to x-axis",
-    y = "Signed Error",
+    title = "Project to X-axis",
+    y = "Error",
     x = "Distance to X-Axis"
   ) +
   # theme_minimal(base_size = 8) +
+  coord_cartesian(ylim = c(-0.25, 0.4)) +
   theme(legend.position = "none") -> p1
 
 p1
@@ -339,7 +341,7 @@ p1
 ggsave(
   here("figs", "task5-project-x.pdf"),
   p1,
-  height = 6,
+  height = 8,
   width = 8,
   units = "cm",
   dpi = 300
@@ -485,8 +487,12 @@ ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) +
     alpha = 0.5,
     size = 0.5
   ) +
-  # ylim(-0.5, 0.5) +
-  labs(title = "Dot to y-axis", y = "Signed Error", x = "Distance to Y-Axis") +
+  coord_cartesian(ylim = c(-0.25, 0.4)) +
+  labs(
+    title = "Project to Y-axis",
+    y = "Error",
+    x = "Distance to Y-Axis"
+  ) +
   # theme_minimal(base_size = 8) +
   theme(legend.position = "none") -> p2
 
@@ -496,11 +502,12 @@ p2
 ```{r}
 #| echo: false
 #| eval: false
+#| label: Task 5 - Y - Results
 
 ggsave(
   here("figs", "task5-project-y.pdf"),
   p2,
-  height = 6,
+  height = 8,
   width = 8,
   units = "cm",
   dpi = 300
@@ -687,21 +694,10 @@ ggsave(
 )
 ```
 
-<!-- Average participant behavior:  -->
-
-<!-- ```{r} -->
-<!-- # m3 %>% get_variables(.) -->
-
-<!-- # Extract posterior samples using spread_draws -->
-<!-- m3 %>% spread_draws(b_sigma_Intercept) %>%  -->
-<!--   mutate(b_sigma = exp(b_sigma_Intercept)) %>%  -->
-<!--   ggplot(aes(x = b_sigma)) +  -->
-<!--   stat_halfeye() -->
-<!-- ``` -->
-
 Plot: 
 
 ```{r}
+#| label: Task 3 - Results
 prediction_grid <- task3_df %>%
   mutate(error_va = va.select.y - va.ans.y) %>%
   data_grid(
@@ -726,7 +722,8 @@ prediction_grid %>%
   ) +
   # theme_minimal(base_size = 8) +
   theme(legend.position = "none") +
-  labs(y = "Signed error", x = "Distance to Y-Axis") -> p3
+  coord_cartesian(ylim = c(-0.25, 0.4)) +
+  labs(title = "Project To Curve", y = "Error", x = "Distance to Y-Axis") -> p3
 
 p3
 ```
@@ -737,7 +734,7 @@ p3
 ggsave(
   here("figs", "task3.pdf"),
   plot = p3,
-  height = 6,
+  height = 8,
   width = 8,
   units = "cm",
   dpi = 300
