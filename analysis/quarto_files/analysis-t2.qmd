@@ -12,38 +12,41 @@ library(ggplot2)
 library(sgt)
 library(numDeriv)
 library(ggdist)
-# setting the theme 
+# setting the theme
 theme_set(theme_minimal())
 # model
 library(brms)
 library(rstan)
 options(brms.backend = "cmdstanr")
 options(mc.cores = parallel::detectCores())
-# plot results 
+# plot results
 library(tidybayes)
 library(here)
 
-# source the helper functions 
+# source the helper functions
 source(here("R", "helpers.R"))
 
 library(RColorBrewer)
+
+# theme setting for bayesplot
+bayesplot::bayesplot_theme_update(text = element_text(family = "sans"))
 ```
 
 # Overview / TLDR
 
-Task 2 is ... 
+Task 2 is the `HighestPoint` Task. 
 For modeling the signed error on the **Y-axis**, we ran the following models: 
 
 - [Lomax](@sec-y-lomax)
 - [Exponential](@sec-y-exponential) 
-- [Weibull](@sec-y-weibull)
+- [Weibull](@sec-y-weibull) --- this is the best-performing one. 
 - [Log-Normal](@sec-y-logNormal)
 - [Gamma](@sec-y-gamma)
 
 For modeling the signed error on the **X-axis**, we ran the following models: 
 
-- [Normal](@sec-x-normal)
-- [Laplace](@sec-x-laplace)
+- [Normal](@sec-x-normal) --- this is the one used for hyper-priors. 
+- [Laplace](@sec-x-laplace) --- this is the best-performing one. 
 - [Student-t](@sec-x-studentT)
 
 # Set up
@@ -62,36 +65,68 @@ Load data specific for task 2:
 
 ```{r}
 #| label: task 2 load data
-#| code-fold: true 
+#| code-fold: true
 
-task2_df <- task_df %>% filter(task == "task2") %>% 
-  select(-slider.x, -slider.y) %>% 
-  mutate(data.ans.x = param.mu, 
-         data.ans.y = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE),
-         data.left.grad = numDeriv::grad(dsgt, param.mu - 1, mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
-         data.right.grad = numDeriv::grad(dsgt, param.mu + 1, mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
-         ) %>% 
-  right_join(participants, by = join_by(participantId)) %>% 
-  # calculate things related to participants' selection 
-  mutate(phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM), 
-         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM),
-         va.select.x = vis_angle(phy.select.x, dist_to_screen), 
-         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>% 
-  # calculate things related to answer 
-  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x), 
-         pixel.ans.y = data_to_pixel_y(data.ans.y), 
-         phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM), 
-         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM),
-         va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
-         va.ans.y = vis_angle(phy.ans.y, dist_to_screen)) %>% 
-  mutate(flat = (abs(data.left.grad) + abs(data.right.grad))/2)
+task2_df <- task_df %>%
+  filter(task == "task2") %>%
+  select(-slider.x, -slider.y) %>%
+  mutate(
+    data.ans.x = param.mu,
+    data.ans.y = dsgt(
+      param.mu,
+      param.mu,
+      param.sigma,
+      param.lambda,
+      param.p,
+      param.q,
+      mean.cent = FALSE
+    ),
+    data.left.grad = numDeriv::grad(
+      dsgt,
+      param.mu - 1,
+      mu = param.mu,
+      sigma = param.sigma,
+      lambda = param.lambda,
+      p = param.p,
+      q = param.q,
+      mean.cent = FALSE
+    ),
+    data.right.grad = numDeriv::grad(
+      dsgt,
+      param.mu + 1,
+      mu = param.mu,
+      sigma = param.sigma,
+      lambda = param.lambda,
+      p = param.p,
+      q = param.q,
+      mean.cent = FALSE
+    ),
+  ) %>%
+  right_join(participants, by = join_by(participantId)) %>%
+  # calculate things related to participants' selection
+  mutate(
+    phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM),
+    phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM),
+    va.select.x = vis_angle(phy.select.x, dist_to_screen),
+    va.select.y = vis_angle(phy.select.y, dist_to_screen)
+  ) %>%
+  # calculate things related to answer
+  mutate(
+    pixel.ans.x = data_to_pixel_x(data.ans.x),
+    pixel.ans.y = data_to_pixel_y(data.ans.y),
+    phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM),
+    phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM),
+    va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
+    va.ans.y = vis_angle(phy.ans.y, dist_to_screen)
+  ) %>%
+  mutate(flat = (abs(data.left.grad) + abs(data.right.grad)) / 2)
 ```
 
 Save data for python analysis 
 
 ```{r}
-#| eval: false 
-#| code-fold: true 
+#| eval: false
+#| code-fold: true
 
 write_csv(task2_df, here("data", "processed", "task2.csv"))
 ```
@@ -99,51 +134,58 @@ write_csv(task2_df, here("data", "processed", "task2.csv"))
 ```{r}
 #| layout-ncol: 2
 #| code-fold: true
-#| eval: false 
+#| eval: false
 
 # Checking relations, focusing on the **Y** Axis
 
-task2_df %>% mutate(error_va = va.select.x - va.ans.x) %>% 
-  mutate(error_va = ifelse(error_va < tolerance, 0, error_va)) %>% 
-  ggplot(aes(x = error_va)) + 
+task2_df %>%
+  mutate(error_va = va.select.x - va.ans.x) %>%
+  mutate(error_va = ifelse(error_va < tolerance, 0, error_va)) %>%
+  ggplot(aes(x = error_va)) +
   geom_dots()
 
-task2_df %>% ggplot(aes(y = phy.ans.y - phy.select.y, x = dist_to_screen)) + 
+task2_df %>%
+  ggplot(aes(y = phy.ans.y - phy.select.y, x = dist_to_screen)) +
   geom_point()
 
-task2_df %>% ggplot(aes(y = va.ans.y - va.select.y, x = dist_to_screen)) + 
+task2_df %>%
+  ggplot(aes(y = va.ans.y - va.select.y, x = dist_to_screen)) +
   geom_point()
 
 task2_df %>% ggplot(aes(x = va.ans.y - va.select.y)) + geom_dots()
 task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
-task2_df %>% ggplot(aes(x = (phy.ans.y - phy.select.y) / dist_to_screen)) + geom_dots()
+task2_df %>%
+  ggplot(aes(x = (phy.ans.y - phy.select.y) / dist_to_screen)) +
+  geom_dots()
 ```
 
 ```{r}
 #| layout-ncol: 2
 #| code-fold: true
-#| eval: false 
+#| eval: false
 
-# Checking relations, focusing on the **X** Axis: 
+# Checking relations, focusing on the **X** Axis:
 
-task2_df %>% ggplot(aes(x = data.ans.x - data.select.x)) + 
+task2_df %>% ggplot(aes(x = data.ans.x - data.select.x)) + geom_dots()
+
+task2_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + geom_dots()
+
+task2_df %>%
+  ggplot(aes(x = (phy.ans.x - phy.select.x) / dist_to_screen)) +
   geom_dots()
 
-task2_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + 
-  geom_dots()
-
-task2_df %>% ggplot(aes(x = (phy.ans.x - phy.select.x)/dist_to_screen)) + 
-  geom_dots()
-
-task2_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + 
-  geom_dots() + 
+task2_df %>%
+  ggplot(aes(x = va.select.x - va.ans.x)) +
+  geom_dots() +
   facet_wrap(~participantId)
 
-task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = dist_to_screen)) + 
+task2_df %>%
+  ggplot(aes(y = va.select.x - va.ans.x, x = dist_to_screen)) +
   geom_point(alpha = 0.5)
 
-task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = param.lambda)) + 
-  geom_point(alpha = 0.5) + 
+task2_df %>%
+  ggplot(aes(y = va.select.x - va.ans.x, x = param.lambda)) +
+  geom_point(alpha = 0.5) +
   labs(title = "Signed error on x-axes against skewness")
 ```
 
@@ -155,20 +197,22 @@ task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = param.lambda)) +
 This is the [stan reference](https://mc-stan.org/docs/functions-reference/positive_lower-bounded_distributions.html#pareto-type-2-distribution). 
 Math model: 
 
-$$\begin{align*}\text{error}_i &\sim \text{Lomax}(\lambda_{\text{PID}[i]}, \alpha_{\text{PID}[i]}) \\ 
+$$
+\begin{align*}\text{error}_i &\sim \text{Lomax}(\lambda_{\text{PID}[i]}, \alpha_{\text{PID}[i]}) \\ 
 \log(\lambda_j) &\sim \text{Normal}(\mu_\lambda, \sigma_\lambda^2) \\ 
 \log(\alpha_j) &\sim \text{Normal}(\mu_\alpha, \sigma_\alpha^2) \\ 
 \mu_\lambda, \mu_\alpha &\sim \mathcal{N}(0, 1) \\ 
-\sigma_\lambda, \sigma_\alpha &\sim \text{Half-Cauchy}(0, 1)
-\end{align*}$$
+\sigma_\lambda, \sigma_\alpha &\sim \mathcal{N}^+(0, 1)
+\end{align*}
+$$
 
 ```{r}
 # Define the Lomax family
 lomax_family <- custom_family(
   "lomax",
-  dpars = c("mu", "lambda", "alpha"),    # parameters: lambda = scale, alpha = shape
-  links = c("identity", "log", "log"),   # log links ensure parameters are positive
-  lb = c(-Inf, 0, 0),                    # lower bounds for both parameters
+  dpars = c("mu", "lambda", "alpha"), # parameters: lambda = scale, alpha = shape
+  links = c("identity", "log", "log"), # log links ensure parameters are positive
+  lb = c(-Inf, 0, 0), # lower bounds for both parameters
   type = "real"
 )
 
@@ -191,40 +235,43 @@ Formula and posterior:
 ```{r}
 #| filename: "Formula and Posterior"
 
-f <- bf(error.y ~ 0, 
-        mu ~ 0, 
-        lambda ~ (1 | participantId), 
-        alpha ~ (1 | participantId), 
-        family = lomax_family)
+f <- bf(
+  error.y ~ 0,
+  mu ~ 0,
+  lambda ~ (1 | participantId),
+  alpha ~ (1 | participantId),
+  family = lomax_family
+)
 
 p <- c(
-  prior(normal(0, 1), class = Intercept, dpar = alpha), 
-  prior(cauchy(0, 1), class = sd, group = participantId, dpar = alpha, lb = 0), 
+  prior(normal(0, 1), class = Intercept, dpar = alpha),
+  prior(cauchy(0, 1), class = sd, group = participantId, dpar = alpha, lb = 0),
   prior(normal(0, 1), class = Intercept, dpar = lambda),
   prior(cauchy(0, 1), class = sd, group = participantId, dpar = lambda, lb = 0)
 )
 ```
 
 ```{r}
-#| eval: false 
-#| echo: false 
+#| eval: false
+#| echo: false
 
-# inspect prior set up 
-task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
-  get_prior(f, data = .)
+# inspect prior set up
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% get_prior(f, data = .)
 
-# generate stan model code 
-task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+# generate stan model code
+task2_df %>%
+  mutate(error.y = abs(va.ans.y - va.select.y)) %>%
   make_stancode(f, data = ., prior = p)
 ```
 
 Fit the model: 
 
 ```{r}
-#| output: false 
-#| label: fit lomax 
+#| output: false
+#| label: fit lomax
 
-model.y.lomax <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+model.y.lomax <- task2_df %>%
+  mutate(error.y = abs(va.ans.y - va.select.y)) %>%
   brm(
     formula = f,
     data = .,
@@ -232,11 +279,11 @@ model.y.lomax <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
     prior = p,
     stanvars = stanvar(scode = stan_funs, block = "functions"),
     chains = 4,
-    cores = 4, 
-    file = here("fitted_models", "task2.y.lomax"),
-    file_refit = "on_change", 
-    iter = 10000, 
-    control = list(adapt_delta = 0.99, max_treedepth = 15), 
+    cores = 4,
+    file = here("analysis", "fitted_models", "task2.y.lomax"),
+    file_refit = "on_change",
+    iter = 10000,
+    control = list(adapt_delta = 0.99, max_treedepth = 15),
     save_pars = save_pars(all = TRUE)
   )
 ```
@@ -244,7 +291,7 @@ model.y.lomax <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
 Check fit and posterior check: 
 
 ```{r}
-#| warning: true 
+#| warning: true
 summary(model.y.lomax)
 # plot(model.y.lomax)
 ```
@@ -271,83 +318,100 @@ pp_check(model.y.lomax, ndraws = 100, type = "pit_ecdf")
 From the PIT-ECDF check it seems that indeed the lomax model is not a good one, because a well-calibrated model should show the line following the 45 degree line, not a flat line from above.  
 
 ```{r}
-#| eval: false 
-#| echo: false 
+#| eval: false
+#| echo: false
 
 model.y.lomax %>% get_variables(.)
 
-model.y.lomax %>% spread_draws(b_lambda_Intercept, b_alpha_Intercept) %>% 
-  mutate(b_lambda = exp(b_lambda_Intercept), b_alpha = exp(b_alpha_Intercept)) %>% 
-  pivot_longer(cols = 6:7) %>% 
-  ggplot(aes(x = value, y = name)) + 
-  stat_halfeye() + facet_wrap(~name, scales = "free") + 
+model.y.lomax %>%
+  spread_draws(b_lambda_Intercept, b_alpha_Intercept) %>%
+  mutate(
+    b_lambda = exp(b_lambda_Intercept),
+    b_alpha = exp(b_alpha_Intercept)
+  ) %>%
+  pivot_longer(cols = 6:7) %>%
+  ggplot(aes(x = value, y = name)) +
+  stat_halfeye() +
+  facet_wrap(~name, scales = "free") +
   geom_vline(xintercept = 1e-10, linetype = "dashed", color = "gray")
 ```
 
 ```{r}
 #| eval: false
 #| echo: false
-prediction <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+prediction <- task2_df %>%
+  mutate(error.y = abs(va.ans.y - va.select.y)) %>%
   add_predicted_draws(model.y.lomax, re_formula = NA)
 
- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
-   ggplot() + 
-   geom_dots(aes(x = error.y)) + 
-   stat_slab(data = prediction, aes(x = .prediction),
-            fill = "skyblue", alpha = 1) # + 
-   xlim(0, 0.05)
+task2_df %>%
+  mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  ggplot() +
+  geom_dots(aes(x = error.y)) +
+  stat_slab(
+    data = prediction,
+    aes(x = .prediction),
+    fill = "skyblue",
+    alpha = 1
+  ) # +
+# xlim(0, 0.05)
 ```
 
 ## Exponential Distribution {#sec-y-exponential}
 
 Math model: 
 
-$$\begin{align*}\text{error}_i &\sim \text{Exponential}(\lambda_{\text{PID}[i]}) \\ 
+$$
+\begin{align*}\text{error}_i &\sim \text{Exponential}(\lambda_{\text{PID}[i]}) \\ 
 \log(\lambda_j) &\sim \text{Normal}(\mu_\lambda, \sigma_\lambda) \\ 
-\mu_\lambda &\sim \mathcal{N}(0, 1), \sigma_\lambda \sim \text{Half-Cauchy}(0, 1)
-\end{align*}$$
+\mu_\lambda &\sim \mathcal{N}(0, 1), \\
+\sigma_\lambda &\sim \mathcal{N}^+(0, 1)
+\end{align*}
+$$
 
 Formula and prior: 
 
 ```{r}
-f <- bf(error.y ~ 0, 
-        mu ~ (1 | participantId), # technically this is lambda but we call it mu nonetheless 
-        family = exponential)
+f <- bf(
+  error.y ~ 0,
+  mu ~ (1 | participantId), # technically this is lambda but we call it mu nonetheless
+  family = exponential
+)
 
-# mu has log-link, so we don't pose any bounds on it 
+# mu has log-link, so we don't pose any bounds on it
 p <- c(
-  prior(normal(0, 1), class = Intercept), 
+  prior(normal(0, 1), class = Intercept),
   prior(cauchy(0, 1), class = sd, group = participantId, lb = 0)
 )
 ```
 
 ```{r}
-#| eval: false 
-#| echo: false 
-task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
-  get_prior(f, data = .)
+#| eval: false
+#| echo: false
+task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% get_prior(f, data = .)
 
-task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>% 
+task2_df %>%
+  mutate(error.y = abs(va.ans.y - va.select.y)) %>%
   make_stancode(f, data = ., prior = p)
 ```
 
 Fit the model: 
 
 ```{r}
-#| output: false 
-#| label: fit exponential 
+#| output: false
+#| label: fit exponential
 
-model.y.exponential <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+model.y.exponential <- task2_df %>%
+  mutate(error.y = abs(va.ans.y - va.select.y)) %>%
   brm(
     formula = f,
     data = .,
     prior = p,
     chains = 4,
-    cores = 4, 
-    file = here("fitted_models", "task2.y.exponential"),
-    file_refit = "on_change", 
-    control = list(adapt_delta = 0.99), 
-    iter = 6000, 
+    cores = 4,
+    file = here("analysis", "fitted_models", "task2.y.exponential"),
+    file_refit = "on_change",
+    control = list(adapt_delta = 0.99),
+    iter = 6000,
     save_pars = save_pars(all = TRUE)
   )
 ```
@@ -371,36 +435,45 @@ pp_check(model.y.exponential, ndraws = 100, type = "pit_ecdf")
 
 model.y.exponential %>% get_variables(.)
 
-model.y.exponential %>% spread_draws(b_Intercept) %>% 
-  mutate(mu = exp(b_Intercept)) %>% 
-  ggplot(aes(x = 1/mu)) + stat_halfeye()
+model.y.exponential %>%
+  spread_draws(b_Intercept) %>%
+  mutate(mu = exp(b_Intercept)) %>%
+  ggplot(aes(x = 1 / mu)) +
+  stat_halfeye()
 ```
 
 ```{r}
 #| eval: false
 #| echo: false
 
-prediction <- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+prediction <- task2_df %>%
+  mutate(error.y = abs(va.ans.y - va.select.y)) %>%
   add_predicted_draws(model.y.exponential, re_formula = NA)
 
- task2_df %>% mutate(error.y = abs(va.ans.y - va.select.y)) %>%
-   ggplot() + 
-   geom_dots(aes(x = error.y)) + 
-   stat_slab(data = prediction, aes(x = .prediction),
-            fill = "skyblue", alpha = 0.5) 
+task2_df %>%
+  mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  ggplot() +
+  geom_dots(aes(x = error.y)) +
+  stat_slab(
+    data = prediction,
+    aes(x = .prediction),
+    fill = "skyblue",
+    alpha = 0.5
+  )
 ```
 
 Overlay plot: 
 
 ```{r}
-task2_df %>% modelr::data_grid(error.y = 0) %>% 
-  add_predicted_draws(model.y.exponential, re_formula = NA) %>% 
-  ggplot() + 
-  stat_slab(aes(x = .prediction), 
-            fill = "lightblue", alpha = 1) + 
-  geom_dots(data = task2_df, aes(x = va.ans.y - va.select.y)) + 
-  labs(y = "Probability", x = "Signed error", title = "Task 2") + 
-  theme_minimal(base_size = 8) -> p 
+#| code-fold: true
+task2_df %>%
+  modelr::data_grid(error.y = 0) %>%
+  add_predicted_draws(model.y.exponential, re_formula = NA) %>%
+  ggplot() +
+  stat_slab(aes(x = .prediction), fill = "lightblue", alpha = 1) +
+  geom_dots(data = task2_df, aes(x = va.ans.y - va.select.y)) +
+  labs(y = "Probability", x = "Signed error", title = "Task 2") +
+  theme_minimal(base_size = 8) -> p
 
 p
 ```
@@ -410,51 +483,62 @@ p
 Specify formula and prior: 
 
 ```{r}
+#| label: task 2 - error on y - weibull
 f <- bf(
-  error.y ~ 0,  
-  mu ~ (1 | participantId), # log link 
-  shape ~ (1 | participantId), # log link 
+  error.y ~ 0,
+  mu ~ (1 | participantId), # log link
+  shape ~ (1 | participantId), # log link
   family = weibull()
 )
 
 p <- c(
-    prior(normal(0, 1), class = Intercept),
-    prior(normal(0, 1), class = sd, group = participantId, lb = 0),
-    prior(normal(0, 1), class = Intercept, dpar = shape), 
-    prior(normal(0, 1), class = sd, group = participantId, dpar = shape, lb = 0)
-  )
+  prior(normal(0, 1), class = Intercept),
+  prior(normal(0, 1), class = sd, group = participantId, lb = 0),
+  prior(normal(0, 1), class = Intercept, dpar = shape),
+  prior(normal(0, 1), class = sd, group = participantId, dpar = shape, lb = 0)
+)
 ```
 
 ```{r}
-#| eval: false 
-#| echo: false 
+#| eval: false
+#| echo: false
 
-task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
-  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% 
-  get_prior(formula = f, data = . )
+task2_df %>%
+  mutate(error.y = va.ans.y - va.select.y) %>%
+  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>%
+  get_prior(formula = f, data = .)
 
-task2_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>%
+task2_df %>%
+  mutate(
+    error = abs(
+      data_to_screen_slope(data.select.slope) -
+        data_to_screen_slope(data.ans.slope)
+    ) +
+      epsilon
+  ) %>%
   make_stancode(formula = f, prior = p)
 ```
 
 Fit the model: 
 
 ```{r}
-#| output: false 
-#| label: fit weibull 
+#| output: false
+#| label: task 2 - y - fit weibull
 
-model.y.weibull <- task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
+model.y.weibull <- task2_df %>%
+  mutate(error.y = va.ans.y - va.select.y) %>%
   mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% # Weibull needs value to be > 0
-  brm(formula = f, 
-      data = ., 
-      prior = p, 
-      chains = 4, 
-      cores = 4, 
-      file = here("fitted_models", "task2.y.weibull"), 
-      file_refit = "on_change",
-      save_pars = save_pars(all = TRUE), 
-      control = list(adapt_delta = 0.99), 
-      iter = 6000
+  brm(
+    formula = f,
+    data = .,
+    prior = p,
+    chains = 4,
+    cores = 4,
+    file = here("analysis", "fitted_models", "task2.y.weibull"),
+    file_refit = "on_change",
+    save_pars = save_pars(all = TRUE),
+    control = list(adapt_delta = 0.99),
+    iter = 6000
   )
 ```
 
@@ -467,51 +551,96 @@ plot(model.y.weibull)
 
 ```{r}
 #| layout-ncol: 2
-pp_check(model.y.weibull, ndraws = 100)
-pp_check(model.y.weibull, ndraws = 100, type = "pit_ecdf")
+pp_check(model.y.weibull, ndraws = 100) +
+  theme(legend.position = c(0.9, 0.5)) +
+  theme(text = element_text(size = 10)) -> p1
+
+pp_check(model.y.weibull, ndraws = 100, type = "pit_ecdf") +
+  theme(text = element_text(size = 10)) -> p2
+
+p1
+p2
+```
+
+```{r}
+#| label: ggsave the ppchecks for best model 
+#| eval: false 
+
+ggsave(here("figs", "task2.y.weibull.ppcheck.pdf"), p1, 
+  width = 10,
+  height = 5,
+  units = "cm",
+  dpi = 300)
+
+ggsave(here("figs", "task2.y.weibull.pit-ecdf.pdf"), p2, 
+width = 6,
+  height = 6,
+  units = "cm",
+  dpi = 300)
+
 ```
 
 Overlay plot: 
 
 ```{r}
-task2_df %>% modelr::data_grid(error.y = 0) %>% 
-  add_predicted_draws(model.y.weibull, re_formula = NA) %>% 
-  ggplot() + 
-  stat_slab(aes(x = .prediction), 
-            fill = "lightblue", alpha = 1) + 
-  geom_dots(data = task2_df, aes(x = va.ans.y - va.select.y)) + 
-  labs(y = "Probability", x = "Signed error") + 
-  theme_minimal(base_size = 8) + 
+#| eval: false
+#| code-fold: true
+task2_df %>%
+  modelr::data_grid(error.y = 0) %>%
+  add_predicted_draws(model.y.weibull, re_formula = NA) %>%
+  ggplot() +
+  stat_slab(aes(x = .prediction), fill = "lightblue", alpha = 1) +
+  geom_dots(data = task2_df, aes(x = va.ans.y - va.select.y)) +
+  labs(y = "Probability", x = "Signed error") +
+  theme_minimal(base_size = 8) +
   coord_cartesian(xlim = c(0, 0.5)) -> p
 
 p
 ```
 
 ```{r}
-task2_df %>% modelr::data_grid(error.y = 0, 
-                               participantId = unique(participantId)) %>% 
-  add_predicted_draws(model.y.weibull, ndraws = 100) %>% 
-  # group_by(.draw) %>% 
-  ggplot() + 
-  stat_slab(aes(x = .prediction, group = .draw), 
-               color = "lightblue", alpha = 0.5, fill = NA, n = 3000, size = 0.5) + 
-  scale_thickness_shared() + 
-  coord_cartesian(xlim = c(0, 0.1)) + 
-  geom_rug(data = task2_df, aes(x = va.ans.y - va.select.y), linewidth = 0.5) + 
-  stat_slab(data = task2_df, aes(x = va.ans.y - va.select.y), 
-            color = "darkblue", fill = NA, n = 3000, size = 0.5) + 
-  labs(y = "density", x = "signed error (on y)" ) + 
+task2_df %>%
+  modelr::data_grid(error.y = 0, participantId = unique(participantId)) %>%
+  add_predicted_draws(model.y.weibull, ndraws = 100) %>%
+  # group_by(.draw) %>%
+  ggplot() +
+  stat_slab(
+    aes(x = .prediction, group = .draw),
+    color = "lightblue",
+    alpha = 0.5,
+    fill = NA,
+    n = 3000,
+    size = 0.5
+  ) +
+  scale_thickness_shared() +
+  coord_cartesian(xlim = c(0, 0.1)) +
+  geom_rug(data = task2_df, aes(x = va.ans.y - va.select.y), linewidth = 0.5) +
+  stat_slab(
+    data = task2_df,
+    aes(x = va.ans.y - va.select.y),
+    color = "darkblue",
+    fill = NA,
+    n = 3000,
+    size = 0.5
+  ) +
+  labs(y = "density", x = "Error (on Y-Axis)") +
   scale_y_continuous(breaks = 0) -> p
-  
+
 p
 ```
 
 ```{r}
-#| eval: false 
-#| echo: false 
+#| eval: false
+#| echo: false
 
-ggsave(here("figs", "task2.y.weibull.pdf"), plot = p, 
-       height = 6, width = 8, units = "cm", dpi = 300)
+ggsave(
+  here("figs", "task2.y.weibull.pdf"),
+  plot = p,
+  height = 6,
+  width = 8,
+  units = "cm",
+  dpi = 300
+)
 ```
 
 ## Log-Normal {#sec-y-logNormal}
@@ -519,48 +648,59 @@ ggsave(here("figs", "task2.y.weibull.pdf"), plot = p,
 Specify formula and prior: 
 
 ```{r}
-f <- bf(error.y ~ 0,
-        mu ~ (1 | participantId), 
-        sigma ~ (1 | participantId), 
-        family = lognormal())
+f <- bf(
+  error.y ~ 0,
+  mu ~ (1 | participantId),
+  sigma ~ (1 | participantId),
+  family = lognormal()
+)
 
 p <- c(
-  prior(normal(0, 1), class = Intercept), 
-  prior(normal(0, 1), class = sd, group = participantId, lb = 0), 
-  prior(normal(0, 1), class = Intercept, dpar = sigma), 
+  prior(normal(0, 1), class = Intercept),
+  prior(normal(0, 1), class = sd, group = participantId, lb = 0),
+  prior(normal(0, 1), class = Intercept, dpar = sigma),
   prior(normal(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
 )
 ``` 
 
 ```{r}
-#| eval: false 
-#| echo: false 
+#| eval: false
+#| echo: false
 
-task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
-  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% 
-  get_prior(formula = f, data = . )
+task2_df %>%
+  mutate(error.y = va.ans.y - va.select.y) %>%
+  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>%
+  get_prior(formula = f, data = .)
 
-task2_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>%
+task2_df %>%
+  mutate(
+    error = abs(
+      data_to_screen_slope(data.select.slope) -
+        data_to_screen_slope(data.ans.slope)
+    ) +
+      epsilon
+  ) %>%
   make_stancode(formula = f, prior = p)
 ```
 
 ```{r}
-#| output: false 
-#| label: fit lognormal 
+#| output: false
+#| label: fit lognormal
 
-model.y.lognormal <- task2_df %>% 
-  mutate(error.y = va.ans.y - va.select.y) %>% 
-  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% 
-  brm(formula = f, 
-      data = ., 
-      prior = p, 
-      chains = 4, 
-      cores = 4, 
-      file = here("fitted_models", "task2.y.lognormal"),
-      file_refit = "on_change",
-      save_pars = save_pars(all = TRUE), 
-      control = list(adapt_delta = 0.99),
-      iter = 6000 
+model.y.lognormal <- task2_df %>%
+  mutate(error.y = va.ans.y - va.select.y) %>%
+  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>%
+  brm(
+    formula = f,
+    data = .,
+    prior = p,
+    chains = 4,
+    cores = 4,
+    file = here("analysis", "fitted_models", "task2.y.lognormal"),
+    file_refit = "on_change",
+    save_pars = save_pars(all = TRUE),
+    control = list(adapt_delta = 0.99),
+    iter = 6000
   )
 ```
 
@@ -581,15 +721,15 @@ pp_check(model.y.lognormal, ndraws = 100, type = "pit_ecdf")
 #| eval: false
 #| echo: false
 
-# Overlay plot: 
-task2_df %>% modelr::data_grid(error.y = 0) %>% 
-  add_predicted_draws(model.y.lognormal, ndraws = 100, re_formula = NA) %>% 
-  ggplot() + 
-  stat_slab(aes(x = .prediction), 
-            fill = "lightblue", alpha = 1) + 
-  geom_dots(data = task2_df, aes(x = va.ans.y - va.select.y)) + 
-  labs(y = "Probability", x = "Signed error", title = "Task 2") + 
-  theme_minimal(base_size = 8) -> p 
+# Overlay plot:
+task2_df %>%
+  modelr::data_grid(error.y = 0) %>%
+  add_predicted_draws(model.y.lognormal, ndraws = 100, re_formula = NA) %>%
+  ggplot() +
+  stat_slab(aes(x = .prediction), fill = "lightblue", alpha = 1) +
+  geom_dots(data = task2_df, aes(x = va.ans.y - va.select.y)) +
+  labs(y = "Probability", x = "Signed error", title = "Task 2") +
+  theme_minimal(base_size = 8) -> p
 
 p
 ```
@@ -599,10 +739,12 @@ p
 Specify formula and prior: 
 
 ```{r}
-f <- bf(error.y ~ 0,
-        mu ~ (1 | participantId),
-        shape ~ (1 | participantId),
-        family = Gamma())
+f <- bf(
+  error.y ~ 0,
+  mu ~ (1 | participantId),
+  shape ~ (1 | participantId),
+  family = Gamma()
+)
 
 p <- c(
   prior(normal(0, 1), class = Intercept),
@@ -613,14 +755,22 @@ p <- c(
 ```
 
 ```{r}
-#| eval: false 
-#| echo: false 
+#| eval: false
+#| echo: false
 
-task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% 
-  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% 
-  get_prior(formula = f, data = . )
+task2_df %>%
+  mutate(error.y = va.ans.y - va.select.y) %>%
+  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>%
+  get_prior(formula = f, data = .)
 
-task2_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope)) + epsilon) %>%
+task2_df %>%
+  mutate(
+    error = abs(
+      data_to_screen_slope(data.select.slope) -
+        data_to_screen_slope(data.ans.slope)
+    ) +
+      epsilon
+  ) %>%
   make_stancode(formula = f, prior = p)
 ```
 
@@ -629,18 +779,19 @@ task2_df %>% mutate(error = abs(data_to_screen_slope(data.select.slope) - data_t
 #| label: fit gamma
 
 model.y.gamma <- task2_df %>%
-  mutate(error.y = va.ans.y - va.select.y) %>% 
-  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% 
-  brm(formula = f,
-      data = .,
-      prior = p,
-      chains = 4,
-      cores = 4,
-      file = here("fitted_models", "task2.y.gamma"), 
-      file_refit = "on_change",
-      save_pars = save_pars(all = TRUE),
-      control = list(adapt_delta = 0.99),
-      iter = 8000
+  mutate(error.y = va.ans.y - va.select.y) %>%
+  mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>%
+  brm(
+    formula = f,
+    data = .,
+    prior = p,
+    chains = 4,
+    cores = 4,
+    file = here("analysis", "fitted_models", "task2.y.gamma"),
+    file_refit = "on_change",
+    save_pars = save_pars(all = TRUE),
+    control = list(adapt_delta = 0.99),
+    iter = 8000
   )
 ```
 
@@ -666,8 +817,13 @@ Note that we won't use [Lomax](#sec-y-lomax) and [Gamma](#sec-y-gamma) in the mo
 Loo comparison: 
 
 ```{r}
-loo(model.y.exponential, model.y.lognormal, model.y.weibull, 
-    moment_match = TRUE, reloo=TRUE)
+loo(
+  model.y.exponential,
+  model.y.lognormal,
+  model.y.weibull,
+  moment_match = TRUE,
+  reloo = TRUE
+)
 ```
 
 Weibull is the best model. 
@@ -678,11 +834,15 @@ Weibull is the best model.
 
 Math model: 
 
-$$\begin{align}
-\text{error_va}_{i} &\sim \text{Normal}(\mu, \sigma^2) \\
-\mu &\sim \mathcal{N}(0, 1) \\ 
-\sigma &\sim \text{Half-Cauchy}(0, 1)
-\end{align}$$
+$$
+\begin{align}
+\text{error_va}_{i} &\sim \text{Normal}(\mu_\text{PID[i]}, \sigma_{\text{PID[i]}}^2) \\
+\mu_j &\sim \mathcal{N}(\bar{\mu}, \bar{\sigma}^2), j \in [16] \\ 
+\sigma_j &\sim \mathcal{N}^+(\alpha, \beta^2), j \in [16] \\ 
+\bar{\mu}, \alpha &\sim \mathcal{N}(0, 1)\\
+\bar{\sigma}, \beta &\sim \mathcal{N}^+(0, 1)
+\end{align}
+$$
 
 Formula and prior: 
 
@@ -724,7 +884,7 @@ model.x.normal <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
     prior = p,
     chains = 4,
     cores = 4, 
-    file = here("fitted_models", "task2.x.normal"),
+    file = here("analysis", "fitted_models", "task2.x.normal"),
     file_refit = "on_change",
     control = list(adapt_delta = 0.99),
     iter = 6000, 
@@ -741,9 +901,11 @@ plot(model.x.normal)
 
 ```{r}
 #| layout-ncol: 2
-pp_check(model.x.normal, ndraws= 100) -> task2.x.gaussian
+pp_check(model.x.normal, ndraws= 100) + 
+  theme(legend.position = c(0.9, 0.5)) +
+  theme(text = element_text(size = 10)) -> task2.x.gaussian
 
-pp_check(model.x.normal, ndraws= 100, type = "pit_ecdf") -> task2.x.gaussian.pit
+pp_check(model.x.normal, ndraws= 100, type = "pit_ecdf") + theme(text = element_text(size = 10)) -> task2.x.gaussian.pit
 
 task2.x.gaussian
 task2.x.gaussian.pit
@@ -753,11 +915,12 @@ task2.x.gaussian.pit
 #| eval: false 
 #| echo: false 
 
-ggsave(here("figs", "task2.x.gaussian.pdf"), task2.x.gaussian, 
-       height = 6, width = 8, unit = "cm", dpi = 300)
+ggsave(here("figs", "task2.x.gaussian.ppcheck.pdf"), 
+       task2.x.gaussian, 
+       height = 5, width = 10, unit = "cm", dpi = 300)
 
 ggsave(here("figs", "task2.x.gaussian-pit.pdf"), task2.x.gaussian.pit, 
-       height = 6, width = 8, unit = "cm", dpi = 300)
+       height = 6, width = 6, unit = "cm", dpi = 300)
 ```
 
 :::{.callout-caution}
@@ -778,11 +941,13 @@ model.x.normal %>% spread_draws(b_Intercept, b_sigma_Intercept) %>%
 
 Math model: 
 
-$$\begin{align}
-\text{error_va}_{i} &\sim \text{Laplace}(\mu, b) \\
-\mu &\sim \mathcal{N}(0, 1) \\ 
-b &\sim \text{Half-Cauchy}(0, 1)
-\end{align}$$
+$$
+\begin{align}
+\text{error_va}_{i} &\sim \text{Laplace}(\mu_{\text{PID[i]}}, b_{\text{PID[i]}}) \\
+\mu_j &\sim \mathcal{N}(0, 1), j \in [16] \\ 
+b_j &\sim \mathcal{N}^+(0, 1), j \in [16]
+\end{align}
+$$
 
 To fit a laplace distribution, we need to define our own custom distribution, since `brms` does not provide a default defined Laplace distribution. 
 
@@ -858,7 +1023,7 @@ model.x.laplace <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
     data = ., 
     chains = 4, 
     cores = 4, 
-    file = here("fitted_models", "task2.x.laplace"),
+    file = here("analysis", "fitted_models", "task2.x.laplace"),
     file_refit = "on_change", 
     iter = 6000, 
     control = list(adapt_delta = 0.99), 
@@ -899,9 +1064,12 @@ Posterior predictive check:
 ```{r}
 #| layout-ncol: 2
 #| code-fold: true
-pp_check(model.x.laplace, ndraws = 100) -> task2.laplace
+pp_check(model.x.laplace, ndraws = 100) + 
+  theme(legend.position = c(0.9, 0.5)) +
+  theme(text = element_text(size = 10)) -> task2.laplace
 
-pp_check(model.x.laplace, ndraws = 100, type = "pit_ecdf") -> task2.laplace.pit
+pp_check(model.x.laplace, ndraws = 100, type = "pit_ecdf") + 
+  theme(text = element_text(size = 10)) -> task2.laplace.pit
 
 task2.laplace
 task2.laplace.pit
@@ -910,10 +1078,10 @@ task2.laplace.pit
 ```{r}
 #| eval: false 
 #| echo: false 
-ggsave(here("figs", "task2.y.laplace.pdf"), task2.laplace, 
-       height = 6, width = 8, units = "cm", dpi = 300)
-ggsave(here("figs", "task2.y.laplace-pit-ecdf.pdf"), task2.laplace.pit, 
-       height = 6, width = 8, units = "cm", dpi = 300)
+ggsave(here("figs", "task2.x.laplace.pdf"), task2.laplace, 
+       height = 5, width = 10, units = "cm", dpi = 300)
+ggsave(here("figs", "task2.x.laplace-pit-ecdf.pdf"), task2.laplace.pit, 
+       height = 6, width = 6, units = "cm", dpi = 300)
 ```
 
 Plot posterior distribution of model parameter: 
