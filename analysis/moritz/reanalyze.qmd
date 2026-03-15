@@ -291,6 +291,8 @@ What is consistent, is that when the "variability" region is in the lower region
 ---
   
 ## Read in data related to strategy 
+
+Question to answer: people who claim to use mean strategy vs people who claim to use median strategy. Is there a difference between their answers? 
   
 ```{r}
 strategy_df <- read.csv(here("data", "moritz", "exp", "strategies.csv")) %>%
