@@ -47,7 +47,7 @@ For modeling the signed error on the **X-axis**, we ran the following models:
 
 - [Normal](@sec-x-normal) --- this is the one used for hyper-priors. 
 - [Laplace](@sec-x-laplace) --- this is the best-performing one. 
-- [Student-t](@sec-x-studentT)
+- ~~[Student-t](@sec-x-studentT)~~ 
 
 # Set up
 
@@ -1078,7 +1078,7 @@ task2.laplace.pit
 ```{r}
 #| eval: false 
 #| echo: false 
-ggsave(here("figs", "task2.x.laplace.pdf"), task2.laplace, 
+ggsave(here("figs", "task2.x.laplace-ppcheck.pdf"), task2.laplace, 
        height = 5, width = 10, units = "cm", dpi = 300)
 ggsave(here("figs", "task2.x.laplace-pit-ecdf.pdf"), task2.laplace.pit, 
        height = 6, width = 6, units = "cm", dpi = 300)
@@ -1126,12 +1126,12 @@ task2_df %>% modelr::data_grid(error.x = 0,
   add_predicted_draws(model.x.laplace, ndraws = 100) %>% 
   ggplot() + 
   stat_slab(aes(x = .prediction, group = .draw), 
-               color = "skyblue", alpha = 0.2, size = 0.5, fill = NA, n = 3000) + 
+               color = "skyblue", alpha = 0.2, linewidth = 0.5, fill = NA, n = 3000) + 
   scale_thickness_shared() + 
   stat_slab(data = task2_df, aes(x = va.select.x - va.ans.x),
-            color = "darkblue", fill = NA, n = 3000, size = 0.5) + 
-  geom_rug(data = task2_df, aes(x = va.select.x - va.ans.x), size = 0.5) + 
-  labs(y = "density", x = "signed error (on x)") + 
+            color = "darkblue", fill = NA, n = 3000, linewidth = 0.5) + 
+  geom_rug(data = task2_df, aes(x = va.select.x - va.ans.x), linewidth = 0.5) + 
+  labs(y = "density", x = "Error (on X-Axis)") + 
   theme_minimal(base_size = 8) + 
   coord_cartesian(xlim = c(-1, 1.5)) + 
   scale_y_continuous(breaks = 0) -> p 
