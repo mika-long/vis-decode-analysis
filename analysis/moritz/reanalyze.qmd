@@ -45,6 +45,14 @@ exp2 <- rbind(exp2_dotArc, exp2_dotX) %>%
 exp2 %>% head(5)
 ```
 
+How many participants per task? 
+
+```{r}
+exp2 %>% group_by(mark) %>% count(assignmentid)
+```
+
+There are 277 participants altogether excluding the `line` condition. 
+
 Perform the correction: 
 
 ```{r}
@@ -100,8 +108,8 @@ p_og <- exp2 %>%
     .groups = "drop"
   ) %>%
   ggplot(aes(
-    x = variability,
-    y = mu,
+    y = variability,
+    x = mu,
     dist = "norm",
     arg1 = mu,
     arg2 = se,
@@ -114,16 +122,16 @@ p_og <- exp2 %>%
     size = .5,
     alpha = .8
   ) + #adding halfeye
-  coord_flip() + #flipping axis
+  # coord_flip() + #flipping axis
   theme_tidybayes() + #theme
   theme(legend.position = "top") +
   scale_fill_manual(values = c("#76B7B2", "#E15759")) + # take out "#59A14F"
-  scale_y_continuous(
-    breaks = seq(0, .11, by = .01),
-    expand = expansion(mult = c(0.01, 0.01))
-  ) + #specifying scale
-  xlab("Variability") + #add x label
-  ylab("Normalized Error") #add y label
+  # scale_y_continuous(
+  #   breaks = seq(0, .11, by = .01),
+  #   expand = expansion(mult = c(0.01, 0.01))
+  # ) + #specifying scale
+  ylab("Variability") + #add x label
+  xlab("Normalized Error") #add y label
 
 p_og
 ```
@@ -290,8 +298,75 @@ The above shows up how different things could be if you use different "means" to
 
 What is consistent, is that when the "variability" region is in the lower region, the error somehow increases ... which makes you wonder whether this could potentially be due to dragging ...? Or something else ...? 
 
+We can also plot the version that does not count the `flip` factor, and just plot the normalized error calculated the original way, vs error calculated compared to the true mean: 
+
+```{r}
+#| code-fold: true
+
+freq_summary <- exp2 %>%
+  mutate(
+    true_error = reportedaverage - data_average,
+    normalized_true_error = ifelse(flip == TRUE, -true_error, true_error)
+  ) %>%
+  group_by(assignmentid, mark) %>%
+  mutate(subj_mean = mean(normalized_true_error)) %>%
+  ungroup() %>%
+  mutate(grand_mean = mean(normalized_true_error)) %>%
+  mutate(corrected = normalized_true_error - subj_mean + grand_mean) %>%
+  group_by(mark, variability) %>% # not grouping by flip anymore
+  summarise(
+    mu = mean(normalized_true_error),
+    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # <- NEW: k is 2
+    .groups = "drop"
+  )
+
+freq_summary
+```
+
+```{r}
+#| code-fold: true
+p3 <- freq_summary %>%
+  ggplot(aes(
+    y = variability,
+    x = mu,
+    dist = "norm",
+    arg1 = mu,
+    arg2 = se,
+    fill = mark
+  )) +
+  stat_dist_halfeye(
+    show_interval = TRUE,
+    position = position_dodge(width = 0.2),
+    .width = 0.95,
+    size = .5,
+    alpha = .8
+  ) +
+  theme_tidybayes() +
+  theme(legend.position = "top") +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) +
+  # scale_x_continuous(
+  #   breaks = seq(0, .11, by = .01),
+  #   expand = expansion(mult = c(0.01, 0.01))
+  # ) +
+  # facet_wrap(~flip_label, ncol = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
+  xlab("Normalized True Error") +
+  ylab("Variability")
+
+p3
+```
+
+To put things into comparison (between how the original paper did, top, vs. how calculating the actual error gives, bottom): 
+
+```{r}
+#| code-fold: true 
+
+(p_og + coord_cartesian(xlim=c(-0.01, 0.1)) + geom_vline(xintercept = 0, linetype = "dashed", color = "gray")) / (p3 + theme(legend.position = "") + coord_cartesian(xlim=c(-0.01, 0.1)))
+```
 ---
   
+# Do participants who use Median Strategy get answer closer to median or mean? 
+
 ## Read in data related to strategy 
 
 Question to answer: people who claim to use mean strategy vs people who claim to use median strategy. Is there a difference between their answers? 
@@ -327,35 +402,4 @@ strategy_df %>%
   filter(r1_number_of_points == TRUE) %>%
   pull(ResponseId) -> equal_points_id
 ```
-
-## Calculate Error and plot empirical error distributions 
-
-Read in the stimuli and calculate the answer for each `index` * `seed` 
-
-```{r}
-#| code-fold: true
-exp_json_data <- jsonlite::fromJSON(here(
-  "data",
-  "moritz",
-  "stimuli",
-  "exp2-stimuli.json"
-)) %>%
-  as_tibble(.)
-
-stimuli_df <- exp_json_data %>%
-  select(index, seed, noise, flip, type, data) %>%
-  mutate(noise = as.character(noise)) %>%
-  filter(type != "line") %>%
-  unnest(col = data)
-
-ans_df <- stimuli_df %>%
-  group_by(index, seed, noise, flip, type) %>%
-  summarise(ans.mean.y = mean(y), ans.median.y = median(y))
-```
-
-
-
-
-
-# Do participants who use Median Strategy get answer closer to median or mean? 
 
