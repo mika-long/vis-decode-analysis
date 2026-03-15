@@ -87,7 +87,7 @@ Recreate the plot that Moritz et al. created:
 
 # detach("package:plyr", unload = TRUE)
 
-exp2 %>%
+p_og <- exp2 %>%
   group_by(assignmentid, mark) %>%
   mutate(subj_mean = mean(normalized_error)) %>%
   ungroup() %>%
@@ -124,6 +124,8 @@ exp2 %>%
   ) + #specifying scale
   xlab("Variability") + #add x label
   ylab("Normalized Error") #add y label
+
+p_og
 ```
 
 ## Analyzed signed error 
