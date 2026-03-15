@@ -12,14 +12,18 @@ format:
 #| code-fold: true
 #| label: read in libraries
 
+
+library(plyr)
+source("analysis/moritz/Functions.R")
 library(ggplot2)
 library(tidyverse)
 library(tidybayes)
-library(here)
+
 library(jsonlite)
 library(brms)
 library(posterior)
-theme_set(theme_minimal())
+theme_set(theme_tidybayes())
+library(here)
 ```
 
 # TLDR (and TODO)
@@ -51,6 +55,8 @@ exp2_dotX <- read.csv(
 exp2 <- rbind(exp2_dotArc, exp2_dotX) %>%
   as_tibble(.) %>%
   select(assignmentid, mark, flip, variability, normalized_error)
+
+exp2 %>% head(5)
 ```
 
 Perform the correction: 
@@ -66,10 +72,25 @@ exp2 %>%
   group_by(mark, variability) %>%
   summarise(
     mu = mean(normalized_error),
-    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2
+    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2 when the within-subj variability is this 
     .groups = "drop"
   )
 ```
+
+If we do it the same way by calling functions in `Functions.R` this is what we get: 
+
+```{r}
+freq_sum <- summarySEwithin(data = exp2, #data
+                measurevar = "normalized_error",  #dependent variable 
+                withinvars = "variability", #within subjects variable
+                betweenvars = "mark", #between subject variable 
+                idvar = "assignmentid") #participant id
+freq_sum
+```
+
+Seems like the numbers match each other, which implies that our approach is correct. So we will use our dataframe to plot: 
+
+Recreate the plot that Moritz et al. created: 
 
 ```{r}
 #| label: plot Mortiz

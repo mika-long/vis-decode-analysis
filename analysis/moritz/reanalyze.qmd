@@ -1,10 +1,14 @@
 ---
 title: "Reanalyze Mortiz"
+author: "Anonymous" 
 ---
 
 ```{r}
 #| echo: false
 #| label: load libraries
+
+# library(plyr)
+# source(paste0(getwd(), "analysis/moritz/Functions.R"))
 library(tidyverse)
 library(tidybayes)
 library(here)
@@ -18,8 +22,11 @@ The goal of this file is to (1) recreate the analysis that Moritz et al. produce
 
 Reading in data from Exp 2 (excluding the `line` condition): 
 
+# Repeating Mortiz's analysis 
+
 ```{r}
-#Exp 2
+#| label: read in Mortiz data
+
 #point arc
 exp2_dotArc <- read.csv(
   here("data", "moritz", "exp", "exp2-point-arc.csv"),
@@ -31,18 +38,260 @@ exp2_dotX <- read.csv(
   here("data", "moritz", "exp", "exp2-point.csv"),
   check.names = FALSE
 )
-# Combining conditions in Exp 2
-exp2 <- rbind(exp2_dotArc, exp2_dotX) %>% as_tibble(.)
+exp2 <- rbind(exp2_dotArc, exp2_dotX) %>%
+  as_tibble(.) %>%
+  select(assignmentid, mark, flip, variability, error, normalized_error)
+
+exp2 %>% head(5)
 ```
 
-Get a basic idea of the underlying dataset: 
+Perform the correction: 
 
 ```{r}
-exp2 %>% count(assignmentid) # 277 participants altogether
+#| code-fold: true
+exp2 %>%
+  group_by(assignmentid, mark) %>%
+  mutate(subj_mean = mean(normalized_error)) %>%
+  ungroup() %>%
+  mutate(grand_mean = mean(normalized_error)) %>%
+  mutate(corrected = normalized_error - subj_mean + grand_mean) %>%
+  group_by(mark, variability) %>%
+  summarise(
+    mu = mean(normalized_error),
+    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2 when the within-subj variability is this
+    .groups = "drop"
+  )
 ```
 
-## Read in data related to strategy 
+If we do it the same way by calling functions in `Functions.R` this is what we get: 
 
+```{r}
+#| eval: false
+freq_sum <- summarySEwithin(
+  data = exp2, #data
+  measurevar = "normalized_error", #dependent variable
+  withinvars = "variability", #within subjects variable
+  betweenvars = "mark", #between subject variable
+  idvar = "assignmentid"
+) #participant id
+freq_sum
+```
+
+Seems like the numbers match each other, which implies that our approach is correct. So we will use our dataframe to plot: 
+
+Recreate the plot that Moritz et al. created: 
+
+```{r}
+#| label: plot Moritz
+#| code-fold: true
+
+# detach("package:plyr", unload = TRUE)
+
+exp2 %>%
+  group_by(assignmentid, mark) %>%
+  mutate(subj_mean = mean(normalized_error)) %>%
+  ungroup() %>%
+  mutate(grand_mean = mean(normalized_error)) %>%
+  mutate(corrected = normalized_error - subj_mean + grand_mean) %>%
+  group_by(mark, variability) %>%
+  summarise(
+    mu = mean(normalized_error),
+    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2
+    .groups = "drop"
+  ) %>%
+  ggplot(aes(
+    x = variability,
+    y = mu,
+    dist = "norm",
+    arg1 = mu,
+    arg2 = se,
+    fill = mark
+  )) + #uncertainty
+  stat_dist_halfeye(
+    show_interval = TRUE,
+    position = position_dodge(width = 0.2), # <- WHY THIS???
+    .width = 0.95,
+    size = .5,
+    alpha = .8
+  ) + #adding halfeye
+  coord_flip() + #flipping axis
+  theme_tidybayes() + #theme
+  theme(legend.position = "top") +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) + # take out "#59A14F"
+  scale_y_continuous(
+    breaks = seq(0, .11, by = .01),
+    expand = expansion(mult = c(0.01, 0.01))
+  ) + #specifying scale
+  xlab("Variability") + #add x label
+  ylab("Normalized Error") #add y label
+```
+
+## Analyzed signed error 
+
+Instead of calculating corrected error, we will first calculate error that still uses the "wrong" mean, but is not "normalized": 
+
+```{r}
+#| code-fold: true
+
+freq_summary <- exp2 %>%
+  group_by(assignmentid, mark) %>%
+  mutate(subj_mean = mean(error)) %>%
+  ungroup() %>%
+  mutate(grand_mean = mean(error)) %>%
+  mutate(corrected = error - subj_mean + grand_mean) %>%
+  group_by(mark, variability, flip) %>%
+  summarise(
+    mu = mean(error),
+    se = sd(corrected) / sqrt(n()) * sqrt(4 / (4 - 1)), # <- NEW: k is 4
+    .groups = "drop"
+  )
+
+freq_summary
+```
+
+```{r}
+#| code-fold: true
+
+p1 <- freq_summary %>%
+  mutate(
+    flip_label = ifelse(flip == TRUE, "Variability Below", "Variability Above"),
+    mu_display = ifelse(flip == FALSE, mu, -mu)
+  ) %>%
+  ggplot(aes(
+    y = variability,
+    x = mu_display,
+    dist = "norm",
+    arg1 = mu_display,
+    arg2 = se,
+    fill = mark
+  )) +
+  stat_dist_halfeye(
+    show_interval = TRUE,
+    position = position_dodge(width = 0.2),
+    .width = 0.95,
+    size = .5,
+    alpha = .8
+  ) +
+  theme_tidybayes() +
+  theme(legend.position = "top") +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) +
+  # scale_x_continuous(
+  #   breaks = seq(0, .11, by = .01),
+  #   expand = expansion(mult = c(0.01, 0.01))
+  # ) +
+  facet_wrap(~flip_label, ncol = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
+  xlab("Error (adjusted toward variability direction)") +
+  ylab("Variability")
+
+p1
+```
+
+Ok so the above tells us that if we look at normal, calculated by looking at the mean in which people share mean, then the above is what we get. 
+
+## Recalculate error 
+
+It is unclear to me how `error` is calculated in the original dataset. 
+
+```{r}
+exp2 <- rbind(exp2_dotArc, exp2_dotX) %>%
+  as_tibble(.)
+
+# normalized error is just error but flipped when flip is TRUE
+# the following confirms it.
+exp2 %>% count(mark, flip, error == normalized_error)
+
+# and error is just reportedaverage - average
+# confirmed by the following
+exp2 %>%
+  mutate(
+    error.1 = reportedaverage - data_average,
+    error.2 = reportedaverage - average,
+    error.3 = reportedaverage - average_along_arc,
+  ) %>%
+  select(seed, error.1, error.2, error.3, error, normalized_error) %>%
+  arrange(seed) %>%
+  filter(!near(error.2, error)) # using dplyr::near becasue of floating point related stuff ....
+```
+
+So let's calculate the true error and plot things: 
+
+```{r}
+#| code-fold: true
+
+freq_summary <- exp2 %>%
+  mutate(true_error = reportedaverage - data_average) %>%
+  group_by(assignmentid, mark) %>%
+  mutate(subj_mean = mean(true_error)) %>%
+  ungroup() %>%
+  mutate(grand_mean = mean(true_error)) %>%
+  mutate(corrected = true_error - subj_mean + grand_mean) %>%
+  group_by(mark, variability, flip) %>%
+  summarise(
+    mu = mean(true_error),
+    se = sd(corrected) / sqrt(n()) * sqrt(4 / (4 - 1)), # <- NEW: k is 4
+    .groups = "drop"
+  )
+
+freq_summary
+```
+
+```{r}
+#| code-fold: true
+
+p2 <- freq_summary %>%
+  mutate(
+    flip_label = ifelse(flip == TRUE, "Variability Below", "Variability Above"),
+    mu_display = ifelse(flip == FALSE, mu, -mu)
+  ) %>%
+  ggplot(aes(
+    y = variability,
+    x = mu_display,
+    dist = "norm",
+    arg1 = mu_display,
+    arg2 = se,
+    fill = mark
+  )) +
+  stat_dist_halfeye(
+    show_interval = TRUE,
+    position = position_dodge(width = 0.2),
+    .width = 0.95,
+    size = .5,
+    alpha = .8
+  ) +
+  theme_tidybayes() +
+  theme(legend.position = "top") +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) +
+  # scale_x_continuous(
+  #   breaks = seq(0, .11, by = .01),
+  #   expand = expansion(mult = c(0.01, 0.01))
+  # ) +
+  facet_wrap(~flip_label, ncol = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
+  xlab("Error (adjusted toward variability)") +
+  ylab("Variability")
+
+p2
+```
+
+So this new plot seems to suggest that for `point_arc`, when error is calculated toward the true mean, with more variability somehow we're more precise ...? It's kind of counter-intuitive ... But to put things into comparison: 
+
+```{r}
+library(patchwork)
+(p1 +
+  coord_cartesian(xlim = c(-0.01, 0.1))) /
+  (p2 +
+    coord_cartesian(xlim = c(-0.01, 0.1)))
+```
+
+The above shows up how different things could be if you use different "means" to calculate error ... Nothing changes for `point` because it's being calculated the right way, but for `point_arc` ... the variability trend basically reverses ... 
+
+What is consistent, is that when the "variability" region is in the lower region, the error somehow increases ... which makes you wonder whether this could potentially be due to dragging ...? Or something else ...? 
+
+---
+  
+## Read in data related to strategy 
+  
 ```{r}
 strategy_df <- read.csv(here("data", "moritz", "exp", "strategies.csv")) %>%
   as_tibble(.) %>%
@@ -100,341 +349,9 @@ ans_df <- stimuli_df %>%
   summarise(ans.mean.y = mean(y), ans.median.y = median(y))
 ```
 
-```{r}
-ans_df
-```
 
-Use the `data_average` to calculate error, and this is what we in terms of empirical distribution of error: 
 
-```{r}
-#| code-fold: true
-#| layout-ncol: 2
-exp2 %>%
-  mutate(error = reportedaverage - data_average) %>%
-  ggplot(aes(x = error, y = variability, fill = mark)) +
-  stat_halfeye(alpha = 0.8)
 
-exp2 %>%
-  mutate(
-    norm.error = ifelse(
-      flip == FALSE,
-      reportedaverage - data_average,
-      data_average - reportedaverage
-    )
-  ) %>%
-  ggplot(aes(x = norm.error, y = variability, fill = mark)) +
-  stat_halfeye(alpha = 0.8)
-```
-
-We could also try to facet by whether y-axis is flipped, and this will allow us to separate plotting: 
-
-```{r}
-#| code-fold: true
-exp2 %>%
-  mutate(
-    error = reportedaverage - data_average,
-    variance_area = ifelse(flip == FALSE, "high", "low")
-  ) %>%
-  ggplot(aes(x = error, y = variability, fill = mark)) +
-  stat_halfeye(alpha = 0.8) +
-  facet_wrap(~variance_area)
-```
-
-If we use `average` instead of `data_average` to calculate error, this is what we will get: 
-
-```{r}
-#| code-fold: true
-exp2 %>%
-  mutate(
-    error = reportedaverage - average,
-    variance_area = ifelse(flip == FALSE, "high", "low")
-  ) %>%
-  ggplot(aes(x = error, y = variability, fill = mark)) +
-  stat_halfeye(alpha = 0.8) +
-  facet_wrap(~variance_area) +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "darkgray")
-```
-
-# Analyses 
-
-Note that the plots produced in the paper, specifically, Figure 2, it was really a summary statistics plot. So we first try to replicate the original correction: 
-
-```{r}
-#| code-fold: true
-#| eval: false
-
-# when mark == "point", you get average == data_average
-# which makes sense, because for `point_arc`, the data average is NOT the actual average ...
-
-exp2 %>%
-  mutate(
-    error = round(error, 5),
-    normalized_error = round(normalized_error, 5)
-  ) %>%
-  # verified that this is how normalized error is calculated
-  mutate(
-    calc_error = ifelse(
-      flip == FALSE,
-      reportedaverage - average,
-      average - reportedaverage
-    ) %>%
-      round(., 5),
-  ) %>%
-  filter(calc_error != normalized_error)
-```
-
-```{r}
-#| code-fold: true
-exp2 %>%
-  group_by(assignmentid, mark) %>%
-  mutate(subj_mean = mean(normalized_error)) %>%
-  ungroup() %>%
-  mutate(grand_mean = mean(normalized_error)) %>%
-  mutate(corrected = normalized_error - subj_mean + grand_mean) %>%
-  group_by(mark, variability) %>%
-  summarise(
-    mu = mean(normalized_error),
-    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2
-    .groups = "drop"
-  )
-```
-
-Plot original: 
-
-```{r}
-#| label: plot Mortiz
-#| code-fold: true
-exp2 %>%
-  group_by(assignmentid, mark) %>%
-  mutate(subj_mean = mean(normalized_error)) %>%
-  ungroup() %>%
-  mutate(grand_mean = mean(normalized_error)) %>%
-  mutate(corrected = normalized_error - subj_mean + grand_mean) %>%
-  group_by(mark, variability) %>%
-  summarise(
-    mu = mean(normalized_error),
-    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2
-    .groups = "drop"
-  ) %>%
-  ggplot(aes(
-    x = variability,
-    y = mu,
-    dist = "norm",
-    arg1 = mu,
-    arg2 = se,
-    fill = mark
-  )) + #uncertainty
-  stat_dist_halfeye(
-    show_interval = TRUE,
-    position = position_dodge(width = 0.2), # <- WHY THIS???
-    .width = 0.95,
-    size = .5,
-    alpha = .8
-  ) + #adding halfeye
-  coord_flip() + #flipping axis
-  theme_tidybayes() + #theme
-  theme(legend.position = "top") +
-  scale_fill_manual(values = c("#76B7B2", "#E15759")) + # take out "#59A14F"
-  scale_y_continuous(
-    breaks = seq(0, .11, by = .01),
-    expand = expansion(mult = c(0.01, 0.01))
-  ) + #specifying scale
-  xlab("Variability") + #add x label
-  ylab("Normalized Error") #add y label
-```
-
----
-
-Plot the graph with `error` instead of `normalized_error` and also its facetted version: 
-
-`#TODO:` the following needs to be checked because it does not look right ....  
-
-```{r}
-#| code-fold: true
-exp2 %>%
-  # Step 1: collapse to subject-level means per cell (now includes flipped)
-  group_by(assignmentid, mark, variability, flip) %>%
-  summarise(subj_cell_mean = mean(error), .groups = "drop") %>%
-
-  # Step 2: subject mean across ALL within-subject conditions
-  group_by(assignmentid, mark) %>%
-  mutate(subj_mean = mean(subj_cell_mean)) %>%
-  ungroup() %>%
-
-  # Step 3: normalize
-  mutate(grand_mean = mean(subj_cell_mean)) %>%
-  mutate(corrected = subj_cell_mean - subj_mean + grand_mean) %>%
-
-  # Step 4: SE per cell (now includes flipped)
-  group_by(mark, variability, flip) %>%
-  summarise(
-    mu = mean(subj_cell_mean),
-    n_subj = n(),
-    se = sd(corrected) / sqrt(n_subj) * sqrt(4 / (4 - 1)),
-    .groups = "drop"
-  ) %>%
-  ggplot(aes(
-    x = variability,
-    y = mu,
-    dist = "norm",
-    arg1 = mu,
-    arg2 = se,
-    fill = mark
-  )) + #uncertainty
-  stat_dist_halfeye(
-    show_interval = TRUE,
-    position = position_dodge(width = 0.2), # <- WHY THIS???
-    .width = 0.95,
-    size = .5,
-    alpha = .8
-  ) + #adding halfeye
-  coord_flip() + #flipping axis
-  theme_tidybayes() + #theme
-  facet_grid(~ as.character(flip)) +
-  theme(legend.position = "top") +
-  scale_fill_manual(values = c("#76B7B2", "#E15759")) + # take out "#59A14F"
-  # scale_y_continuous(
-  #   breaks = seq(0, .11, by = .01),
-  #   expand = expansion(mult = c(0.01, 0.01))
-  # ) + #specifying scale
-  xlab("Variability") + #add x label
-  ylab("Normalized Error") + #add y label +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "darkgray")
-```
 
 # Do participants who use Median Strategy get answer closer to median or mean? 
 
-```{r}
-median_df <- exp2 %>%
-  filter(assignmentid %in% equal_points_id) %>%
-  rename(type = mark, index = stimuliindex)
-```
-
-```{r}
-#| code-fold: true
-#| layout-ncol: 2
-
-median_df %>%
-  left_join(ans_df) %>%
-  mutate(
-    error_avg = reportedaverage - ans.mean.y,
-    error_median = reportedaverage - ans.median.y
-  ) %>%
-  ggplot(aes(x = error_avg, fill = type, y = noise)) +
-  stat_halfeye() +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "darkgray") +
-  labs(title = "error calculated using mean")
-
-median_df %>%
-  left_join(ans_df) %>%
-  mutate(
-    error_avg = reportedaverage - ans.mean.y,
-    error_median = reportedaverage - ans.median.y
-  ) %>%
-  ggplot(aes(x = error_median, fill = type, y = noise)) +
-  stat_halfeye() +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "darkgray") +
-  labs(title = "error calculated using median")
-```
-
-What if we do the same analysis as did before? 
-
-```{r}
-#| code-fold: true
-#| layout-ncol: 2
-
-median_df %>%
-  left_join(ans_df) %>%
-  mutate(
-    error = ifelse(
-      flip == FALSE,
-      reportedaverage - ans.mean.y,
-      ans.mean.y - reportedaverage
-    )
-  ) %>%
-  group_by(assignmentid, type) %>%
-  mutate(subj_mean = mean(error)) %>%
-  ungroup() %>%
-  mutate(grand_mean = mean(error)) %>%
-  mutate(corrected = error - subj_mean + grand_mean) %>%
-  group_by(type, variability) %>%
-  summarise(
-    mu = mean(error),
-    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2
-    .groups = "drop"
-  ) %>%
-  ggplot(aes(
-    x = variability,
-    y = mu,
-    dist = "norm",
-    arg1 = mu,
-    arg2 = se,
-    fill = type
-  )) + #uncertainty
-  stat_dist_halfeye(
-    show_interval = TRUE,
-    position = position_dodge(width = 0.2), # <- WHY THIS???
-    .width = 0.95,
-    size = .5,
-    alpha = .8
-  ) + #adding halfeye
-  coord_flip() + #flipping axis
-  theme_tidybayes() + #theme
-  theme(legend.position = "top") +
-  scale_fill_manual(values = c("#76B7B2", "#E15759")) + # take out "#59A14F"
-  scale_y_continuous(
-    breaks = seq(0, .11, by = .01),
-    expand = expansion(mult = c(0.01, 0.01))
-  ) + #specifying scale
-  xlab("Variability") + #add x label
-  ylab("Normalized Error") + #add y label
-  labs(title = "Error calculated using mean")
-
-median_df %>%
-  left_join(ans_df) %>%
-  mutate(
-    error = ifelse(
-      flip == FALSE,
-      reportedaverage - ans.median.y,
-      ans.median.y - reportedaverage
-    )
-  ) %>%
-  group_by(assignmentid, type) %>%
-  mutate(subj_mean = mean(error)) %>%
-  ungroup() %>%
-  mutate(grand_mean = mean(error)) %>%
-  mutate(corrected = error - subj_mean + grand_mean) %>%
-  group_by(type, variability) %>%
-  summarise(
-    mu = mean(error),
-    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2
-    .groups = "drop"
-  ) %>%
-  ggplot(aes(
-    x = variability,
-    y = mu,
-    dist = "norm",
-    arg1 = mu,
-    arg2 = se,
-    fill = type
-  )) + #uncertainty
-  stat_dist_halfeye(
-    show_interval = TRUE,
-    position = position_dodge(width = 0.2), # <- WHY THIS???
-    .width = 0.95,
-    size = .5,
-    alpha = .8
-  ) + #adding halfeye
-  coord_flip() + #flipping axis
-  theme_tidybayes() + #theme
-  theme(legend.position = "top") +
-  scale_fill_manual(values = c("#76B7B2", "#E15759")) + # take out "#59A14F"
-  scale_y_continuous(
-    breaks = seq(0, .11, by = .01),
-    expand = expansion(mult = c(0.01, 0.01))
-  ) + #specifying scale
-  xlab("Variability") + #add x label
-  ylab("Normalized Error") + #add y label
-  labs(title = "Error calculated using median")
-
-```

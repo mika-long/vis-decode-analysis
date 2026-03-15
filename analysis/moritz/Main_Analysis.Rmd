@@ -388,6 +388,7 @@ plot1_Exp2_freq_sum #print plot
 #export plot
 ggsave(plot=plot1_Exp2_freq_sum,height=4,width=7,dpi=200, filename="plots/Exp2V2Freq_sum.pdf", useDingbats=FALSE)
 ```
+
 Next we visualize the effect of variability for each mark type
 
 ```{r}
