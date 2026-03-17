@@ -43,6 +43,19 @@ exp2 <- rbind(exp2_dotArc, exp2_dotX) %>%
   select(assignmentid, mark, flip, variability, error, normalized_error)
 
 exp2 %>% head(5)
+
+# also read in the original stimuli file 
+exp_json_data <- jsonlite::fromJSON(here(
+  "data",
+  "moritz",
+  "stimuli",
+  "exp2-stimuli.json"
+)) %>%
+  as_tibble(.)
+
+stimuli_df <- exp_json_data %>%
+  select(index, seed, noise, flip, type, data) %>%
+  mutate(noise = as.character(noise))
 ```
 
 How many participants per task? 
@@ -53,61 +66,37 @@ exp2 %>% group_by(mark) %>% count(assignmentid)
 
 There are 277 participants altogether excluding the `line` condition. 
 
-Perform the correction: 
+Define helper function: 
 
 ```{r}
-#| code-fold: true
-exp2 %>%
-  group_by(assignmentid, mark) %>%
-  mutate(subj_mean = mean(normalized_error)) %>%
-  ungroup() %>%
-  mutate(grand_mean = mean(normalized_error)) %>%
-  mutate(corrected = normalized_error - subj_mean + grand_mean) %>%
-  group_by(mark, variability) %>%
-  summarise(
-    mu = mean(normalized_error),
-    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2 when the within-subj variability is this
-    .groups = "drop"
-  )
-```
+#| code-fold: true 
 
-If we do it the same way by calling functions in `Functions.R` this is what we get: 
+summarySEwithin2 <- function(data, dv, within_vars, between_vars, id_var = "assignmentid") {
+  dv_sym <- sym(dv)
+  
+  # k = number of within-subject cells
+  k <- data %>%
+    distinct(across(all_of(within_vars))) %>%
+    nrow()
+  
+  data %>%
+    # subject mean across all within-subject conditions, within each between-subject group
+    group_by(across(all_of(c(id_var, between_vars)))) %>%
+    mutate(subj_mean = mean(!!dv_sym)) %>%
+    ungroup() %>%
+    mutate(grand_mean = mean(!!dv_sym)) %>%
+    mutate(corrected = !!dv_sym - subj_mean + grand_mean) %>%
+    # summarise per cell
+    group_by(across(all_of(c(between_vars, within_vars)))) %>%
+    summarise(
+      mu = mean(!!dv_sym),
+      se = sd(corrected) / sqrt(n()) * sqrt(k / (k - 1)),
+      .groups = "drop"
+    )
+}
 
-```{r}
-#| eval: false
-freq_sum <- summarySEwithin(
-  data = exp2, #data
-  measurevar = "normalized_error", #dependent variable
-  withinvars = "variability", #within subjects variable
-  betweenvars = "mark", #between subject variable
-  idvar = "assignmentid"
-) #participant id
-freq_sum
-```
-
-Seems like the numbers match each other, which implies that our approach is correct. So we will use our dataframe to plot: 
-
-Recreate the plot that Moritz et al. created: 
-
-```{r}
-#| label: plot Moritz
-#| code-fold: true
-
-# detach("package:plyr", unload = TRUE)
-
-p_og <- exp2 %>%
-  group_by(assignmentid, mark) %>%
-  mutate(subj_mean = mean(normalized_error)) %>%
-  ungroup() %>%
-  mutate(grand_mean = mean(normalized_error)) %>%
-  mutate(corrected = normalized_error - subj_mean + grand_mean) %>%
-  group_by(mark, variability) %>%
-  summarise(
-    mu = mean(normalized_error),
-    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2
-    .groups = "drop"
-  ) %>%
-  ggplot(aes(
+plot_results <- function(data){
+    data %>% ggplot(aes(
     y = variability,
     x = mu,
     dist = "norm",
@@ -117,44 +106,73 @@ p_og <- exp2 %>%
   )) + #uncertainty
   stat_dist_halfeye(
     show_interval = TRUE,
-    position = position_dodge(width = 0.2), # <- WHY THIS???
+    position = position_dodge(width = 0.2), 
     .width = 0.95,
     size = .5,
     alpha = .8
-  ) + #adding halfeye
-  # coord_flip() + #flipping axis
-  theme_tidybayes() + #theme
+  ) + 
   theme(legend.position = "top") +
   scale_fill_manual(values = c("#76B7B2", "#E15759")) + # take out "#59A14F"
-  # scale_y_continuous(
-  #   breaks = seq(0, .11, by = .01),
-  #   expand = expansion(mult = c(0.01, 0.01))
-  # ) + #specifying scale
   ylab("Variability") + #add x label
   xlab("Normalized Error") #add y label
-
-p_og
+}
 ```
 
-## Analyzed signed error 
+Perform the correction: 
 
-Instead of calculating corrected error, we will first calculate error that still uses the "wrong" mean, but is not "normalized": 
+```{r}
+#| code-fold: true
+exp2 %>% summarySEwithin2(., dv = "normalized_error", 
+                 within_vars = "variability", 
+                 between_vars = "mark")
+```
+
+---
+
+Recreate the plot that Moritz et al. created: 
+
+```{r}
+#| label: plot Moritz
+#| code-fold: true
+
+p_og <- exp2 %>% summarySEwithin2(., dv = "normalized_error", 
+                 within_vars = "variability", 
+                 between_vars = "mark") %>% 
+  plot_results(.)
+p_og 
+```
+
+# Analyze signed error
+
+We will calculate error ourselves using reported average: 
+
+```{r}
+exp2 <- rbind(exp2_dotArc, exp2_dotX) %>%
+  as_tibble(.) %>% 
+  select(assignmentid, reportedaverage, stimuliindex)
+
+ans_df <- stimuli_df %>% filter(type != "line") %>% 
+  rename(stimuliindex = index) %>% unnest(data) %>% 
+  group_by(stimuliindex, seed, noise, flip, type) %>% 
+  summarise(mean.y = mean(y), median.y = median(y))
+
+error_df <- exp2 %>% left_join(ans_df) %>% 
+  mutate(error_mean = reportedaverage - mean.y, 
+  error_median = reportedaverage - median.y) %>% 
+    rename(variability = noise, mark = type) %>% 
+    mutate(variability = factor(variability, levels = c("c(0, 0)", "c(0, 0.4)")))
+
+error_df %>% head(5)
+```
+
+Instead of calculating corrected error, we will first calculate relative to mean: 
 
 ```{r}
 #| code-fold: true
 
-freq_summary <- exp2 %>%
-  group_by(assignmentid, mark) %>%
-  mutate(subj_mean = mean(error)) %>%
-  ungroup() %>%
-  mutate(grand_mean = mean(error)) %>%
-  mutate(corrected = error - subj_mean + grand_mean) %>%
-  group_by(mark, variability, flip) %>%
-  summarise(
-    mu = mean(error),
-    se = sd(corrected) / sqrt(n()) * sqrt(4 / (4 - 1)), # <- NEW: k is 4
-    .groups = "drop"
-  )
+freq_summary <- error_df %>% summarySEwithin2(., dv = "error_mean", 
+  within_vars = c("variability", "flip"), 
+  between_vars = "mark")
 
 freq_summary
 ```
@@ -197,7 +215,36 @@ p1 <- freq_summary %>%
 p1
 ```
 
-Ok so the above tells us that if we look at normal, calculated by looking at the mean in which people share mean, then the above is what we get. 
+Now let's look at how the error distributions look like if we compare to median: 
+
+```{r}
+error_df %>% summarySEwithin2(., dv = "error_median", 
+  within_vars = c("variability", "flip"), 
+  between_vars = "mark") %>%
+  mutate(
+    flip_label = ifelse(flip == TRUE, "Variability Below", "Variability Above"),
+    mu_display = ifelse(flip == FALSE, mu, -mu)
+  ) %>% plot_results(.) + facet_wrap(~flip_label, ncol = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray")
+```
+
+It seems like there's something weird with variability below ... What if we don't split by variability upper vs lower? 
+
+```{r}
+#| layout-ncol: 2 
+
+error_df %>% summarySEwithin2(., dv = "error_mean", 
+  within_vars = "variability", 
+  between_vars = "mark") %>% 
+  plot_results(.)
+
+error_df %>% summarySEwithin2(., dv = "error_median", 
+  within_vars = "variability", 
+  between_vars = "mark") %>% 
+  plot_results(.)
+```
+
+It is unclear why these are all negative ... 
 
 ## Recalculate error 
 

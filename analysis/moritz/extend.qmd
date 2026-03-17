@@ -12,9 +12,6 @@ format:
 #| code-fold: true
 #| label: read in libraries
 
-
-library(plyr)
-source("analysis/moritz/Functions.R")
 library(ggplot2)
 library(tidyverse)
 library(tidybayes)
@@ -36,103 +33,7 @@ library(here)
 - What is the "apples-to-apples" comparison we need to show here 
 - What does this reveal about their modeling choice, and how could we potentially improve on top of it 
 
-# Repeating Mortiz's analysis 
-
-```{r}
-#| label: read in Mortiz data
-
-#point arc
-exp2_dotArc <- read.csv(
-  here("data", "moritz", "exp", "exp2-point-arc.csv"),
-  ,
-  check.names = FALSE
-)
-#point
-exp2_dotX <- read.csv(
-  here("data", "moritz", "exp", "exp2-point.csv"),
-  check.names = FALSE
-)
-exp2 <- rbind(exp2_dotArc, exp2_dotX) %>%
-  as_tibble(.) %>%
-  select(assignmentid, mark, flip, variability, normalized_error)
-
-exp2 %>% head(5)
-```
-
-Perform the correction: 
-
-```{r}
-#| code-fold: true
-exp2 %>%
-  group_by(assignmentid, mark) %>%
-  mutate(subj_mean = mean(normalized_error)) %>%
-  ungroup() %>%
-  mutate(grand_mean = mean(normalized_error)) %>%
-  mutate(corrected = normalized_error - subj_mean + grand_mean) %>%
-  group_by(mark, variability) %>%
-  summarise(
-    mu = mean(normalized_error),
-    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2 when the within-subj variability is this 
-    .groups = "drop"
-  )
-```
-
-If we do it the same way by calling functions in `Functions.R` this is what we get: 
-
-```{r}
-freq_sum <- summarySEwithin(data = exp2, #data
-                measurevar = "normalized_error",  #dependent variable 
-                withinvars = "variability", #within subjects variable
-                betweenvars = "mark", #between subject variable 
-                idvar = "assignmentid") #participant id
-freq_sum
-```
-
-Seems like the numbers match each other, which implies that our approach is correct. So we will use our dataframe to plot: 
-
-Recreate the plot that Moritz et al. created: 
-
-```{r}
-#| label: plot Mortiz
-#| code-fold: true
-exp2 %>%
-  group_by(assignmentid, mark) %>%
-  mutate(subj_mean = mean(normalized_error)) %>%
-  ungroup() %>%
-  mutate(grand_mean = mean(normalized_error)) %>%
-  mutate(corrected = normalized_error - subj_mean + grand_mean) %>%
-  group_by(mark, variability) %>%
-  summarise(
-    mu = mean(normalized_error),
-    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2
-    .groups = "drop"
-  ) %>%
-  ggplot(aes(
-    x = variability,
-    y = mu, 
-    dist = "norm",
-    arg1 = mu,
-    arg2 = se,
-    fill = mark
-  )) + #uncertainty
-  stat_dist_halfeye(
-    show_interval = TRUE,
-    position = position_dodge(width = 0.2), # <- WHY THIS???
-    .width = 0.95,
-    size = .5,
-    alpha = .8
-  ) + #adding halfeye
-  coord_flip() + #flipping axis
-  theme_tidybayes() + #theme
-  theme(legend.position = "top") +
-  scale_fill_manual(values = c("#76B7B2", "#E15759")) + # take out "#59A14F"
-  scale_y_continuous(
-    breaks = seq(0, .11, by = .01),
-    expand = expansion(mult = c(0.01, 0.01))
-  ) + #specifying scale
-  xlab("Variability") + #add x label
-  ylab("Normalized Error") #add y label
-```
+For details related to Mortiz's original experiment, and different ways of analyzing it, see `reanalyze.qmd`. 
 
 # Generate posterior predictions for an "average" participant 
 
@@ -193,6 +94,23 @@ stimuli_df <- stimuli_df %>%
 #| label: show stimuli dataframe
 stimuli_df
 ```
+
+:::{.callout}
+# To what extent does median vs mean differ ...? 
+
+```{r}
+stimuli_df %>%
+  group_by(ogIndex, type, noise) %>%
+  summarise(
+    mean.y = mean(num.y),
+    median.y = median(num.y),
+    diff = median.y - mean.y
+  ) %>%
+  ggplot(aes(y = noise, x = diff, fill = type)) +
+  geom_dotplot()
+```
+
+:::
 
 Define helper functions: 
 
@@ -275,10 +193,27 @@ participant_df <- pilot_df %>%
   select(participantId, responseId, answer) %>%
   pivot_wider(names_from = responseId, values_from = answer) %>%
   # we will not use participants who have distance calibration < 250 mm
-  mutate(`dist-calibration-MM` = as.numeric(`dist-calibration-MM`)) %>%
-  filter(`dist-calibration-MM` >= 250) %>%
+  mutate(
+    `
+dist - calibration - MM
+` = as.numeric(
+      `
+dist - calibration - MM
+`
+    )
+  ) %>%
+  filter(
+    `
+dist - calibration - MM
+` >=
+      250
+  ) %>%
   select(1, 3, 4) %>%
-  rename(distToScreen = `dist-calibration-MM`) %>%
+  rename(
+    distToScreen = `
+dist - calibration - MM
+`
+  ) %>%
   mutate(
     pixelsPerMM = as.numeric(pixelsPerMM),
     distToScreen = as.numeric(distToScreen)
@@ -776,8 +711,8 @@ participant_df
 Let us first do more aggressive thinning: 
 
 ```{r}
-#| label: thin posterior draws for all participants 
-#| code-fold: true 
+#| label: thin posterior draws for all participants
+#| code-fold: true
 
 draws <- model %>%
   spread_draws(b_Intercept, b_sigma_Intercept) %>%
@@ -785,9 +720,9 @@ draws <- model %>%
   thin_draws(thin = 20)
 
 # 6 participant * 48 trials per participant * 60 dots per trial
-# 17280 rows 
+# 17280 rows
 new_data <- participant_df %>%
-  left_join(stimuli_df, relationship = "many-to-many") %>% 
+  left_join(stimuli_df, relationship = "many-to-many") %>%
   # calculate pixel values from numerical values
   mutate(px.x = 500 / 120 * num.x, px.y = 200 * num.y) %>%
   # calcuate physical values (in MM) from pixel values
@@ -799,18 +734,24 @@ new_data <- participant_df %>%
   )
 
 new_data
-```
+`
+`
+`
   
 ### Strategy 1 -- Project once to y-axis 
   
 Build the posterior prediction: 
   
-```{r}
+`
+``
+{
+  r
+}
 rm(pred)
 
-# 17280 rows * 600 draws per row 
-# 1036800 
-pred <- new_data %>% 
+# 17280 rows * 600 draws per row
+# 1036800
+pred <- new_data %>%
   expand_grid(draws) %>%
   mutate(
     sigma = exp(b_sigma_Intercept + log(va.ans.x)),
@@ -828,14 +769,15 @@ Again, the above number of rows is obtained by participant (6) * trials/particip
 To then average across participants mean that we have distinct trials (48 * 2) * draw/trial (600): 
 
 ```{r}
-avg_pred <- pred %>% group_by(participantId, expIndex, type, flip, noise, .draw) %>% 
+avg_pred <- pred %>%
+  group_by(participantId, expIndex, type, flip, noise, .draw) %>%
   summarise(
     num.pred.avg.y = mean(num.pred.y),
     num.pred.median.y = median(num.pred.y)
-  ) %>% 
-  group_by(expIndex, type, flip, noise, .draw) %>% 
+  ) %>%
+  group_by(expIndex, type, flip, noise, .draw) %>%
   summarise(
-    num.pred.avg.y = mean(num.pred.avg.y), 
+    num.pred.avg.y = mean(num.pred.avg.y),
     num.pred.median.y = mean(num.pred.median.y)
   )
 ```
@@ -868,7 +810,8 @@ Finally let's plot to see if we can get similar results:
 #| code-fold: true
 #| layout-ncol: 2
 
-plot_df %>% group_by(type, noise, .draw) %>% 
+plot_df %>%
+  group_by(type, noise, .draw) %>%
   summarise(error = mean(norm.error.median)) %>%
   ggplot(aes(x = error, y = noise, fill = type)) +
   stat_halfeye(alpha = 0.8) +
@@ -896,11 +839,11 @@ This time we will build the posterior prediction a bit differently:
 
 ```{r}
 # 6 participant * 48 trials per participant * 60 dots per trial
-# 17280 rows 
+# 17280 rows
 new_data <- participant_df %>%
-  left_join(stimuli_df, relationship = "many-to-many") %>% 
+  left_join(stimuli_df, relationship = "many-to-many") %>%
   # calculate pixel values from numerical values
-  mutate(px.x = 500 / 120 * abs(num.x - 60), px.y = 200 * num.y) %>% # <- DIFF 
+  mutate(px.x = 500 / 120 * abs(num.x - 60), px.y = 200 * num.y) %>% # <- DIFF
   # calcuate physical values (in MM) from pixel values
   mutate(phy.x = px.x / pixelsPerMM, phy.y = px.y / pixelsPerMM) %>%
   # calculate visual angle
@@ -909,24 +852,24 @@ new_data <- participant_df %>%
     va.ans.y = vis_angle(phy.y, distToScreen)
   )
 
-# 17280 rows * 600 draws per row 
-# 1036800 
-pred <- new_data %>% 
+# 17280 rows * 600 draws per row
+# 1036800
+pred <- new_data %>%
   expand_grid(draws) %>%
   mutate(
     sigma = exp(b_sigma_Intercept + log(va.ans.x)),
     va.pred.error = rnorm(n(), mean = b_Intercept, sd = sigma),
-    # first projection to x == 60 
+    # first projection to x == 60
     va.pred.y = va.pred.error + va.ans.y,
-  ) %>% 
-  group_by(participantId, expIndex, type, flip, noise, .draw) %>% 
+  ) %>%
+  group_by(participantId, expIndex, type, flip, noise, .draw) %>%
   summarise(
     va.pred.avg.y = mean(va.pred.y),
-    va.pred.median.y = median(va.pred.y), 
+    va.pred.median.y = median(va.pred.y),
     .groups = "drop_last"
   )
 
-# project from middle to left axis 
+# project from middle to left axis
 pred2 <- pred %>%
   left_join(draws) %>%
   mutate(
@@ -950,10 +893,10 @@ pred2 <- pred %>%
 Then we go through the same process: 
 
 ```{r}
-avg_pred <- pred2 %>% 
-  group_by(expIndex, type, flip, noise, .draw) %>% 
+avg_pred <- pred2 %>%
+  group_by(expIndex, type, flip, noise, .draw) %>%
   summarise(
-    num.pred.avg.y = mean(num.pred.y.avg), 
+    num.pred.avg.y = mean(num.pred.y.avg),
     num.pred.median.y = mean(num.pred.y.median)
   )
 ```
@@ -986,7 +929,8 @@ Then plot:
 #| code-fold: true
 #| layout-ncol: 2
 
-plot_df %>% group_by(type, noise, .draw) %>% 
+plot_df %>%
+  group_by(type, noise, .draw) %>%
   summarise(error = mean(norm.error.median)) %>%
   ggplot(aes(x = error, y = noise, fill = type)) +
   stat_halfeye(alpha = 0.8) +
