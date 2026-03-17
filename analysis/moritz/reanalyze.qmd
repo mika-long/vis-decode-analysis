@@ -369,7 +369,7 @@ To put things into comparison (between how the original paper did, top, vs. how 
 
 ## Read in data related to strategy 
 
-Question to answer: people who claim to use mean strategy vs people who claim to use median strategy. Is there a difference between their answers? 
+Question to answer: people who claim to use mean strategy vs people who claim to use median strategy. **Is there a difference between their responses/errors?** 
   
 ```{r}
 strategy_df <- read.csv(here("data", "moritz", "exp", "strategies.csv")) %>%
@@ -377,14 +377,16 @@ strategy_df <- read.csv(here("data", "moritz", "exp", "strategies.csv")) %>%
   # keep only those related to experiment 2, and only related to point and point arc condition
   filter(Exp == 2, Condition %in% c("point", "point_arc")) %>%
   select(1:4, contains("mental_averaging"), contains("number_of_points"))
+
+strategy_df %>% head(.)
 ```
 
 Where do the two raters (`r1` and `r2`) disagree? 
 
 ```{r}
-# for mental averaging
+# for mental averaging -- 22 participants 
 strategy_df %>% filter(r1_mental_averaging != r2_mental_averaging)
-# for equal number of points
+# for equal number of points -- 9 participants 
 strategy_df %>% filter(r1_number_of_points != r2_number_of_points)
 ```
 
@@ -403,3 +405,163 @@ strategy_df %>%
   pull(ResponseId) -> equal_points_id
 ```
 
+I should note that there is also some overlap between those who perform mental averaging and median: 
+
+```{r}
+intersect(mental_average_id, equal_points_id)
+```
+
+What about the distribution? Do participants who view `point_arc` and `point` use these strategies about equally or is there a preference? 
+
+```{r}
+exp2 %>% filter(assignmentid %in% mental_average_id) %>% 
+  group_by(mark) %>% count(.)
+
+exp2 %>% filter(assignmentid %in% equal_points_id) %>% 
+  group_by(mark) %>% count(.)
+```
+
+
+
+---
+
+Let us analyze errors in a similar way before: 
+
+```{r}
+exp2 %>% filter(assignmentid %in% mental_average_id) %>%
+  group_by(assignmentid, mark) %>%
+  mutate(subj_mean = mean(normalized_error)) %>%
+  ungroup() %>%
+  mutate(grand_mean = mean(normalized_error)) %>%
+  mutate(corrected = normalized_error - subj_mean + grand_mean) %>%
+  group_by(mark, variability) %>%
+  summarise(
+    mu = mean(normalized_error),
+    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # k is 2 when the within-subj variability is this
+    .groups = "drop"
+  )  %>%
+  # mutate(
+  #   flip_label = ifelse(flip == TRUE, "Variability Below", "Variability Above"),
+  #   mu_display = ifelse(flip == FALSE, mu, -mu)
+  # ) %>%
+  ggplot(aes(
+    y = variability,
+    x = mu,
+    dist = "norm",
+    arg1 = mu,
+    arg2 = se,
+    fill = mark
+  )) +
+  stat_dist_halfeye(
+    show_interval = TRUE,
+    position = position_dodge(width = 0.2),
+    .width = 0.95,
+    size = .5,
+    alpha = .8
+  ) +
+  theme_tidybayes() +
+  theme(legend.position = "top") +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) +
+  # scale_x_continuous(
+  #   breaks = seq(0, .11, by = .01),
+  #   expand = expansion(mult = c(0.01, 0.01))
+  # ) +
+  # facet_wrap(~flip_label, ncol = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
+  xlab("Error (adjusted toward variability)") +
+  ylab("Variability")
+
+exp2 %>%
+  filter(assignmentid %in% mental_average_id) %>% 
+  mutate(
+    true_error = reportedaverage - data_average,
+    normalized_true_error = ifelse(flip == TRUE, -true_error, true_error)
+  ) %>%
+  group_by(assignmentid, mark) %>%
+  mutate(subj_mean = mean(normalized_true_error)) %>%
+  ungroup() %>%
+  mutate(grand_mean = mean(normalized_true_error)) %>%
+  mutate(corrected = normalized_true_error - subj_mean + grand_mean) %>%
+  group_by(mark, variability) %>% # not grouping by flip anymore
+  summarise(
+    mu = mean(normalized_true_error),
+    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # <- NEW: k is 2
+    .groups = "drop"
+  ) %>% 
+      ggplot(aes(
+    y = variability,
+    x = mu,
+    dist = "norm",
+    arg1 = mu,
+    arg2 = se,
+    fill = mark
+  )) +
+  stat_dist_halfeye(
+    show_interval = TRUE,
+    position = position_dodge(width = 0.2),
+    .width = 0.95,
+    size = .5,
+    alpha = .8
+  ) +
+  theme_tidybayes() +
+  theme(legend.position = "top") +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) +
+  # scale_x_continuous(
+  #   breaks = seq(0, .11, by = .01),
+  #   expand = expansion(mult = c(0.01, 0.01))
+  # ) +
+  # facet_wrap(~flip_label, ncol = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
+  xlab("Error (adjusted toward variability)") +
+  ylab("Variability")
+
+
+```
+
+What about the median stuff? 
+
+```{r}
+exp2 %>%
+  filter(assignmentid %in% equal_points_id) %>% 
+  mutate(
+    true_error = reportedaverage - data_average,
+    normalized_true_error = ifelse(flip == TRUE, -true_error, true_error)
+  ) %>%
+  group_by(assignmentid, mark) %>%
+  mutate(subj_mean = mean(normalized_true_error)) %>%
+  ungroup() %>%
+  mutate(grand_mean = mean(normalized_true_error)) %>%
+  mutate(corrected = normalized_true_error - subj_mean + grand_mean) %>%
+  group_by(mark, variability) %>% # not grouping by flip anymore
+  summarise(
+    mu = mean(normalized_true_error),
+    se = sd(corrected) / sqrt(n()) * sqrt(2 / (2 - 1)), # <- NEW: k is 2
+    .groups = "drop"
+  ) %>% 
+      ggplot(aes(
+    y = variability,
+    x = mu,
+    dist = "norm",
+    arg1 = mu,
+    arg2 = se,
+    fill = mark
+  )) +
+  stat_dist_halfeye(
+    show_interval = TRUE,
+    position = position_dodge(width = 0.2),
+    .width = 0.95,
+    size = .5,
+    alpha = .8
+  ) +
+  theme_tidybayes() +
+  theme(legend.position = "top") +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) +
+  # scale_x_continuous(
+  #   breaks = seq(0, .11, by = .01),
+  #   expand = expansion(mult = c(0.01, 0.01))
+  # ) +
+  # facet_wrap(~flip_label, ncol = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
+  xlab("Error (adjusted toward variability)") +
+  ylab("Variability")
+```
