@@ -12,6 +12,8 @@ format:
 #| code-fold: true
 #| label: read in libraries
 
+library(plyr)
+source(here::here("analysis", "moritz", "Functions.R"))
 library(ggplot2)
 library(tidyverse)
 library(tidybayes)
@@ -20,7 +22,6 @@ library(jsonlite)
 library(brms)
 library(posterior)
 theme_set(theme_tidybayes())
-library(here)
 ```
 
 # TLDR (and TODO)
@@ -56,7 +57,7 @@ First, read in the stimuli data from Mortiz experiment 2:
 ```{r}
 #| code-fold: true
 
-exp_json_data <- jsonlite::fromJSON(here(
+exp_json_data <- jsonlite::fromJSON(here::here(
   "data",
   "moritz",
   "stimuli",
@@ -95,7 +96,7 @@ stimuli_df <- stimuli_df %>%
 stimuli_df
 ```
 
-:::{.callout}
+:::{.callout-note collapse="true"}
 # To what extent does median vs mean differ ...? 
 
 ```{r}
@@ -161,7 +162,8 @@ The goal is to translate from the pixel space to the physical space, and then to
 #| code-fold: true
 #| label: read in pilot df
 
-raw_df <- read_csv(here("data", "part_2", "part2_pilot.csv")) %>% as_tibble(.)
+raw_df <- read_csv(here::here("data", "part_2", "part2_pilot.csv")) %>%
+  as_tibble(.)
 
 pilot_df <- raw_df %>%
   select(
@@ -193,30 +195,10 @@ participant_df <- pilot_df %>%
   select(participantId, responseId, answer) %>%
   pivot_wider(names_from = responseId, values_from = answer) %>%
   # we will not use participants who have distance calibration < 250 mm
+  mutate(distToScreen = as.numeric(`dist-calibration-MM`)) %>%
+  filter(distToScreen >= 250) %>%
   mutate(
-    `
-dist - calibration - MM
-` = as.numeric(
-      `
-dist - calibration - MM
-`
-    )
-  ) %>%
-  filter(
-    `
-dist - calibration - MM
-` >=
-      250
-  ) %>%
-  select(1, 3, 4) %>%
-  rename(
-    distToScreen = `
-dist - calibration - MM
-`
-  ) %>%
-  mutate(
-    pixelsPerMM = as.numeric(pixelsPerMM),
-    distToScreen = as.numeric(distToScreen)
+    pixelsPerMM = as.numeric(pixelsPerMM)
   )
 
 # only keep people whose ans are somewhat useful
@@ -278,7 +260,7 @@ ans_df <- stimuli_df %>%
   ungroup(.) %>%
   left_join(temp_df)
 
-ans_df
+# ans_df
 ```
 
 Here are the processed dataframes: 
@@ -287,6 +269,43 @@ Here are the processed dataframes:
 participant_df
 ans_df
 resp_df %>% count(participantId, type)
+```
+
+## Look at participants' error
+
+```{r}
+resp_df %>% select(participantId, type, expIndex, num.y) %>% 
+  mutate(type = ifelse(type == "pointArc", "point_arc", "point")) %>% 
+  left_join(ans_df, by = c("type", "expIndex")) %>% 
+  mutate(error = num.y - num.ans.y) %>% 
+  summarySEwithin(data = ., 
+  measurevar = "error", betweenvars = "type", withinvars = c("noise", "flip"), idvar = "participantId") %>% 
+  mutate(noise = factor(noise, levels = c("c(0, 0)", "c(0, 0.4)")), 
+  flip_lab = ifelse(flip == FALSE, "Noise in Upper", "Noise in Lower"), 
+  flip_lab = factor(flip_lab, levels = c("Noise in Upper", "Noise in Lower"))
+  ) %>% 
+  ggplot(aes(
+      y = noise,
+      x = error, # {{ xvar }},
+      dist = "norm",
+      arg1 = error, # {{ xvar }},
+      arg2 = se,
+      fill = type
+    )) + #uncertainty
+    stat_dist_halfeye(
+      show_interval = TRUE,
+      position = position_dodge(width = 0.2),
+      .width = 0.95,
+      size = .5,
+      alpha = .8
+    ) +
+    theme(legend.position = "top") +
+    scale_fill_manual(values = c("#76B7B2", "#E15759")) + # take out "#59A14F"
+    ylab("Variability") + #add x label
+    xlab("Error") +  #add y label
+    facet_wrap(flip_lab ~ ., ncol = 1) + 
+    geom_vline(xintercept = 0, linetype = "dashed") + 
+    labs(y = "Variability", x = "True Error", title = "Pilot study (N = 6)")
 ```
 
 ## Read in fitted model for `project_to_y_axis`
@@ -327,7 +346,7 @@ p <- c(
 And here we load the actual fitted model: 
 
 ```{r}
-model <- readRDS(here("analysis", "fitted_models", "task5.y.rds"))
+model <- readRDS(here::here("analysis", "fitted_models", "task5.y.rds"))
 model
 ```
 
@@ -386,7 +405,8 @@ Get (thinned) posterior draws:
 draws <- model %>%
   spread_draws(b_Intercept, b_sigma_Intercept) %>%
   as_draws_df(.) %>%
-  thin_draws(thin = 2) # if too much we can also do thinning
+  # if too slow we can also do more aggressive thinning by making k large
+  thin_draws(thin = 2)
 ```
 
 Then we go the prediction route: `VA -> mm -> px -> num`:
@@ -420,7 +440,7 @@ avg_pred <- pred %>%
   summarise(
     # suppose participants can calculate mean
     num.pred.avg.y = mean(num.pred.y),
-    # suppor participants use the median instead
+    # suppose participants use the median instead
     num.pred.median.y = median(num.pred.y),
   )
 ```
@@ -463,19 +483,25 @@ plot_df <- avg_pred %>%
   )
 
 plot_df %>%
+  mutate(noise = factor(noise, levels = c("c(0, 0)", "c(0, 0.4)"))) %>%
   group_by(type, noise, .draw) %>%
   summarise(error = mean(norm.error.avg)) %>%
   ggplot(aes(x = error, y = noise, fill = type)) +
   stat_halfeye(alpha = 0.8) +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) +
+  theme(legend.position = "top") +
   labs(
     title = "Posterior normalized error (mean strategy)"
   )
 
 plot_df %>%
+  mutate(noise = factor(noise, levels = c("c(0, 0)", "c(0, 0.4)"))) %>%
   group_by(type, noise, .draw) %>%
   summarise(error = mean(norm.error.median)) %>%
   ggplot(aes(x = error, y = noise, fill = type)) +
   stat_halfeye(alpha = 0.8) +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) +
+  theme(legend.position = "top") +
   labs(
     title = "Posterior normalized error (median strategy)"
   )
@@ -483,12 +509,16 @@ plot_df %>%
 
 As one can see, the above posterior error has very small variance. Median has slightly larger variance, but the "normalized error" goes negative. 
 
+:::{.callout-note collapse="true"}
+
 ```{r}
 plot_df %>%
   group_by(type, noise, .draw) %>%
   summarise(error = mean(norm.error.median)) %>%
   median_qi()
 ```
+
+:::
 
 ### Strategy 2 --- Project to vertical line where `xintercept == 60` and then `xintercept == 0`
 
@@ -530,7 +560,7 @@ draws <- model %>%
   as_draws_df(.) %>%
   # thin parameter set to 4 instead of 2
   # for more aggressive thinning
-  thin_draws(thin = 2)
+  thin_draws(thin = 4)
 ```
 
 Combine the posterior with new data: 
@@ -665,11 +695,13 @@ plot_df <- avg_pred %>%
   summarise(
     error.avg = mean(norm.error.avg),
     error.median = mean(norm.error.median),
-  )
+  ) %>%
+  mutate(noise = factor(noise, levels = c("c(0, 0)", "c(0, 0.4)")))
 
 plot_df %>%
   ggplot(aes(x = error.avg, y = noise, fill = type)) +
   stat_halfeye(alpha = 0.8) +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) +
   labs(
     title = "Mean Strategy on twice projected value on y-axis",
     x = "Numerical Normalized Error on y-axis"
@@ -680,6 +712,7 @@ plot_df %>%
 plot_df %>%
   ggplot(aes(x = error.median, y = noise, fill = type)) +
   stat_halfeye(alpha = 0.8) +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) +
   labs(
     title = "Median Strategy on twice projected value on y-axis",
     x = "Numerical Normalized Error on y-axis"
@@ -690,11 +723,208 @@ plot_df %>%
 
 The results are very similiar, except that the median strategy reads like the mean strategy but shifted to the left of the x-axis for a bit ... 
 
-Compared to strategy 1, I think the variance here is a bit bigger ... 
+:::{.callout-note collapse="true"}
+
+Compared to strategy 1 of projecting once, I think the variance here is a bit bigger ... 
 
 ```{r}
 plot_df %>% median_qi()
 ```
+
+:::
+
+## New -- What if we do weighted stuff ...? 
+
+```{r}
+
+```
+
+## NEW -- What if we do truncated normal sampling? 
+
+```{r}
+rm(draws)
+
+draws <- model %>%
+  spread_draws(b_Intercept, b_sigma_Intercept) %>%
+  as_draws_df(.) %>%
+  # thin parameter set to 4 instead of 2
+  # for more aggressive thinning
+  thin_draws(thin = 4)
+```
+
+```{r}
+library("devtools")
+install_github("olafmersmann/truncnorm")
+library(truncnorm)
+
+pred <- draws %>%
+  expand_grid(new_data) %>%
+  mutate(
+    sigma = exp(b_sigma_Intercept + log(va.ans.x)),
+    
+    # 1. Calculate analytical bounds for the error
+    va.min = vis_angle(0, distToScreen), 
+    # Upper bound: when physical size is maxed out (200 / pixelToMM)
+    va.max = vis_angle(200 / pixelToMM, distToScreen),
+    
+    error_lb = va.min - va.ans.y,
+    error_ub = va.max - va.ans.y,
+    
+    # 2. Draw directly from the truncated distribution
+    va.pred.error = rtruncnorm(n(), a = error_lb, b = error_ub, mean = b_Intercept, sd = sigma),
+    
+    # 3. Proceed forward (guaranteed to fall in [0,1])
+    va.pred.y = va.pred.error + va.ans.y,
+    phy.pred.y = phys_size(va.pred.y, distToScreen),
+    px.pred.y = phy.pred.y * pixelToMM,
+    num.pred.y = px.pred.y / 200
+  )
+```
+
+```{r}
+avg_pred <- pred %>%
+  group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
+  summarise(
+    # suppose participants can calculate mean
+    num.pred.avg.y = mean(num.pred.y),
+    # suppose participants use the median instead
+    num.pred.median.y = median(num.pred.y),
+  )
+```
+
+Get the plotting dataframe and plots: 
+
+```{r}
+plot_df <- avg_pred %>%
+  ungroup(.) %>%
+  left_join(ans_df) %>%
+  mutate(
+    error.median = num.pred.median.y - num.ans.y,
+    norm.error.median = ifelse(
+      flip == FALSE,
+      num.pred.median.y - num.ans.y,
+      num.ans.y - num.pred.median.y
+    ),
+    error.avg = num.pred.avg.y - num.ans.y,
+    norm.error.avg = ifelse(
+      flip == FALSE,
+      num.pred.avg.y - num.ans.y,
+      num.ans.y - num.pred.avg.y
+    )
+  ) %>% 
+  mutate(noise = factor(noise, levels = c("c(0, 0)", "c(0, 0.4)")))
+
+plot_df %>%
+  group_by(type, noise, .draw) %>%
+  summarise(error = mean(norm.error.avg)) %>%
+  ggplot(aes(x = error, y = noise, fill = type)) +
+  stat_halfeye(alpha = 0.8) +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) +
+  theme(legend.position = "top") +
+  labs(
+    title = "Posterior normalized error (mean strategy)"
+  )
+
+plot_df %>%
+  group_by(type, noise, .draw) %>%
+  summarise(error = mean(norm.error.median)) %>%
+  ggplot(aes(x = error, y = noise, fill = type)) +
+  stat_halfeye(alpha = 0.8) +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) +
+  theme(legend.position = "top") +
+  labs(
+    title = "Posterior normalized error (median strategy)"
+    )
+```
+
+## NEW -- Add more randomness 
+
+```{r}
+draws <- model %>%
+  spread_draws(
+    b_Intercept, 
+    b_sigma_Intercept,
+    sd_participantId__Intercept, # <- NEW 
+    sd_participantId__sigma_Intercept # <- NEW 
+  ) %>% 
+  as_draws_df(.) %>% 
+  thin_draws(thin = 4)
+
+pred <- draws %>%
+  expand_grid(new_data) %>%
+  mutate(
+    # simulate a new participant's offsets from the population distribution
+    re_mu    = rnorm(n(), mean = 0, sd = sd_participantId__Intercept),
+    re_sigma = rnorm(n(), mean = 0, sd = sd_participantId__sigma_Intercept),
+    mu    = b_Intercept + re_mu,
+    sigma = exp(b_sigma_Intercept + re_sigma + log(va.ans.x)),
+    va.pred.error = rnorm(n(), mean = mu, sd = sigma),
+    va.pred.y = va.pred.error + va.ans.y
+  )  %>%
+  # turn vis angle back to numerical values
+  mutate(
+    phy.pred.y = phys_size(va.pred.y, distToScreen),
+    px.pred.y = phy.pred.y * pixelToMM,
+    num.pred.y = px.pred.y / 200
+  )
+
+avg_pred <- pred %>%
+  group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
+  summarise(
+    # suppose participants can calculate mean
+    num.pred.avg.y = mean(num.pred.y),
+    # suppose participants use the median instead
+    num.pred.median.y = median(num.pred.y),
+  )
+```
+
+Create the plotting dataframe: 
+
+```{r}
+plot_df <- avg_pred %>%
+  ungroup(.) %>%
+  left_join(ans_df) %>%
+  mutate(
+    error.median = num.pred.median.y - num.ans.y,
+    norm.error.median = ifelse(
+      flip == FALSE,
+      num.pred.median.y - num.ans.y,
+      num.ans.y - num.pred.median.y
+    ),
+    error.avg = num.pred.avg.y - num.ans.y,
+    norm.error.avg = ifelse(
+      flip == FALSE,
+      num.pred.avg.y - num.ans.y,
+      num.ans.y - num.pred.avg.y
+    )
+  ) %>% 
+    mutate(noise = factor(noise, levels = c("c(0, 0)", "c(0, 0.4)")))
+
+plot_df %>%
+  group_by(type, noise, .draw) %>%
+  summarise(error = mean(norm.error.avg)) %>%
+  ggplot(aes(x = error, y = noise, fill = type)) +
+  stat_halfeye(alpha = 0.8) +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) +
+  theme(legend.position = "top") +
+  labs(
+    title = "Posterior normalized error (mean strategy)"
+  )
+
+plot_df %>%
+  mutate(noise = factor(noise, levels = c("c(0, 0)", "c(0, 0.4)"))) %>%
+  group_by(type, noise, .draw) %>%
+  summarise(error = mean(norm.error.median)) %>%
+  ggplot(aes(x = error, y = noise, fill = type)) +
+  stat_halfeye(alpha = 0.8) +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) +
+  theme(legend.position = "top") +
+  labs(
+    title = "Posterior normalized error (median strategy)"
+  )
+```
+
+Hmm maybe I did this wrong but why does it look so similar ...??? 
 
 ---
 
@@ -734,19 +964,13 @@ new_data <- participant_df %>%
   )
 
 new_data
-`
-`
-`
+```
   
 ### Strategy 1 -- Project once to y-axis 
   
 Build the posterior prediction: 
   
-`
-``
-{
-  r
-}
+```{r}
 rm(pred)
 
 # 17280 rows * 600 draws per row

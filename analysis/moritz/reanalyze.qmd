@@ -213,10 +213,14 @@ error_df %>%
     betweenvars = "mark",
     idvar = "assignmentid"
   ) %>%
+  mutate(
+    flip_lab = ifelse(flip == FALSE, "Noise in Upper", "Noise in Lower"),
+    flip_lab = factor(flip_lab, levels = c("Noise in Upper", "Noise in Lower"))
+  ) %>%
   plot_results(., error_mean) +
-  labs(x = "True Error") +
   geom_vline(xintercept = 0, linetype = "dashed") +
-  facet_wrap(~flip, ncol = 1)
+  facet_wrap(~flip_lab, ncol = 1) +
+  labs(x = "True Error", title = "Moritz Exp")
 ```
 
 It seems to me that there are several things that are unexplained in the original analysis: 
