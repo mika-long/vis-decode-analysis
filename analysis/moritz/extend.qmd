@@ -780,15 +780,15 @@ First, project points to the middle axis in visual angle space and take the aver
 pred_mid <- draws %>%
   # every draw * every dot;
   # will result in 5760 * 3000 (thinned version) row
-  expand_grid(new_data_2) %>%
+  expand_grid(new_data_mid) %>%
   mutate(
     sigma = exp(b_sigma_Intercept + log(va.ans.x)),
-    va.pred.error = rnorm(n(), mean = b_Intercept, sd = sigma),
+    va.pred.error = b_Intercept,
     va.pred.y = va.pred.error + va.ans.y
   ) %>%
   summarise(
     # assume participants use the mean before second projection
-    va.mid_pred.y.avg = mean(va.pred.y),
+    va.mid_pred.y.avg = weighted.mean(va.pred.y, 1 / sigma^2),
     # assume participants use the median before second projection
     va.mid_pred.y.median = median(va.pred.y),
     .by = c(ogIndex, expIndex, type, flip, noise, seed, .draw)
@@ -880,22 +880,22 @@ plot_df <- avg_pred_mid_axis %>%
   left_join(ans_df) %>%
   mutate(
     error.median = num.pred.y.median - num.mean.y,
-    norm.error.median = ifelse(
-      flip == FALSE,
-      num.pred.y.median - num.ans.y,
-      num.ans.y - num.pred.avg.median.y
-    ),
-    error.avg = num.pred.y.avg - num.mean.y,
-    norm.error.avg = ifelse(
-      flip == FALSE,
-      num.pred.y.avg - num.ans.y,
-      num.ans.y - num.pred.avg.avg.y
-    )
+    # norm.error.median = ifelse(
+    #   flip == FALSE,
+    #   num.pred.y.median - num.ans.y,
+    #   num.ans.y - num.pred.avg.median.y
+    # ),
+    error.avg = num.pred.y.avg - num.mean.y
+    # norm.error.avg = ifelse(
+    #   flip == FALSE,
+    #   num.pred.y.avg - num.ans.y,
+    #   num.ans.y - num.pred.avg.avg.y
+    # )
   ) %>%
   group_by(type, noise, .draw) %>%
   summarise(
-    error.avg = mean(norm.error.avg),
-    error.median = mean(norm.error.median),
+    error.avg = mean(error.avg),
+    error.median = mean(error.median),
   )
 
 plot_df %>%
