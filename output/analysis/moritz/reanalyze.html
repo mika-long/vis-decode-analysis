@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.8.26">
+<meta name="generator" content="quarto-1.8.27">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -67,7 +67,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="reanalyze_files/libs/quarto-html/tippy.umd.min.js"></script>
 <script src="reanalyze_files/libs/quarto-html/anchor.min.js"></script>
 <link href="reanalyze_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="reanalyze_files/libs/quarto-html/quarto-syntax-highlighting-587c61ba64f3a5504c4d52d930310e48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="reanalyze_files/libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="reanalyze_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="reanalyze_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="reanalyze_files/libs/bootstrap/bootstrap-c62ef0501ae2f3adb684d0ab58cf61b7.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
@@ -86,11 +86,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
    
   <ul>
   <li><a href="#tldr" id="toc-tldr" class="nav-link active" data-scroll-target="#tldr">TLDR</a></li>
-  <li><a href="#repeating-mortizs-analysis" id="toc-repeating-mortizs-analysis" class="nav-link" data-scroll-target="#repeating-mortizs-analysis">Repeating Mortiz’s analysis</a>
-  <ul class="collapse">
-  <li><a href="#analyzed-signed-error" id="toc-analyzed-signed-error" class="nav-link" data-scroll-target="#analyzed-signed-error">Analyzed signed error</a></li>
-  <li><a href="#recalculate-error" id="toc-recalculate-error" class="nav-link" data-scroll-target="#recalculate-error">Recalculate error</a></li>
-  </ul></li>
+  <li><a href="#repeating-mortizs-analysis" id="toc-repeating-mortizs-analysis" class="nav-link" data-scroll-target="#repeating-mortizs-analysis">Repeating Mortiz’s analysis</a></li>
+  <li><a href="#analyze-signed-error" id="toc-analyze-signed-error" class="nav-link" data-scroll-target="#analyze-signed-error">Analyze signed error</a></li>
   <li><a href="#do-participants-who-use-median-strategy-get-answer-closer-to-median-or-mean" id="toc-do-participants-who-use-median-strategy-get-answer-closer-to-median-or-mean" class="nav-link" data-scroll-target="#do-participants-who-use-median-strategy-get-answer-closer-to-median-or-mean">Do participants who use Median Strategy get answer closer to median or mean?</a>
   <ul class="collapse">
   <li><a href="#read-in-data-related-to-strategy" id="toc-read-in-data-related-to-strategy" class="nav-link" data-scroll-target="#read-in-data-related-to-strategy">Read in data related to strategy</a></li>
@@ -135,20 +132,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#point arc</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>exp2_dotArc <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"moritz"</span>, <span class="st">"exp"</span>, <span class="st">"exp2-point-arc.csv"</span>),</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  ,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"moritz"</span>, <span class="st">"exp"</span>, <span class="st">"exp2-point-arc.csv"</span>),</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># paste0(getwd(), "/data/moritz/exp/exp2-point-arc.csv"),</span></span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">check.names =</span> <span class="cn">FALSE</span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">#point</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>exp2_dotX <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"moritz"</span>, <span class="st">"exp"</span>, <span class="st">"exp2-point.csv"</span>),</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">check.names =</span> <span class="cn">FALSE</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>exp2 <span class="ot">&lt;-</span> <span class="fu">rbind</span>(exp2_dotArc, exp2_dotX) <span class="sc">%&gt;%</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(.) <span class="sc">%&gt;%</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(assignmentid, mark, flip, variability, error, normalized_error)</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">#point</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>exp2_dotX <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"moritz"</span>, <span class="st">"exp"</span>, <span class="st">"exp2-point.csv"</span>),</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># paste0(getwd(), "/data/moritz/exp/exp2-point.csv"),</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">check.names =</span> <span class="cn">FALSE</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co"># combine</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>raw_exp2 <span class="ot">&lt;-</span> <span class="fu">rbind</span>(exp2_dotArc, exp2_dotX) <span class="sc">%&gt;%</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(.)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>exp2 <span class="ot">&lt;-</span> raw_exp2 <span class="sc">%&gt;%</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(assignmentid, mark, flip, variability, error, normalized_error)</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
@@ -156,10 +159,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </script>
 </div>
 </div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># also read in the original stimuli file</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>exp_json_data <span class="ot">&lt;-</span> jsonlite<span class="sc">::</span><span class="fu">fromJSON</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"moritz"</span>, <span class="st">"stimuli"</span>, <span class="st">"exp2-stimuli.json"</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># paste0(getwd(), "/data/moritz/stimuli/exp2-stimuli.json"),</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(.)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>stimuli_df <span class="ot">&lt;-</span> exp_json_data <span class="sc">%&gt;%</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(index, seed, noise, flip, type, data) <span class="sc">%&gt;%</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">noise =</span> <span class="fu">as.character</span>(noise))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>How many participants per task?</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(mark) <span class="sc">%&gt;%</span> <span class="fu">count</span>(assignmentid)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(mark) <span class="sc">%&gt;%</span> <span class="fu">count</span>(assignmentid)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
@@ -169,88 +182,49 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <p>There are 277 participants altogether excluding the <code>line</code> condition.</p>
-<p>Perform the correction:</p>
+<p>Define helper function for plotting:</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(assignmentid, mark) <span class="sc">%&gt;%</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">subj_mean =</span> <span class="fu">mean</span>(normalized_error)) <span class="sc">%&gt;%</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">grand_mean =</span> <span class="fu">mean</span>(normalized_error)) <span class="sc">%&gt;%</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">corrected =</span> normalized_error <span class="sc">-</span> subj_mean <span class="sc">+</span> grand_mean) <span class="sc">%&gt;%</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(mark, variability) <span class="sc">%&gt;%</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">mu =</span> <span class="fu">mean</span>(normalized_error),</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">se =</span> <span class="fu">sd</span>(corrected) <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">n</span>()) <span class="sc">*</span> <span class="fu">sqrt</span>(<span class="dv">2</span> <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">-</span> <span class="dv">1</span>)), <span class="co"># k is 2 when the within-subj variability is this</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>plot_results <span class="ot">&lt;-</span> <span class="cf">function</span>(data, xvar) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  data <span class="sc">%&gt;%</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>      <span class="at">y =</span> variability,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">x =</span> {{ xvar }},</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">dist =</span> <span class="st">"norm"</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">arg1 =</span> {{ xvar }},</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">arg2 =</span> se,</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">fill =</span> mark</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    )) <span class="sc">+</span> <span class="co">#uncertainty</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stat_dist_halfeye</span>(</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">show_interval =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.2</span>),</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>      <span class="at">.width =</span> <span class="fl">0.95</span>,</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>      <span class="at">size =</span> .<span class="dv">5</span>,</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>      <span class="at">alpha =</span> .<span class="dv">8</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>) <span class="sc">+</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"#76B7B2"</span>, <span class="st">"#E15759"</span>)) <span class="sc">+</span> <span class="co"># take out "#59A14F"</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ylab</span>(<span class="st">"Variability"</span>) <span class="sc">+</span> <span class="co">#add x label</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">xlab</span>(<span class="st">"Normalized Error"</span>) <span class="co">#add y label</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
-<div class="cell-output-display">
-<div data-pagedtable="false">
-  <script data-pagedtable-source="" type="application/json">
-{"columns":[{"label":["mark"],"name":[1],"type":["chr"],"align":["left"]},{"label":["variability"],"name":[2],"type":["chr"],"align":["left"]},{"label":["mu"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["se"],"name":[4],"type":["dbl"],"align":["right"]}],"data":[{"1":"point","2":"0,0","3":"0.00967116","4":"0.002942689"},{"1":"point","2":"0,0.4","3":"0.01655093","4":"0.002987090"},{"1":"point_arc","2":"0,0","3":"0.03284001","4":"0.003371558"},{"1":"point_arc","2":"0,0.4","3":"0.08480817","4":"0.003375684"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
-  </script>
 </div>
-</div>
-</div>
-<p>If we do it the same way by calling functions in <code>Functions.R</code> this is what we get:</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>freq_sum <span class="ot">&lt;-</span> <span class="fu">summarySEwithin</span>(</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> exp2, <span class="co">#data</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">measurevar =</span> <span class="st">"normalized_error"</span>, <span class="co">#dependent variable</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">withinvars =</span> <span class="st">"variability"</span>, <span class="co">#within subjects variable</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">betweenvars =</span> <span class="st">"mark"</span>, <span class="co">#between subject variable</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">idvar =</span> <span class="st">"assignmentid"</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>) <span class="co">#participant id</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>freq_sum</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>Seems like the numbers match each other, which implies that our approach is correct. So we will use our dataframe to plot:</p>
-<p>Recreate the plot that Moritz et al.&nbsp;created:</p>
+<p>For our own sanity, recreate the plot that Moritz et al.&nbsp;created, using the <code>Functions.R</code> library that they used:</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># detach("package:plyr", unload = TRUE)</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>p_og <span class="ot">&lt;-</span> exp2 <span class="sc">%&gt;%</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(assignmentid, mark) <span class="sc">%&gt;%</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">subj_mean =</span> <span class="fu">mean</span>(normalized_error)) <span class="sc">%&gt;%</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">grand_mean =</span> <span class="fu">mean</span>(normalized_error)) <span class="sc">%&gt;%</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">corrected =</span> normalized_error <span class="sc">-</span> subj_mean <span class="sc">+</span> grand_mean) <span class="sc">%&gt;%</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(mark, variability) <span class="sc">%&gt;%</span></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">mu =</span> <span class="fu">mean</span>(normalized_error),</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">se =</span> <span class="fu">sd</span>(corrected) <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">n</span>()) <span class="sc">*</span> <span class="fu">sqrt</span>(<span class="dv">2</span> <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">-</span> <span class="dv">1</span>)), <span class="co"># k is 2</span></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> variability,</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> mu,</span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">dist =</span> <span class="st">"norm"</span>,</span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">arg1 =</span> mu,</span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">arg2 =</span> se,</span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> mark</span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">+</span> <span class="co">#uncertainty</span></span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_dist_halfeye</span>(</span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">show_interval =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.2</span>), <span class="co"># &lt;- WHY THIS???</span></span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">.width =</span> <span class="fl">0.95</span>,</span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> .<span class="dv">5</span>,</span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> .<span class="dv">8</span></span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span> <span class="co">#adding halfeye</span></span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>  <span class="co"># coord_flip() + #flipping axis</span></span>
-<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_tidybayes</span>() <span class="sc">+</span> <span class="co">#theme</span></span>
-<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>) <span class="sc">+</span></span>
-<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"#76B7B2"</span>, <span class="st">"#E15759"</span>)) <span class="sc">+</span> <span class="co"># take out "#59A14F"</span></span>
-<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>  <span class="co"># scale_y_continuous(</span></span>
-<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   breaks = seq(0, .11, by = .01),</span></span>
-<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   expand = expansion(mult = c(0.01, 0.01))</span></span>
-<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ) + #specifying scale</span></span>
-<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">"Variability"</span>) <span class="sc">+</span> <span class="co">#add x label</span></span>
-<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Normalized Error"</span>) <span class="co">#add y label</span></span>
-<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>p_og</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>p_og <span class="ot">&lt;-</span> exp2 <span class="sc">%&gt;%</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarySEwithin</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> .,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">measurevar =</span> <span class="st">"normalized_error"</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">withinvars =</span> <span class="st">"variability"</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">betweenvars =</span> <span class="st">"mark"</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">idvar =</span> <span class="st">"assignmentid"</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_results</span>(., normalized_error)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>p_og</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -260,72 +234,84 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<section id="analyzed-signed-error" class="level2">
-<h2 class="anchored" data-anchor-id="analyzed-signed-error">Analyzed signed error</h2>
-<p>Instead of calculating corrected error, we will first calculate error that still uses the “wrong” mean, but is not “normalized”:</p>
+</section>
+<section id="analyze-signed-error" class="level1">
+<h1>Analyze signed error</h1>
+<p>We will calculate error ourselves using reported average and the og <code>stimuli.json</code>:</p>
 <div class="cell">
-<details class="code-fold">
-<summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>freq_summary <span class="ot">&lt;-</span> exp2 <span class="sc">%&gt;%</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(assignmentid, mark) <span class="sc">%&gt;%</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">subj_mean =</span> <span class="fu">mean</span>(error)) <span class="sc">%&gt;%</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">grand_mean =</span> <span class="fu">mean</span>(error)) <span class="sc">%&gt;%</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">corrected =</span> error <span class="sc">-</span> subj_mean <span class="sc">+</span> grand_mean) <span class="sc">%&gt;%</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(mark, variability, flip) <span class="sc">%&gt;%</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">mu =</span> <span class="fu">mean</span>(error),</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">se =</span> <span class="fu">sd</span>(corrected) <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">n</span>()) <span class="sc">*</span> <span class="fu">sqrt</span>(<span class="dv">4</span> <span class="sc">/</span> (<span class="dv">4</span> <span class="sc">-</span> <span class="dv">1</span>)), <span class="co"># &lt;- NEW: k is 4</span></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>freq_summary</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="ot">&lt;-</span> raw_exp2 <span class="sc">%&gt;%</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(assignmentid, reportedaverage, stimuliindex)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>ans_df <span class="ot">&lt;-</span> stimuli_df <span class="sc">%&gt;%</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(type <span class="sc">!=</span> <span class="st">"line"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">stimuliindex =</span> index) <span class="sc">%&gt;%</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(data) <span class="sc">%&gt;%</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(stimuliindex, seed, noise, flip, type) <span class="sc">%&gt;%</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">mean.y =</span> <span class="fu">mean</span>(y), <span class="at">median.y =</span> <span class="fu">median</span>(y))</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>error_df <span class="ot">&lt;-</span> exp2 <span class="sc">%&gt;%</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(ans_df) <span class="sc">%&gt;%</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">error_mean =</span> reportedaverage <span class="sc">-</span> mean.y, <span class="co"># in the original file, mean.y \equiv data_average</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">error_median =</span> reportedaverage <span class="sc">-</span> median.y</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">variability =</span> noise, <span class="at">mark =</span> type) <span class="sc">%&gt;%</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">variability =</span> <span class="fu">factor</span>(variability, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"c(0, 0)"</span>, <span class="st">"c(0, 0.4)"</span>)))</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>error_df <span class="sc">%&gt;%</span> <span class="fu">head</span>(<span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
-{"columns":[{"label":["mark"],"name":[1],"type":["chr"],"align":["left"]},{"label":["variability"],"name":[2],"type":["chr"],"align":["left"]},{"label":["flip"],"name":[3],"type":["lgl"],"align":["right"]},{"label":["mu"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["se"],"name":[5],"type":["dbl"],"align":["right"]}],"data":[{"1":"point","2":"0,0","3":"FALSE","4":"-0.001781011","5":"0.002983872"},{"1":"point","2":"0,0","3":"TRUE","4":"-0.021123330","5":"0.003121034"},{"1":"point","2":"0,0.4","3":"FALSE","4":"0.006146767","5":"0.003222665"},{"1":"point","2":"0,0.4","3":"TRUE","4":"-0.026955098","5":"0.003187716"},{"1":"point_arc","2":"0,0","3":"FALSE","4":"0.020014866","5":"0.003492910"},{"1":"point_arc","2":"0,0","3":"TRUE","4":"-0.045665163","5":"0.003520416"},{"1":"point_arc","2":"0,0.4","3":"FALSE","4":"0.078435207","5":"0.003485145"},{"1":"point_arc","2":"0,0.4","3":"TRUE","4":"-0.091181131","5":"0.003528121"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":["assignmentid"],"name":[1],"type":["chr"],"align":["left"]},{"label":["reportedaverage"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["stimuliindex"],"name":[3],"type":["int"],"align":["right"]},{"label":["seed"],"name":[4],"type":["int"],"align":["right"]},{"label":["variability"],"name":[5],"type":["fct"],"align":["left"]},{"label":["flip"],"name":[6],"type":["lgl"],"align":["right"]},{"label":["mark"],"name":[7],"type":["chr"],"align":["left"]},{"label":["mean.y"],"name":[8],"type":["dbl"],"align":["right"]},{"label":["median.y"],"name":[9],"type":["dbl"],"align":["right"]},{"label":["error_mean"],"name":[10],"type":["dbl"],"align":["right"]},{"label":["error_median"],"name":[11],"type":["dbl"],"align":["right"]}],"data":[{"1":"3C44YUNSI2PS5YV5YCV0B058A80PDO","2":"0.5840625","3":"44","4":"17","5":"c(0, 0)","6":"FALSE","7":"point_arc","8":"0.4390840","9":"0.4284073","10":"0.14497853","11":"0.15565518"},{"1":"3X66WABAJXIOAT0924Z14I54I4OG3D","2":"0.4940625","3":"34","4":"3","5":"c(0, 0.4)","6":"FALSE","7":"point_arc","8":"0.4832300","9":"0.4839731","10":"0.01083246","11":"0.01008942"},{"1":"3LJ7UR74RIDF2H0ZPMHF4767XG6N4D","2":"0.4381250","3":"93","4":"8","5":"c(0, 0)","6":"TRUE","7":"point_arc","8":"0.5176108","9":"0.4662092","10":"-0.07948576","11":"-0.02808422"},{"1":"358UUM7WR03X02AAKRW3G3VRPFL7R5","2":"0.0990625","3":"32","4":"3","5":"c(0, 0)","6":"FALSE","7":"point_arc","8":"0.4235269","9":"0.3932993","10":"-0.32446444","11":"-0.29423676"},{"1":"3WQ3B2KGE9GW99EJZET4FEZA47IB1Z","2":"0.7090625","3":"69","4":"13","5":"c(0, 0)","6":"TRUE","7":"point_arc","8":"0.5525202","9":"0.5310128","10":"0.15654226","11":"0.17804971"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 </div>
 </div>
+<p>Results with “noramlized” true error:</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> freq_summary <span class="sc">%&gt;%</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> error_df <span class="sc">%&gt;%</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">flip_label =</span> <span class="fu">ifelse</span>(flip <span class="sc">==</span> <span class="cn">TRUE</span>, <span class="st">"Variability Below"</span>, <span class="st">"Variability Above"</span>),</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">mu_display =</span> <span class="fu">ifelse</span>(flip <span class="sc">==</span> <span class="cn">FALSE</span>, mu, <span class="sc">-</span>mu)</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> variability,</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> mu_display,</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">dist =</span> <span class="st">"norm"</span>,</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">arg1 =</span> mu_display,</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">arg2 =</span> se,</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> mark</span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">+</span></span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_dist_halfeye</span>(</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">show_interval =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.2</span>),</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">.width =</span> <span class="fl">0.95</span>,</span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> .<span class="dv">5</span>,</span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> .<span class="dv">8</span></span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_tidybayes</span>() <span class="sc">+</span></span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>) <span class="sc">+</span></span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"#76B7B2"</span>, <span class="st">"#E15759"</span>)) <span class="sc">+</span></span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>  <span class="co"># scale_x_continuous(</span></span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   breaks = seq(0, .11, by = .01),</span></span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   expand = expansion(mult = c(0.01, 0.01))</span></span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ) +</span></span>
-<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>flip_label, <span class="at">ncol =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"gray"</span>) <span class="sc">+</span></span>
-<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Error (adjusted toward variability direction)"</span>) <span class="sc">+</span></span>
-<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">"Variability"</span>)</span>
-<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>p1</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">normalized_error_mean =</span> <span class="fu">ifelse</span>(flip <span class="sc">==</span> <span class="cn">FALSE</span>, error_mean, <span class="sc">-</span>error_mean)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarySEwithin</span>(</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    .,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">measurevar =</span> <span class="st">"normalized_error_mean"</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">withinvars =</span> <span class="st">"variability"</span>,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">betweenvars =</span> <span class="st">"mark"</span>,</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">idvar =</span> <span class="st">"assignmentid"</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_results</span>(., normalized_error_mean) <span class="sc">+</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Normalized True Error"</span>) <span class="sc">+</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>)</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>p1</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="reanalyze_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>To compare the two:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>(p_og <span class="sc">+</span> <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.01</span>, <span class="fl">0.1</span>))) <span class="sc">/</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  (p1 <span class="sc">+</span> <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.01</span>, <span class="fl">0.1</span>)) <span class="sc">+</span> <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">""</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -334,239 +320,96 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>Ok so the above tells us that if we look at normal, calculated by looking at the mean in which people share mean, then the above is what we get.</p>
-</section>
-<section id="recalculate-error" class="level2">
-<h2 class="anchored" data-anchor-id="recalculate-error">Recalculate error</h2>
-<p>It is unclear to me how <code>error</code> is calculated in the original dataset.</p>
+<p>One could tell that the result for <code>point</code> is preserved, while the result for <code>point_arc</code> is completely reversed …</p>
+</div>
+</div>
+</div>
+<p>Results with true error:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="ot">&lt;-</span> <span class="fu">rbind</span>(exp2_dotArc, exp2_dotX) <span class="sc">%&gt;%</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(.)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># normalized error is just error but flipped when flip is TRUE</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># the following confirms it.</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span> <span class="fu">count</span>(mark, flip, error <span class="sc">==</span> normalized_error)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output-display">
-<div data-pagedtable="false">
-  <script data-pagedtable-source="" type="application/json">
-{"columns":[{"label":["mark"],"name":[1],"type":["chr"],"align":["left"]},{"label":["flip"],"name":[2],"type":["lgl"],"align":["right"]},{"label":["error == normalized_error"],"name":[3],"type":["lgl"],"align":["right"]},{"label":["n"],"name":[4],"type":["int"],"align":["right"]}],"data":[{"1":"point","2":"FALSE","3":"TRUE","4":"3360"},{"1":"point","2":"TRUE","3":"FALSE","4":"3360"},{"1":"point_arc","2":"FALSE","3":"TRUE","4":"3360"},{"1":"point_arc","2":"TRUE","3":"FALSE","4":"3360"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
-  </script>
-</div>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># and error is just reportedaverage - average</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co"># confirmed by the following</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">error.1 =</span> reportedaverage <span class="sc">-</span> data_average,</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">error.2 =</span> reportedaverage <span class="sc">-</span> average,</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">error.3 =</span> reportedaverage <span class="sc">-</span> average_along_arc,</span>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>error_df <span class="sc">%&gt;%</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarySEwithin</span>(</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    .,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">measurevar =</span> <span class="st">"error_mean"</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">withinvars =</span> <span class="st">"variability"</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">betweenvars =</span> <span class="st">"mark"</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">idvar =</span> <span class="st">"assignmentid"</span></span>
 <span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(seed, error<span class="fl">.1</span>, error<span class="fl">.2</span>, error<span class="fl">.3</span>, error, normalized_error) <span class="sc">%&gt;%</span></span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(seed) <span class="sc">%&gt;%</span></span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">near</span>(error<span class="fl">.2</span>, error)) <span class="co"># using dplyr::near becasue of floating point related stuff ....</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output-display">
-<div data-pagedtable="false">
-  <script data-pagedtable-source="" type="application/json">
-{"columns":[{"label":["seed"],"name":[1],"type":["int"],"align":["right"]},{"label":["error.1"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["error.2"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["error.3"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["error"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["normalized_error"],"name":[6],"type":["dbl"],"align":["right"]}],"data":[{"1":"13","2":"5.1958e-05","3":"5.1958e-05","4":"0.061318127","5":"5.20e-05","6":"-5.20e-05"},{"1":"19","2":"6.1923e-05","3":"6.1923e-05","4":"-0.001252685","5":"6.19e-05","6":"6.19e-05"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
-  </script>
-</div>
-</div>
-</div>
-<p>So let’s calculate the true error and plot things:</p>
-<div class="cell">
-<details class="code-fold">
-<summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>freq_summary <span class="ot">&lt;-</span> exp2 <span class="sc">%&gt;%</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">true_error =</span> reportedaverage <span class="sc">-</span> data_average) <span class="sc">%&gt;%</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(assignmentid, mark) <span class="sc">%&gt;%</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">subj_mean =</span> <span class="fu">mean</span>(true_error)) <span class="sc">%&gt;%</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">grand_mean =</span> <span class="fu">mean</span>(true_error)) <span class="sc">%&gt;%</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">corrected =</span> true_error <span class="sc">-</span> subj_mean <span class="sc">+</span> grand_mean) <span class="sc">%&gt;%</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(mark, variability, flip) <span class="sc">%&gt;%</span></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">mu =</span> <span class="fu">mean</span>(true_error),</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">se =</span> <span class="fu">sd</span>(corrected) <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">n</span>()) <span class="sc">*</span> <span class="fu">sqrt</span>(<span class="dv">4</span> <span class="sc">/</span> (<span class="dv">4</span> <span class="sc">-</span> <span class="dv">1</span>)), <span class="co"># &lt;- NEW: k is 4</span></span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>freq_summary</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output-display">
-<div data-pagedtable="false">
-  <script data-pagedtable-source="" type="application/json">
-{"columns":[{"label":["mark"],"name":[1],"type":["chr"],"align":["left"]},{"label":["variability"],"name":[2],"type":["chr"],"align":["left"]},{"label":["flip"],"name":[3],"type":["lgl"],"align":["right"]},{"label":["mu"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["se"],"name":[5],"type":["dbl"],"align":["right"]}],"data":[{"1":"point","2":"0,0","3":"FALSE","4":"-0.001781011","5":"0.002983872"},{"1":"point","2":"0,0","3":"TRUE","4":"-0.021123330","5":"0.003121034"},{"1":"point","2":"0,0.4","3":"FALSE","4":"0.006146767","5":"0.003222665"},{"1":"point","2":"0,0.4","3":"TRUE","4":"-0.026955098","5":"0.003187716"},{"1":"point_arc","2":"0,0","3":"FALSE","4":"0.009058720","5":"0.003299644"},{"1":"point_arc","2":"0,0","3":"TRUE","4":"-0.034709017","5":"0.003338710"},{"1":"point_arc","2":"0,0.4","3":"FALSE","4":"-0.002822749","5":"0.003407271"},{"1":"point_arc","2":"0,0.4","3":"TRUE","4":"-0.009923174","5":"0.003449023"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
-  </script>
-</div>
-</div>
-</div>
-<div class="cell">
-<details class="code-fold">
-<summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> freq_summary <span class="sc">%&gt;%</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">flip_label =</span> <span class="fu">ifelse</span>(flip <span class="sc">==</span> <span class="cn">TRUE</span>, <span class="st">"Variability Below"</span>, <span class="st">"Variability Above"</span>),</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">mu_display =</span> <span class="fu">ifelse</span>(flip <span class="sc">==</span> <span class="cn">FALSE</span>, mu, <span class="sc">-</span>mu)</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> variability,</span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> mu_display,</span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">dist =</span> <span class="st">"norm"</span>,</span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">arg1 =</span> mu_display,</span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">arg2 =</span> se,</span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> mark</span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">+</span></span>
-<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_dist_halfeye</span>(</span>
-<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">show_interval =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.2</span>),</span>
-<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">.width =</span> <span class="fl">0.95</span>,</span>
-<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> .<span class="dv">5</span>,</span>
-<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> .<span class="dv">8</span></span>
-<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_tidybayes</span>() <span class="sc">+</span></span>
-<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>) <span class="sc">+</span></span>
-<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"#76B7B2"</span>, <span class="st">"#E15759"</span>)) <span class="sc">+</span></span>
-<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>  <span class="co"># scale_x_continuous(</span></span>
-<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   breaks = seq(0, .11, by = .01),</span></span>
-<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   expand = expansion(mult = c(0.01, 0.01))</span></span>
-<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ) +</span></span>
-<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>flip_label, <span class="at">ncol =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"gray"</span>) <span class="sc">+</span></span>
-<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Error (adjusted toward variability)"</span>) <span class="sc">+</span></span>
-<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">"Variability"</span>)</span>
-<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a>p2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_results</span>(., error_mean) <span class="sc">+</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"True Error"</span>) <span class="sc">+</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="reanalyze_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="reanalyze_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
-<p>So this new plot seems to suggest that for <code>point_arc</code>, when error is calculated toward the true mean, with more variability somehow we’re more precise …? It’s kind of counter-intuitive … But to put things into comparison:</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>(p1 <span class="sc">+</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.01</span>, <span class="fl">0.1</span>))) <span class="sc">/</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  (p2 <span class="sc">+</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.01</span>, <span class="fl">0.1</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="reanalyze_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>The above shows up how different things could be if you use different “means” to calculate error … Nothing changes for <code>point</code> because it’s being calculated the right way, but for <code>point_arc</code> … the variability trend basically reverses …</p>
-<p>What is consistent, is that when the “variability” region is in the lower region, the error somehow increases … which makes you wonder whether this could potentially be due to dragging …? Or something else …?</p>
-<p>We can also plot the version that does not count the <code>flip</code> factor, and just plot the normalized error calculated the original way, vs error calculated compared to the true mean:</p>
+<p>Results with true error + additional withinvars factor of <code>flip</code>:</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>freq_summary <span class="ot">&lt;-</span> exp2 <span class="sc">%&gt;%</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">true_error =</span> reportedaverage <span class="sc">-</span> data_average,</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">normalized_true_error =</span> <span class="fu">ifelse</span>(flip <span class="sc">==</span> <span class="cn">TRUE</span>, <span class="sc">-</span>true_error, true_error)</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(assignmentid, mark) <span class="sc">%&gt;%</span></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">subj_mean =</span> <span class="fu">mean</span>(normalized_true_error)) <span class="sc">%&gt;%</span></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">grand_mean =</span> <span class="fu">mean</span>(normalized_true_error)) <span class="sc">%&gt;%</span></span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">corrected =</span> normalized_true_error <span class="sc">-</span> subj_mean <span class="sc">+</span> grand_mean) <span class="sc">%&gt;%</span></span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(mark, variability) <span class="sc">%&gt;%</span> <span class="co"># not grouping by flip anymore</span></span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">mu =</span> <span class="fu">mean</span>(normalized_true_error),</span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">se =</span> <span class="fu">sd</span>(corrected) <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">n</span>()) <span class="sc">*</span> <span class="fu">sqrt</span>(<span class="dv">2</span> <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">-</span> <span class="dv">1</span>)), <span class="co"># &lt;- NEW: k is 2</span></span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>freq_summary</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output-display">
-<div data-pagedtable="false">
-  <script data-pagedtable-source="" type="application/json">
-{"columns":[{"label":["mark"],"name":[1],"type":["chr"],"align":["left"]},{"label":["variability"],"name":[2],"type":["chr"],"align":["left"]},{"label":["mu"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["se"],"name":[4],"type":["dbl"],"align":["right"]}],"data":[{"1":"point","2":"0,0","3":"0.009671160","4":"0.002942689"},{"1":"point","2":"0,0.4","3":"0.016550932","4":"0.002987090"},{"1":"point_arc","2":"0,0","3":"0.021883869","4":"0.003226146"},{"1":"point_arc","2":"0,0.4","3":"0.003550213","4":"0.003314685"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
-  </script>
-</div>
-</div>
-</div>
-<div class="cell">
-<details class="code-fold">
-<summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>p3 <span class="ot">&lt;-</span> freq_summary <span class="sc">%&gt;%</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> variability,</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> mu,</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">dist =</span> <span class="st">"norm"</span>,</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">arg1 =</span> mu,</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">arg2 =</span> se,</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> mark</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">+</span></span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_dist_halfeye</span>(</span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">show_interval =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.2</span>),</span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">.width =</span> <span class="fl">0.95</span>,</span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> .<span class="dv">5</span>,</span>
-<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> .<span class="dv">8</span></span>
-<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_tidybayes</span>() <span class="sc">+</span></span>
-<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>) <span class="sc">+</span></span>
-<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"#76B7B2"</span>, <span class="st">"#E15759"</span>)) <span class="sc">+</span></span>
-<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>  <span class="co"># scale_x_continuous(</span></span>
-<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   breaks = seq(0, .11, by = .01),</span></span>
-<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   expand = expansion(mult = c(0.01, 0.01))</span></span>
-<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ) +</span></span>
-<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>  <span class="co"># facet_wrap(~flip_label, ncol = 1) +</span></span>
-<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"gray"</span>) <span class="sc">+</span></span>
-<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">"Normalized True Error"</span>) <span class="sc">+</span></span>
-<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">"Variability"</span>)</span>
-<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>p3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>error_df <span class="sc">%&gt;%</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarySEwithin</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    .,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">measurevar =</span> <span class="st">"error_mean"</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">withinvars =</span> <span class="fu">c</span>(<span class="st">"variability"</span>, <span class="st">"flip"</span>),</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">betweenvars =</span> <span class="st">"mark"</span>,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">idvar =</span> <span class="st">"assignmentid"</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_results</span>(., error_mean) <span class="sc">+</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"True Error"</span>) <span class="sc">+</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>flip, <span class="at">ncol =</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="reanalyze_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="reanalyze_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
-<p>To put things into comparison (between how the original paper did, top, vs.&nbsp;how calculating the actual error gives, bottom):</p>
-<div class="cell">
-<details class="code-fold">
-<summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>(p_og <span class="sc">+</span> <span class="fu">coord_cartesian</span>(<span class="at">xlim=</span><span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.01</span>, <span class="fl">0.1</span>)) <span class="sc">+</span> <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"gray"</span>)) <span class="sc">/</span> (p3 <span class="sc">+</span> <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">""</span>) <span class="sc">+</span> <span class="fu">coord_cartesian</span>(<span class="at">xlim=</span><span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.01</span>, <span class="fl">0.1</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="reanalyze_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-</div>
+<p>It seems to me that there are several things that are unexplained in the original analysis:</p>
+<ul>
+<li>When the original plot is flipped (when <code>flip == TRUE</code>), there seems to be a bigger bias compared to the case when it’s not flipped.</li>
+<li>When calculating error using the true mean, instead of the mean for the plot with the same seed, we don’t see the same trend that more variability implies bigger error.</li>
+</ul>
 <hr>
-</section>
 </section>
 <section id="do-participants-who-use-median-strategy-get-answer-closer-to-median-or-mean" class="level1">
 <h1>Do participants who use Median Strategy get answer closer to median or mean?</h1>
 <section id="read-in-data-related-to-strategy" class="level2">
 <h2 class="anchored" data-anchor-id="read-in-data-related-to-strategy">Read in data related to strategy</h2>
-<p>Question to answer: people who claim to use mean strategy vs people who claim to use median strategy. Is there a difference between their answers?</p>
+<p>Question to answer: people who claim to use mean strategy vs people who claim to use median strategy. <strong>Is there a difference between their responses/errors?</strong></p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>strategy_df <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"moritz"</span>, <span class="st">"exp"</span>, <span class="st">"strategies.csv"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(.) <span class="sc">%&gt;%</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># keep only those related to experiment 2, and only related to point and point arc condition</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Exp <span class="sc">==</span> <span class="dv">2</span>, Condition <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"point"</span>, <span class="st">"point_arc"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>, <span class="fu">contains</span>(<span class="st">"mental_averaging"</span>), <span class="fu">contains</span>(<span class="st">"number_of_points"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>strategy_df <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"data"</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"moritz"</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"exp"</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"strategies.csv"</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>)) <span class="sc">%&gt;%</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(.) <span class="sc">%&gt;%</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># keep only those related to experiment 2, and only related to point and point arc condition</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Exp <span class="sc">==</span> <span class="dv">2</span>, Condition <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"point"</span>, <span class="st">"point_arc"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>, <span class="fu">contains</span>(<span class="st">"mental_averaging"</span>), <span class="fu">contains</span>(<span class="st">"number_of_points"</span>))</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>strategy_df <span class="sc">%&gt;%</span> <span class="fu">head</span>(.)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["ResponseId"],"name":[1],"type":["chr"],"align":["left"]},{"label":["Exp"],"name":[2],"type":["int"],"align":["right"]},{"label":["Condition"],"name":[3],"type":["chr"],"align":["left"]},{"label":["Strategy_Response"],"name":[4],"type":["chr"],"align":["left"]},{"label":["r1_mental_averaging"],"name":[5],"type":["lgl"],"align":["right"]},{"label":["r2_mental_averaging"],"name":[6],"type":["lgl"],"align":["right"]},{"label":["r1_number_of_points"],"name":[7],"type":["lgl"],"align":["right"]},{"label":["r2_number_of_points"],"name":[8],"type":["lgl"],"align":["right"]}],"data":[{"1":"30IQTZXKAL63FNW28RHMQ67SI5RX0S","2":"2","3":"point","4":"My strategy was to try to put the red bar between an even amount of blue balls. So I tried to put an equal amount of balls above and below the red bar.","5":"TRUE","6":"TRUE","7":"TRUE","8":"TRUE"},{"1":"30LB5CDZNDASKIWH9957NRN3QGS0ZH","2":"2","3":"point","4":"I considered the angle of the slope, and how many dots were represented. I tried to gauge a spot that had an equal number of plot points above and below the line.","5":"FALSE","6":"FALSE","7":"TRUE","8":"TRUE"},{"1":"30LSNF239VVDL2ALOSLZ6KDSR3H2IH","2":"2","3":"point_arc","4":"te stoks are wequally sared","5":"FALSE","6":"FALSE","7":"FALSE","8":"FALSE"},{"1":"30LSNF239VVDL2ALOSLZ6KDTVODI25","2":"2","3":"point_arc","4":"I tried seeing what the highs and lows were in comparison with the middle","5":"TRUE","6":"TRUE","7":"FALSE","8":"FALSE"},{"1":"30OG32W0SVBXUJXSESTSDTIZEQLNEG","2":"2","3":"point_arc","4":"I looked at the lowest and compared it to the highest and tried to average it out by that.","5":"TRUE","6":"TRUE","7":"FALSE","8":"FALSE"},{"1":"3180JW2OT5C1FADEOT8XGSV4OENJ59","2":"2","3":"point","4":"Good current and projected profitability","5":"FALSE","6":"FALSE","7":"FALSE","8":"FALSE"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
 </div>
 <p>Where do the two raters (<code>r1</code> and <code>r2</code>) disagree?</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># for mental averaging</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>strategy_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(r1_mental_averaging <span class="sc">!=</span> r2_mental_averaging)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># for mental averaging -- 22 participants</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>strategy_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(r1_mental_averaging <span class="sc">!=</span> r2_mental_averaging)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
@@ -574,8 +417,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </script>
 </div>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># for equal number of points</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>strategy_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(r1_number_of_points <span class="sc">!=</span> r2_number_of_points)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># for equal number of points -- 9 participants</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>strategy_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(r1_number_of_points <span class="sc">!=</span> r2_number_of_points)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
@@ -586,16 +429,61 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>Where do they agree?</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># for mental averaging --- 98 participants where both raters agree</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>strategy_df <span class="sc">%&gt;%</span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(r1_mental_averaging <span class="sc">==</span> r2_mental_averaging) <span class="sc">%&gt;%</span></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(r1_mental_averaging <span class="sc">==</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(ResponseId) <span class="ot">-&gt;</span> mental_average_id</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="co"># for equal number of points -- 44 participants where both raters agree</span></span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>strategy_df <span class="sc">%&gt;%</span></span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(r1_number_of_points <span class="sc">==</span> r2_number_of_points) <span class="sc">%&gt;%</span></span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(r1_number_of_points <span class="sc">==</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(ResponseId) <span class="ot">-&gt;</span> equal_points_id</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># for mental averaging --- 98 participants where both raters agree</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>strategy_df <span class="sc">%&gt;%</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(r1_mental_averaging <span class="sc">==</span> r2_mental_averaging) <span class="sc">%&gt;%</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(r1_mental_averaging <span class="sc">==</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(ResponseId) <span class="ot">-&gt;</span> mental_average_id</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co"># for equal number of points -- 44 participants where both raters agree</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>strategy_df <span class="sc">%&gt;%</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(r1_number_of_points <span class="sc">==</span> r2_number_of_points) <span class="sc">%&gt;%</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(r1_number_of_points <span class="sc">==</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(ResponseId) <span class="ot">-&gt;</span> equal_points_id</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>I should note that there is also some overlap between those who perform mental averaging and median:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">intersect</span>(mental_average_id, equal_points_id)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "30IQTZXKAL63FNW28RHMQ67SI5RX0S" "3180JW2OT5C1FADEOT8XGSV4OFV5J5"
+ [3] "31LVTDXBL8AWFNZCOLXDZ8DSM2ZLR9" "32AT8R96GM9BZSMJCOPJG5E7JTVSUC"
+ [5] "33SA9F9TRYUNHD666TKF9CVP1RBWE8" "35USIKEBNSGTH44D8AAU15QLUMUN6B"
+ [7] "37Q970SNZF8VQVVLA0FZ539A8RR1S5" "384PI804XT1VJ6A3EHBZRYQ06LYS0H"
+ [9] "392CY0QWG2RNOGP8S64NZZAQAUC4I3" "3C44YUNSI2PS5YV5YCV0B058A1HDPF"
+[11] "3E47SOBEYRWQJK2NLLA5IXME275CI0" "3F6HPJW4JE0VMXUQD9PE7BM06C7W26"
+[13] "3F6KKYWMNC1S2DJSIXI87B0DAL1NDC" "3GNCZX450JNU7RSTE24YLZX2O0KPAS"
+[15] "3I2PTA7R3UULJG2UQ6WCFIQ8ZDJKQN" "3ITXP059PXJ2LCBP0PL5935W2CBJSJ"
+[17] "3K2755HG5T3GEL6BK9ZVZ6R5CN9FDJ" "3KMS4QQVK3QOSRCLCQLI3JMURTXKFF"
+[19] "3LRKMWOKB6HZGSZVOW9L6FGINCHZ21" "3TAYZSBPLM82FGDHT4FDAMJFZZWS27"
+[21] "3W92K5RLWVHA65D85IMGJG6YJAC5VG" "3Z4XG4ZF49RLXC153VU1JLDA11VX83"</code></pre>
+</div>
+</div>
+<p>What about the distribution? Do participants who view <code>point_arc</code> and <code>point</code> use these strategies about equally or is there a preference?</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="ot">&lt;-</span> raw_exp2 <span class="sc">%&gt;%</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(assignmentid, mark, flip, variability, error, normalized_error)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(assignmentid <span class="sc">%in%</span> mental_average_id) <span class="sc">%&gt;%</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(mark) <span class="sc">%&gt;%</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(.)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["mark"],"name":[1],"type":["chr"],"align":["left"]},{"label":["n"],"name":[2],"type":["int"],"align":["right"]}],"data":[{"1":"point","2":"2544"},{"1":"point_arc","2":"2208"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>exp2 <span class="sc">%&gt;%</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(assignmentid <span class="sc">%in%</span> equal_points_id) <span class="sc">%&gt;%</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(mark) <span class="sc">%&gt;%</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(.)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["mark"],"name":[1],"type":["chr"],"align":["left"]},{"label":["n"],"name":[2],"type":["int"],"align":["right"]}],"data":[{"1":"point","2":"1632"},{"1":"point_arc","2":"528"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
 </div>
 </section>
 </section>
