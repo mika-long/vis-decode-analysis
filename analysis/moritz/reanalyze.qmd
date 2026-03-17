@@ -224,14 +224,112 @@ It seems to me that there are several things that are unexplained in the origina
 - When the original plot is flipped (when `flip == TRUE`), there seems to be a bigger bias compared to the case when it's not flipped. 
 - When calculating error using the true mean, instead of the mean for the plot with the same seed, we don't see the same trend that more variability implies bigger error. 
 
+## Investigate why reversed 
+
+So the question becomes:  does `actual_mean` systematically differ from `seed_mean` in a way that correlates with mark type and variability? (I think the short intuitive answer is yes but need to show proof). 
+
+This is where they share averages: **same seed, same flip => same average**. 
+
+```{r}
+raw_exp2 %>%
+  select(stimuliindex, seed, mark, flip, variability, data_average, average) %>%
+  group_by(seed, mark, flip, variability, average) %>% # data_average,
+  summarise(.)
+```
+
+Let us calculate the difference between `data_average` and `average`: 
+
+```{r}
+raw_exp2 %>%
+  distinct(
+    stimuliindex,
+    seed,
+    mark,
+    flip,
+    variability,
+    data_average,
+    average
+  ) %>%
+  mutate(diff = data_average - average) %>%
+  ggplot(aes(x = diff, fill = flip)) +
+  stat_dotsinterval(alpha = 0.5) +
+  facet_wrap(~ mark + variability)
+```
+
+So if we try to account for this and perform a "bias-correction" of some kind: 
+
+```{r}
+raw_exp2 %>%
+  filter(mark == "point_arc", flip == FALSE) %>%
+  distinct(
+    stimuliindex,
+    seed,
+    # mark,
+    flip,
+    variability,
+    data_average,
+    average
+  ) %>%
+  mutate(diff = data_average - average) %>%
+  group_by(variability) %>%
+  median_qi(diff)
+```
+
+So lets remove 0.0178 and 0.0825 out from it: 
+
+```{r}
+exp2 <- raw_exp2 %>%
+  select(assignmentid, mark, flip, variability, error, normalized_error)
+
+p_og_corrected <- exp2 %>%
+  summarySEwithin(
+    data = .,
+    measurevar = "normalized_error",
+    withinvars = "variability",
+    betweenvars = "mark",
+    idvar = "assignmentid"
+  ) %>%
+  mutate(
+    normalized_error = case_when(
+      mark == "point_arc" & variability == "0,0" ~ normalized_error -
+        0.0178,
+      mark == "point_arc" & variability == "0,0.4" ~ normalized_error -
+        0.0825,
+      TRUE ~ normalized_error
+    )
+  ) %>%
+  plot_results(., normalized_error) +
+  labs(x = "Bias corrected normalized error") +
+  geom_vline(xintercept = 0, linetype = "dashed")
+
+p_og_corrected
+```
+
+:::{.callout-note collapse="true"}
+
+Let's compare this with the version that uses the correct error: 
+
+```{r}
+(p1 +
+  coord_cartesian(xlim = c(-0.01, 0.04))) /
+  (p_og_corrected +
+    theme(legend.position = "") +
+    geom_vline(xintercept = 0, linetype = "dashed") +
+    coord_cartesian(xlim = c(-0.01, 0.04)))
+```
+
+So yeah I don't know what Mortiz et al. where doing LOL But I don't think our results are going to let us be able to predict tis kind of performance ... 
+
+:::
+
 ---
-  
+    
 # Do participants who use Median Strategy get answer closer to median or mean? 
-
-## Read in data related to strategy 
-
-Question to answer: people who claim to use mean strategy vs people who claim to use median strategy. **Is there a difference between their responses/errors?** 
   
+## Read in data related to strategy 
+  
+Question to answer: people who claim to use mean strategy vs people who claim to use median strategy. **Is there a difference between their responses/errors?** 
+    
 ```{r}
 strategy_df <- read.csv(here::here(
   "data",
@@ -280,9 +378,6 @@ intersect(mental_average_id, equal_points_id)
 What about the distribution? Do participants who view `point_arc` and `point` use these strategies about equally or is there a preference? 
 
 ```{r}
-exp2 <- raw_exp2 %>%
-  select(assignmentid, mark, flip, variability, error, normalized_error)
-
 exp2 %>%
   filter(assignmentid %in% mental_average_id) %>%
   group_by(mark) %>%
