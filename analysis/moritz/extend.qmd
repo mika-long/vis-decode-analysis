@@ -274,6 +274,8 @@ resp_df %>% count(participantId, type)
 ## Look at participants' error
 
 ```{r}
+#| code-fold: true 
+
 resp_df %>% select(participantId, type, expIndex, num.y) %>% 
   mutate(type = ifelse(type == "pointArc", "point_arc", "point")) %>% 
   left_join(ans_df, by = c("type", "expIndex")) %>% 
@@ -286,9 +288,9 @@ resp_df %>% select(participantId, type, expIndex, num.y) %>%
   ) %>% 
   ggplot(aes(
       y = noise,
-      x = error, # {{ xvar }},
+      x = error, 
       dist = "norm",
-      arg1 = error, # {{ xvar }},
+      arg1 = error,
       arg2 = se,
       fill = type
     )) + #uncertainty
@@ -414,7 +416,7 @@ Then we go the prediction route: `VA -> mm -> px -> num`:
 ```{r}
 pred <- draws %>%
   # every draw * every dot;
-  # will result in 5760 * 3000 (thinned version) row
+  # will result in 5760 rows * 3000 (thinned version) dots / row
   expand_grid(new_data) %>%
   mutate(
     # mu = b_Intercept,
@@ -430,6 +432,47 @@ pred <- draws %>%
     num.pred.y = px.pred.y / 200
   )
 ```
+
+:::{.callout-note collapse="true"}
+Let's say we're only interested in `ogIndex == 4`: 
+
+```{r}
+library(patchwork)
+left <- pred %>% filter(ogIndex == 4) %>% 
+  group_by(.draw) %>% 
+  summarise(mean.y = mean(num.pred.y)) %>% 
+  ggplot(aes(y = mean.y)) + 
+  stat_halfeye() + 
+  coord_cartesian(ylim = c(0, 1))
+
+right <- get_og_stimuli(4)
+
+left + right
+```
+
+One could tell from this that the mean strategy is too precise. 
+
+If we do some **sensor-fusion related weighting**: 
+
+```{r}
+left <- pred %>% filter(ogIndex == 4) %>% 
+  mutate(mse = b_Intercept^2 + sigma^2, 
+  w = 1/mse) %>% 
+  group_by(.draw) %>% 
+  summarise(va.pred.y = weighted.mean(va.pred.y, w), .groups = "drop") %>% 
+  mutate(
+    phy.pred.y = phys_size(va.pred.y, distToScreen),
+    px.pred.y = phy.pred.y * pixelToMM,
+    num.pred.y = px.pred.y / 200
+  ) %>% 
+  ggplot(aes(y = num.pred.y)) + 
+  stat_halfeye() + 
+  coord_cartesian(ylim = c(0, 1))
+
+left + right
+```
+
+:::
 
 Now we "average"^[**Averaging Strategy vs. Median Strategy**: “Equal number of points or line below and above. A strategy we did not anticipate was ensuring an equal number of points or line lengths above and below the judgment indicator. To indicate their responses, participants drug a line on the graph. By allowing participants to place a line directly on the graphs, participants could then easily count the number of points above and below the line. One participant simply wrote, “I tried to have the number of points above and below the line be approximately equal.” Unsurprisingly, this strategy was most common for participants who viewed graphs with points equally spaced along the x-axis (24%).” ([Moritz et al., 2023, p. 7](zotero://select/library/items/ZPTBTRIF)) ([pdf](zotero://open-pdf/library/items/AZRSTSWZ?page=7&annotation=4AENLNDJ))
 ] across the 60 dots for each trial: 
@@ -469,42 +512,35 @@ plot_df <- avg_pred %>%
   left_join(ans_df) %>%
   mutate(
     error.median = num.pred.median.y - num.ans.y,
-    norm.error.median = ifelse(
-      flip == FALSE,
-      num.pred.median.y - num.ans.y,
-      num.ans.y - num.pred.median.y
-    ),
     error.avg = num.pred.avg.y - num.ans.y,
-    norm.error.avg = ifelse(
-      flip == FALSE,
-      num.pred.avg.y - num.ans.y,
-      num.ans.y - num.pred.avg.y
-    )
-  )
+    noise = factor(noise, levels = c("c(0, 0)", "c(0, 0.4)"))
+  ) 
 
 plot_df %>%
-  mutate(noise = factor(noise, levels = c("c(0, 0)", "c(0, 0.4)"))) %>%
-  group_by(type, noise, .draw) %>%
-  summarise(error = mean(norm.error.avg)) %>%
+  group_by(type, noise, flip, .draw) %>%
+  summarise(error = mean(error.avg)) %>%
   ggplot(aes(x = error, y = noise, fill = type)) +
   stat_halfeye(alpha = 0.8) +
   scale_fill_manual(values = c("#76B7B2", "#E15759")) +
   theme(legend.position = "top") +
   labs(
     title = "Posterior normalized error (mean strategy)"
-  )
+  ) + 
+  facet_wrap(~ flip, ncol = 1) + 
+  geom_vline(xintercept = 0, linetype = "dashed")
 
 plot_df %>%
-  mutate(noise = factor(noise, levels = c("c(0, 0)", "c(0, 0.4)"))) %>%
-  group_by(type, noise, .draw) %>%
-  summarise(error = mean(norm.error.median)) %>%
+  group_by(type, noise, flip, .draw) %>%
+  summarise(error = mean(error.median)) %>%
   ggplot(aes(x = error, y = noise, fill = type)) +
   stat_halfeye(alpha = 0.8) +
   scale_fill_manual(values = c("#76B7B2", "#E15759")) +
   theme(legend.position = "top") +
   labs(
     title = "Posterior normalized error (median strategy)"
-  )
+  ) + 
+  facet_wrap(~ flip, ncol = 1) + 
+  geom_vline(xintercept = 0, linetype = "dashed")
 ```
 
 As one can see, the above posterior error has very small variance. Median has slightly larger variance, but the "normalized error" goes negative. 
@@ -519,6 +555,81 @@ plot_df %>%
 ```
 
 :::
+
+---
+
+What if the projected responses use some kind of sensor-fusion based weighting? 
+
+This implies `draws` or `new_data`, but we would change generate `pred` differently: 
+
+```{r}
+pred <- draws %>%
+  # every draw * every dot;
+  # will result in 5760 rows * 3000 (thinned version) dots / row
+  expand_grid(new_data) %>%
+  mutate(
+    sigma = exp(b_sigma_Intercept + log(va.ans.x)),
+    va.pred.error = rnorm(n(), mean = b_Intercept, sd = sigma),
+    va.pred.y = va.pred.error + va.ans.y, 
+    mse = b_Intercept^2 + sigma^2,       
+    w = 1 / mse
+  ) %>% 
+  group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
+  summarise(va.pred.y = weighted.mean(va.pred.y, w),
+    .groups = "drop") %>% 
+  # turn vis angle back to numerical values
+  mutate(
+    phy.pred.y = phys_size(va.pred.y, distToScreen),
+    px.pred.y = phy.pred.y * pixelToMM,
+    num.pred.y = px.pred.y / 200
+  )
+```
+
+Now we get the average for each trial: 
+
+```{r}
+# This is kind of rendered obsolete by the group_by and summarise above. 
+# avg_pred <- pred %>%
+#   group_by(ogIndex, expIndex, type, flip, noise, .draw) %>% 
+#   summarise(
+#     # suppose participants can calculate mean
+#     num.pred.avg.y = mean(num.pred.y),
+#     # suppose participants use the median instead
+#     num.pred.median.y = median(num.pred.y),
+#   )
+```
+
+Now we get the data used for plotting: 
+
+```{r}
+plot_df <- pred %>% # avg_pred %>%
+  ungroup(.) %>%
+  left_join(ans_df) %>%
+  mutate(
+    error = num.pred.y - num.ans.y,
+    # error.median = num.pred.median.y - num.ans.y,
+    # error.avg = num.pred.avg.y - num.ans.y,
+    noise = factor(noise, levels = c("c(0, 0)", "c(0, 0.4)"))
+  ) 
+```
+
+```{r}
+#| code-fold: true 
+#| layout-ncol: 2
+
+plot_df %>%
+  group_by(type, noise, flip, .draw) %>%
+  summarise(error = mean(error)) %>%
+  ggplot(aes(x = error, y = noise, fill = type)) +
+  stat_halfeye(alpha = 0.8) +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) +
+  theme(legend.position = "top") +
+  labs(
+    title = "Posterior normalized error (weighted mean)"
+  ) + 
+  facet_wrap(~flip, ncol = 1) + 
+  geom_vline(xintercept = 0, linetype = "dashed")
+```
 
 ### Strategy 2 --- Project to vertical line where `xintercept == 60` and then `xintercept == 0`
 

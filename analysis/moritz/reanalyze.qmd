@@ -371,22 +371,37 @@ strategy_df %>%
   filter(r1_number_of_points == r2_number_of_points) %>%
   filter(r1_number_of_points == TRUE) %>%
   pull(ResponseId) -> equal_points_id
+
+# we also want to calculate the case when at least one reviewer thinks that it could be the case, regardless of whether they agree or not
+# 120 participants
+strategy_df %>%
+  filter(r1_mental_averaging == TRUE | r2_mental_averaging == TRUE) %>%
+  pull(ResponseId) -> lenient_mental_average_id
+
+# 53 participants
+strategy_df %>%
+  filter(r1_number_of_points == TRUE | r2_number_of_points == TRUE) %>%
+  pull(ResponseId) -> lenient_equal_points_id
 ```
 
 I should note that there is also some overlap between those who perform mental averaging and median: 
 
 ```{r}
-intersect(mental_average_id, equal_points_id)
+i <- intersect(mental_average_id, equal_points_id)
+i
 ```
 
 ---
 
 ## What does the error pattern look like for people who use _MEAN_ strategy? 
 
+First we use the lenient way, that is, as long as one rater classifis this as mean, then this counts as mean: 
+
 ```{r}
 #| code-fold: true
+
 error_df %>%
-  filter(assignmentid %in% mental_average_id) %>%
+  filter(assignmentid %in% lenient_mental_average_id) %>%
   summarySEwithin(
     .,
     measurevar = "error_mean",
@@ -401,17 +416,44 @@ error_df %>%
   plot_results(., error_mean) +
   geom_vline(xintercept = 0, linetype = "dashed") +
   facet_wrap(~flip_lab, ncol = 1) +
-  labs(x = "True Error", title = "Moritz Exp (Mean Strategy)")
+  labs(x = "True Error", title = "Moritz Exp (Lenient Mean Strategy)") +
+  coord_cartesian(xlim = c(-0.04, 0.01))
+```
+
+Then we use the strict way, that is, both rater agree that it's only mental averaging and not median: 
+
+```{r}
+#| code-fold: true
+
+error_df %>%
+  filter(assignmentid %in% setdiff(mental_average_id, i)) %>%
+  summarySEwithin(
+    .,
+    measurevar = "error_mean",
+    withinvars = c("variability", "flip"),
+    betweenvars = "mark",
+    idvar = "assignmentid"
+  ) %>%
+  mutate(
+    flip_lab = ifelse(flip == FALSE, "Noise in Upper", "Noise in Lower"),
+    flip_lab = factor(flip_lab, levels = c("Noise in Upper", "Noise in Lower"))
+  ) %>%
+  plot_results(., error_mean) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  facet_wrap(~flip_lab, ncol = 1) +
+  labs(x = "True Error", title = "Moritz Exp (Only Mean Strategy)") +
+  coord_cartesian(xlim = c(-0.04, 0.01))
 ```
 
 ## What does the error pattern look like for people who use _MEDIAN_ strategy? 
 
+Similarly, this is the lenient way: 
 
 ```{r}
 #| code-fold: true
 
 error_df %>%
-  filter(assignmentid %in% equal_points_id) %>%
+  filter(assignmentid %in% lenient_equal_points_id) %>%
   summarySEwithin(
     .,
     measurevar = "error_mean",
@@ -426,5 +468,31 @@ error_df %>%
   plot_results(., error_mean) +
   geom_vline(xintercept = 0, linetype = "dashed") +
   facet_wrap(~flip_lab, ncol = 1) +
-  labs(x = "True Error", title = "Moritz Exp (Median Strategy)")
+  labs(x = "True Error", title = "Moritz Exp (Lenient Median Strategy)") +
+  coord_cartesian(xlim = c(-0.04, 0.05))
+```
+
+And this is the strict way: 
+
+```{r}
+#| code-fold: true
+
+error_df %>%
+  filter(assignmentid %in% setdiff(equal_points_id, i)) %>%
+  summarySEwithin(
+    .,
+    measurevar = "error_mean",
+    withinvars = c("variability", "flip"),
+    betweenvars = "mark",
+    idvar = "assignmentid"
+  ) %>%
+  mutate(
+    flip_lab = ifelse(flip == FALSE, "Noise in Upper", "Noise in Lower"),
+    flip_lab = factor(flip_lab, levels = c("Noise in Upper", "Noise in Lower"))
+  ) %>%
+  plot_results(., error_mean) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  facet_wrap(~flip_lab, ncol = 1) +
+  labs(x = "True Error", title = "Moritz Exp (Only Median Strategy)") +
+  coord_cartesian(xlim = c(-0.04, 0.05))
 ```
