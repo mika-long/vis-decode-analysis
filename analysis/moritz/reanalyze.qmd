@@ -379,16 +379,52 @@ I should note that there is also some overlap between those who perform mental a
 intersect(mental_average_id, equal_points_id)
 ```
 
-What about the distribution? Do participants who view `point_arc` and `point` use these strategies about equally or is there a preference? 
+---
+
+## What does the error pattern look like for people who use _MEAN_ strategy? 
 
 ```{r}
-exp2 %>%
+#| code-fold: true
+error_df %>%
   filter(assignmentid %in% mental_average_id) %>%
-  group_by(mark) %>%
-  count(.)
+  summarySEwithin(
+    .,
+    measurevar = "error_mean",
+    withinvars = c("variability", "flip"),
+    betweenvars = "mark",
+    idvar = "assignmentid"
+  ) %>%
+  mutate(
+    flip_lab = ifelse(flip == FALSE, "Noise in Upper", "Noise in Lower"),
+    flip_lab = factor(flip_lab, levels = c("Noise in Upper", "Noise in Lower"))
+  ) %>%
+  plot_results(., error_mean) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  facet_wrap(~flip_lab, ncol = 1) +
+  labs(x = "True Error", title = "Moritz Exp (Mean Strategy)")
+```
 
-exp2 %>%
+## What does the error pattern look like for people who use _MEDIAN_ strategy? 
+
+
+```{r}
+#| code-fold: true
+
+error_df %>%
   filter(assignmentid %in% equal_points_id) %>%
-  group_by(mark) %>%
-  count(.)
+  summarySEwithin(
+    .,
+    measurevar = "error_mean",
+    withinvars = c("variability", "flip"),
+    betweenvars = "mark",
+    idvar = "assignmentid"
+  ) %>%
+  mutate(
+    flip_lab = ifelse(flip == FALSE, "Noise in Upper", "Noise in Lower"),
+    flip_lab = factor(flip_lab, levels = c("Noise in Upper", "Noise in Lower"))
+  ) %>%
+  plot_results(., error_mean) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  facet_wrap(~flip_lab, ncol = 1) +
+  labs(x = "True Error", title = "Moritz Exp (Median Strategy)")
 ```
