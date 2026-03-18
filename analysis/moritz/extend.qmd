@@ -565,13 +565,12 @@ This implies `draws` or `new_data`, but we would change generate `pred` differen
 ```{r}
 pred <- draws %>%
   # every draw * every dot;
-  # will result in 5760 rows * 3000 (thinned version) dots / row
   expand_grid(new_data) %>%
   mutate(
     sigma = exp(b_sigma_Intercept + log(va.ans.x)),
     va.pred.error = rnorm(n(), mean = b_Intercept, sd = sigma),
     va.pred.y = va.pred.error + va.ans.y, 
-    mse = b_Intercept^2 + sigma^2,       
+    mse = b_Intercept^2 + sigma^2, 
     w = 1 / mse
   ) %>% 
   group_by(ogIndex, expIndex, type, flip, noise, .draw) %>%
@@ -615,7 +614,19 @@ plot_df <- pred %>% # avg_pred %>%
 
 ```{r}
 #| code-fold: true 
-#| layout-ncol: 2
+
+plot_df %>%
+  group_by(type, noise, flip, .draw) %>%
+  summarise(error = mean(error)) %>%
+  ggplot(aes(x = error, y = noise, fill = type)) +
+  stat_halfeye(alpha = 0.8) +
+  scale_fill_manual(values = c("#76B7B2", "#E15759")) +
+  theme(legend.position = "top") +
+  labs(
+    title = "Posterior normalized error (weighted mean)"
+  ) + 
+  # facet_wrap(~flip, ncol = 1) + 
+  geom_vline(xintercept = 0, linetype = "dashed")
 
 plot_df %>%
   group_by(type, noise, flip, .draw) %>%
