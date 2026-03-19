@@ -57,6 +57,7 @@ First, read in the stimuli data from Mortiz experiment 2:
 
 ```{r}
 #| code-fold: true
+#| label: read in moritz stimuli data 
 
 exp_json_data <- jsonlite::fromJSON(here::here(
   "data",
@@ -1247,7 +1248,8 @@ This time we will build the posterior prediction a bit differently:
 ```{r}
 # 6 participant * 48 trials per participant * 60 dots per trial
 # 17280 rows
-new_data <- participant_df %>% select(participantId, type, pixelsPerMM, distToScreen) %>% 
+new_data <- participant_df %>% 
+  select(participantId, type, pixelsPerMM, distToScreen) %>% 
   left_join(stimuli_df, by = "type", relationship = "many-to-many") %>%
   # calculate pixel values from numerical values
   mutate(
@@ -1282,26 +1284,42 @@ pred <- new_data %>%
     va.pred.y = weighted.mean(va.pred.y, w), .groups = "drop"
   )
 
-# project from middle to left axis
-pred2 <- pred %>%
-  left_join(draws) %>%
-  mutate(
-    phy.x_ref = x_num_to_px(60) %>% px_to_phys(pixelsPerMM), 
-    # distance to y-axis is vis angle distance from x == 60
-    sigma = exp(b_sigma_Intercept + log(vis_angle(phy.x_ref, distToScreen))),
-    va.pred.error = rnorm(n(), mean = b_Intercept, sd = sigma),
-    va.pred.y = va.pred.error + va.pred.y, 
-  ) %>%
-  # turn vis angle back to numerical values
+# given that there is a horizontal line, we probably don't need to project again 
+
+avg_pred <- pred %>% 
   mutate(
     num.pred.y = y_va_to_num(va.pred.y, distToScreen, pixelsPerMM)
+  ) %>%
+  group_by(expIndex, type, flip, noise, .draw) %>%
+  summarise(
+    # suppose participants can calculate mean
+    num.pred.y = mean(num.pred.y),
+    # suppose participants use the median instead
+    # num.pred.median.y = median(num.pred.y),
   )
+
+
+
+# # project from middle to left axis
+# pred2 <- pred %>%
+#   left_join(draws) %>%
+#   mutate(
+#     phy.x_ref = x_num_to_px(60) %>% px_to_phys(pixelsPerMM), 
+#     # distance to y-axis is vis angle distance from x == 60
+#     sigma = exp(b_sigma_Intercept + log(vis_angle(phy.x_ref, distToScreen))),
+#     va.pred.error = rnorm(n(), mean = b_Intercept, sd = sigma),
+#     va.pred.y = va.pred.error + va.pred.y, 
+#   ) %>%
+#   # turn vis angle back to numerical values
+#   mutate(
+#     num.pred.y = y_va_to_num(va.pred.y, distToScreen, pixelsPerMM)
+#   )
 ```
 
 Then get dataframe used for plotting error: 
 
 ```{r}
-plot_df <- pred2 %>%
+plot_df <- avg_pred %>% # pred2 %>%
   ungroup(.) %>%
   left_join(ans_df) %>%
   mutate(
