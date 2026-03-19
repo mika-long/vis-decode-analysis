@@ -471,7 +471,18 @@ sequence <- list(
     "training_intro", # training intro
     # missing training section here
     # Block/Task 5 related
-    list(), # TODO
+    list(
+      order = "fixed",
+      components = list(
+        "train-video-5",
+        paste0("task5_train_", 1:2),
+        # "testing-instruction",
+        list(
+          components = c(paste0("task5_test_", 1:10)),
+          order = "random"
+        )
+      )
+    ), # TODO
     "testing_intro",
     list(
       order = "latinSquare", # needs to be latin square to ensure sampling efficiency
