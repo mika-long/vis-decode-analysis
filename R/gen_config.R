@@ -7,7 +7,7 @@ library(tidyverse)
 
 # --- initialize json validator
 # --- only works when one have access to the internet
-schema_url <- "https://raw.githubusercontent.com/revisit-studies/study/v2.4.0/src/parser/StudyConfigSchema.json"
+schema_url <- "https://raw.githubusercontent.com/revisit-studies/study/v2.4.1/src/parser/StudyConfigSchema.json"
 schema <- content(GET(schema_url), as = "text")
 validator <- json_validator(schema, engine = "ajv")
 
@@ -54,13 +54,21 @@ ui_config = list(
 
 
 #--- define functions
-StudyResponse <- function(id, type, prompt, required = FALSE, hidden = FALSE) {
+StudyResponse <- function(
+  id,
+  type,
+  prompt,
+  required = FALSE,
+  hidden = FALSE,
+  ...
+) {
   list(
     id = id,
     prompt = prompt,
     required = required,
     type = type,
-    hidden = hidden
+    hidden = hidden,
+    ...
   )
 }
 
@@ -85,10 +93,11 @@ BaseComponent <- function(
   )
 }
 
-Component <- function(baseComponent, parameters) {
+Component <- function(baseComponent, parameters, ...) {
   list(
     baseComponent = baseComponent,
-    parameters = parameters
+    parameters = parameters,
+    ...
   )
 }
 
@@ -144,7 +153,8 @@ block5_x_numresponse = StudyResponse(
   prompt = "Numeric response of slider to Block5",
   required = FALSE,
   type = "numerical",
-  hidden = TRUE
+  hidden = FALSE,
+  location = "sidebar"
 )
 
 block5_y_numresponse = StudyResponse(
@@ -152,7 +162,8 @@ block5_y_numresponse = StudyResponse(
   prompt = "Numeric response of slider to Block5",
   required = FALSE,
   type = "numerical",
-  hidden = TRUE
+  hidden = TRUE,
+  location = "sidebar"
 )
 
 block5_x_pxresponse = StudyResponse(
@@ -186,16 +197,29 @@ block5_component <- BaseComponent(
   )
 )
 
+# "simple-dropbox": {
+#   "type": "questionnaire",
+#   "response": [
+#     {
+#       "id": "q-mark-type",
+#       "type": "dropdown",
+#       "required": true,
+#       "prompt": "What is the most efficient visual mark?",
+#       "secondaryText": "Hint: it's not round.",
+#       "placeholder": "Choose mark",
+#       "options": [
+#         "Bar",
+#         "Bubble",
+#         "Pie",
+#         "Stacked Bar"
+#       ]
+#     }
+#   ],
+
 # --- test
 block5_component %>% convert_to_json(.)
 
 # --- video for block 5
-
-# "train-video-5": {
-#   "type": "markdown",
-#   "path": "vis-decode-slider/assets/training-task5.md",
-#   "response": []
-# },
 
 train_video_Block5 <- list(
   type = "markdown",
@@ -203,30 +227,44 @@ train_video_Block5 <- list(
   response = list()
 )
 
-# TODO
-
-# "task5_train_1": {
-#   "baseComponent": "Block-5",
-#   "parameters": {
-#     "params": {"trial_id": 8, "training": true}
-#   }
-# },
-# "task5_train_2": {
-#   "baseComponent": "Block-5",
-#   "parameters": {
-#     "params": {"trial_id": 9, "training": true}
-#   }
-
 # --- create a sequence of blocks for task5
 
-block5_train_components <- 1:2 %>%
-  imap(
-    ~ Component(
+#   "correctAnswer": [
+#     {
+#       "id": "q-mark-type",
+#       "answer": "Bar"
+#     }
+#   ],
+#   "provideFeedback": true,
+#   "allowFailedTraining": false,
+#   "trainingAttempts": 4
+# }
+
+block5_train_params <- tibble(
+  x = c(0.2, -1.5),
+  y = c(0.75, 0.4)
+)
+
+block5_train_components <- block5_train_params %>%
+  pmap(function(x, y) {
+    Component(
       baseComponent = "Block5",
-      parameters = list(taskType = "Block5", training = TRUE)
+      parameters = list(
+        taskType = "Block5",
+        training = TRUE,
+        x = x,
+        y = y
+      ),
+      correctAnswer = list(
+        list(id = "slider-x", answer = x),
+        list(id = "slider-y", answer = y)
+      ),
+      provideFeedback = TRUE,
+      allowFailedTraining = TRUE,
+      trainingAttempts = 1
     )
-  ) %>%
-  set_names(paste0("block5_train_", seq_along(1:2)))
+  }) %>%
+  set_names(paste0("block5_train_", seq_len(nrow(block5_train_params))))
 
 block5_test_components <- block5_ids %>%
   imap(

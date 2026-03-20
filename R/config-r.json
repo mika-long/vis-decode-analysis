@@ -98,7 +98,8 @@
           "prompt": "Numeric response of slider to Block5",
           "required": false,
           "type": "numerical",
-          "hidden": true
+          "hidden": false,
+          "location": "sidebar"
         },
         {
           "id": "location-x",
@@ -112,7 +113,8 @@
           "prompt": "Numeric response of slider to Block5",
           "required": false,
           "type": "numerical",
-          "hidden": true
+          "hidden": true,
+          "location": "sidebar"
         },
         {
           "id": "location-y",
@@ -525,15 +527,45 @@
       "baseComponent": "Block5",
       "parameters": {
         "taskType": "Block5",
-        "training": true
-      }
+        "training": true,
+        "x": 0.2,
+        "y": 0.75
+      },
+      "correctAnswer": [
+        {
+          "id": "slider-x",
+          "answer": 0.2
+        },
+        {
+          "id": "slider-y",
+          "answer": 0.75
+        }
+      ],
+      "provideFeedback": true,
+      "allowFailedTraining": true,
+      "trainingAttempts": 1
     },
     "block5_train_2": {
       "baseComponent": "Block5",
       "parameters": {
         "taskType": "Block5",
-        "training": true
-      }
+        "training": true,
+        "x": -1.5,
+        "y": 0.4
+      },
+      "correctAnswer": [
+        {
+          "id": "slider-x",
+          "answer": -1.5
+        },
+        {
+          "id": "slider-y",
+          "answer": 0.4
+        }
+      ],
+      "provideFeedback": true,
+      "allowFailedTraining": true,
+      "trainingAttempts": 1
     },
     "block5_test_1": {
       "baseComponent": "Block5",
