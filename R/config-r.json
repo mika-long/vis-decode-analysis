@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/revisit-studies/study/v2.4.1/src/parser/StudyConfigSchema.json",
+  "$schema": "https://raw.githubusercontent.com/revisit-studies/study/v2.4.0/src/parser/StudyConfigSchema.json",
   "studyMetadata": {
     "title": "Visual Decoding Operators - Average Estimation in Line Graphs",
     "version": "pilot",
@@ -153,22 +153,19 @@
           "required": true,
           "location": "belowStimulus",
           "type": "radio",
-          "options": [
-            "Decline",
-            "Accept"
-          ]
+          "options": ["Decline", "Accept"]
         }
       ]
     },
-    "calibration_intro": {
+    "chinrest_intro": {
       "type": "markdown",
-      "path": "vis-decode-retrieve-value/assets/calibration_intro.md",
+      "path": "vis-decode-retrieve-value/assets/chinrest_intro.md",
       "response": [],
       "nextButtonEnableTime": 3000
     },
-    "training_intro": {
+    "study_overview": {
       "type": "markdown",
-      "path": "vis-decode-retrieve-value/assets/training_intro.md",
+      "path": "vis-decode-retrieve-value/assets/study_overview.md",
       "response": [],
       "nextButtonEnableTime": 3000,
       "style": {
@@ -176,20 +173,40 @@
         "width": "50%"
       }
     },
-    "testing_intro": {
+    "task1_intro": {
       "type": "markdown",
-      "path": "vis-decode-retrieve-value/assets/testing_intro.md",
-      "response": [],
-      "nextButtonEnableTime": 3000,
-      "style": {
-        "margin": "0 auto",
-        "width": "50%"
-      }
-    },
-    "train-video-5": {
-      "type": "markdown",
-      "path": "vis-decode-retrieve-value/assets/training-task5.md",
+      "path": "vis-decode-retrieve-value/assets/task1_intro.md",
       "response": []
+    },
+    "task1_test_intro": {
+      "type": "markdown",
+      "path": "vis-decode-retrieve-value/assets/task1_test_intro.md",
+      "response": [],
+      "nextButtonEnableTime": 3000,
+      "style": {
+        "margin": "0 auto",
+        "width": "50%"
+      }
+    },
+    "task2_intro": {
+      "type": "markdown",
+      "path": "vis-decode-retrieve-value/assets/task2_intro.md",
+      "response": [],
+      "nextButtonEnableTime": 3000,
+      "style": {
+        "margin": "0 auto",
+        "width": "50%"
+      }
+    },
+    "task2_test_intro": {
+      "type": "markdown",
+      "path": "vis-decode-retrieve-value/assets/task2_test_intro.md",
+      "response": [],
+      "nextButtonEnableTime": 3000,
+      "style": {
+        "margin": "0 auto",
+        "width": "50%"
+      }
     },
     "block5_train_1": {
       "baseComponent": "Block5",
@@ -1025,11 +1042,7 @@
           "prompt": "## Thank you! \n\n Please answer the following demographics related questions: \n\n Gender",
           "location": "belowStimulus",
           "type": "radio",
-          "options": [
-            "Male",
-            "Female",
-            "Prefer not to say"
-          ],
+          "options": ["Male", "Female", "Prefer not to say"],
           "withOther": true
         },
         {
@@ -1042,10 +1055,7 @@
           "id": "feedback",
           "prompt": "Were any of the instructions unclear?",
           "type": "radio",
-          "options": [
-            "Yes",
-            "No"
-          ]
+          "options": ["Yes", "No"]
         },
         {
           "id": "feedback-text",
@@ -1097,33 +1107,23 @@
         ],
         "order": "fixed"
       },
-      "calibration_intro",
+      "chinrest_intro",
       "$virtual-chinrest.se.full",
-      "training_intro",
+      "study_overview",
       {
         "order": "fixed",
         "components": [
-          "train-video-5",
+          "task1_intro",
           "block5_train_1",
           "block5_train_2",
+          "task1_test_intro",
           {
-            "components": [
-              "block5_test_1",
-              "block5_test_2",
-              "block5_test_3",
-              "block5_test_4",
-              "block5_test_5",
-              "block5_test_6",
-              "block5_test_7",
-              "block5_test_8",
-              "block5_test_9",
-              "block5_test_10"
-            ],
+            "components": ["block5_test_1", "block5_test_2", "block5_test_3", "block5_test_4", "block5_test_5", "block5_test_6", "block5_test_7", "block5_test_8", "block5_test_9", "block5_test_10"],
             "order": "random"
           }
         ]
       },
-      "testing_intro",
+      "task2_intro",
       {
         "order": "latinSquare",
         "numSamples": 1,
@@ -1133,56 +1133,10 @@
             "components": [
               "moritz_train_point_1",
               "moritz_train_point_2",
+              "task2_test_intro",
               {
                 "order": "random",
-                "components": [
-                  "point_task_1",
-                  "point_task_2",
-                  "point_task_3",
-                  "point_task_4",
-                  "point_task_5",
-                  "point_task_6",
-                  "point_task_7",
-                  "point_task_8",
-                  "point_task_9",
-                  "point_task_10",
-                  "point_task_11",
-                  "point_task_12",
-                  "point_task_13",
-                  "point_task_14",
-                  "point_task_15",
-                  "point_task_16",
-                  "point_task_17",
-                  "point_task_18",
-                  "point_task_19",
-                  "point_task_20",
-                  "point_task_21",
-                  "point_task_22",
-                  "point_task_23",
-                  "point_task_24",
-                  "point_task_25",
-                  "point_task_26",
-                  "point_task_27",
-                  "point_task_28",
-                  "point_task_29",
-                  "point_task_30",
-                  "point_task_31",
-                  "point_task_32",
-                  "point_task_33",
-                  "point_task_34",
-                  "point_task_35",
-                  "point_task_36",
-                  "point_task_37",
-                  "point_task_38",
-                  "point_task_39",
-                  "point_task_40",
-                  "point_task_41",
-                  "point_task_42",
-                  "point_task_43",
-                  "point_task_44",
-                  "point_task_45",
-                  "point_task_46"
-                ],
+                "components": ["point_task_1", "point_task_2", "point_task_3", "point_task_4", "point_task_5", "point_task_6", "point_task_7", "point_task_8", "point_task_9", "point_task_10", "point_task_11", "point_task_12", "point_task_13", "point_task_14", "point_task_15", "point_task_16", "point_task_17", "point_task_18", "point_task_19", "point_task_20", "point_task_21", "point_task_22", "point_task_23", "point_task_24", "point_task_25", "point_task_26", "point_task_27", "point_task_28", "point_task_29", "point_task_30", "point_task_31", "point_task_32", "point_task_33", "point_task_34", "point_task_35", "point_task_36", "point_task_37", "point_task_38", "point_task_39", "point_task_40", "point_task_41", "point_task_42", "point_task_43", "point_task_44", "point_task_45", "point_task_46"],
                 "interruptions": [
                   {
                     "spacing": "random",
@@ -1200,56 +1154,10 @@
             "components": [
               "moritz_train_pointArc_1",
               "moritz_train_pointArc_2",
+              "task2_test_intro",
               {
                 "order": "random",
-                "components": [
-                  "pointArc_task_1",
-                  "pointArc_task_2",
-                  "pointArc_task_3",
-                  "pointArc_task_4",
-                  "pointArc_task_5",
-                  "pointArc_task_6",
-                  "pointArc_task_7",
-                  "pointArc_task_8",
-                  "pointArc_task_9",
-                  "pointArc_task_10",
-                  "pointArc_task_11",
-                  "pointArc_task_12",
-                  "pointArc_task_13",
-                  "pointArc_task_14",
-                  "pointArc_task_15",
-                  "pointArc_task_16",
-                  "pointArc_task_17",
-                  "pointArc_task_18",
-                  "pointArc_task_19",
-                  "pointArc_task_20",
-                  "pointArc_task_21",
-                  "pointArc_task_22",
-                  "pointArc_task_23",
-                  "pointArc_task_24",
-                  "pointArc_task_25",
-                  "pointArc_task_26",
-                  "pointArc_task_27",
-                  "pointArc_task_28",
-                  "pointArc_task_29",
-                  "pointArc_task_30",
-                  "pointArc_task_31",
-                  "pointArc_task_32",
-                  "pointArc_task_33",
-                  "pointArc_task_34",
-                  "pointArc_task_35",
-                  "pointArc_task_36",
-                  "pointArc_task_37",
-                  "pointArc_task_38",
-                  "pointArc_task_39",
-                  "pointArc_task_40",
-                  "pointArc_task_41",
-                  "pointArc_task_42",
-                  "pointArc_task_43",
-                  "pointArc_task_44",
-                  "pointArc_task_45",
-                  "pointArc_task_46"
-                ],
+                "components": ["pointArc_task_1", "pointArc_task_2", "pointArc_task_3", "pointArc_task_4", "pointArc_task_5", "pointArc_task_6", "pointArc_task_7", "pointArc_task_8", "pointArc_task_9", "pointArc_task_10", "pointArc_task_11", "pointArc_task_12", "pointArc_task_13", "pointArc_task_14", "pointArc_task_15", "pointArc_task_16", "pointArc_task_17", "pointArc_task_18", "pointArc_task_19", "pointArc_task_20", "pointArc_task_21", "pointArc_task_22", "pointArc_task_23", "pointArc_task_24", "pointArc_task_25", "pointArc_task_26", "pointArc_task_27", "pointArc_task_28", "pointArc_task_29", "pointArc_task_30", "pointArc_task_31", "pointArc_task_32", "pointArc_task_33", "pointArc_task_34", "pointArc_task_35", "pointArc_task_36", "pointArc_task_37", "pointArc_task_38", "pointArc_task_39", "pointArc_task_40", "pointArc_task_41", "pointArc_task_42", "pointArc_task_43", "pointArc_task_44", "pointArc_task_45", "pointArc_task_46"],
                 "interruptions": [
                   {
                     "spacing": "random",

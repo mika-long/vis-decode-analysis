@@ -204,14 +204,159 @@ block5_component <- BaseComponent(
   )
 )
 
-# --- video for block 5
-train_video_Block5 <- list(
-  type = "markdown",
-  path = "vis-decode-retrieve-value/assets/training-task5.md",
-  response = list()
+# --- Static markdown components
+
+introduction_component <- list(
+  introduction = list(
+    path = "vis-decode-retrieve-value/assets/introduction.md",
+    response = list(
+      list(
+        id = "prolificId",
+        prompt = "Please enter your Prolific ID (without any spaces):",
+        required = TRUE,
+        location = "belowStimulus",
+        type = "shortText",
+        placeholder = "Prolific ID",
+        paramCapture = "PROLIFIC_PID"
+      )
+    ),
+    type = "markdown"
+  )
 )
 
-# --- Block5 training components
+consent_comp = list(
+  consent = list(
+    type = "markdown",
+    path = "vis-decode-retrieve-value/assets/consent.md",
+    response = list(
+      list(
+        id = "consentApproval",
+        prompt = "Do you consent to the study and wish to continue?",
+        required = TRUE,
+        location = "belowStimulus",
+        type = "radio",
+        options = c("Decline", "Accept")
+      )
+    )
+  )
+)
+
+attention_check = list(
+  attention_check = list(
+    type = "markdown",
+    path = "vis-decode-retrieve-value/assets/attention_check.md",
+    response = list(
+      list(
+        id = "attention_check",
+        prompt = "During this study, you will be asked to look at graphs of _____ prices. \n\n What should _____ be?",
+        required = TRUE,
+        location = "belowStimulus",
+        type = "shortText"
+      )
+    )
+  )
+)
+
+chinrest_intro = list(
+  chinrest_intro = list(
+    type = "markdown",
+    path = "vis-decode-retrieve-value/assets/chinrest_intro.md",
+    response = list(),
+    nextButtonEnableTime = 3000
+  )
+)
+
+study_overview = list(
+  study_overview = list(
+    type = "markdown",
+    path = "vis-decode-retrieve-value/assets/study_overview.md",
+    response = list(),
+    nextButtonEnableTime = 3000,
+    style = list(margin = "0 auto", width = "50%")
+  )
+)
+
+task1_intro = list(
+  task1_intro = list(
+    type = "markdown",
+    path = "vis-decode-retrieve-value/assets/task1_intro.md",
+    response = list()
+  )
+)
+
+task1_test_intro = list(
+  task1_test_intro = list(
+    type = "markdown",
+    path = "vis-decode-retrieve-value/assets/task1_test_intro.md",
+    response = list(),
+    nextButtonEnableTime = 3000,
+    style = list(margin = "0 auto", width = "50%")
+  )
+)
+
+task2_intro = list(
+  task2_intro = list(
+    type = "markdown",
+    path = "vis-decode-retrieve-value/assets/task2_intro.md",
+    response = list(),
+    nextButtonEnableTime = 3000,
+    style = list(margin = "0 auto", width = "50%")
+  )
+)
+
+task2_test_intro = list(
+  task2_test_intro = list(
+    type = "markdown",
+    path = "vis-decode-retrieve-value/assets/task2_test_intro.md",
+    response = list(),
+    nextButtonEnableTime = 3000,
+    style = list(margin = "0 auto", width = "50%")
+  )
+)
+
+post_study_component = list(
+  post_study = list(
+    type = "questionnaire",
+    response = list(
+      list(
+        id = "gender",
+        prompt = "## Thank you! \n\n Please answer the following demographics related questions: \n\n Gender",
+        location = "belowStimulus",
+        type = "radio",
+        options = c("Male", "Female", "Prefer not to say"),
+        withOther = TRUE
+      ),
+      list(
+        id = "age",
+        prompt = "What is your age?",
+        location = "belowStimulus",
+        type = "numerical"
+      ),
+      list(
+        id = "feedback",
+        prompt = "Were any of the instructions unclear?",
+        type = "radio",
+        options = c("Yes", "No")
+      ),
+      list(
+        id = "feedback-text",
+        prompt = "(Optional) If so, which instructions were unclear?",
+        location = "belowStimulus",
+        type = "longText",
+        required = FALSE
+      ),
+      list(
+        id = "strategy",
+        prompt = "(Optional) Please share with us any **strategy** you used.",
+        location = "belowStimulus",
+        type = "longText",
+        required = FALSE
+      )
+    )
+  )
+)
+
+# --- Block5 training and test components
 block5_train_params <- tibble(
   x = c(0.2, -1.5),
   y = c(0.75, 0.4)
@@ -314,130 +459,6 @@ point_arc_components <- pointArc_ids_test %>%
   ) %>%
   set_names(pointArc_task_names)
 
-# --- Static components
-
-introduction_component <- list(
-  introduction = list(
-    path = "vis-decode-retrieve-value/assets/introduction.md",
-    response = list(
-      list(
-        id = "prolificId",
-        prompt = "Please enter your Prolific ID (without any spaces):",
-        required = TRUE,
-        location = "belowStimulus",
-        type = "shortText",
-        placeholder = "Prolific ID",
-        paramCapture = "PROLIFIC_PID"
-      )
-    ),
-    type = "markdown"
-  )
-)
-
-consent_comp = list(
-  consent = list(
-    type = "markdown",
-    path = "vis-decode-retrieve-value/assets/consent.md",
-    response = list(
-      list(
-        id = "consentApproval",
-        prompt = "Do you consent to the study and wish to continue?",
-        required = TRUE,
-        location = "belowStimulus",
-        type = "radio",
-        options = c("Decline", "Accept")
-      )
-    )
-  )
-)
-
-attention_check = list(
-  attention_check = list(
-    type = "markdown",
-    path = "vis-decode-retrieve-value/assets/attention_check.md",
-    response = list(
-      list(
-        id = "attention_check",
-        prompt = "During this study, you will be asked to look at graphs of _____ prices. \n\n What should _____ be?",
-        required = TRUE,
-        location = "belowStimulus",
-        type = "shortText"
-      )
-    )
-  )
-)
-
-calibration_intro = list(
-  calibration_intro = list(
-    type = "markdown",
-    path = "vis-decode-retrieve-value/assets/calibration_intro.md",
-    response = list(),
-    nextButtonEnableTime = 3000
-  )
-)
-
-training_intro = list(
-  training_intro = list(
-    type = "markdown",
-    path = "vis-decode-retrieve-value/assets/training_intro.md",
-    response = list(),
-    nextButtonEnableTime = 3000,
-    style = list(margin = "0 auto", width = "50%")
-  )
-)
-
-testing_intro = list(
-  testing_intro = list(
-    type = "markdown",
-    path = "vis-decode-retrieve-value/assets/testing_intro.md",
-    response = list(),
-    nextButtonEnableTime = 3000,
-    style = list(margin = "0 auto", width = "50%")
-  )
-)
-
-post_study_component = list(
-  post_study = list(
-    type = "questionnaire",
-    response = list(
-      list(
-        id = "gender",
-        prompt = "## Thank you! \n\n Please answer the following demographics related questions: \n\n Gender",
-        location = "belowStimulus",
-        type = "radio",
-        options = c("Male", "Female", "Prefer not to say"),
-        withOther = TRUE
-      ),
-      list(
-        id = "age",
-        prompt = "What is your age?",
-        location = "belowStimulus",
-        type = "numerical"
-      ),
-      list(
-        id = "feedback",
-        prompt = "Were any of the instructions unclear?",
-        type = "radio",
-        options = c("Yes", "No")
-      ),
-      list(
-        id = "feedback-text",
-        prompt = "(Optional) If so, which instructions were unclear?",
-        location = "belowStimulus",
-        type = "longText",
-        required = FALSE
-      ),
-      list(
-        id = "strategy",
-        prompt = "(Optional) Please share with us any **strategy** you used.",
-        location = "belowStimulus",
-        type = "longText",
-        required = FALSE
-      )
-    )
-  )
-)
-
 # --- Sequence
 # Training for Moritz is nested inside each latinSquare arm so participants
 # only see cross-type training charts matching their assigned condition
@@ -458,24 +479,25 @@ sequence <- list(
       )),
       order = "fixed"
     ),
-    "calibration_intro",
+    "chinrest_intro",
     "$virtual-chinrest.se.full",
-    "training_intro",
-    # Block5 training and test
+    "study_overview",
+    # Task 1 (Block5): training video, practice trials, then test trials
     list(
       order = "fixed",
       components = list(
-        "train-video-5",
+        "task1_intro",
         "block5_train_1",
         "block5_train_2",
+        "task1_test_intro",
         list(
           components = c(paste0("block5_test_", 1:10)),
           order = "random"
         )
       )
     ),
-    "testing_intro",
-    # Moritz training (cross-type) and test, assigned via latinSquare
+    "task2_intro",
+    # Task 2 (Moritz): cross-type training then test, assigned via latinSquare
     list(
       order = "latinSquare",
       numSamples = 1,
@@ -485,6 +507,7 @@ sequence <- list(
           components = list(
             "moritz_train_point_1",
             "moritz_train_point_2",
+            "task2_test_intro",
             list(
               order = "random",
               components = c(point_task_names),
@@ -501,6 +524,7 @@ sequence <- list(
           components = list(
             "moritz_train_pointArc_1",
             "moritz_train_pointArc_2",
+            "task2_test_intro",
             list(
               order = "random",
               components = c(pointArc_task_names),
@@ -554,10 +578,12 @@ final_output = list(
   components = c(
     introduction_component,
     consent_comp,
-    calibration_intro,
-    training_intro,
-    testing_intro,
-    list(`train-video-5` = train_video_Block5),
+    chinrest_intro,
+    study_overview,
+    task1_intro,
+    task1_test_intro,
+    task2_intro,
+    task2_test_intro,
     block5_train_components,
     block5_test_components,
     moritz_train_point_components,
