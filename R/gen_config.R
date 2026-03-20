@@ -34,9 +34,8 @@ block5_ids <- 1:10
 point_train_indices <- point_ids[1:2]
 pointArc_train_indices <- pointArc_ids[1:2]
 
-# Exclude training indices from test pools
-point_ids_test <- setdiff(point_ids, point_train_indices)
-pointArc_ids_test <- setdiff(pointArc_ids, pointArc_train_indices)
+point_ids_test <- point_ids
+pointArc_ids_test <- pointArc_ids
 
 get_true_mean <- function(idx) {
   stimuli_df %>%

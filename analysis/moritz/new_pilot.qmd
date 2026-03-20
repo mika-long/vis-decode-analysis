@@ -16,7 +16,33 @@ library(jsonlite)
 library(here)
 ```
 
-Read in data: 
+Read in stimuli data: 
+
+```{r}
+exp_json_data <- jsonlite::fromJSON(here::here(
+  "data",
+  "moritz",
+  "stimuli",
+  "exp2-stimuli.json"
+)) %>%
+  as_tibble(.)
+
+stimuli_df <- exp_json_data %>%
+  select(index, seed, noise, flip, type, data) %>%
+  mutate(noise = as.character(noise))
+
+# get the mapping between og index and the index used in exp
+stimuli_df %>%
+  filter(type == "point") %>%
+  mutate(expIndex = 1:nrow(.)) %>%
+  select(index, type, expIndex) -> point_map
+stimuli_df %>%
+  filter(type == "point_arc") %>%
+  mutate(expIndex = 1:nrow(.)) %>%
+  select(index, type, expIndex) -> pointArc_map
+```
+
+Read in participant data: 
 
 ```{r}
 raw_df <- read_csv(here("data", "part_2", "part2_newpilot.csv")) %>%
@@ -63,6 +89,20 @@ part2_df <- pilot_df %>%
     num.resp.y = numericResponse
   ) %>%
   mutate(px.resp.y = as.numeric(px.resp.y), num.resp.y = as.numeric(num.resp.y))
+```
+
+```{r}
+# now which two trials are we missing here ...?
+
+point_map # 48
+# why is this 46 ...???
+part2_df %>%
+  separate_wider_delim(trialId, "_", names = c("A", "B", "expIndex")) %>%
+  select(expIndex, ogIndex) %>%
+  mutate(expIndex = as.numeric(expIndex)) %>%
+  arrange(expIndex) %>%
+  # compare "index" from point_map and "ogIndex" in the new thing
+  left_join(point_map)
 ```
 
 # Fit model for part 1 
