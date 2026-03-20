@@ -1,13 +1,13 @@
 {
-  "$schema": "https://raw.githubusercontent.com/revisit-studies/study/v2.4.0/src/parser/StudyConfigSchema.json",
+  "$schema": "https://raw.githubusercontent.com/revisit-studies/study/v2.4.1/src/parser/StudyConfigSchema.json",
   "studyMetadata": {
-    "title": "Visual Decoding Operators — Average Estimation in Line Graphs",
+    "title": "Visual Decoding Operators - Average Estimation in Line Graphs",
     "version": "pilot",
     "authors": [
       "Sheng Long"
     ],
     "date": "2025-12-10",
-    "description": "A study designed to elicit resposnes from participants",
+    "description": "A study designed to elicit responses from participants",
     "organizations": [
       "Northwestern University"
     ]
@@ -71,7 +71,8 @@
           "prompt": "Numeric response of slider to Mortiz question",
           "required": false,
           "type": "numerical",
-          "hidden": true
+          "hidden": false,
+          "location": "sidebar"
         },
         {
           "id": "pixelResponse",
@@ -113,7 +114,7 @@
           "prompt": "Numeric response of slider to Block5",
           "required": false,
           "type": "numerical",
-          "hidden": true,
+          "hidden": false,
           "location": "sidebar"
         },
         {
@@ -152,7 +153,10 @@
           "required": true,
           "location": "belowStimulus",
           "type": "radio",
-          "options": ["Decline", "Accept"]
+          "options": [
+            "Decline",
+            "Accept"
+          ]
         }
       ]
     },
@@ -180,342 +184,6 @@
       "style": {
         "margin": "0 auto",
         "width": "50%"
-      }
-    },
-    "point_task_1": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 4,
-        "taskType": "point"
-      }
-    },
-    "point_task_2": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 5,
-        "taskType": "point"
-      }
-    },
-    "point_task_3": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 6,
-        "taskType": "point"
-      }
-    },
-    "point_task_4": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 7,
-        "taskType": "point"
-      }
-    },
-    "point_task_5": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 16,
-        "taskType": "point"
-      }
-    },
-    "point_task_6": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 17,
-        "taskType": "point"
-      }
-    },
-    "point_task_7": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 18,
-        "taskType": "point"
-      }
-    },
-    "point_task_8": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 19,
-        "taskType": "point"
-      }
-    },
-    "point_task_9": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 28,
-        "taskType": "point"
-      }
-    },
-    "point_task_10": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 29,
-        "taskType": "point"
-      }
-    },
-    "point_task_11": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 30,
-        "taskType": "point"
-      }
-    },
-    "point_task_12": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 31,
-        "taskType": "point"
-      }
-    },
-    "point_task_13": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 40,
-        "taskType": "point"
-      }
-    },
-    "point_task_14": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 41,
-        "taskType": "point"
-      }
-    },
-    "point_task_15": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 42,
-        "taskType": "point"
-      }
-    },
-    "point_task_16": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 43,
-        "taskType": "point"
-      }
-    },
-    "point_task_17": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 52,
-        "taskType": "point"
-      }
-    },
-    "point_task_18": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 53,
-        "taskType": "point"
-      }
-    },
-    "point_task_19": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 54,
-        "taskType": "point"
-      }
-    },
-    "point_task_20": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 55,
-        "taskType": "point"
-      }
-    },
-    "point_task_21": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 64,
-        "taskType": "point"
-      }
-    },
-    "point_task_22": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 65,
-        "taskType": "point"
-      }
-    },
-    "point_task_23": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 66,
-        "taskType": "point"
-      }
-    },
-    "point_task_24": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 67,
-        "taskType": "point"
-      }
-    },
-    "point_task_25": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 76,
-        "taskType": "point"
-      }
-    },
-    "point_task_26": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 77,
-        "taskType": "point"
-      }
-    },
-    "point_task_27": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 78,
-        "taskType": "point"
-      }
-    },
-    "point_task_28": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 79,
-        "taskType": "point"
-      }
-    },
-    "point_task_29": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 88,
-        "taskType": "point"
-      }
-    },
-    "point_task_30": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 89,
-        "taskType": "point"
-      }
-    },
-    "point_task_31": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 90,
-        "taskType": "point"
-      }
-    },
-    "point_task_32": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 91,
-        "taskType": "point"
-      }
-    },
-    "point_task_33": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 100,
-        "taskType": "point"
-      }
-    },
-    "point_task_34": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 101,
-        "taskType": "point"
-      }
-    },
-    "point_task_35": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 102,
-        "taskType": "point"
-      }
-    },
-    "point_task_36": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 103,
-        "taskType": "point"
-      }
-    },
-    "point_task_37": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 112,
-        "taskType": "point"
-      }
-    },
-    "point_task_38": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 113,
-        "taskType": "point"
-      }
-    },
-    "point_task_39": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 114,
-        "taskType": "point"
-      }
-    },
-    "point_task_40": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 115,
-        "taskType": "point"
-      }
-    },
-    "point_task_41": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 124,
-        "taskType": "point"
-      }
-    },
-    "point_task_42": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 125,
-        "taskType": "point"
-      }
-    },
-    "point_task_43": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 126,
-        "taskType": "point"
-      }
-    },
-    "point_task_44": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 127,
-        "taskType": "point"
-      }
-    },
-    "point_task_45": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 136,
-        "taskType": "point"
-      }
-    },
-    "point_task_46": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 137,
-        "taskType": "point"
-      }
-    },
-    "point_task_47": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 138,
-        "taskType": "point"
-      }
-    },
-    "point_task_48": {
-      "baseComponent": "Moritz",
-      "parameters": {
-        "taskIndex": 139,
-        "taskType": "point"
       }
     },
     "train-video-5": {
@@ -637,336 +305,712 @@
         "training": false
       }
     },
-    "pointArc_task_1": {
+    "moritz_train_point_1": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 8,
-        "taskType": "pointArc"
-      }
+        "taskType": "pointArc",
+        "training": true
+      },
+      "correctAnswer": [
+        {
+          "id": "numericResponse",
+          "answer": 0.49
+        }
+      ],
+      "provideFeedback": true,
+      "allowFailedTraining": true,
+      "trainingAttempts": 1
     },
-    "pointArc_task_2": {
+    "moritz_train_point_2": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 9,
-        "taskType": "pointArc"
+        "taskType": "pointArc",
+        "training": true
+      },
+      "correctAnswer": [
+        {
+          "id": "numericResponse",
+          "answer": 0.51
+        }
+      ],
+      "provideFeedback": true,
+      "allowFailedTraining": true,
+      "trainingAttempts": 1
+    },
+    "moritz_train_pointArc_1": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 4,
+        "taskType": "point",
+        "training": true
+      },
+      "correctAnswer": [
+        {
+          "id": "numericResponse",
+          "answer": 0.51
+        }
+      ],
+      "provideFeedback": true,
+      "allowFailedTraining": true,
+      "trainingAttempts": 1
+    },
+    "moritz_train_pointArc_2": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 5,
+        "taskType": "point",
+        "training": true
+      },
+      "correctAnswer": [
+        {
+          "id": "numericResponse",
+          "answer": 0.49
+        }
+      ],
+      "provideFeedback": true,
+      "allowFailedTraining": true,
+      "trainingAttempts": 1
+    },
+    "point_task_1": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 6,
+        "taskType": "point"
       }
     },
-    "pointArc_task_3": {
+    "point_task_2": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 7,
+        "taskType": "point"
+      }
+    },
+    "point_task_3": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 16,
+        "taskType": "point"
+      }
+    },
+    "point_task_4": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 17,
+        "taskType": "point"
+      }
+    },
+    "point_task_5": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 18,
+        "taskType": "point"
+      }
+    },
+    "point_task_6": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 19,
+        "taskType": "point"
+      }
+    },
+    "point_task_7": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 28,
+        "taskType": "point"
+      }
+    },
+    "point_task_8": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 29,
+        "taskType": "point"
+      }
+    },
+    "point_task_9": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 30,
+        "taskType": "point"
+      }
+    },
+    "point_task_10": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 31,
+        "taskType": "point"
+      }
+    },
+    "point_task_11": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 40,
+        "taskType": "point"
+      }
+    },
+    "point_task_12": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 41,
+        "taskType": "point"
+      }
+    },
+    "point_task_13": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 42,
+        "taskType": "point"
+      }
+    },
+    "point_task_14": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 43,
+        "taskType": "point"
+      }
+    },
+    "point_task_15": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 52,
+        "taskType": "point"
+      }
+    },
+    "point_task_16": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 53,
+        "taskType": "point"
+      }
+    },
+    "point_task_17": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 54,
+        "taskType": "point"
+      }
+    },
+    "point_task_18": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 55,
+        "taskType": "point"
+      }
+    },
+    "point_task_19": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 64,
+        "taskType": "point"
+      }
+    },
+    "point_task_20": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 65,
+        "taskType": "point"
+      }
+    },
+    "point_task_21": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 66,
+        "taskType": "point"
+      }
+    },
+    "point_task_22": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 67,
+        "taskType": "point"
+      }
+    },
+    "point_task_23": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 76,
+        "taskType": "point"
+      }
+    },
+    "point_task_24": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 77,
+        "taskType": "point"
+      }
+    },
+    "point_task_25": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 78,
+        "taskType": "point"
+      }
+    },
+    "point_task_26": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 79,
+        "taskType": "point"
+      }
+    },
+    "point_task_27": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 88,
+        "taskType": "point"
+      }
+    },
+    "point_task_28": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 89,
+        "taskType": "point"
+      }
+    },
+    "point_task_29": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 90,
+        "taskType": "point"
+      }
+    },
+    "point_task_30": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 91,
+        "taskType": "point"
+      }
+    },
+    "point_task_31": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 100,
+        "taskType": "point"
+      }
+    },
+    "point_task_32": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 101,
+        "taskType": "point"
+      }
+    },
+    "point_task_33": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 102,
+        "taskType": "point"
+      }
+    },
+    "point_task_34": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 103,
+        "taskType": "point"
+      }
+    },
+    "point_task_35": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 112,
+        "taskType": "point"
+      }
+    },
+    "point_task_36": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 113,
+        "taskType": "point"
+      }
+    },
+    "point_task_37": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 114,
+        "taskType": "point"
+      }
+    },
+    "point_task_38": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 115,
+        "taskType": "point"
+      }
+    },
+    "point_task_39": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 124,
+        "taskType": "point"
+      }
+    },
+    "point_task_40": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 125,
+        "taskType": "point"
+      }
+    },
+    "point_task_41": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 126,
+        "taskType": "point"
+      }
+    },
+    "point_task_42": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 127,
+        "taskType": "point"
+      }
+    },
+    "point_task_43": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 136,
+        "taskType": "point"
+      }
+    },
+    "point_task_44": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 137,
+        "taskType": "point"
+      }
+    },
+    "point_task_45": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 138,
+        "taskType": "point"
+      }
+    },
+    "point_task_46": {
+      "baseComponent": "Moritz",
+      "parameters": {
+        "taskIndex": 139,
+        "taskType": "point"
+      }
+    },
+    "pointArc_task_1": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 10,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_4": {
+    "pointArc_task_2": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 11,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_5": {
+    "pointArc_task_3": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 20,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_6": {
+    "pointArc_task_4": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 21,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_7": {
+    "pointArc_task_5": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 22,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_8": {
+    "pointArc_task_6": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 23,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_9": {
+    "pointArc_task_7": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 32,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_10": {
+    "pointArc_task_8": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 33,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_11": {
+    "pointArc_task_9": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 34,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_12": {
+    "pointArc_task_10": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 35,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_13": {
+    "pointArc_task_11": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 44,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_14": {
+    "pointArc_task_12": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 45,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_15": {
+    "pointArc_task_13": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 46,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_16": {
+    "pointArc_task_14": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 47,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_17": {
+    "pointArc_task_15": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 56,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_18": {
+    "pointArc_task_16": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 57,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_19": {
+    "pointArc_task_17": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 58,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_20": {
+    "pointArc_task_18": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 59,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_21": {
+    "pointArc_task_19": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 68,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_22": {
+    "pointArc_task_20": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 69,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_23": {
+    "pointArc_task_21": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 70,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_24": {
+    "pointArc_task_22": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 71,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_25": {
+    "pointArc_task_23": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 80,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_26": {
+    "pointArc_task_24": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 81,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_27": {
+    "pointArc_task_25": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 82,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_28": {
+    "pointArc_task_26": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 83,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_29": {
+    "pointArc_task_27": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 92,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_30": {
+    "pointArc_task_28": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 93,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_31": {
+    "pointArc_task_29": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 94,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_32": {
+    "pointArc_task_30": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 95,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_33": {
+    "pointArc_task_31": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 104,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_34": {
+    "pointArc_task_32": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 105,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_35": {
+    "pointArc_task_33": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 106,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_36": {
+    "pointArc_task_34": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 107,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_37": {
+    "pointArc_task_35": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 116,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_38": {
+    "pointArc_task_36": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 117,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_39": {
+    "pointArc_task_37": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 118,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_40": {
+    "pointArc_task_38": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 119,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_41": {
+    "pointArc_task_39": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 128,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_42": {
+    "pointArc_task_40": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 129,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_43": {
+    "pointArc_task_41": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 130,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_44": {
+    "pointArc_task_42": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 131,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_45": {
+    "pointArc_task_43": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 140,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_46": {
+    "pointArc_task_44": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 141,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_47": {
+    "pointArc_task_45": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 142,
         "taskType": "pointArc"
       }
     },
-    "pointArc_task_48": {
+    "pointArc_task_46": {
       "baseComponent": "Moritz",
       "parameters": {
         "taskIndex": 143,
@@ -981,7 +1025,11 @@
           "prompt": "## Thank you! \n\n Please answer the following demographics related questions: \n\n Gender",
           "location": "belowStimulus",
           "type": "radio",
-          "options": ["Male", "Female", "Prefer not to say"],
+          "options": [
+            "Male",
+            "Female",
+            "Prefer not to say"
+          ],
           "withOther": true
         },
         {
@@ -994,7 +1042,10 @@
           "id": "feedback",
           "prompt": "Were any of the instructions unclear?",
           "type": "radio",
-          "options": ["Yes", "No"]
+          "options": [
+            "Yes",
+            "No"
+          ]
         },
         {
           "id": "feedback-text",
@@ -1056,7 +1107,18 @@
           "block5_train_1",
           "block5_train_2",
           {
-            "components": ["block5_test_1", "block5_test_2", "block5_test_3", "block5_test_4", "block5_test_5", "block5_test_6", "block5_test_7", "block5_test_8", "block5_test_9", "block5_test_10"],
+            "components": [
+              "block5_test_1",
+              "block5_test_2",
+              "block5_test_3",
+              "block5_test_4",
+              "block5_test_5",
+              "block5_test_6",
+              "block5_test_7",
+              "block5_test_8",
+              "block5_test_9",
+              "block5_test_10"
+            ],
             "order": "random"
           }
         ]
@@ -1067,27 +1129,135 @@
         "numSamples": 1,
         "components": [
           {
-            "order": "random",
-            "components": ["point_task_1", "point_task_2", "point_task_3", "point_task_4", "point_task_5", "point_task_6", "point_task_7", "point_task_8", "point_task_9", "point_task_10", "point_task_11", "point_task_12", "point_task_13", "point_task_14", "point_task_15", "point_task_16", "point_task_17", "point_task_18", "point_task_19", "point_task_20", "point_task_21", "point_task_22", "point_task_23", "point_task_24", "point_task_25", "point_task_26", "point_task_27", "point_task_28", "point_task_29", "point_task_30", "point_task_31", "point_task_32", "point_task_33", "point_task_34", "point_task_35", "point_task_36", "point_task_37", "point_task_38", "point_task_39", "point_task_40", "point_task_41", "point_task_42", "point_task_43", "point_task_44", "point_task_45", "point_task_46", "point_task_47", "point_task_48"],
-            "interruptions": [
+            "order": "fixed",
+            "components": [
+              "moritz_train_point_1",
+              "moritz_train_point_2",
               {
-                "spacing": "random",
-                "numInterruptions": 2,
+                "order": "random",
                 "components": [
-                  "attention_check"
+                  "point_task_1",
+                  "point_task_2",
+                  "point_task_3",
+                  "point_task_4",
+                  "point_task_5",
+                  "point_task_6",
+                  "point_task_7",
+                  "point_task_8",
+                  "point_task_9",
+                  "point_task_10",
+                  "point_task_11",
+                  "point_task_12",
+                  "point_task_13",
+                  "point_task_14",
+                  "point_task_15",
+                  "point_task_16",
+                  "point_task_17",
+                  "point_task_18",
+                  "point_task_19",
+                  "point_task_20",
+                  "point_task_21",
+                  "point_task_22",
+                  "point_task_23",
+                  "point_task_24",
+                  "point_task_25",
+                  "point_task_26",
+                  "point_task_27",
+                  "point_task_28",
+                  "point_task_29",
+                  "point_task_30",
+                  "point_task_31",
+                  "point_task_32",
+                  "point_task_33",
+                  "point_task_34",
+                  "point_task_35",
+                  "point_task_36",
+                  "point_task_37",
+                  "point_task_38",
+                  "point_task_39",
+                  "point_task_40",
+                  "point_task_41",
+                  "point_task_42",
+                  "point_task_43",
+                  "point_task_44",
+                  "point_task_45",
+                  "point_task_46"
+                ],
+                "interruptions": [
+                  {
+                    "spacing": "random",
+                    "numInterruptions": 2,
+                    "components": [
+                      "attention_check"
+                    ]
+                  }
                 ]
               }
             ]
           },
           {
-            "order": "random",
-            "components": ["pointArc_task_1", "pointArc_task_2", "pointArc_task_3", "pointArc_task_4", "pointArc_task_5", "pointArc_task_6", "pointArc_task_7", "pointArc_task_8", "pointArc_task_9", "pointArc_task_10", "pointArc_task_11", "pointArc_task_12", "pointArc_task_13", "pointArc_task_14", "pointArc_task_15", "pointArc_task_16", "pointArc_task_17", "pointArc_task_18", "pointArc_task_19", "pointArc_task_20", "pointArc_task_21", "pointArc_task_22", "pointArc_task_23", "pointArc_task_24", "pointArc_task_25", "pointArc_task_26", "pointArc_task_27", "pointArc_task_28", "pointArc_task_29", "pointArc_task_30", "pointArc_task_31", "pointArc_task_32", "pointArc_task_33", "pointArc_task_34", "pointArc_task_35", "pointArc_task_36", "pointArc_task_37", "pointArc_task_38", "pointArc_task_39", "pointArc_task_40", "pointArc_task_41", "pointArc_task_42", "pointArc_task_43", "pointArc_task_44", "pointArc_task_45", "pointArc_task_46", "pointArc_task_47", "pointArc_task_48"],
-            "interruptions": [
+            "order": "fixed",
+            "components": [
+              "moritz_train_pointArc_1",
+              "moritz_train_pointArc_2",
               {
-                "spacing": "random",
-                "numInterruptions": 2,
+                "order": "random",
                 "components": [
-                  "attention_check"
+                  "pointArc_task_1",
+                  "pointArc_task_2",
+                  "pointArc_task_3",
+                  "pointArc_task_4",
+                  "pointArc_task_5",
+                  "pointArc_task_6",
+                  "pointArc_task_7",
+                  "pointArc_task_8",
+                  "pointArc_task_9",
+                  "pointArc_task_10",
+                  "pointArc_task_11",
+                  "pointArc_task_12",
+                  "pointArc_task_13",
+                  "pointArc_task_14",
+                  "pointArc_task_15",
+                  "pointArc_task_16",
+                  "pointArc_task_17",
+                  "pointArc_task_18",
+                  "pointArc_task_19",
+                  "pointArc_task_20",
+                  "pointArc_task_21",
+                  "pointArc_task_22",
+                  "pointArc_task_23",
+                  "pointArc_task_24",
+                  "pointArc_task_25",
+                  "pointArc_task_26",
+                  "pointArc_task_27",
+                  "pointArc_task_28",
+                  "pointArc_task_29",
+                  "pointArc_task_30",
+                  "pointArc_task_31",
+                  "pointArc_task_32",
+                  "pointArc_task_33",
+                  "pointArc_task_34",
+                  "pointArc_task_35",
+                  "pointArc_task_36",
+                  "pointArc_task_37",
+                  "pointArc_task_38",
+                  "pointArc_task_39",
+                  "pointArc_task_40",
+                  "pointArc_task_41",
+                  "pointArc_task_42",
+                  "pointArc_task_43",
+                  "pointArc_task_44",
+                  "pointArc_task_45",
+                  "pointArc_task_46"
+                ],
+                "interruptions": [
+                  {
+                    "spacing": "random",
+                    "numInterruptions": 2,
+                    "components": [
+                      "attention_check"
+                    ]
+                  }
                 ]
               }
             ]

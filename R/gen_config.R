@@ -25,19 +25,37 @@ stimuli_df <- exp_json_data %>%
   mutate(noise = as.character(noise))
 
 point_ids <- stimuli_df %>% filter(type == "point") %>% pull(index)
-
 pointArc_ids <- stimuli_df %>% filter(type == "point_arc") %>% pull(index)
 
 block5_ids <- 1:10
 
-#--- Define UI and metada
+# First 2 of each type used as cross-type training:
+# point participants train on pointArc charts, and vice versa
+point_train_indices <- point_ids[1:2]
+pointArc_train_indices <- pointArc_ids[1:2]
+
+# Exclude training indices from test pools
+point_ids_test <- setdiff(point_ids, point_train_indices)
+pointArc_ids_test <- setdiff(pointArc_ids, pointArc_train_indices)
+
+get_true_mean <- function(idx) {
+  stimuli_df %>%
+    filter(index == idx) %>%
+    pull(data) %>%
+    .[[1]] %>%
+    pull(y) %>%
+    mean() %>%
+    round(2)
+}
+
+#--- Define UI and metadata
 
 metadata <- list(
-  title = "Visual Decoding Operators — Average Estimation in Line Graphs",
+  title = "Visual Decoding Operators - Average Estimation in Line Graphs",
   version = "pilot",
   authors = list("Sheng Long"),
   date = "2025-12-10",
-  description = "A study designed to elicit resposnes from participants",
+  description = "A study designed to elicit responses from participants",
   organizations = list("Northwestern University")
 )
 
@@ -105,13 +123,16 @@ convert_to_json <- function(c) {
   toJSON(c, auto_unbox = TRUE, pretty = TRUE)
 }
 
-# --- construct response
+# --- construct responses for Moritz
+# numericResponse uses location = "sidebar" so that the FeedbackAlert renders
+# in belowStimulus during training without showing a visible input box
 moritz_num_response = StudyResponse(
   id = "numericResponse",
   prompt = "Numeric response of slider to Mortiz question",
   required = FALSE,
   type = "numerical",
-  hidden = TRUE
+  hidden = FALSE,
+  location = "sidebar"
 )
 moritz_px_response = StudyResponse(
   id = "pixelResponse",
@@ -120,11 +141,8 @@ moritz_px_response = StudyResponse(
   type = "numerical",
   hidden = TRUE
 )
-# --- test
-moritz_num_response %>% convert_to_json(.)
-moritz_px_response %>% convert_to_json(.)
 
-# --- construct basecomponent
+# --- construct basecomponent for Moritz
 moritz_component <- BaseComponent(
   type = "react-component",
   path = "vis-decode-retrieve-value/assets/Moritz.tsx",
@@ -135,19 +153,8 @@ moritz_component <- BaseComponent(
   response_list = list(moritz_num_response, moritz_px_response)
 )
 
-# --- test
-moritz_component %>% convert_to_json()
-
-# creating a simple component
-task1 = Component(
-  baseComponent = "Moritz",
-  parameters = list(params = list(index = 4))
-)
-# --- test
-convert_to_json(task1)
-
-# --- create the component for the Projection task
-
+# --- construct responses for Block5
+# slider-x/y use location = "sidebar" so FeedbackAlert renders without visible inputs
 block5_x_numresponse = StudyResponse(
   id = "slider-x",
   prompt = "Numeric response of slider to Block5",
@@ -162,7 +169,7 @@ block5_y_numresponse = StudyResponse(
   prompt = "Numeric response of slider to Block5",
   required = FALSE,
   type = "numerical",
-  hidden = TRUE,
+  hidden = FALSE,
   location = "sidebar"
 )
 
@@ -197,49 +204,14 @@ block5_component <- BaseComponent(
   )
 )
 
-# "simple-dropbox": {
-#   "type": "questionnaire",
-#   "response": [
-#     {
-#       "id": "q-mark-type",
-#       "type": "dropdown",
-#       "required": true,
-#       "prompt": "What is the most efficient visual mark?",
-#       "secondaryText": "Hint: it's not round.",
-#       "placeholder": "Choose mark",
-#       "options": [
-#         "Bar",
-#         "Bubble",
-#         "Pie",
-#         "Stacked Bar"
-#       ]
-#     }
-#   ],
-
-# --- test
-block5_component %>% convert_to_json(.)
-
 # --- video for block 5
-
 train_video_Block5 <- list(
   type = "markdown",
   path = "vis-decode-retrieve-value/assets/training-task5.md",
   response = list()
 )
 
-# --- create a sequence of blocks for task5
-
-#   "correctAnswer": [
-#     {
-#       "id": "q-mark-type",
-#       "answer": "Bar"
-#     }
-#   ],
-#   "provideFeedback": true,
-#   "allowFailedTraining": false,
-#   "trainingAttempts": 4
-# }
-
+# --- Block5 training components
 block5_train_params <- tibble(
   x = c(0.2, -1.5),
   y = c(0.75, 0.4)
@@ -275,33 +247,74 @@ block5_test_components <- block5_ids %>%
   ) %>%
   set_names(paste0("block5_test_", seq_along(block5_ids)))
 
-# {
-#   "components": [
-#     "training_instruction",
-#     "train-video-5",
-#     "task5_train_1",
-#     "task5_train_2",
-#     "testing_instruction",
-#     {
-#       "components": [
-#         "task5_test_1",
-#         "task5_test_2",
-#         "task5_test_3",
-#         "task5_test_4",
-#         "task5_test_5",
-#         "task5_test_6",
-#         "task5_test_7",
-#         "task5_test_8",
-#         "task5_test_9",
-#         "task5_test_10"
-#       ],
-#       "order": "random"
-#     }
-#   ],
-#   "order": "fixed"
-# },
+# --- Moritz training components
+# point participants train on pointArc charts
+moritz_train_point_components <- tibble(
+  taskIndex = pointArc_train_indices,
+  taskType = "pointArc",
+  trueMean = map_dbl(pointArc_train_indices, get_true_mean)
+) %>%
+  pmap(function(taskIndex, taskType, trueMean) {
+    Component(
+      baseComponent = "Moritz",
+      parameters = list(
+        taskIndex = taskIndex,
+        taskType = taskType,
+        training = TRUE
+      ),
+      correctAnswer = list(list(id = "numericResponse", answer = trueMean)),
+      provideFeedback = TRUE,
+      allowFailedTraining = TRUE,
+      trainingAttempts = 1
+    )
+  }) %>%
+  set_names(paste0("moritz_train_point_", 1:2))
 
-# create the component for introduction
+# pointArc participants train on point charts
+moritz_train_pointArc_components <- tibble(
+  taskIndex = point_train_indices,
+  taskType = "point",
+  trueMean = map_dbl(point_train_indices, get_true_mean)
+) %>%
+  pmap(function(taskIndex, taskType, trueMean) {
+    Component(
+      baseComponent = "Moritz",
+      parameters = list(
+        taskIndex = taskIndex,
+        taskType = taskType,
+        training = TRUE
+      ),
+      correctAnswer = list(list(id = "numericResponse", answer = trueMean)),
+      provideFeedback = TRUE,
+      allowFailedTraining = TRUE,
+      trainingAttempts = 1
+    )
+  }) %>%
+  set_names(paste0("moritz_train_pointArc_", 1:2))
+
+# --- Moritz test components (training indices excluded)
+point_task_names <- paste0("point_task_", seq_along(point_ids_test))
+pointArc_task_names <- paste0("pointArc_task_", seq_along(pointArc_ids_test))
+
+components <- point_ids_test %>%
+  imap(
+    ~ Component(
+      baseComponent = "Moritz",
+      parameters = list(taskIndex = .x, taskType = "point")
+    )
+  ) %>%
+  set_names(point_task_names)
+
+point_arc_components <- pointArc_ids_test %>%
+  imap(
+    ~ Component(
+      baseComponent = "Moritz",
+      parameters = list(taskIndex = .x, taskType = "pointArc")
+    )
+  ) %>%
+  set_names(pointArc_task_names)
+
+# --- Static components
 
 introduction_component <- list(
   introduction = list(
@@ -320,15 +333,11 @@ introduction_component <- list(
     type = "markdown"
   )
 )
-# test
-introduction_component %>% convert_to_json(.)
 
-# create the document for consent
 consent_comp = list(
   consent = list(
     type = "markdown",
     path = "vis-decode-retrieve-value/assets/consent.md",
-    # nextButtonText = "I agree",
     response = list(
       list(
         id = "consentApproval",
@@ -341,10 +350,7 @@ consent_comp = list(
     )
   )
 )
-# test
-consent_comp %>% convert_to_json(.)
 
-# attention check component
 attention_check = list(
   attention_check = list(
     type = "markdown",
@@ -376,10 +382,7 @@ training_intro = list(
     path = "vis-decode-retrieve-value/assets/training_intro.md",
     response = list(),
     nextButtonEnableTime = 3000,
-    style = list(
-      margin = "0 auto",
-      width = "50%"
-    )
+    style = list(margin = "0 auto", width = "50%")
   )
 )
 
@@ -389,14 +392,10 @@ testing_intro = list(
     path = "vis-decode-retrieve-value/assets/testing_intro.md",
     response = list(),
     nextButtonEnableTime = 3000,
-    style = list(
-      margin = "0 auto",
-      width = "50%"
-    )
+    style = list(margin = "0 auto", width = "50%")
   )
 )
 
-# create post study survey component
 post_study_component = list(
   post_study = list(
     type = "questionnaire",
@@ -406,7 +405,6 @@ post_study_component = list(
         prompt = "## Thank you! \n\n Please answer the following demographics related questions: \n\n Gender",
         location = "belowStimulus",
         type = "radio",
-        # options = c("Male", "Female", "Prefer to self describe", "Prefer not to say"),
         options = c("Male", "Female", "Prefer not to say"),
         withOther = TRUE
       ),
@@ -440,33 +438,9 @@ post_study_component = list(
   )
 )
 
-# test
-post_study_component %>% convert_to_json(.)
-
-# --- creating a sequence of components for Mortiz where type == point
-components <- point_ids %>%
-  imap(
-    ~ Component(
-      baseComponent = "Moritz",
-      # parameters = list(params = list(index = .x, type = "point"))
-      parameters = list(taskIndex = .x, taskType = "point")
-    )
-  ) %>%
-  set_names(paste0("point_task_", seq_along(point_ids)))
-
-# --- creating a sequence of components for Mortiz where type == pointArc
-point_arc_components <- pointArc_ids %>%
-  imap(
-    ~ Component(
-      baseComponent = "Moritz",
-      parameters = list(taskIndex = .x, taskType = "pointArc")
-    )
-  ) %>%
-  set_names(paste0("pointArc_task_", seq_along(pointArc_ids)))
-
-# build the overall experiment sequence
-point_task_names = paste0("point_task_", 1:48)
-pointArc_task_names = paste0("pointArc_task_", 1:48)
+# --- Sequence
+# Training for Moritz is nested inside each latinSquare arm so participants
+# only see cross-type training charts matching their assigned condition
 
 sequence <- list(
   order = "fixed",
@@ -486,46 +460,55 @@ sequence <- list(
     ),
     "calibration_intro",
     "$virtual-chinrest.se.full",
-    "training_intro", # training intro
-    # missing training section here
-    # Block/Task 5 related
+    "training_intro",
+    # Block5 training and test
     list(
       order = "fixed",
       components = list(
         "train-video-5",
         "block5_train_1",
         "block5_train_2",
-        # "testing-instruction",
         list(
           components = c(paste0("block5_test_", 1:10)),
           order = "random"
         )
       )
-    ), # TODO
+    ),
     "testing_intro",
+    # Moritz training (cross-type) and test, assigned via latinSquare
     list(
-      order = "latinSquare", # needs to be latin square to ensure sampling efficiency
-      numSamples = 1, # randomly select 1
+      order = "latinSquare",
+      numSamples = 1,
       components = list(
         list(
-          order = "random",
-          components = c(point_task_names),
-          interruptions = list(
+          order = "fixed",
+          components = list(
+            "moritz_train_point_1",
+            "moritz_train_point_2",
             list(
-              spacing = "random",
-              numInterruptions = 2,
-              components = list("attention_check")
+              order = "random",
+              components = c(point_task_names),
+              interruptions = list(list(
+                spacing = "random",
+                numInterruptions = 2,
+                components = list("attention_check")
+              ))
             )
           )
         ),
         list(
-          order = "random",
-          components = c(pointArc_task_names),
-          interruptions = list(
+          order = "fixed",
+          components = list(
+            "moritz_train_pointArc_1",
+            "moritz_train_pointArc_2",
             list(
-              spacing = "random",
-              numInterruptions = 2,
-              components = list("attention_check")
+              order = "random",
+              components = c(pointArc_task_names),
+              interruptions = list(list(
+                spacing = "random",
+                numInterruptions = 2,
+                components = list("attention_check")
+              ))
             )
           )
         )
@@ -535,15 +518,12 @@ sequence <- list(
   )
 )
 
-# test
-sequence %>% convert_to_json(.)
-
-# --- create the new study rules
+# --- Study rules
 
 studyRules = list(
   display = list(
     minHeight = 400,
-    minWidth = 935 # has to be this for the calibration thing to work
+    minWidth = 935
   ),
   browsers = list(
     allowed = list(
@@ -559,20 +539,7 @@ studyRules = list(
   )
 )
 
-# --- test
-studyRules %>% convert_to_json(.)
-
-
-# 4. RENDER
-# the final output has the following components:
-# 1. schema
-# 2. studyMetadata
-# 3. uiConfig,
-# 3.1 (new) studyRules
-# 4. importedLibraries
-# 5. baseComponents
-# 6. components
-# 7. sequence
+# --- Render
 
 final_output = list(
   `$schema` = "https://raw.githubusercontent.com/revisit-studies/study/v2.4.0/src/parser/StudyConfigSchema.json",
@@ -590,10 +557,12 @@ final_output = list(
     calibration_intro,
     training_intro,
     testing_intro,
-    components,
     list(`train-video-5` = train_video_Block5),
     block5_train_components,
     block5_test_components,
+    moritz_train_point_components,
+    moritz_train_pointArc_components,
+    components,
     point_arc_components,
     post_study_component,
     attention_check
@@ -602,6 +571,7 @@ final_output = list(
 )
 
 config_json <- final_output %>% convert_to_json(.)
+
 # validate
 validator(config_json, verbose = TRUE)
 
