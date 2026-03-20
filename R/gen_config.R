@@ -122,11 +122,6 @@ moritz_component <- BaseComponent(
   instruction = "***Experiment Instructions.*** Please read the following paragraphs carefully. You will be asked questions about the information in the paragraphs. \n\n***Scenario:*** Assume that you are a stock market investor. You are investing your own money in stocks, and you want to determine the average price of a stock over time in order to pick the best investment.\n\n***Task:*** In this experiment, you will be shown graphs of stock prices over a one-year period like the one below. Your task is to determine the average stock price for that year. **What is the average stock price?** \n\n***Response:*** To indicate the average stock price, use your mouse to click and drag the handle on the slider, which will show a dotted red line. Move the line to where you think the average stock price is for that year. You can readjust the line by clicking, dragging, or using the left and right arrow keys. Once you are happy with your judgment of the average stock price, click the next button.",
   instructionLocation = "aboveStimulus",
   nextButtonLocation = "belowStimulus",
-  # commetning these out
-  # parameters = list(
-  #   taskid = "Moritz",
-  #   taskType = "moritz"
-  # ),
   parameters = list(taskIndex = "", taskType = ""),
   response_list = list(moritz_num_response, moritz_px_response)
 )
@@ -241,21 +236,6 @@ block5_test_components <- block5_ids %>%
     )
   ) %>%
   set_names(paste0("block5_test_", seq_along(block5_ids)))
-
-#--- test
-
-list(
-  list(`task5-video` = train_video_Block5),
-  block5_train_components,
-  components = list(
-    list(
-      order = "random",
-      block5_test_components
-    ),
-    order = "fixed"
-  )
-) %>%
-  convert_to_json(.)
 
 # {
 #   "components": [
@@ -475,10 +455,11 @@ sequence <- list(
       order = "fixed",
       components = list(
         "train-video-5",
-        paste0("task5_train_", 1:2),
+        "block5_train_1",
+        "block5_train_2",
         # "testing-instruction",
         list(
-          components = c(paste0("task5_test_", 1:10)),
+          components = c(paste0("block5_test_", 1:10)),
           order = "random"
         )
       )
@@ -563,7 +544,7 @@ final_output = list(
   importedLibraries = list("virtual-chinrest"),
   baseComponents = list(
     Moritz = moritz_component,
-    Block5 = block5_component,
+    Block5 = block5_component
   ),
   components = c(
     introduction_component,
@@ -572,7 +553,7 @@ final_output = list(
     training_intro,
     testing_intro,
     components,
-    train_video_Block5,
+    list(`train-video-5` = train_video_Block5),
     block5_train_components,
     block5_test_components,
     point_arc_components,
