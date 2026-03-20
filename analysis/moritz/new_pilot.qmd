@@ -1,0 +1,74 @@
+---
+title: "New Pilot with combined components "
+author: "Anonymous"
+date: today
+date-format: "iso"
+format:
+  html:
+    reference-location: margin
+---
+
+```{r}
+#| code-fold: true
+
+library(tidyverse)
+library(jsonlite)
+library(here)
+```
+
+Read in data: 
+
+```{r}
+raw_df <- read_csv(here("data", "part_2", "part2_newpilot.csv")) %>%
+  as_tibble(.)
+
+pilot_df <- raw_df %>% filter(responseId != "windowEvents")
+
+# participant-relevant df
+# i.e., the part that is relevant for pixelsPerMM and distToScreen
+participant_df <- pilot_df %>%
+  filter(str_detect(trialId, "chinrest")) %>%
+  select(1:5)
+
+# part 1 relevant df
+part1_df <- pilot_df %>%
+  filter(str_detect(trialId, "block5_test")) %>%
+  select(1, 3, 4:5) %>%
+  mutate(answer = as.numeric(answer)) %>%
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  rename(
+    num.ans.x = `location-x`,
+    num.ans.y = `location-y`,
+    num.resp.x = `slider-x`,
+    num.resp.y = `slider-y`
+  )
+
+# part 2 relevant df
+part2_df <- pilot_df %>%
+  filter(str_detect(trialId, "task")) %>%
+  select(
+    participantId,
+    trialOrder,
+    trialId,
+    responseId,
+    answer,
+    parameters_taskType,
+    parameters_taskIndex
+  ) %>%
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  rename(
+    type = parameters_taskType,
+    ogIndex = parameters_taskIndex,
+    px.resp.y = pixelResponse,
+    num.resp.y = numericResponse
+  ) %>%
+  mutate(px.resp.y = as.numeric(px.resp.y), num.resp.y = as.numeric(num.resp.y))
+```
+
+# Fit model for part 1 
+
+`TODO` 
+
+# Infer model for part 2 
+
+`TODO` 
