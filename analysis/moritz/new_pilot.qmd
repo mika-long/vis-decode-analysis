@@ -40,12 +40,28 @@ stimuli_df %>%
   filter(type == "point_arc") %>%
   mutate(expIndex = 1:nrow(.)) %>%
   select(index, type, expIndex) -> pointArc_map
+
+# get the answer
+part2_ans_df <- stimuli_df |>
+  filter(type != "line") |>
+  unnest(col = data) |>
+  rename(num.x = x, num.y = y, ogIndex = index) |>
+  summarise(
+    num.mean.y = mean(num.y),
+    num.median.y = median(num.y),
+    .by = c(ogIndex, type, flip, noise, seed)
+  ) |>
+  mutate(
+    # num.ans.y = num.mean.y[type == "point"][[1]], # this is what Moritz did, and what we're not doing
+    num.ans.y = num.mean.y,
+    .by = c(flip, noise, seed)
+  )
 ```
 
 Read in participant data: 
 
 ```{r}
-raw_df <- read_csv(here("data", "part_2", "part2_newpilot.csv")) %>%
+raw_df <- read_csv(here("data", "part_2", "exp2-pilot.csv")) %>%
   as_tibble(.)
 
 pilot_df <- raw_df %>% filter(responseId != "windowEvents")
@@ -91,23 +107,91 @@ part2_df <- pilot_df %>%
   mutate(px.resp.y = as.numeric(px.resp.y), num.resp.y = as.numeric(num.resp.y))
 ```
 
-```{r}
-# now which two trials are we missing here ...?
+Read in helper functions for transforming between spaces: 
 
-point_map # 48
-# why is this 46 ...???
-part2_df %>%
-  separate_wider_delim(trialId, "_", names = c("A", "B", "expIndex")) %>%
-  select(expIndex, ogIndex) %>%
-  mutate(expIndex = as.numeric(expIndex)) %>%
-  arrange(expIndex) %>%
-  # compare "index" from point_map and "ogIndex" in the new thing
-  left_join(point_map)
+```{r}
+#| code-fold: true
+#| label: helper-functions
+
+# return visual angle in degrees and not radian
+vis_angle <- function(size, distance) {
+  return(2 * atan(size / (2 * distance)) * 180 / pi)
+}
+
+# define function for turning vis angle to phy size
+phys_size <- function(va, distance) {
+  return(2 * distance * tan(va * pi / 360))
+}
+
+# Code copied from Matt; this prevents us from having mistakes
+x_num_to_px = \(x, x_range = 120, px_range = 500) x / x_range * px_range
+y_num_to_px = \(y, y_range = 1, px_range = 200) y / y_range * px_range
+
+x_px_to_num = \(x, x_range = 120, px_range = 500) x * x_range / px_range
+y_px_to_num = \(y, y_range = 1, px_range = 200) y * y_range / px_range
+
+px_to_phys = \(px, px_per_mm) px / px_per_mm
+phys_to_px = \(phys, px_per_mm) phys * px_per_mm
+
+x_va_to_num = \(va, distance, px_per_mm, x_range = 120, px_range = 500) {
+  va |>
+    phys_size(distance) |>
+    phys_to_px(px_per_mm) |>
+    x_px_to_num(x_range, px_range)
+}
+
+y_va_to_num = \(va, distance, px_per_mm, y_range = 1, px_range = 200) {
+  va |>
+    phys_size(distance) |>
+    phys_to_px(px_per_mm) |>
+    y_px_to_num(y_range, px_range)
+}
+```
+
+# See whether data is good 
+
+```{r}
+part1_df %>% mutate()
 ```
 
 # Fit model for part 1 
 
 `TODO` 
+
+## Model Specification 
+
+Recall the we defined the following model for the "project from dot to axis" operator: 
+
+$$
+\begin{align*}
+\texttt{error}_i &\sim \mathcal{N}(\beta_0 + u_{\text{PID[i]}}, \sigma_{i, \text{PID}[i]}) \\ 
+\log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.x}_i) \\ 
+\text{or:} \log(\sigma_{i, j}) &\sim \mathcal{N}(\mu_\alpha + \log(\texttt{va.ans.x}_i), \sigma_\alpha)\\ 
+\alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
+\mu_\alpha &\sim N(0, 1) \\ 
+\sigma_\alpha &\sim \mathcal{N}^+(0, 1)
+\end{align*}
+$$
+
+Here is the specification we used for fitting: 
+
+```{r}
+#| eval: false
+#| label: brms specs
+
+# Recall that we defined error = resp - ans
+f <- bf(
+  error_va ~ (1 | participantId),
+  sigma ~ (1 | participantId) + offset(log(va.ans.x))
+)
+
+p <- c(
+  prior(normal(0, 1), class = Intercept),
+  prior(normal(0, 1), class = sd, group = participantId, lb = 0),
+  prior(normal(0, 1), class = Intercept, dpar = "sigma"),
+  prior(normal(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
+)
+```
 
 # Infer model for part 2 
 
