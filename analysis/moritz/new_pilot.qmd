@@ -62,7 +62,9 @@ Read in participant data:
 
 ```{r}
 raw_df <- read_csv(here("data", "part_2", "exp2-pilot.csv")) %>%
-  as_tibble(.)
+  as_tibble(.) %>%
+  filter(status != "rejected") %>%
+  select(-status)
 
 pilot_df <- raw_df %>% filter(responseId != "windowEvents")
 
@@ -70,7 +72,15 @@ pilot_df <- raw_df %>% filter(responseId != "windowEvents")
 # i.e., the part that is relevant for pixelsPerMM and distToScreen
 participant_df <- pilot_df %>%
   filter(str_detect(trialId, "chinrest")) %>%
-  select(1:5)
+  select(1:5) %>%
+  select(participantId, responseId, answer) %>%
+  filter(
+    str_detect(responseId, "pixelsPerMM") |
+      str_detect(responseId, "dist-calibration-MM")
+  ) %>%
+  mutate(answer = as.numeric(answer)) %>%
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  rename(distToScreen = `dist-calibration-MM`)
 
 # part 1 relevant df
 part1_df <- pilot_df %>%
@@ -82,7 +92,11 @@ part1_df <- pilot_df %>%
     num.ans.x = `location-x`,
     num.ans.y = `location-y`,
     num.resp.x = `slider-x`,
-    num.resp.y = `slider-y`
+    num.resp.y = `slider-y`,
+    px.resp.x = `px-slider-x`,
+    px.resp.y = `px-slider-y`,
+    px.ans.x = `px-location-x`,
+    px.ans.y = `px-location-y`
   )
 
 # part 2 relevant df
@@ -146,17 +160,45 @@ y_va_to_num = \(va, distance, px_per_mm, y_range = 1, px_range = 200) {
     phys_to_px(px_per_mm) |>
     y_px_to_num(y_range, px_range)
 }
+
+data_to_pixel_y <- function(data_y) {
+  return(-395 * data_y + 410)
+}
+data_to_pixel_x <- function(data_x) {
+  return(53.5 * data_x + 317.5)
+}
+
+# origin is bottom left
+pixel_to_phy_x <- function(pixel, pxMM) {
+  (pixel - 50) / pxMM
+}
+pixel_to_phy_y <- function(pixel, pxMM) {
+  (410 - pixel) / pxMM
+}
 ```
 
 # See whether data is good 
 
 ```{r}
-part1_df %>% mutate()
+# get a sense of the distribution of part1_df
+part1_df %>%
+  ggplot(aes(y = num.resp.y)) +
+  stat_halfeye() +
+  coord_cartesian(ylim = c(0, 10))
+part1_df %>%
+  ggplot(aes(x = num.resp.x)) +
+  stat_halfeye() +
+  coord_cartesian(xlim = c(-5, 5))
+part1_df %>% ggplot(aes(x = num.resp.x, y = num.resp.y)) + geom_bin2d()
+```
+
+Get a sense of whether participants answered the calibration task correctly: 
+
+```{r}
+participant_df
 ```
 
 # Fit model for part 1 
-
-`TODO` 
 
 ## Model Specification 
 
@@ -193,6 +235,61 @@ p <- c(
 )
 ```
 
+Get the data ready: 
+
+```{r}
+# adding the visual angle related stuff
+
+part1_df <- part1_df %>%
+  left_join(participant_df) %>%
+  mutate(
+    va.ans.x = num.ans.x %>%
+      data_to_pixel_x(.) %>%
+      pixel_to_phy_x(., pixelsPerMM) %>%
+      vis_angle(size = ., distance = distToScreen),
+    va.ans.y = num.ans.y %>%
+      data_to_pixel_y(.) %>%
+      pixel_to_phy_y(., pixelsPerMM) %>%
+      vis_angle(size = ., distance = distToScreen),
+    va.resp.x = num.resp.x %>%
+      data_to_pixel_x(.) %>%
+      pixel_to_phy_x(., pixelsPerMM) %>%
+      vis_angle(size = ., distance = distToScreen),
+    va.resp.y = num.resp.y %>%
+      data_to_pixel_y(.) %>%
+      pixel_to_phy_y(., pixelsPerMM) %>%
+      vis_angle(size = ., distance = distToScreen)
+  ) %>%
+  mutate(va.error.x = va.resp.x - va.ans.x, va.error.y = va.resp.y - va.ans.y)
+```
+
+Get a sense of error distribution 
+
+```{r}
+part1_df %>%
+  ggplot(aes(x = num.resp.y - num.ans.y)) +
+  geom_dotplot()
+```
+
+```{r}
+part1_df %>%
+  ggplot(aes(y = va.error.x, x = va.ans.y)) +
+  geom_point()
+part1_df %>%
+  ggplot(aes(y = va.error.y, x = va.ans.x)) +
+  geom_point()
+```
+
 # Infer model for part 2 
 
-`TODO` 
+
+```{r}
+part2_df %>%
+  mutate(type = ifelse(type == "pointArc", "point_arc", "point")) %>%
+  left_join(ans_df) %>%
+  mutate(diff = num.resp.y - num.ans.y) %>%
+  ggplot(aes(x = diff, y = noise, fill = type)) +
+  stat_halfeye(alpha = 0.5) +
+  facet_wrap(~flip, ncol = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed")
+```
