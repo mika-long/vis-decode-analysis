@@ -402,6 +402,8 @@ summary(m1)
 plot(m1)
 ```
 
+Note that the Bulk_ESS and Tail_ESS all indicate good fit. 
+
 Posterior predictive checks: 
 
 ```{r}
@@ -429,7 +431,7 @@ prediction_grid <- part1_df %>%
     va.ans.x = modelr::seq_range(va.ans.x, n = 100),
     participantId = unique(participantId)
   ) %>%
-  add_predicted_draws(m1, ndraws = 1000)
+  add_predicted_draws(m1, ndraws = 100)
 
 ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) +
   stat_lineribbon(
@@ -456,7 +458,7 @@ ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) +
 p1
 ```
 
-## Prior sensitivity analysis 
+## Prior sensitivity analysis -- Only Run if time permitting 
 
 To test whether our model is sensitive to prior specifications, we fit them on differnt priors: 
 
@@ -643,9 +645,8 @@ predict_df %>% head(5)
 We then generate the posterior draws from out fitted model, `m1`, using `add_predicted_draws`: 
 
 ```{r}
-# preds <- posterior_predict(m1, newdata = predict_df, ndraws = 1)
 preds <- predict_df %>%
-  add_predicted_draws(m1, ndraws = 1000) %>%
+  add_predicted_draws(m1, ndraws = 100) %>%
   mutate(va.pred.y = va.ans.y + .prediction) %>%
   group_by(
     participantId,
@@ -675,6 +676,50 @@ preds <- predict_df %>%
       pixelsPerMM
     )
   )
+```
+
+### Checking Results across participants 
+
+We can also plot them by the diagonal to see whether they predict things correcty: 
+
+```{r}
+combined <- preds %>%
+  group_by(ogIndex, participantId) %>%
+  median_qi(num.pred.mean.y, .width = .95) %>%
+  left_join(part2_df %>% select(ogIndex, participantId, num.resp.y))
+
+ggplot(combined, aes(x = num.pred.mean.y, y = num.resp.y)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  geom_point(alpha = 0.3) +
+  labs(x = "Predicted", y = "Observed", title = "Mean Strategy")
+```
+
+```{r}
+combined <- preds %>%
+  group_by(ogIndex, participantId) %>%
+  median_qi(num.pred.median.y, .width = .95) %>%
+  left_join(part2_df %>% select(ogIndex, participantId, num.resp.y))
+
+ggplot(combined, aes(x = num.pred.median.y, y = num.resp.y)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  geom_point(alpha = 0.3) +
+  labs(x = "Predicted", y = "Observed", title = "Median Strategy")
+```
+
+Let's also do coverage check: 
+
+```{r}
+combined <- preds %>%
+  group_by(ogIndex, participantId) %>%
+  summarise(
+    lo95 = quantile(num.pred.median.y, 0.025), # could also be num.pred.mean.y
+    hi95 = quantile(num.pred.median.y, 0.975), # could also be num.pred.mean.y
+    .groups = "drop"
+  ) %>%
+  left_join(part2_df %>% select(ogIndex, participantId, num.resp.y)) %>%
+  mutate(covered = num.resp.y >= lo95 & num.resp.y <= hi95)
+
+mean(combined$covered)
 ```
 
 ### Checking results for one participant 
@@ -731,48 +776,6 @@ ggplot() +
   facet_wrap(~flip)
 ```
 
-We can also plot them by the diagonal to see whether they predict things correcty: 
-
-```{r}
-combined <- preds %>%
-  group_by(ogIndex, participantId) %>%
-  median_qi(num.pred.mean.y, .width = .95) %>%
-  left_join(part2_df %>% select(ogIndex, participantId, num.resp.y))
-
-ggplot(combined, aes(x = num.pred.mean.y, y = num.resp.y)) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
-  geom_point(alpha = 0.3) +
-  labs(x = "Predicted", y = "Observed", title = "Mean Strategy")
-```
-
-```{r}
-combined <- preds %>%
-  group_by(ogIndex, participantId) %>%
-  median_qi(num.pred.median.y, .width = .95) %>%
-  left_join(part2_df %>% select(ogIndex, participantId, num.resp.y))
-
-ggplot(combined, aes(x = num.pred.median.y, y = num.resp.y)) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
-  geom_point(alpha = 0.3) +
-  labs(x = "Predicted", y = "Observed", title = "Median Strategy")
-```
-
-Let's also do coverage check: 
-
-```{r}
-combined <- preds %>%
-  group_by(ogIndex, participantId) %>%
-  summarise(
-    lo95 = quantile(num.pred.median.y, 0.025), # could also be num.pred.mean.y
-    hi95 = quantile(num.pred.median.y, 0.975), # could also be num.pred.mean.y
-    .groups = "drop"
-  ) %>%
-  left_join(part2_df %>% select(ogIndex, participantId, num.resp.y)) %>%
-  mutate(covered = num.resp.y >= lo95 & num.resp.y <= hi95)
-
-mean(combined$covered)
-```
-
 ## Sensor Fusion Strategy 
 
 `TODO` 
@@ -791,9 +794,10 @@ mean(combined$covered)
 #   mutate(va.error.y = va.resp.y - va.ans.y)
 ```
 
+Look at the empirical distribution: 
+
 ```{r}
 part2_df %>%
-  mutate(type = ifelse(type == "pointArc", "point_arc", "point")) %>%
   left_join(part2_ans_df) %>%
   mutate(diff = num.resp.y - num.ans.y) %>%
   ggplot(aes(x = diff, y = noise, fill = type)) +
@@ -803,6 +807,7 @@ part2_df %>%
 ```
 
 ```{r}
+# plotting function for Moritz result
 plot_results <- function(data, xvar) {
   data %>%
     ggplot(aes(
@@ -830,9 +835,6 @@ plot_results <- function(data, xvar) {
 
 ```{r}
 part2_df %>%
-  mutate(
-    type = ifelse(type == "pointArc", "point_arc", "point"),
-  ) %>%
   left_join(part2_ans_df) %>%
   mutate(
     error = num.resp.y - num.ans.y,
@@ -845,9 +847,23 @@ part2_df %>%
     betweenvars = "type",
     idvar = "participantId"
   ) %>%
+  mutate(
+    flip_lab = ifelse(
+      flip == FALSE,
+      "Variability in top",
+      "Variability in bottom"
+    ),
+    flip_lab = factor(
+      flip_lab,
+      levels = c("Variability in top", "Variability in bottom")
+    )
+  ) %>%
   # change error to the direction of "variability"
   # mutate(error = ifelse(flip == FALSE, error, -error)) %>%
   plot_results(., error) +
   # xlab("Error (in the direction of variability)") +
-  facet_wrap(~flip, ncol = 1)
+  facet_wrap(~flip_lab, ncol = 1) +
+  labs(title = "N = 20")
 ```
+
+Now this is not something that you would see in Moritz ... 
