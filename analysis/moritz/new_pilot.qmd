@@ -777,7 +777,51 @@ ggplot() +
 
 ## Sensor Fusion Strategy 
 
-`TODO` 
+$$
+\hat{y} = \sum w_i \times y_i, \text{ where } w_i = \frac{MSE^{-1}(y_i)}{\sum_j MSE(y_j)}
+$$
+
+```{r}
+predict_df <- participant_df %>%
+  rename(type = condition) %>%
+  mutate(type = ifelse(type == "pointArc", "point_arc", "point")) %>%
+  inner_join(
+    stimuli_df %>% filter(type != "line") %>% rename(ogIndex = index),
+    by = "type",
+    relationship = "many-to-many"
+  ) %>%
+  unnest(col = data) %>%
+  rename(num.ans.x = x, num.ans.y = y) %>%
+  mutate(
+    va.ans.x = abs(
+      x_moritz$data_to_va(60, distToScreen, pixelsPerMM) -
+        x_moritz$data_to_va(num.ans.x, distToScreen, pixelsPerMM)
+    ),
+    va.ans.y = y_moritz$data_to_va(num.ans.y, distToScreen, pixelsPerMM),
+  )
+```
+
+```{r}
+draws <- m1 %>%
+  spread_draws(
+    b_Intercept,
+    r_participantId[participantId, ],
+    b_sigma_Intercept,
+    r_participantId__sigma[participantId, ]
+  ) %>%
+  as_draws_df(.) %>%
+  posterior::thin_draws(thin = 60)
+
+weights_df <- draws %>%
+  mutate(
+    b_Intercept = b_Intercept + r_participantId,
+    log_sigma = b_sigma_Intercept + r_participantId__sigma
+  )
+```
+
+```{r}
+
+```
 
 ## pre-process data 
 
