@@ -17,7 +17,9 @@ library(tidyverse)
 library(jsonlite)
 library(ggplot2)
 library(tidybayes)
+library(brms)
 theme_set(theme_tidybayes())
+bayesplot::bayesplot_theme_update(text = element_text(family = "sans"))
 ```
 
 Read in stimuli data: 
@@ -174,22 +176,22 @@ make_va_scale <- function(data_min, data_max, px_min, px_max) {
 }
 
 # Block 5
-x_block5 <- make_va_scale(
+x_moritz <- make_va_scale(
   data_min = 0,
   data_max = 120,
   px_min = 0,
   px_max = 500
 )
-y_block5 <- make_va_scale(data_min = 0, data_max = 1, px_min = 0, px_max = 200)
+y_moritz <- make_va_scale(data_min = 0, data_max = 1, px_min = 0, px_max = 200)
 
 # Moritz
-x_moritz <- make_va_scale(
+x_block5 <- make_va_scale(
   data_min = -5,
   data_max = 5,
   px_min = 50,
   px_max = 585
 )
-y_moritz <- make_va_scale(
+y_block5 <- make_va_scale(
   data_min = 0,
   data_max = 10,
   px_min = 410,
@@ -255,7 +257,59 @@ participant_df %>% ggplot(aes(x = pixelsPerMM)) + geom_dotplot()
 participant_df %>% ggplot(aes(x = distToScreen)) + geom_dotplot()
 ```
 
+Calculate spearman correlation to determine whether we want to filter out participant who fail our check: 
+
+```{r}
+part1_df %>%
+  summarise(
+    rho = cor(va.ans.x, va.resp.x, method = "spearman"),
+    .by = participantId
+  )
+
+part1_df %>%
+  summarise(
+    rho = cor(va.ans.y, va.resp.y, method = "spearman"),
+    .by = participantId
+  )
+```
+
+So far everyone seems to fit. So we are not filtering out anyone from this. 
+
 # Fit model for part 1 
+
+## Get the data ready: 
+
+```{r}
+# adding the visual angle related stuff
+
+part1_df <- part1_df %>%
+  left_join(participant_df) %>%
+  mutate(
+    va.ans.x = x_block5$data_to_va(num.ans.x, distToScreen, pixelsPerMM),
+    va.ans.y = y_block5$data_to_va(num.ans.y, distToScreen, pixelsPerMM),
+    va.resp.x = x_block5$data_to_va(num.resp.x, distToScreen, pixelsPerMM),
+    va.resp.y = y_block5$data_to_va(num.resp.y, distToScreen, pixelsPerMM)
+  ) %>%
+  mutate(va.error.x = va.resp.x - va.ans.x, va.error.y = va.resp.y - va.ans.y)
+```
+
+Get a sense of error distribution 
+
+```{r}
+#| layout-ncol: 2
+#| code-fold: true
+
+part1_df %>%
+  ggplot(aes(y = va.error.x, x = va.ans.y)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  labs(title = "Project to X-Axis Error (Vis Angle)")
+part1_df %>%
+  ggplot(aes(y = va.error.y, x = va.ans.x)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  labs(title = "Project to Y-Axis Error (Vis Angle)")
+```
 
 ## Model Specification 
 
@@ -280,7 +334,7 @@ Here is the specification we used for fitting:
 
 # Recall that we defined error = resp - ans
 f <- bf(
-  error_va ~ (1 | participantId),
+  va.error.y ~ (1 | participantId),
   sigma ~ (1 | participantId) + offset(log(va.ans.x))
 )
 
@@ -292,59 +346,85 @@ p <- c(
 )
 ```
 
-Get the data ready: 
+Fit the model: 
 
 ```{r}
-# adding the visual angle related stuff
+m1 <- part1_df %>%
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p,
+    chains = 4,
+    cores = 4,
+    control = list(adapt_delta = 0.99),
+    iter = 6000,
+    file = here::here("analysis", "fitted_models", "exp2", "m1"),
+    file_refit = "on_change",
+    save_pars = save_pars(all = TRUE)
+  )
+```
 
-part1_df <- part1_df %>%
-  left_join(participant_df) %>%
-  mutate(
-    va.ans.x = x_block5$data_to_va(num.ans.x, distToScreen, pixelsPerMM),
-    va.ans.y = y_block5$data_to_va(num.ans.y, distToScreen, pixelsPerMM),
-    va.resp.x = x_block5$data_to_va(num.resp.x, distToScreen, pixelsPerMM),
-    va.resp.y = y_block5$data_to_va(num.resp.y, distToScreen, pixelsPerMM)
+Get a sense of posterior fit: 
+
+```{r}
+summary(m1)
+plot(m1)
+```
+
+Posterior predictive checks: 
+
+```{r}
+#| layout-ncol: 3
+#| code-fold: true
+pp_check(m1, ndraws = 100) +
+  theme(legend.position = c(0.9, 0.5)) +
+  theme(text = element_text(size = 10)) -> p1
+p1
+
+pp_check(m1, ndraws = 100, type = "pit_ecdf") +
+  theme(text = element_text(size = 10)) -> p2
+p2
+
+pp_check(m1, ndraws = 100, type = "pit_ecdf", plot_diff = TRUE) +
+  theme(text = element_text(size = 10)) -> p3
+p3
+```
+
+Plot existing data on top of prediction, for an average participant: 
+
+```{r}
+prediction_grid <- part1_df %>%
+  modelr::data_grid(
+    va.ans.x = modelr::seq_range(va.ans.x, n = 100),
+    participantId = unique(participantId)
   ) %>%
-  mutate(va.error.x = va.resp.x - va.ans.x, va.error.y = va.resp.y - va.ans.y)
+  add_predicted_draws(m1, ndraws = 1000)
+
+ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) +
+  stat_lineribbon(
+    .width = c(.95, .80, .50),
+    # alpha = 0.5,
+    linewidth = 0.5
+  ) +
+  scale_fill_brewer(palette = "Blues") +
+  geom_point(
+    data = part1_df,
+    aes(y = va.error.y, x = va.ans.x),
+    alpha = 0.5,
+    size = 0.5
+  ) +
+  labs(
+    title = "Project to Y-axis",
+    y = "Error",
+    x = "Distance to Y-Axis"
+  ) +
+  # theme_minimal(base_size = 8) +
+  coord_cartesian(ylim = c(-0.25, 0.4)) +
+  theme(legend.position = "none") -> p1
+
+p1
 ```
-
-Get a sense of error distribution 
-
-```{r}
-part1_df %>%
-  ggplot(aes(x = num.resp.y - num.ans.y)) +
-  geom_dotplot()
-```
-
-```{r}
-part1_df %>%
-  ggplot(aes(y = va.error.x, x = va.ans.y, color = participantId)) +
-  geom_point() +
-  geom_hline(yintercept = 0, linetype = "dashed") # okay this scale is hella weird ...  +
-facet_wrap(~participantId, ncol = 4)
-part1_df %>%
-  ggplot(aes(y = va.error.y, x = va.ans.x, color = participantId)) +
-  geom_point() # +
-facet_wrap(~participantId, ncol = 4)
-```
-
-Calculate spearman correlation to determine whether we want to filter out participant who fail our check: 
-
-```{r}
-part1_df %>%
-  summarise(
-    rho = cor(va.ans.x, va.resp.x, method = "spearman"),
-    .by = participantId
-  )
-
-part1_df %>%
-  summarise(
-    rho = cor(va.ans.y, va.resp.y, method = "spearman"),
-    .by = participantId
-  )
-```
-
-So far everyone seems to fit. 
 
 # Infer model for part 2 
 
