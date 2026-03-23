@@ -24,7 +24,7 @@ theme_set(theme_tidybayes())
 bayesplot::bayesplot_theme_update(text = element_text(family = "sans"))
 ```
 
-Read in stimuli data: 
+Read in stimuli data for experiment 2 from Moritz et al.: 
 
 ```{r}
 exp_json_data <- jsonlite::fromJSON(here::here(
@@ -60,7 +60,8 @@ part2_ans_df <- stimuli_df %>%
     .by = c(ogIndex, type, flip, noise, seed)
   ) |>
   mutate(
-    # num.ans.y = num.mean.y[type == "point"][[1]], # this is what Moritz did, and what we're not doing
+    # this is what Moritz did, and what we're not doing
+    # num.ans.y = num.mean.y[type == "point"][[1]],
     num.ans.y = num.mean.y,
     .by = c(flip, noise, seed)
   )
@@ -70,7 +71,8 @@ Read in participant data:
 
 ```{r}
 raw_df <- read_csv(here::here("data", "part_2", "exp2-pilot.csv")) %>%
-  as_tibble(.)
+  as_tibble(.) %>%
+  filter(status != "rejected")
 
 pilot_df <- raw_df %>% filter(responseId != "windowEvents")
 
@@ -288,13 +290,13 @@ Calculate spearman correlation to determine whether we want to filter out partic
 ```{r}
 part1_df %>%
   summarise(
-    rho = cor(va.ans.x, va.resp.x, method = "spearman"),
+    rho = cor(num.ans.x, num.resp.x, method = "spearman"),
     .by = participantId
   )
 
 part1_df %>%
   summarise(
-    rho = cor(va.ans.y, va.resp.y, method = "spearman"),
+    rho = cor(num.ans.y, num.resp.y, method = "spearman"),
     .by = participantId
   )
 ```
@@ -327,15 +329,17 @@ Get a sense of error distribution
 
 part1_df %>%
   ggplot(aes(y = va.error.x, x = va.ans.y)) +
-  geom_point() +
+  geom_point(alpha = 0.5) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
   labs(title = "Project to X-Axis Error (Vis Angle)")
 part1_df %>%
   ggplot(aes(y = va.error.y, x = va.ans.x)) +
-  geom_point() +
+  geom_point(alpha = 0.5) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
   labs(title = "Project to Y-Axis Error (Vis Angle)")
 ```
+
+Note that for matching with part 2, we are interested in the second graph. 
 
 ## Model Specification 
 
