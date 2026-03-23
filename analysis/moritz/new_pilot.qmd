@@ -18,6 +18,7 @@ library(jsonlite)
 library(ggplot2)
 library(tidybayes)
 library(brms)
+library(purrr)
 theme_set(theme_tidybayes())
 bayesplot::bayesplot_theme_update(text = element_text(family = "sans"))
 ```
@@ -420,11 +421,170 @@ ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) +
     x = "Distance to Y-Axis"
   ) +
   # theme_minimal(base_size = 8) +
-  coord_cartesian(ylim = c(-0.25, 0.4)) +
+  # coord_cartesian(ylim = c(-0.25, 0.4)) +
   theme(legend.position = "none") -> p1
 
 p1
 ```
+
+## Prior sensitivity analysis 
+
+To test whether our model is sensitive to prior specifications, we fit them on differnt priors: 
+
+```{r}
+# Wider — less informative
+p_wide <- c(
+  prior(normal(0, 5), class = Intercept),
+  prior(normal(0, 5), class = sd, group = participantId, lb = 0),
+  prior(normal(0, 5), class = Intercept, dpar = "sigma"),
+  prior(normal(0, 5), class = sd, group = participantId, dpar = sigma, lb = 0)
+)
+
+# Tighter — more informative
+p_tight <- c(
+  prior(normal(0, 0.1), class = Intercept),
+  prior(normal(0, 0.1), class = sd, group = participantId, lb = 0),
+  prior(normal(0, 0.1), class = Intercept, dpar = "sigma"),
+  prior(normal(0, 0.1), class = sd, group = participantId, dpar = sigma, lb = 0)
+)
+
+# Different family — heavier tails
+p_student <- c(
+  prior(student_t(3, 0, 1), class = Intercept),
+  prior(student_t(3, 0, 1), class = sd, group = participantId, lb = 0),
+  prior(student_t(3, 0, 1), class = Intercept, dpar = "sigma"),
+  prior(
+    student_t(3, 0, 1),
+    class = sd,
+    group = participantId,
+    dpar = sigma,
+    lb = 0
+  )
+)
+```
+
+```{r}
+m1_wide <- part1_df %>%
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p_wide,
+    chains = 4,
+    cores = 4,
+    control = list(adapt_delta = 0.99),
+    iter = 6000,
+    file = here::here("analysis", "fitted_models", "exp2", "m1_wide"),
+    file_refit = "on_change",
+    save_pars = save_pars(all = TRUE)
+  )
+
+m1_tight <- part1_df %>%
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p_tight,
+    chains = 4,
+    cores = 4,
+    control = list(adapt_delta = 0.99),
+    iter = 6000,
+    file = here::here("analysis", "fitted_models", "exp2", "m1_tight"),
+    file_refit = "on_change",
+    save_pars = save_pars(all = TRUE)
+  )
+
+m1_student <- part1_df %>%
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p_student,
+    chains = 4,
+    cores = 4,
+    control = list(adapt_delta = 0.99),
+    iter = 6000,
+    file = here::here("analysis", "fitted_models", "exp2", "m1_student"),
+    file_refit = "on_change",
+    save_pars = save_pars(all = TRUE)
+  )
+```
+
+All models fit without convergence issues. Now we combine posterior and plot them: 
+
+```{r}
+# Combine posteriors from all models
+models <- list(
+  "default (0,1)" = m1,
+  "wide (0,5)" = m1_wide,
+  "tight (0,0.1)" = m1_tight,
+  "student_t(3,0,1)" = m1_student
+)
+
+combined <- models %>%
+  imap_dfr(
+    ~ gather_draws(.x, b_Intercept, b_sigma_Intercept) %>%
+      mutate(prior = .y)
+  )
+```
+
+Interval plot: 
+
+```{r}
+combined %>%
+  # uncomment to see what variance instead of log(variance) is.
+  # mutate(
+  #   .value = if_else(.variable == "b_sigma_Intercept", exp(.value), .value)
+  # ) %>%
+  ggplot(aes(x = .value, y = prior)) +
+  stat_pointinterval(.width = c(.50, .95)) +
+  facet_wrap(~.variable, scales = "free_x") +
+  labs(x = "Estimate", y = "Prior specification")
+```
+
+Densities overlaid: 
+
+```{r}
+combined %>%
+  ggplot(aes(x = .value, color = prior, fill = prior)) +
+  stat_slab(alpha = 0.3) +
+  facet_wrap(~.variable, scales = "free") +
+  labs(x = "Estimate", y = NULL)
+```
+
+To see the actual table: 
+
+```{r}
+combined %>%
+  group_by(prior, .variable) %>%
+  median_qi(.value, .width = .95) %>%
+  select(prior, .variable, .value, .lower, .upper) %>%
+  arrange(.variable, prior)
+```
+
+We can also check random effects: 
+
+```{r}
+combined_sd <- models %>%
+  imap_dfr(
+    ~ gather_draws(
+      .x,
+      sd_participantId__Intercept,
+      sd_participantId__sigma_Intercept
+    ) %>%
+      mutate(prior = .y)
+  )
+```
+
+```{r}
+combined_sd %>%
+  ggplot(aes(x = .value, y = prior)) +
+  stat_pointinterval(.width = c(.50, .95)) +
+  facet_wrap(~.variable, scales = "free_x") +
+  labs(x = "Estimate", y = "Prior specification")
+```
+
+**Takeaway**: posteriors were robust to prior specification across default, wide, and heavy-tailed priors. The tight prior $\sigma = 0.1$ constrained the residual variance parameter, confirming it is unreasonably informative for this parameter; the remaining three specifications produced essentially identical posteriors. 
 
 # Infer model for part 2 
 
