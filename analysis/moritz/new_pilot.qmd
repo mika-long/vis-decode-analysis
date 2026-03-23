@@ -18,6 +18,7 @@ library(jsonlite)
 library(ggplot2)
 library(tidybayes)
 library(brms)
+library(posterior)
 library(purrr)
 theme_set(theme_tidybayes())
 bayesplot::bayesplot_theme_update(text = element_text(family = "sans"))
@@ -77,7 +78,6 @@ pilot_df <- raw_df %>% filter(responseId != "windowEvents")
 # i.e., the part that is relevant for pixelsPerMM and distToScreen
 participant_df <- pilot_df %>%
   filter(str_detect(trialId, "chinrest")) %>%
-  select(participantId, trialId, trialOrder, responseId, condition, answer) %>%
   select(participantId, responseId, answer) %>%
   filter(
     str_detect(responseId, "pixelsPerMM") |
@@ -124,7 +124,25 @@ part2_df <- pilot_df %>%
     px.resp.y = pixelResponse,
     num.resp.y = numericResponse
   ) %>%
-  mutate(px.resp.y = as.numeric(px.resp.y), num.resp.y = as.numeric(num.resp.y))
+  mutate(
+    px.resp.y = as.numeric(px.resp.y),
+    num.resp.y = as.numeric(num.resp.y),
+    type = ifelse(type == "pointArc", "point_arc", "point")
+  )
+
+# join to make the participant_df also contain condition
+participant_df <- participant_df %>%
+  left_join(
+    part2_df %>%
+      select(-condition) %>%
+      separate_wider_delim(
+        trialId,
+        delim = "_",
+        names = c("condition", "A", "B")
+      ) %>%
+      select(participantId, condition) %>%
+      unique(.)
+  )
 ```
 
 Read in helper functions for transforming between spaces: 
@@ -155,12 +173,17 @@ make_va_scale <- function(data_min, data_max, px_min, px_max) {
   data_to_phys <- function(data, px_per_mm) {
     (data - data_min) / data_range * px_extent / px_per_mm
   }
+  phys_to_data <- function(phys, px_per_mm) {
+    phys * px_per_mm / px_extent * data_range + data_min
+  }
 
   data_to_va <- function(data, distance, px_per_mm) {
     data |> data_to_phys(px_per_mm) |> vis_angle(distance = distance)
   }
+  va_to_data <- function(va, distance, px_per_mm) {
+    va |> phys_size(distance = distance) |> phys_to_data(px_per_mm)
+  }
 
-  # keep these around if you need them elsewhere
   data_to_px <- function(data) {
     (data - data_min) / data_range * (px_max - px_min) + px_min
   }
@@ -170,22 +193,15 @@ make_va_scale <- function(data_min, data_max, px_min, px_max) {
 
   list(
     data_to_va = data_to_va,
+    va_to_data = va_to_data,
     data_to_phys = data_to_phys,
+    phys_to_data = phys_to_data,
     data_to_px = data_to_px,
     px_to_data = px_to_data
   )
 }
 
-# Block 5
-x_moritz <- make_va_scale(
-  data_min = 0,
-  data_max = 120,
-  px_min = 0,
-  px_max = 500
-)
-y_moritz <- make_va_scale(data_min = 0, data_max = 1, px_min = 0, px_max = 200)
-
-# Moritz
+# First Part -- Block 5
 x_block5 <- make_va_scale(
   data_min = -5,
   data_max = 5,
@@ -198,6 +214,15 @@ y_block5 <- make_va_scale(
   px_min = 410,
   px_max = 15
 )
+
+# Second part -- Mortiz
+x_moritz <- make_va_scale(
+  data_min = 0,
+  data_max = 120,
+  px_min = 0,
+  px_max = 500
+)
+y_moritz <- make_va_scale(data_min = 0, data_max = 1, px_min = 0, px_max = 200)
 
 # # Code copied from Matt; this prevents us from having mistakes
 # x_num_to_px = \(x, x_range = 120, px_range = 500) x / x_range * px_range
@@ -587,6 +612,180 @@ combined_sd %>%
 **Takeaway**: posteriors were robust to prior specification across default, wide, and heavy-tailed priors. The tight prior $\sigma = 0.1$ constrained the residual variance parameter, confirming it is unreasonably informative for this parameter; the remaining three specifications produced essentially identical posteriors. 
 
 # Infer model for part 2 
+
+## Mean and Median 
+
+First we get a cross between participant and the stimuli they saw, in order to generate **predictions**: 
+
+```{r}
+predict_df <- participant_df %>%
+  rename(type = condition) %>%
+  mutate(type = ifelse(type == "pointArc", "point_arc", "point")) %>%
+  inner_join(
+    stimuli_df %>% filter(type != "line") %>% rename(ogIndex = index),
+    by = "type",
+    relationship = "many-to-many"
+  ) %>%
+  unnest(col = data) %>%
+  rename(num.ans.x = x, num.ans.y = y) %>%
+  mutate(
+    va.ans.x = x_moritz$data_to_va(num.ans.x, distToScreen, pixelsPerMM),
+    va.ans.y = y_moritz$data_to_va(num.ans.y, distToScreen, pixelsPerMM),
+  )
+
+predict_df %>% head(5)
+```
+
+We then generate the posterior draws from out fitted model, `m1`, using `add_predicted_draws`: 
+
+```{r}
+# preds <- posterior_predict(m1, newdata = predict_df, ndraws = 1)
+preds <- predict_df %>%
+  add_predicted_draws(m1, ndraws = 1000) %>%
+  mutate(va.pred.y = va.ans.y + .prediction) %>%
+  group_by(
+    participantId,
+    ogIndex,
+    type,
+    flip,
+    noise,
+    distToScreen,
+    pixelsPerMM,
+    .draw
+  ) %>%
+  summarise(
+    # calculate mean and median of va
+    va.pred.mean.y = mean(va.pred.y),
+    va.pred.median.y = median(va.pred.y),
+  ) %>%
+  # turn vis angle into numerical
+  mutate(
+    num.pred.mean.y = y_moritz$va_to_data(
+      va.pred.mean.y,
+      distToScreen,
+      pixelsPerMM
+    ),
+    num.pred.median.y = y_moritz$va_to_data(
+      va.pred.median.y,
+      distToScreen,
+      pixelsPerMM
+    )
+  )
+```
+
+### Checking results for one participant 
+
+```{r}
+# Pick one participant
+pid <- unique(part1_df$participantId)[1]
+
+pred_one <- preds %>%
+  filter(participantId == pid)
+
+obs_one <- part2_df %>%
+  filter(participantId == pid)
+```
+
+Let's first plot mean strategy: 
+
+```{r}
+#| code-fold: true
+
+ggplot() +
+  stat_pointinterval(
+    data = pred_one,
+    aes(y = ogIndex, x = num.pred.mean.y),
+    .width = c(.50, .95)
+  ) +
+  geom_point(
+    data = obs_one,
+    aes(y = ogIndex, x = num.resp.y),
+    color = "red",
+    size = 2
+  ) +
+  labs(y = "Trial", x = "Response (numeric)", title = "Mean Strategy") +
+  facet_wrap(~flip)
+```
+
+Then let's plot median strategy: 
+
+```{r}
+#| code-fold: true
+ggplot() +
+  stat_pointinterval(
+    data = pred_one,
+    aes(y = ogIndex, x = num.pred.median.y),
+    .width = c(.50, .95)
+  ) +
+  geom_point(
+    data = obs_one,
+    aes(y = ogIndex, x = num.resp.y),
+    color = "red",
+    size = 2
+  ) +
+  labs(y = "Trial", x = "Response (numeric)", title = "Median Strategy") +
+  facet_wrap(~flip)
+```
+
+We can also plot them by the diagonal to see whether they predict things correcty: 
+
+```{r}
+combined <- preds %>%
+  group_by(ogIndex, participantId) %>%
+  median_qi(num.pred.mean.y, .width = .95) %>%
+  left_join(part2_df %>% select(ogIndex, participantId, num.resp.y))
+
+ggplot(combined, aes(x = num.pred.mean.y, y = num.resp.y)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  geom_point(alpha = 0.3) +
+  labs(x = "Predicted", y = "Observed", title = "Mean Strategy")
+```
+
+```{r}
+combined <- preds %>%
+  group_by(ogIndex, participantId) %>%
+  median_qi(num.pred.median.y, .width = .95) %>%
+  left_join(part2_df %>% select(ogIndex, participantId, num.resp.y))
+
+ggplot(combined, aes(x = num.pred.median.y, y = num.resp.y)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  geom_point(alpha = 0.3) +
+  labs(x = "Predicted", y = "Observed", title = "Median Strategy")
+```
+
+Let's also do coverage check: 
+
+```{r}
+combined <- preds %>%
+  group_by(ogIndex, participantId) %>%
+  summarise(
+    lo95 = quantile(num.pred.median.y, 0.025), # could also be num.pred.mean.y
+    hi95 = quantile(num.pred.median.y, 0.975), # could also be num.pred.mean.y
+    .groups = "drop"
+  ) %>%
+  left_join(part2_df %>% select(ogIndex, participantId, num.resp.y)) %>%
+  mutate(covered = num.resp.y >= lo95 & num.resp.y <= hi95)
+
+mean(combined$covered)
+```
+
+## Sensor Fusion Strategy 
+
+`TODO` 
+
+## pre-process data 
+
+```{r}
+# part2_df %>%
+#   mutate(type = ifelse(type == "pointArc", "point_arc", "point")) %>%
+#   left_join(part2_ans_df, by = c("ogIndex", "type")) %>%
+#   left_join(participant_df, by = join_by(participantId)) %>%
+#   mutate(
+#     va.ans.y = y_moritz$data_to_va(num.ans.y, distToScreen, pixelsPerMM),
+#     va.resp.y = y_moritz$data_to_va(num.resp.y, distToScreen, pixelsPerMM)
+#   ) %>%
+#   mutate(va.error.y = va.resp.y - va.ans.y)
+```
 
 ```{r}
 part2_df %>%
