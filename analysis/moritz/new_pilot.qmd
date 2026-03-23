@@ -359,7 +359,6 @@ $$
 Here is the specification we used for fitting: 
 
 ```{r}
-#| eval: false
 #| label: brms specs
 
 # Recall that we defined error = resp - ans
