@@ -492,7 +492,7 @@ p1
 ```
 
 ```{r}
-#| eval: false 
+#| eval: false
 
 ggsave(
   here::here("figs", "part2-task1-project-y.pdf"),
@@ -739,7 +739,8 @@ combined <- preds %>%
 ggplot(combined, aes(x = num.pred.mean.y, y = num.resp.y)) +
   geom_point(alpha = 0.3) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray") +
-  labs(x = "Predicted", y = "Observed", title = "Mean Strategy")
+  labs(x = "Predicted", y = "Observed", title = "Mean Strategy") +
+  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1))
 ```
 
 ```{r}
@@ -752,17 +753,19 @@ combined <- preds %>%
 ggplot(combined, aes(x = num.pred.median.y, y = num.resp.y)) +
   geom_point(alpha = 0.3) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray") +
-  labs(x = "Predicted", y = "Observed", title = "Median Strategy")
+  labs(x = "Predicted", y = "Observed", title = "Median Strategy") +
+  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1))
 ```
 
-Let's also do coverage check: 
+Let's also do **coverage check for mean**: 
 
 ```{r}
+#| code-fold: true
 combined <- preds %>%
   group_by(ogIndex, participantId) %>%
   summarise(
-    lo95 = quantile(num.pred.median.y, 0.025), # could also be num.pred.mean.y
-    hi95 = quantile(num.pred.median.y, 0.975), # could also be num.pred.mean.y
+    lo95 = quantile(num.pred.mean.y, 0.025),
+    hi95 = quantile(num.pred.mean.y, 0.975),
     .groups = "drop"
   ) %>%
   left_join(part2_df %>% select(ogIndex, participantId, num.resp.y)) %>%
@@ -770,6 +773,25 @@ combined <- preds %>%
 
 mean(combined$covered)
 ```
+
+**coverage check for median**:
+
+```{r}
+#| code-fold: true
+combined <- preds %>%
+  group_by(ogIndex, participantId) %>%
+  summarise(
+    lo95 = quantile(num.pred.median.y, 0.025),
+    hi95 = quantile(num.pred.median.y, 0.975),
+    .groups = "drop"
+  ) %>%
+  left_join(part2_df %>% select(ogIndex, participantId, num.resp.y)) %>%
+  mutate(covered = num.resp.y >= lo95 & num.resp.y <= hi95)
+
+mean(combined$covered)
+```
+
+Note that increasing the number of draws does not significantly increase the coverage we have, suggesting that these likely do not capture important structure that humans might actually be using. 
 
 ### Checking results for one participant -- skipping for now 
 
@@ -862,7 +884,8 @@ predict_df <- participant_df %>%
   rename(num.ans.x = x, num.ans.y = y) %>%
   mutate(
     va_60 = x_moritz$data_to_va(60, distToScreen, pixelsPerMM),
-    va.ans.x = abs(va_60 - x_moritz$data_to_va(num.ans.x, distToScreen, pixelsPerMM)
+    va.ans.x = abs(
+      va_60 - x_moritz$data_to_va(num.ans.x, distToScreen, pixelsPerMM)
     ),
     va.ans.y = y_moritz$data_to_va(num.ans.y, distToScreen, pixelsPerMM),
   )
@@ -889,7 +912,8 @@ Step 2: Do it for a single participant and then extend it to all participants us
 
 ```{r}
 # Step 2: Loop over participants, use matrix ops, summarize per trial
-posterior_predict_df <- map_dfr(.progress = TRUE,
+posterior_predict_df <- map_dfr(
+  .progress = TRUE,
   unique(predict_df$participantId),
   function(pid) {
     # 12,000 draws for this participant
@@ -905,7 +929,7 @@ posterior_predict_df <- map_dfr(.progress = TRUE,
     mu_vec <- d$mu # length 12,000
     log_sb <- d$log_sigma_base # length 12,000
     log_vax <- log(obs$va.ans.x) # length 2,880
-    log_va_proj <- log(obs$va_60) 
+    log_va_proj <- log(obs$va_60)
 
     # sigma matrix: 12,000 × 2,880 (~276 MB)
     sigma_mat <- exp(outer(log_sb, log_vax, "+"))
@@ -935,12 +959,13 @@ posterior_predict_df <- map_dfr(.progress = TRUE,
         va.weighted_pred = rowSums(w_sub * pred_sub) / rowSums(w_sub)
       )
     })
-    # second projection 
+    # second projection
     n_trials <- length(unique(trial_ids))
-    trial_results %>% 
+    trial_results %>%
       mutate(
-        sigma_proj = exp(rep(log_sb, times = n_trials) + log_va_proj[1]), 
-        va.final_pred = va.weighted_pred + rnorm(n(), mean = rep(mu_vec, times = n_trials), sd = sigma_proj)
+        sigma_proj = exp(rep(log_sb, times = n_trials) + log_va_proj[1]),
+        va.final_pred = va.weighted_pred +
+          rnorm(n(), mean = rep(mu_vec, times = n_trials), sd = sigma_proj)
       )
   }
 )
@@ -962,9 +987,10 @@ full_pp_df <- posterior_predict_df %>%
   )
 ```
 
-We can then compare this against the actual response, starting with the coverage check: 
+We can then compare this against the actual response, starting with the **coverage check**:
 
 ```{r}
+#| code-fold: true
 combined <- full_pp_df %>%
   group_by(ogIndex, participantId) %>%
   median_qi(num.weighted_pred, .width = .95) %>%
@@ -973,6 +999,8 @@ combined <- full_pp_df %>%
 
 mean(combined$covered) # should be close to 0.95 if well-calibrated
 ```
+
+Note this is twice the coverage compared to the median strategy. 
 
 ```{r}
 combined <- full_pp_df %>%
@@ -983,7 +1011,7 @@ combined <- full_pp_df %>%
 ggplot(combined, aes(x = num.weighted_pred, y = num.resp.y)) +
   geom_point(alpha = 0.3) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray") +
-  labs(x = "Predicted", y = "Observed", title = "Weighted Mean Strategy") + 
+  labs(x = "Predicted", y = "Observed", title = "Weighted Mean Strategy") +
   coord_cartesian(xlim = c(0, 1), ylim = c(0, 1))
 ```
 
@@ -1000,10 +1028,21 @@ pit_df <- full_pp_df %>%
 
 ggplot(pit_df, aes(x = pit)) +
   geom_histogram(bins = 20, boundary = 0) +
-  geom_hline(yintercept = nrow(pit_df) / 20, linetype = "dashed", color = "gray") +
-  labs(x = "PIT value", y = "Count", title = "PIT Histogram (uniform = well-calibrated)")
+  geom_hline(
+    yintercept = nrow(pit_df) / 20,
+    linetype = "dashed",
+    color = "gray"
+  ) +
+  labs(
+    x = "PIT value",
+    y = "Count",
+    title = "PIT Histogram (uniform = well-calibrated)"
+  )
 ```
-  
+
+This seems like a good source of inference ...? 
+https://topmodels.r-forge.r-project.org/articles/topmodels.html
+
   
 ## pre-process data 
   
