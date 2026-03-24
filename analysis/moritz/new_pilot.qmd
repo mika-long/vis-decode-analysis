@@ -443,6 +443,14 @@ ggsave(
   units = "cm",
   dpi = 300
 )
+ggsave(
+  here::here("figs", "part2-task1-pit-ecdf.pdf"),
+  p2,
+  height = 5,
+  width = 5,
+  units = "cm",
+  dpi = 300
+)
 ```
 
 Plot existing data on top of prediction, for an average participant: 
@@ -472,7 +480,7 @@ ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) +
     size = 0.5
   ) +
   labs(
-    title = "Project to Y-axis",
+    title = "Part 1: Project to Y-axis",
     y = "Error",
     x = "Distance to Y-Axis"
   ) +
@@ -482,6 +490,20 @@ ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) +
 
 p1
 ```
+
+```{r}
+#| eval: false 
+
+ggsave(
+  here::here("figs", "part2-task1-project-y.pdf"),
+  p1,
+  height = 8,
+  width = 8,
+  units = "cm",
+  dpi = 300
+)
+```
+
 
 ## Prior sensitivity analysis -- Only Run if time permitting 
 
