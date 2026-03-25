@@ -709,7 +709,9 @@ predict_df <- participant_df %>%
 predict_df %>% head(5)
 ```
 
-**Step 3: Draw the posterior prediction for project once AND project twice:**
+## Project Once 
+
+**Step 3: Draw the posterior prediction for project once to the y-axis:**
 
 ```{r}
 posterior_predict_df <- map_dfr(
@@ -728,7 +730,7 @@ posterior_predict_df <- map_dfr(
 
     cross_join(d, obs) %>%
       mutate(
-        sigma = var_scale * va.ans.x,
+        sigma = var_scale * va.ans.x, # dist to y-axis is va.ans.x
         .prediction = rnorm(n(), mean = mu, sd = sigma),
         pred_y = va.ans.y + .prediction,
         w = 1 / (mu^2 + sigma^2) # inverse-mse
@@ -749,17 +751,11 @@ posterior_predict_df <- map_dfr(
         .groups = "drop_last"
       ) %>%
       mutate(
-        proj_noise = rnorm(n(), mean = mu, sd = var_scale * va.60),
-        va.2proj.mean = va.1proj.mean + proj_noise,
-        va.2proj.median = va.1proj.median + proj_noise,
-        va.2proj.weighted = va.1proj.weighted + proj_noise,
         participantId = pid
       )
   }
 )
 ```
-
-We then transform things from visual angle prediction to actual numerical value, for comparison against the actual response we got: 
 
 ```{r}
 posterior_predict_df <- posterior_predict_df %>%
@@ -778,7 +774,164 @@ posterior_predict_df <- posterior_predict_df %>%
       va.1proj.weighted,
       distToScreen,
       pixelsPerMM
-    ),
+    )
+  )
+```
+
+```{r}
+#| eval: false
+#| echo: false
+
+saveRDS(
+  posterior_predict_df,
+  file = here::here("analysis/fitted_models/exp2/part2_posterior_1proj.rds")
+)
+```
+
+### Posterior checks 
+
+```{r}
+#| code-fold: true
+
+# get the relevant ones for each strategy
+response_ordered <- part2_df %>% arrange(participantId, ogIndex)
+y <- response_ordered$num.resp.y
+
+# group can be any condition-level variable, or a combination
+group <- response_ordered %>%
+  left_join(part2_ans_df %>% select(ogIndex, type, flip, noise)) %>%
+  mutate(g = paste(type, noise, flip, sep = " | ")) %>%
+  pull(g)
+
+yrep_mean <- posterior_predict_df %>%
+  ungroup() %>%
+  select(participantId, ogIndex, .draw, num.1proj.mean) %>%
+  arrange(participantId, ogIndex, .draw) %>%
+  unite("obs_id", participantId, ogIndex) %>%
+  pivot_wider(
+    id_cols = .draw,
+    names_from = obs_id,
+    values_from = num.1proj.mean
+  ) %>%
+  select(-.draw) %>%
+  as.matrix()
+
+yrep_median <- posterior_predict_df %>%
+  ungroup() %>%
+  select(participantId, ogIndex, .draw, num.1proj.median) %>%
+  arrange(participantId, ogIndex, .draw) %>%
+  unite("obs_id", participantId, ogIndex) %>%
+  pivot_wider(
+    id_cols = .draw,
+    names_from = obs_id,
+    values_from = num.1proj.median
+  ) %>%
+  select(-.draw) %>%
+  as.matrix()
+
+yrep_weighted <- posterior_predict_df %>%
+  ungroup() %>%
+  select(participantId, ogIndex, .draw, num.1proj.weighted) %>%
+  arrange(participantId, ogIndex, .draw) %>%
+  unite("obs_id", participantId, ogIndex) %>%
+  pivot_wider(
+    id_cols = .draw,
+    names_from = obs_id,
+    values_from = num.1proj.weighted
+  ) %>%
+  select(-.draw) %>%
+  as.matrix()
+```
+
+**PIT-ECDFs**: 
+
+```{r}
+#| layout-ncol: 3
+ppc_pit_ecdf(y, yrep_mean) + labs(title = "Mean Strategy")
+ppc_pit_ecdf(y, yrep_median) + labs(title = "Median Strategy")
+ppc_pit_ecdf(y, yrep_weighted) + labs(title = "Weighted Strategy")
+```
+
+Grouped version: 
+
+```{r}
+#| layout-ncol: 3
+ppc_pit_ecdf_grouped(y, yrep_mean, group) + labs(title = "Mean Strategy")
+ppc_pit_ecdf_grouped(y, yrep_median, group) + labs(title = "Median Strategy")
+ppc_pit_ecdf_grouped(y, yrep_weighted, group) +
+  labs(title = "Weighted Strategy")
+```
+
+**KDE-Overlay**: 
+
+```{r}
+ppc_dens_overlay(y, yrep_mean[sample(nrow(yrep_mean), 100), ]) +
+  labs(title = "Mean Strategy")
+ppc_dens_overlay(y, yrep_median[sample(nrow(yrep_median), 100), ]) +
+  labs(title = "Median Strategy")
+ppc_dens_overlay(y, yrep_weighted[sample(nrow(yrep_weighted), 100), ]) +
+  labs(title = "Weighted Strategy")
+```
+
+## Project Twice 
+
+Same step 1 and step 2 as before, so we reuse them. 
+
+**Step 3: Draw the posterior prediction for project once to the middle AND project twice to the y-axis:**
+
+```{r}
+posterior_predict_df <- map_dfr(
+  .progress = TRUE,
+  unique(predict_df$participantId),
+  function(pid) {
+    # 12,000 draws for this participant
+    d <- m1_draws_df %>%
+      filter(participantId == pid) %>%
+      arrange(.draw)
+
+    # 2,880 observations (48 trials × 60 dots)
+    obs <- predict_df %>%
+      filter(participantId == pid) %>%
+      select(ogIndex, va.60, va.ans.x, va.ans.y, pixelsPerMM, distToScreen)
+
+    cross_join(d, obs) %>%
+      mutate(
+        sigma = var_scale * abs(va.60 - va.ans.x), # dist to center
+        .prediction = rnorm(n(), mean = mu, sd = sigma),
+        pred_y = va.ans.y + .prediction,
+        w = 1 / (mu^2 + sigma^2) # inverse-mse
+      ) %>%
+      group_by(
+        .draw,
+        mu,
+        var_scale,
+        pixelsPerMM,
+        distToScreen,
+        va.60,
+        ogIndex
+      ) %>%
+      summarise(
+        va.1proj.mean = mean(pred_y),
+        va.1proj.median = median(pred_y),
+        va.1proj.weighted = sum(w * pred_y) / sum(w), # not sure if this is the right level ...? This feels more like across the things ...?
+        .groups = "drop_last"
+      ) %>%
+      mutate(
+        proj_noise = rnorm(n(), mean = mu, sd = var_scale * va.60),
+        va.2proj.mean = va.1proj.mean + proj_noise,
+        va.2proj.median = va.1proj.median + proj_noise,
+        va.2proj.weighted = va.1proj.weighted + proj_noise,
+        participantId = pid
+      )
+  }
+)
+```
+
+We then transform things from visual angle prediction to actual numerical value, for comparison against the actual response we got: 
+
+```{r}
+posterior_predict_df <- posterior_predict_df %>%
+  mutate(
     num.2proj.mean = y_moritz$va_to_data(
       va.2proj.mean,
       distToScreen,
@@ -807,10 +960,9 @@ saveRDS(
 )
 ```
 
-## Posterior Checks for Project Twice 
-... using `bayesplot`. 
+### Posterior Checks 
 
-### PIT-ECDF Plots 
+PIT-ECDF Plots 
 
 ```{r}
 response_ordered <- part2_df %>% arrange(participantId, ogIndex)
@@ -835,17 +987,6 @@ yrep_mean <- posterior_predict_df %>%
   select(-.draw) %>%
   as.matrix()
 
-ppc_pit_ecdf(y, yrep_mean) + labs(title = "Mean Strategy")
-```
-
-```{r}
-ppc_pit_ecdf(y, yrep_mean, group = group) + labs(title = "Mean Strategy")
-ppc_pit_ecdf(y, yrep_mean, plot_diff = TRUE) +
-  labs(title = "Mean Strategy")
-ppc_pit_ecdf_grouped(y, yrep_mean, group) + labs(title = "Mean Strategy")
-```
-
-```{r}
 yrep_median <- posterior_predict_df %>%
   ungroup() %>%
   select(participantId, ogIndex, .draw, num.2proj.median) %>%
@@ -859,12 +1000,6 @@ yrep_median <- posterior_predict_df %>%
   select(-.draw) %>%
   as.matrix()
 
-ppc_pit_ecdf(y, yrep_median) + labs(title = "Median Strategy")
-ppc_pit_ecdf(y, yrep_median, plot_diff = TRUE) + labs(title = "Median Strategy")
-ppc_pit_ecdf_grouped(y, yrep_median, group) + labs(title = "Median Strategy")
-```
-
-```{r}
 yrep_weighted <- posterior_predict_df %>%
   ungroup() %>%
   select(participantId, ogIndex, .draw, num.2proj.weighted) %>%
@@ -877,7 +1012,22 @@ yrep_weighted <- posterior_predict_df %>%
   ) %>%
   select(-.draw) %>%
   as.matrix()
+```
 
+```{r}
+ppc_pit_ecdf(y, yrep_mean) + labs(title = "Mean Strategy")
+ppc_pit_ecdf(y, yrep_mean, plot_diff = TRUE) +
+  labs(title = "Mean Strategy")
+ppc_pit_ecdf_grouped(y, yrep_mean, group) + labs(title = "Mean Strategy")
+```
+
+```{r}
+ppc_pit_ecdf(y, yrep_median) + labs(title = "Median Strategy")
+ppc_pit_ecdf(y, yrep_median, plot_diff = TRUE) + labs(title = "Median Strategy")
+ppc_pit_ecdf_grouped(y, yrep_median, group) + labs(title = "Median Strategy")
+```
+
+```{r}
 ppc_pit_ecdf(y, yrep_weighted) + labs(title = "Weighted Mean Strategy")
 ppc_pit_ecdf(y, yrep_weighted, plot_diff = TRUE) +
   labs(title = "Weighted Mean Strategy")
