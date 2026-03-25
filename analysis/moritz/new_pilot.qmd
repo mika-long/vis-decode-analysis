@@ -743,11 +743,87 @@ posterior_predict_df <- map_dfr(
 )
 ```
 
-Do some checks: 
+We then transform things from visual angle prediction to actual numerical value: 
 
-TODO 
+```{r}
+posterior_predict_df <- posterior_predict_df %>%
+  mutate(
+    num.pred.avg = y_moritz$va_to_data(va.pred.avg, distToScreen, pixelsPerMM),
+    num.pred.median = y_moritz$va_to_data(
+      va.pred.median,
+      distToScreen,
+      pixelsPerMM
+    )
+  )
+```
 
-Generate posterior prediction for projecting twice: 
+```{r}
+#| eval: false
+#| echo: false
+
+# save this hard-earned dataframe somewhere ...
+# about 364.9 mb ...
+saveRDS(
+  posterior_predict_df,
+  file = here::here("analysis/fitted_models/part2_posterior_predict.rds")
+)
+```
+
+Posterior distribution of answer for a particular stimuli, for all participants who saw the stimuli: 
+
+```{r}
+#| code-fold: true
+
+# define a helper function for this plot
+plot_stimuli_forAll <- function(i, s) {
+  target_col <- switch(
+    s,
+    "mean" = "num.pred.avg",
+    "median" = "num.pred.median",
+    stop("Error: 's' must be either 'mean' or 'median'.")
+  )
+  posterior_predict_df %>%
+    ungroup(.) %>%
+    filter(ogIndex == i) %>%
+    ggplot(aes(y = .data[[target_col]])) +
+    stat_halfeye() +
+    geom_hline(
+      data = part2_df %>% filter(ogIndex == i),
+      aes(yintercept = num.resp.y),
+      color = "red",
+      linetype = "dashed"
+    ) +
+    facet_wrap(~participantId) +
+    labs(
+      title = paste0(
+        "Stimuli Index ",
+        i,
+        " across 10 participants, ",
+        s,
+        " strategy"
+      )
+    )
+}
+```
+
+```{r}
+#| layout-ncol: 2
+plot_stimuli_forAll(4, "mean") # point
+plot_stimuli_forAll(5, "mean")
+```
+
+```{r}
+#| layout-ncol: 2
+plot_stimuli_forAll(8, "median") # point_arc
+plot_stimuli_forAll(9, "median")
+```
+
+---
+
+
+
+
+
 
 ```{r}
 posterior_predict_df <- map_dfr(
