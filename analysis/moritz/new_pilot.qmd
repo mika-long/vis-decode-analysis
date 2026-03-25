@@ -771,6 +771,7 @@ Posterior distribution of answer for a particular stimuli, for all participants 
 
 ```{r}
 #| code-fold: true
+#| label: plot_stimuli_forAll
 
 # define a helper function for this plot
 plot_stimuli_forAll <- function(i, s) {
@@ -820,6 +821,8 @@ plot_stimuli_forAll(9, "median")
 
 ## Project twice, first to middle and then to y-axis 
 
+Takes about 5-is mins to run. Run with caution. 
+
 ```{r}
 posterior_predict_df <- map_dfr(
   .progress = TRUE,
@@ -840,14 +843,22 @@ posterior_predict_df <- map_dfr(
         sigma = var_scale * abs(va.60 - va.ans.x),
         .prediction = rnorm(n(), mean = mu, sd = sigma)
       ) %>%
-      group_by(.draw, mu, pixelsPerMM, distToScreen, va.60, ogIndex) %>%
+      group_by(
+        .draw,
+        mu,
+        var_scale,
+        pixelsPerMM,
+        distToScreen,
+        va.60,
+        ogIndex
+      ) %>%
       summarise(
         va.pred.avg = mean(va.ans.y + .prediction),
         va.pred.median = median(va.ans.y + .prediction),
         .groups = "drop_last"
       ) %>%
       mutate(
-        .prediction = rnorm(n(), mean = mu, sd = va.60),
+        .prediction = rnorm(n(), mean = mu, sd = var_scale * va.60),
         va.final.avg = va.pred.avg + .prediction,
         va.final.median = va.pred.median + .prediction
       ) %>%
@@ -866,6 +877,24 @@ saveRDS(
 )
 ```
 
+```{r}
+posterior_predict_df <- readRDS(here::here(
+  "analysis",
+  "fitted_models",
+  "part2_twice_project.rds"
+))
+
+posterior_predict_df <- posterior_predict_df %>%
+  mutate(
+    num.pred.avg = y_moritz$va_to_data(va.final.avg, distToScreen, pixelsPerMM),
+    num.pred.median = y_moritz$va_to_data(
+      va.final.median,
+      distToScreen,
+      pixelsPerMM
+    )
+  )
+```
+
 And we can perform the same checks we did: 
 
 ```{r}
@@ -876,91 +905,18 @@ plot_stimuli_forAll(8, "median") # point
 plot_stimuli_forAll(9, "median")
 ```
 
----
-OLD CODE BELOW 
-
-```{r}
-posterior_predict_df <- map_dfr(
-  .progress = TRUE,
-  unique(predict_df$participantId),
-  function(pid) {
-    # 12,000 draws for this participant
-    d <- m1_draws_df %>%
-      filter(participantId == pid) %>%
-      arrange(.draw)
-    n_draws <- nrow(d)
-
-    # 2,880 observations (48 trials × 60 dots)
-    obs <- predict_df %>%
-      filter(participantId == pid) %>%
-      select(ogIndex, va.60, va.ans.x, va.ans.y, pixelsPerMM, distToScreen)
-    n_obs <- nrow(obs)
-
-    cross_join(d, obs) %>%
-      mutate(
-        sigma = var_scale * va.ans.x,
-        .prediction = rnorm(n(), mean = mu, sd = sigma)
-      ) %>%
-      group_by(.draw, pixelsPerMM, distToScreen, ogIndex) %>%
-      summarise(
-        va.pred.avg = mean(va.ans.y + .prediction),
-        va.pred.median = median(va.ans.y + .prediction),
-        .groups = "drop_last"
-      ) %>%
-      mutate(participantId = pid)
-  }
-)
-```
-
-
-We then generate the posterior draws from out fitted model, `m1`, using `add_predicted_draws`: 
-
-```{r}
-preds <- predict_df %>%
-  add_predicted_draws(m1, ndraws = 100) %>%
-  mutate(va.pred.y = va.ans.y + .prediction) %>%
-  group_by(
-    participantId,
-    ogIndex,
-    type,
-    flip,
-    noise,
-    distToScreen,
-    pixelsPerMM,
-    .draw
-  ) %>%
-  summarise(
-    # calculate mean and median of va
-    va.pred.mean.y = mean(va.pred.y),
-    va.pred.median.y = median(va.pred.y),
-  ) %>%
-  # turn vis angle into numerical
-  mutate(
-    num.pred.mean.y = y_moritz$va_to_data(
-      va.pred.mean.y,
-      distToScreen,
-      pixelsPerMM
-    ),
-    num.pred.median.y = y_moritz$va_to_data(
-      va.pred.median.y,
-      distToScreen,
-      pixelsPerMM
-    )
-  )
-```
-
 ### Checking Results across participants 
 
 We can also plot them by the diagonal to see whether they predict things correcty: 
 
 ```{r}
 #| code-fold: true
-combined <- preds %>%
+combined <- posterior_predict_df %>%
   group_by(ogIndex, participantId) %>%
-  median_qi(num.pred.mean.y, .width = .95) %>%
+  median_qi(num.pred.avg, .width = .95) %>%
   left_join(part2_df %>% select(ogIndex, participantId, num.resp.y))
 
-ggplot(combined, aes(x = num.pred.mean.y, y = num.resp.y)) +
+ggplot(combined, aes(x = num.pred.avg, y = num.resp.y)) +
   geom_point(alpha = 0.3) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray") +
   labs(x = "Predicted", y = "Observed", title = "Mean Strategy") +
@@ -969,12 +925,12 @@ ggplot(combined, aes(x = num.pred.mean.y, y = num.resp.y)) +
 
 ```{r}
 #| code-fold: true
-combined <- preds %>%
+combined <- posterior_predict_df %>%
   group_by(ogIndex, participantId) %>%
-  median_qi(num.pred.median.y, .width = .95) %>%
+  median_qi(num.pred.median, .width = .95) %>%
   left_join(part2_df %>% select(ogIndex, participantId, num.resp.y))
 
-ggplot(combined, aes(x = num.pred.median.y, y = num.resp.y)) +
+ggplot(combined, aes(x = num.pred.median, y = num.resp.y)) +
   geom_point(alpha = 0.3) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray") +
   labs(x = "Predicted", y = "Observed", title = "Median Strategy") +
@@ -985,11 +941,11 @@ Let's also do **coverage check for mean**:
 
 ```{r}
 #| code-fold: true
-combined <- preds %>%
+combined <- posterior_predict_df %>%
   group_by(ogIndex, participantId) %>%
   summarise(
-    lo95 = quantile(num.pred.mean.y, 0.025),
-    hi95 = quantile(num.pred.mean.y, 0.975),
+    lo95 = quantile(num.pred.avg, 0.025),
+    hi95 = quantile(num.pred.avg, 0.975),
     .groups = "drop"
   ) %>%
   left_join(part2_df %>% select(ogIndex, participantId, num.resp.y)) %>%
@@ -1002,11 +958,11 @@ mean(combined$covered)
 
 ```{r}
 #| code-fold: true
-combined <- preds %>%
+combined <- posterior_predict_df %>%
   group_by(ogIndex, participantId) %>%
   summarise(
-    lo95 = quantile(num.pred.median.y, 0.025),
-    hi95 = quantile(num.pred.median.y, 0.975),
+    lo95 = quantile(num.pred.median, 0.025),
+    hi95 = quantile(num.pred.median, 0.975),
     .groups = "drop"
   ) %>%
   left_join(part2_df %>% select(ogIndex, participantId, num.resp.y)) %>%
@@ -1242,11 +1198,11 @@ ggplot(combined, aes(x = num.weighted_pred, y = num.resp.y)) +
 And then there's also the PIT histogram: 
 
 ```{r}
-pit_df <- full_pp_df %>%
+pit_df <- posterior_predict_df %>%
   left_join(part2_df %>% select(ogIndex, participantId, num.resp.y)) %>%
   group_by(ogIndex, participantId) %>%
   summarize(
-    pit = mean(num.weighted_pred <= num.resp.y),
+    pit = mean(num.pred.median <= num.resp.y),
     .groups = "drop"
   )
 
