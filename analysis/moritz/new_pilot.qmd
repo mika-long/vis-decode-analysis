@@ -920,7 +920,29 @@ ppc_dens_overlay_grouped(
   labs(title = "Weighted Mean Strategy")
 ```
 
+### Group-level checks 
 
+```{r}
+# average observed response per stimulus
+y_avg <- part2_df %>%
+  group_by(ogIndex) %>%
+  summarise(response = mean(num.resp.y), .groups = "drop") %>%
+  arrange(ogIndex)
+
+# average predicted response per stimulus per draw
+yrep_avg <- posterior_predict_df %>%
+  group_by(.draw, ogIndex) %>%
+  summarise(pred = mean(num.2proj.mean), .groups = "drop") %>%
+  arrange(ogIndex, .draw) %>%
+  pivot_wider(id_cols = .draw, names_from = ogIndex, values_from = pred) %>%
+  select(-.draw) %>%
+  as.matrix()
+
+ppc_pit_ecdf(y_avg$response, yrep_avg, prob = 0.99, plot_diff = TRUE)
+ppc_dens_overlay(y_avg$response, yrep_avg[sample(nrow(yrep_avg), 100), ])
+```
+
+Hmm nope doesn't really capture this two hump thing going on here ... 
 
 <!-- 
 ### Checking Results across participants 
