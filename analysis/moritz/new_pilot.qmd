@@ -971,6 +971,56 @@ combined <- posterior_predict_df %>%
 mean(combined$covered)
 ```
 
+**create PIT-ECDF plot**: 
+
+```{r}
+library(bayesplot)
+
+response_ordered <- part2_df %>% arrange(participantId, ogIndex)
+y <- response_ordered$num.resp.y
+
+yrep <- posterior_predict_df %>%
+  ungroup() %>%
+  select(participantId, ogIndex, .draw, num.pred.avg) %>%
+  arrange(participantId, ogIndex, .draw) %>%
+  unite("obs_id", participantId, ogIndex) %>%
+  pivot_wider(
+    id_cols = .draw,
+    names_from = obs_id,
+    values_from = num.pred.avg
+  ) %>%
+  select(-.draw) %>%
+  as.matrix()
+
+ppc_pit_ecdf(y, yrep) + labs(title = "Mean Strategy")
+```
+
+```{r}
+response_ordered <- part2_df %>% arrange(participantId, ogIndex)
+y <- response_ordered$num.resp.y
+
+yrep <- posterior_predict_df %>%
+  ungroup() %>%
+  select(participantId, ogIndex, .draw, num.pred.median) %>%
+  arrange(participantId, ogIndex, .draw) %>%
+  unite("obs_id", participantId, ogIndex) %>%
+  pivot_wider(
+    id_cols = .draw,
+    names_from = obs_id,
+    values_from = num.pred.median
+  ) %>%
+  select(-.draw) %>%
+  as.matrix()
+
+bayesplot::ppc_pit_ecdf(y, yrep) + labs(title = "Median Strategy")
+```
+
+We can also try KDE overlay: 
+
+
+
+---
+
 Note that increasing the number of draws does not significantly increase the coverage we have, suggesting that these likely do not capture important structure that humans might actually be using. 
 
 ### Checking results for one participant -- skipping for now 
