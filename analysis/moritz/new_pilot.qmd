@@ -840,7 +840,8 @@ ppc_pit_ecdf(y, yrep_mean) + labs(title = "Mean Strategy")
 
 ```{r}
 ppc_pit_ecdf(y, yrep_mean, group = group) + labs(title = "Mean Strategy")
-
+ppc_pit_ecdf(y, yrep_mean, plot_diff = TRUE) +
+  labs(title = "Mean Strategy")
 ppc_pit_ecdf_grouped(y, yrep_mean, group) + labs(title = "Mean Strategy")
 ```
 
@@ -859,6 +860,7 @@ yrep_median <- posterior_predict_df %>%
   as.matrix()
 
 ppc_pit_ecdf(y, yrep_median) + labs(title = "Median Strategy")
+ppc_pit_ecdf(y, yrep_median, plot_diff = TRUE) + labs(title = "Median Strategy")
 ppc_pit_ecdf_grouped(y, yrep_median, group) + labs(title = "Median Strategy")
 ```
 
@@ -877,6 +879,8 @@ yrep_weighted <- posterior_predict_df %>%
   as.matrix()
 
 ppc_pit_ecdf(y, yrep_weighted) + labs(title = "Weighted Mean Strategy")
+ppc_pit_ecdf(y, yrep_weighted, plot_diff = TRUE) +
+  labs(title = "Weighted Mean Strategy")
 ppc_pit_ecdf_grouped(y, yrep_weighted, group) +
   labs(title = "Weighted Mean Strategy")
 ```
