@@ -1026,6 +1026,14 @@ ppc_dens_overlay(y, yrep[sample(nrow(yrep), 50), ]) +
   labs(title = "Median Strategy")
 ```
 
+```{r}
+# boxplots: observed vs replicated summary stats
+ppc_stat(y, yrep, stat = "mean")
+ppc_stat(y, yrep, stat = "sd")
+```
+
+
+
 ---
 
 Note that increasing the number of draws does not significantly increase the coverage we have, suggesting that these likely do not capture important structure that humans might actually be using. 
