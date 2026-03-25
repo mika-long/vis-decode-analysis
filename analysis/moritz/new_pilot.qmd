@@ -666,7 +666,7 @@ combined_sd %>%
 
 # Infer model for part 2 
 
-## Mean and Median 
+## Project once to the y-axis 
 
 **Step 1:** Extract participant-level draws (20 participants $\times$ 3000 per chain $\times$ 4 chains)
 
