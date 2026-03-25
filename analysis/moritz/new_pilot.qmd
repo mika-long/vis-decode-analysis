@@ -719,15 +719,13 @@ posterior_predict_df <- map_dfr(
     d <- m1_draws_df %>%
       filter(participantId == pid) %>%
       arrange(.draw)
-    n_draws <- nrow(d)
 
     # 2,880 observations (48 trials × 60 dots)
     obs <- predict_df %>%
       filter(participantId == pid) %>%
       select(ogIndex, va.60, va.ans.x, va.ans.y, pixelsPerMM, distToScreen)
-    n_obs <- nrow(obs)
 
-    cross_join(d, obs) %>%
+    temp <- cross_join(d, obs) %>%
       mutate(
         sigma = var_scale * va.ans.x,
         .prediction = rnorm(n(), mean = mu, sd = sigma)
@@ -820,10 +818,66 @@ plot_stimuli_forAll(9, "median")
 
 ---
 
+## Project twice, first to middle and then to y-axis 
 
+```{r}
+posterior_predict_df <- map_dfr(
+  .progress = TRUE,
+  unique(predict_df$participantId),
+  function(pid) {
+    # 12,000 draws for this participant
+    d <- m1_draws_df %>%
+      filter(participantId == pid) %>%
+      arrange(.draw)
 
+    # 2,880 observations (48 trials × 60 dots)
+    obs <- predict_df %>%
+      filter(participantId == pid) %>%
+      select(ogIndex, va.60, va.ans.x, va.ans.y, pixelsPerMM, distToScreen)
 
+    temp <- cross_join(d, obs) %>%
+      mutate(
+        sigma = var_scale * abs(va.60 - va.ans.x),
+        .prediction = rnorm(n(), mean = mu, sd = sigma)
+      ) %>%
+      group_by(.draw, mu, pixelsPerMM, distToScreen, va.60, ogIndex) %>%
+      summarise(
+        va.pred.avg = mean(va.ans.y + .prediction),
+        va.pred.median = median(va.ans.y + .prediction),
+        .groups = "drop_last"
+      ) %>%
+      mutate(
+        .prediction = rnorm(n(), mean = mu, sd = va.60),
+        va.final.avg = va.pred.avg + .prediction,
+        va.final.median = va.pred.median + .prediction
+      ) %>%
+      mutate(participantId = pid)
+  }
+)
+```
 
+```{r}
+#| eval: false
+#| echo: false
+
+saveRDS(
+  posterior_predict_df,
+  here::here("analysis", "fitted_models", "part2_twice_project.rds")
+)
+```
+
+And we can perform the same checks we did: 
+
+```{r}
+#| layout-ncol: 2
+plot_stimuli_forAll(4, "mean") # point
+plot_stimuli_forAll(5, "mean")
+plot_stimuli_forAll(8, "median") # point
+plot_stimuli_forAll(9, "median")
+```
+
+---
+OLD CODE BELOW 
 
 ```{r}
 posterior_predict_df <- map_dfr(
