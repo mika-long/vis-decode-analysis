@@ -19,6 +19,7 @@ library(ggplot2)
 library(tidybayes)
 library(brms)
 library(posterior)
+library(bayesplot)
 library(purrr)
 theme_set(theme_tidybayes())
 bayesplot::bayesplot_theme_update(text = element_text(family = "sans"))
@@ -974,8 +975,6 @@ mean(combined$covered)
 **create PIT-ECDF plot**: 
 
 ```{r}
-library(bayesplot)
-
 response_ordered <- part2_df %>% arrange(participantId, ogIndex)
 y <- response_ordered$num.resp.y
 
@@ -993,6 +992,11 @@ yrep <- posterior_predict_df %>%
   as.matrix()
 
 ppc_pit_ecdf(y, yrep) + labs(title = "Mean Strategy")
+```
+
+```{r}
+ppc_dens_overlay(y, yrep[sample(nrow(yrep), 50), ]) +
+  labs(title = "Mean Strategy")
 ```
 
 ```{r}
@@ -1017,7 +1021,10 @@ bayesplot::ppc_pit_ecdf(y, yrep) + labs(title = "Median Strategy")
 
 We can also try KDE overlay: 
 
-
+```{r}
+ppc_dens_overlay(y, yrep[sample(nrow(yrep), 50), ]) +
+  labs(title = "Median Strategy")
+```
 
 ---
 
