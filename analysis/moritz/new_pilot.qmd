@@ -1108,8 +1108,9 @@ p1 <- posterior_predict_df %>%
     fill = NA,
     color = "#7CCBA2",
     alpha = 0.7,
-    # normalize = "all",
+    normalize = "all",
     size = 0.25,
+    bounds = c(0, 1) 
   ) +
   stat_slab(
     data = part2_df %>%
@@ -1121,8 +1122,10 @@ p1 <- posterior_predict_df %>%
     fill = NA,
     color = "navy",
     linewidth = 1,
-    normalize = "all"
+    normalize = "all", 
+    bounds = c(0, 1) 
   ) +
+  scale_thickness_shared() + 
   geom_vline(
     data = part2_ans_df %>%
       group_by(flip, noise) %>%
@@ -1168,6 +1171,7 @@ p2 <- posterior_predict_df %>%
     alpha = 0.7,
     normalize = "all",
     size = 0.25,
+    bounds = c(0, 1) 
   ) +
   stat_slab(
     data = part2_df %>%
@@ -1179,8 +1183,10 @@ p2 <- posterior_predict_df %>%
     fill = NA,
     color = "navy",
     linewidth = 1,
-    normalize = "all"
+    normalize = "all"， 
+    bounds = c(0, 1)
   ) +
+   scale_thickness_shared() + 
   geom_vline(
     data = part2_ans_df %>%
       group_by(flip, noise) %>%
@@ -1226,6 +1232,7 @@ p3 <- posterior_predict_df %>%
     alpha = 0.7,
     normalize = "all",
     size = 0.25,
+    bounds = c(0, 1) 
   ) +
   stat_slab(
     data = part2_df %>%
@@ -1237,8 +1244,10 @@ p3 <- posterior_predict_df %>%
     fill = NA,
     color = "navy",
     linewidth = 1,
-    normalize = "all"
+    normalize = "all", 
+    bounds = c(0, 1) 
   ) +
+  scale_thickness_shared() + 
   geom_vline(
     data = part2_ans_df %>%
       group_by(flip, noise) %>%
