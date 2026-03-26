@@ -970,8 +970,12 @@ y <- response_ordered$num.resp.y
 
 # group can be any condition-level variable, or a combination
 group <- response_ordered %>%
-  left_join(part2_ans_df %>% select(ogIndex, type, flip, noise)) %>%
-  mutate(g = paste(type, noise, flip, sep = " | ")) %>%
+  left_join(
+    part2_ans_df %>%
+      select(ogIndex, type, flip, noise)
+  ) %>%
+  # mutate(g = paste(type, noise, flip, sep = " | ")) %>%
+  mutate(g = paste(noise, flip, sep = " | ")) %>%
   pull(g)
 
 yrep_mean <- posterior_predict_df %>%
@@ -1041,27 +1045,25 @@ ppc_pit_ecdf_grouped(y, yrep_weighted, group) +
 #| layout-ncol: 3
 ppc_dens_overlay(y, yrep_mean[sample(nrow(yrep_mean), 100), ]) +
   labs(title = "Mean Strategy")
+ppc_dens_overlay(y, yrep_median[sample(nrow(yrep_median), 100), ]) +
+  labs(title = "Median Strategy")
+ppc_dens_overlay(y, yrep_weighted[sample(nrow(yrep_weighted), 100), ]) +
+  labs(title = "Weighted Mean Strategy")
 
 ppc_dens_overlay_grouped(
   y,
   yrep_mean[sample(nrow(yrep_mean), 100), ],
   group = group
 ) +
-  labs(title = "Mean Strategy")
-
-ppc_dens_overlay(y, yrep_median[sample(nrow(yrep_median), 100), ]) +
-  labs(title = "Median Strategy")
-
+  labs(title = "Mean Strategy") +
+  geom_vline(xintercept = 0.5, linetype = "dashed") +
+  coord_cartesian(xlim = c(0, 1))
 ppc_dens_overlay_grouped(
   y,
   yrep_median[sample(nrow(yrep_median), 100), ],
   group = group
 ) +
   labs(title = "Median Strategy")
-
-ppc_dens_overlay(y, yrep_weighted[sample(nrow(yrep_weighted), 100), ]) +
-  labs(title = "Weighted Mean Strategy")
-
 ppc_dens_overlay_grouped(
   y,
   yrep_weighted[sample(nrow(yrep_weighted), 100), ],
@@ -1070,7 +1072,235 @@ ppc_dens_overlay_grouped(
   labs(title = "Weighted Mean Strategy")
 ```
 
-### Group-level checks 
+Ok let's also do some customized `ggdist`: 
+
+```{r}
+library(ggdist)
+posterior_predict_df
+```
+
+
+```{r}
+stimuli_df %>%
+  filter(type != "line") %>%
+  unnest(data) %>%
+  group_by(index, flip, noise) %>%
+  summarise(mean = mean(y)) %>%
+  group_by(flip, noise) %>%
+  summarise(mean = mean(mean))
+```
+
+Next step: Do the dens overlay in ggdist 
+
+```{r}
+draw_subset <- sample(unique(posterior_predict_df$.draw), 100)
+
+p1 <- posterior_predict_df %>%
+  ungroup(.) %>%
+  filter(.draw %in% draw_subset) %>%
+  select(.draw, ogIndex, num.2proj.mean) %>%
+  left_join(
+    part2_ans_df %>%
+      select(ogIndex, type, flip, noise)
+  ) %>%
+  ggplot(aes(x = num.2proj.mean, group = .draw, thickness = after_stat(pdf))) +
+  stat_slab(
+    fill = NA,
+    color = "#7CCBA2",
+    alpha = 0.7,
+    # normalize = "all",
+    size = 0.25,
+  ) +
+  stat_slab(
+    data = part2_df %>%
+      left_join(
+        part2_ans_df %>% select(ogIndex, type, flip, noise),
+        by = join_by(type, ogIndex)
+      ),
+    aes(x = num.resp.y, group = NULL, thickness = after_stat(pdf)),
+    fill = NA,
+    color = "navy",
+    linewidth = 1,
+    normalize = "all"
+  ) +
+  geom_vline(
+    data = part2_ans_df %>%
+      group_by(flip, noise) %>%
+      summarise(mean.y = mean(num.mean.y)),
+    aes(xintercept = mean.y),
+    linetype = "dashed",
+    color = "darkgray"
+  ) +
+  facet_grid(
+    noise ~ flip,
+    labeller = labeller(
+      noise = c("c(0, 0)" = "Variability 0", "c(0, 0.4)" = "Variability .4"),
+      flip = c("TRUE" = "Variability Upper", "FALSE" = "Variability Lower")
+    )
+  ) +
+  coord_cartesian(xlim = c(0, 1)) +
+  labs(y = "", x = "numerical value", title = "Mean Strategy")
+
+p1
+```
+
+Median stategy with ggdist: 
+
+```{r}
+draw_subset <- sample(unique(posterior_predict_df$.draw), 100)
+
+p2 <- posterior_predict_df %>%
+  ungroup(.) %>%
+  filter(.draw %in% draw_subset) %>%
+  select(.draw, ogIndex, num.2proj.median) %>%
+  left_join(
+    part2_ans_df %>%
+      select(ogIndex, type, flip, noise)
+  ) %>%
+  ggplot(aes(
+    x = num.2proj.median,
+    group = .draw,
+    thickness = after_stat(pdf)
+  )) +
+  stat_slab(
+    fill = NA,
+    color = "#7CCBA2",
+    alpha = 0.7,
+    normalize = "all",
+    size = 0.25,
+  ) +
+  stat_slab(
+    data = part2_df %>%
+      left_join(
+        part2_ans_df %>% select(ogIndex, type, flip, noise),
+        by = join_by(type, ogIndex)
+      ),
+    aes(x = num.resp.y, group = NULL, thickness = after_stat(pdf)),
+    fill = NA,
+    color = "navy",
+    linewidth = 1,
+    normalize = "all"
+  ) +
+  geom_vline(
+    data = part2_ans_df %>%
+      group_by(flip, noise) %>%
+      summarise(mean.y = mean(num.mean.y)),
+    aes(xintercept = mean.y),
+    linetype = "dashed",
+    color = "darkgray"
+  ) +
+  facet_grid(
+    noise ~ flip,
+    labeller = labeller(
+      noise = c("c(0, 0)" = "Variability 0", "c(0, 0.4)" = "Variability .4"),
+      flip = c("TRUE" = "Variability Upper", "FALSE" = "Variability Lower")
+    )
+  ) +
+  coord_cartesian(xlim = c(0, 1)) +
+  labs(y = "", x = "numerical value", title = "Median Strategy")
+
+p2
+```
+
+Sensor fusion strategy: 
+
+```{r}
+draw_subset <- sample(unique(posterior_predict_df$.draw), 100)
+
+p3 <- posterior_predict_df %>%
+  ungroup(.) %>%
+  filter(.draw %in% draw_subset) %>%
+  select(.draw, ogIndex, num.2proj.weighted) %>%
+  left_join(
+    part2_ans_df %>%
+      select(ogIndex, type, flip, noise)
+  ) %>%
+  ggplot(aes(
+    x = num.2proj.weighted,
+    group = .draw,
+    thickness = after_stat(pdf)
+  )) +
+  stat_slab(
+    fill = NA,
+    color = "#7CCBA2",
+    alpha = 0.7,
+    normalize = "all",
+    size = 0.25,
+  ) +
+  stat_slab(
+    data = part2_df %>%
+      left_join(
+        part2_ans_df %>% select(ogIndex, type, flip, noise),
+        by = join_by(type, ogIndex)
+      ),
+    aes(x = num.resp.y, group = NULL, thickness = after_stat(pdf)),
+    fill = NA,
+    color = "navy",
+    linewidth = 1,
+    normalize = "all"
+  ) +
+  geom_vline(
+    data = part2_ans_df %>%
+      group_by(flip, noise) %>%
+      summarise(mean.y = mean(num.mean.y)),
+    aes(xintercept = mean.y),
+    linetype = "dashed",
+    color = "darkgray"
+  ) +
+  facet_grid(
+    noise ~ flip,
+    labeller = labeller(
+      noise = c("c(0, 0)" = "Variability 0", "c(0, 0.4)" = "Variability .4"),
+      flip = c("TRUE" = "Variability Upper", "FALSE" = "Variability Lower")
+    )
+  ) +
+  coord_cartesian(xlim = c(0, 1)) +
+  labs(y = "", x = "numerical value", title = "Sensor Fusion Strategy")
+
+p3
+```
+
+```{r}
+#| echo: false
+#| eval: false
+ggsave(
+  here::here(
+    "figs",
+    "part2_task2_mean.svg"
+  ),
+  p1 + theme_set(theme_tidybayes(base_size = 8)),
+  width = 3,
+  height = 2.5,
+  units = c("in"),
+  dpi = 300
+)
+
+ggsave(
+  here::here(
+    "figs",
+    "part2_task2_median.svg"
+  ),
+  p2 + theme_set(theme_tidybayes(base_size = 8)),
+  width = 3,
+  height = 2.5,
+  units = c("in"),
+  dpi = 300
+)
+
+ggsave(
+  here::here(
+    "figs",
+    "part2_task2_weighted.svg"
+  ),
+  p3 + theme_set(theme_tidybayes(base_size = 8)),
+  width = 3,
+  height = 2.5,
+  units = c("in"),
+  dpi = 300
+)
+```
+
+### SKIP --- Group-level checks 
 
 ```{r}
 # average observed response per stimulus
