@@ -598,6 +598,8 @@ task2_df %>%
 p
 ```
 
+Original output: 
+
 ```{r}
 task2_df %>%
   modelr::data_grid(error.y = 0, participantId = unique(participantId)) %>%
@@ -1182,12 +1184,14 @@ The Cauchy distribution puts too much weight on its tails; we'll go for studente
 
 Math model: 
 
-$$\begin{align}
+$$
+\begin{align}
 \text{error_va}_{i} &\sim \text{student-t}(\mu, \sigma, \nu) \\
 \mu ... \\ 
 \sigma .... \\ 
 \nu ... 
-\end{align}$$
+\end{align}
+$$
 
 Formula and prior: 
 
@@ -1338,3 +1342,75 @@ loo(model.x.normal, model.x.laplace, moment_match = TRUE)
 
 So we see that the laplace model is the best one for X. 
 
+# Plot the marginalized example 
+
+So here's the particular example we're looking at: 
+$\mu = -1.1, \sigma = 0.7, \lambda = -0.1, p = 4.6, q = 3.17$. 
+
+```{r}
+x <- seq(-5, 5, length.out = 100)
+y <- dsgt(x, mu = -1.1, sigma = 0.9, lambda = -0.3, p = 4.6, q = 3.17, mean.cent = TRUE)
+
+# dsgt(-0.3, mu = -1.1, sigma = 0.9, lambda = -0.3, p = 4.6, q = 3.17)
+
+example_plot <- tibble(x = x, y = y) %>% 
+  ggplot(aes(x = x, y = y)) + 
+  geom_line() + 
+  coord_cartesian(xlim = c(-5, 5), ylim = c(0, 1)) + 
+  theme_tidybayes() + 
+  geom_vline(xintercept = -0.3, linetype = "dashed", color = "gray") + 
+  geom_hline(yintercept = dsgt(-0.3, mu = -1.1, sigma = 0.9, lambda = -0.3, p = 4.6, q = 3.17), linetype = "dashed", color = "gray")
+```
+
+So we will use this plot as our example for things to marginalize. 
+
+```{r}
+avg_participant <- task2_df |> 
+  distinct(participantId, pixelToMM, dist_to_screen) %>% 
+  summarise(pixelToMM = mean(pixelToMM), distToScreen = mean(dist_to_screen))
+```
+
+```{r}
+theme_set(theme_tidybayes(base_size = 8))
+newdata <- avg_participant %>% mutate(participantId = "avg_participant")
+
+# Y-error draws
+y_draws <- newdata |>
+  add_predicted_draws(model.y.weibull, 
+                      re_formula = NULL,        # include random effects
+                      allow_new_levels = TRUE, 
+                      sample_new_levels = "gaussian",
+                      ndraws = 4000) %>% 
+  mutate(num.prediction = va_to_numerical_y(.prediction, pixelToMM, distToScreen))
+
+# X-error draws
+x_draws <- newdata |>
+  add_predicted_draws(model.x.laplace, 
+                      re_formula = NULL,        # include random effects
+                      allow_new_levels = TRUE, 
+                      sample_new_levels = "gaussian",
+                      ndraws = 4000) %>% 
+  mutate(num.prediction = va_to_numerical_x(.prediction, pixelToMM, distToScreen))
+
+y_val <- dsgt(-0.3, mu = -1.1, sigma = 0.9, lambda = -0.3, p = 4.6, q = 3.17)
+
+x_graph <- x_draws %>% ggplot(aes(x = .prediction - 0.3)) +
+  stat_slab() + # + scale_y_reverse()
+  coord_cartesian(xlim = c(-5, 5)) + labs(x = "", y = "") 
+y_graph <- y_draws %>% ggplot(aes(y = -num.prediction)) +
+  stat_slab() + coord_cartesian(ylim = c(0, 1)) + labs(x = "", y = "") 
+```
+
+Use patchwork to put things together: 
+
+```{r}
+library(patchwork)
+
+new_output <- example_plot + y_graph + x_graph + plot_spacer() + plot_layout(
+    ncol = 2, nrow = 2,
+    widths  = c(4, 1),
+    heights = c(3, 1)
+  )
+
+ggsave(here::here("figs", "new.svg"), new_output, units = "in", width = 3.5, height = 3.5 * 600 / 750, dpi = 300)
+```
