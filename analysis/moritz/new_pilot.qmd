@@ -1098,7 +1098,7 @@ p1 <- posterior_predict_df %>%
     fill = NA,
     color = "#7CCBA2",
     alpha = 0.7,
-    normalize = "all",
+    # normalize = "all",
     size = 0.25,
     density = density_bounded(bounds = c(0, 1))
   ) +
@@ -1112,7 +1112,7 @@ p1 <- posterior_predict_df %>%
     fill = NA,
     color = "navy",
     linewidth = 1,
-    normalize = "all",
+    # normalize = "all",
     density = density_bounded(bounds = c(0, 1))
   ) +
   scale_thickness_shared() +
@@ -1160,7 +1160,7 @@ p2 <- posterior_predict_df %>%
     fill = NA,
     color = "#7CCBA2",
     alpha = 0.7,
-    normalize = "all",
+    # normalize = "all",
     size = 0.25,
     density = density_bounded(bounds = c(0, 1))
   ) +
@@ -1174,7 +1174,7 @@ p2 <- posterior_predict_df %>%
     fill = NA,
     color = "navy",
     linewidth = 1,
-    normalize = "all",
+    # normalize = "all",
     density = density_bounded(bounds = c(0, 1))
   ) +
   scale_thickness_shared() +
@@ -1222,10 +1222,10 @@ p3 <- posterior_predict_df %>%
     fill = NA,
     color = "#7CCBA2",
     alpha = 0.7,
-    normalize = "all",
+    # normalize = "all",
     size = 0.25,
     # density = density_bounded(bounds = c(0, 1))
-    density = "bounded"
+    density = "unbounded"
   ) +
   stat_slab(
     data = part2_df %>%
@@ -1237,7 +1237,7 @@ p3 <- posterior_predict_df %>%
     fill = NA,
     color = "navy",
     linewidth = 1,
-    normalize = "all",
+    # normalize = "all",
     density = density_bounded(bounds = c(0, 1))
   ) +
   scale_thickness_shared() +
