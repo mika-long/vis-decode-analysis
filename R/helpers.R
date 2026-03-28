@@ -35,7 +35,7 @@ make_va_scale <- function(data_min, data_max, px_min, px_max) {
     abs(px - px_min) / px_per_mm
   }
   phys_to_px <- function(phys, px_per_mm) {
-    phys * px_per_mm
+    sign(px_max - px_min) * phys * px_per_mm + px_min
   }
 
   # 3) mm -> vis angle
@@ -46,11 +46,19 @@ make_va_scale <- function(data_min, data_max, px_min, px_max) {
     visual_angle_to_mm(va, distance)
   }
 
+  # --- Composite functions ---
+  data_to_phys <- function(data, px_per_mm) {
+    data |> data_to_px() |> px_to_phys(px_per_mm)
+  }
+  phys_to_data <- function(phys, px_per_mm) {
+    phys |> phys_to_px(px_per_mm) |> px_to_data()
+  }
+
   data_to_va <- function(data, distance, px_per_mm) {
     data |> data_to_px() |> px_to_phys(px_per_mm) |> phys_to_va(distance)
   }
   va_to_data <- function(va, distance, px_per_mm) {
-    va |> va_to_phys(distance) |> phys_to_px(px_per_mm) |> px_to_data(distance)
+    va |> va_to_phys(distance) |> phys_to_px(px_per_mm) |> px_to_data()
   }
   px_to_va <- function(px, distance, px_per_mm) {
     px |> px_to_data() |> data_to_va(distance, px_per_mm)
@@ -59,6 +67,8 @@ make_va_scale <- function(data_min, data_max, px_min, px_max) {
   list(
     data_to_px = data_to_px,
     px_to_data = px_to_data,
+    data_to_phys = data_to_phys,
+    phys_to_data = phys_to_data,
     data_to_va = data_to_va,
     va_to_data = va_to_data,
     px_to_va = px_to_va
