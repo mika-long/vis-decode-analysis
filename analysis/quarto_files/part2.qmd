@@ -1015,7 +1015,7 @@ y <- response_ordered$num.resp.y
 # group can be any condition-level variable, or a combination
 group <- response_ordered %>%
   left_join(
-    part2_ans_df %>%
+    part2.ans_df %>%
       select(ogIndex, type, flip, noise)
   ) %>%
   mutate(g = paste(noise, flip, sep = " | ")) %>%
@@ -1064,6 +1064,8 @@ yrep_weighted <- posterior_predict_df %>%
 **PIT-ECDF**: 
 
 ```{r}
+#| code-fold: true
+#| layout-ncol: 3
 ppc_pit_ecdf(y, yrep_mean) + labs(title = "Mean Strategy")
 ppc_pit_ecdf(y, yrep_median) + labs(title = "Median Strategy")
 ppc_pit_ecdf(y, yrep_weighted) + labs(title = "Weighted Mean Strategy")
@@ -1077,6 +1079,8 @@ ppc_pit_ecdf(y, yrep_weighted) + labs(title = "Weighted Mean Strategy")
 **PIT-ECDF Grouped**: 
 
 ```{r}
+#| layout-ncol: 3
+#| code-fold: true
 ppc_pit_ecdf_grouped(y, yrep_mean, group) + labs(title = "Mean Strategy")
 ppc_pit_ecdf_grouped(y, yrep_median, group) + labs(title = "Median Strategy")
 ppc_pit_ecdf_grouped(y, yrep_weighted, group) +
@@ -1104,7 +1108,6 @@ ppc_dens_overlay_grouped(
   group = group
 ) +
   labs(title = "Mean Strategy") +
-  geom_vline(xintercept = 0.5, linetype = "dashed") +
   coord_cartesian(xlim = c(0, 1))
 ppc_dens_overlay_grouped(
   y,
@@ -1124,42 +1127,48 @@ ppc_dens_overlay_grouped(
 
 For better customization and easier to manipulate dataframes, we will use `stat_slab` in `ggdist` instead of `bayesplot::ppc_dens_overlay`. 
 
+We extract the shared layers across all three strategies first: 
+
 ```{r}
 library(ggdist)
 
-draw_subset <- sample(unique(posterior_predict_df$.draw), 100)
+# get the plotting relevant data ready
 
-p1 <- posterior_predict_df %>%
-  ungroup(.) %>%
-  filter(.draw %in% draw_subset) %>%
-  select(.draw, ogIndex, num.2proj.mean) %>%
+part2_joined <- part2_df %>%
   left_join(
-    part2.ans_df %>%
-      select(ogIndex, type, flip, noise)
-  ) %>%
-  ggplot(aes(x = num.2proj.mean, group = .draw, thickness = after_stat(pdf))) +
+    part2.ans_df %>% select(ogIndex, type, flip, noise),
+    by = join_by(type, ogIndex)
+  )
+
+posterior_joined <- posterior_predict_df %>%
+  ungroup() %>%
+  left_join(
+    part2.ans_df %>% select(ogIndex, type, flip, noise)
+  )
+
+# the density of the response that participants did
+participant_resp <- list(
   stat_slab(
-    fill = NA,
-    color = "#7CCBA2",
-    alpha = 0.7,
-    # normalize = "all",
-    size = 0.25,
-    density = density_bounded(bounds = c(0, 1))
-  ) +
-  stat_slab(
-    data = part2_df %>%
-      left_join(
-        part2.ans_df %>% select(ogIndex, type, flip, noise),
-        by = join_by(type, ogIndex)
-      ),
+    data = part2_joined,
     aes(x = num.resp.y, group = NULL, thickness = after_stat(pdf)),
     fill = NA,
-    color = "navy",
+    color = "darkblue",
     linewidth = 1,
-    # normalize = "all",
     density = density_bounded(bounds = c(0, 1))
-  ) +
-  scale_thickness_shared() +
+  ),
+  stat_pointinterval(
+    data = part2_joined,
+    aes(x = num.resp.y, group = NULL),
+    color = "darkblue",
+    point_interval = mean_qi,
+    .width = .68, # about +/- 1SD
+    # position = position_nudge(y = -0.02),
+    inherit.aes = FALSE
+  )
+)
+
+# the shared "annotation-like" details
+shared_layers <- list(
   geom_vline(
     data = part2.ans_df %>%
       group_by(flip, noise) %>%
@@ -1167,18 +1176,53 @@ p1 <- posterior_predict_df %>%
     aes(xintercept = mean.y),
     linetype = "dashed",
     color = "darkgray"
-  ) +
+  ),
   facet_grid(
     noise ~ flip,
     labeller = labeller(
       noise = c("c(0, 0)" = "Variability 0", "c(0, 0.4)" = "Variability .4"),
       flip = c("TRUE" = "Variability Upper", "FALSE" = "Variability Lower")
     )
+  ),
+  coord_cartesian(xlim = c(0, 1)),
+  scale_x_continuous(breaks = c(0, 0.5, 1)),
+  scale_y_continuous(breaks = 0, expand = expansion(mult = c(0.15, 0.05)))
+)
+```
+
+```{r}
+library(ggdist)
+
+draw_subset <- sample(unique(posterior_predict_df$.draw), 100)
+
+p1 <- posterior_joined %>%
+  filter(.draw %in% draw_subset) %>%
+  select(.draw, ogIndex, num.2proj.mean) %>%
+  ggplot(aes(x = num.2proj.mean, group = .draw, thickness = after_stat(pdf))) +
+  stat_slab(
+    fill = NA,
+    color = "#7CCBA2",
+    alpha = 0.7,
+    size = 0.25,
+    density = density_bounded(bounds = c(0, 1))
   ) +
-  coord_cartesian(xlim = c(0, 1)) +
-  scale_x_continuous(breaks = c(0, 0.5, 1)) +
-  scale_y_continuous(breaks = 0) +
-  labs(y = "", x = "numerical value", title = "Mean Strategy") +
+  participant_resp +
+  stat_pointinterval(
+    data = posterior_predict_df %>%
+      ungroup(.) %>%
+      left_join(
+        part2.ans_df %>%
+          select(ogIndex, type, flip, noise)
+      ),
+    aes(x = num.2proj.mean, group = NULL),
+    color = "#7CCBA2",
+    point_interval = mean_qi,
+    .width = .68,
+    inherit.aes = FALSE
+  ) +
+  scale_thickness_shared() +
+  shared_layers +
+  labs(y = "density", x = "numerical value", title = "Mean Strategy") +
   theme_light(base_size = 8)
 
 p1
@@ -1210,37 +1254,10 @@ p2 <- posterior_predict_df %>%
     size = 0.25,
     density = density_bounded(bounds = c(0, 1))
   ) +
-  stat_slab(
-    data = part2_df %>%
-      left_join(
-        part2.ans_df %>% select(ogIndex, type, flip, noise),
-        by = join_by(type, ogIndex)
-      ),
-    aes(x = num.resp.y, group = NULL, thickness = after_stat(pdf)),
-    fill = NA,
-    color = "navy",
-    linewidth = 1,
-    # normalize = "all",
-    density = density_bounded(bounds = c(0, 1))
-  ) +
+  participant_resp +
   scale_thickness_shared() +
-  geom_vline(
-    data = part2.ans_df %>%
-      group_by(flip, noise) %>%
-      summarise(mean.y = mean(num.mean.y)),
-    aes(xintercept = mean.y),
-    linetype = "dashed",
-    color = "darkgray"
-  ) +
-  facet_grid(
-    noise ~ flip,
-    labeller = labeller(
-      noise = c("c(0, 0)" = "Variability 0", "c(0, 0.4)" = "Variability .4"),
-      flip = c("TRUE" = "Variability Upper", "FALSE" = "Variability Lower")
-    )
-  ) +
-  coord_cartesian(xlim = c(0, 1)) +
-  labs(y = "", x = "numerical value", title = "Median Strategy") +
+  shared_layers +
+  labs(y = "density", x = "numerical value", title = "Median Strategy") +
   theme_light(base_size = 8)
 
 p2
@@ -1268,41 +1285,14 @@ p3 <- posterior_predict_df %>%
     fill = NA,
     color = "#7CCBA2",
     alpha = 0.7,
-    # normalize = "all",
     size = 0.25,
     # density = density_bounded(bounds = c(0, 1))
+    # Note: the density goes beyond [0, 1] which is why we can't used density_bounded
     density = "unbounded"
   ) +
-  stat_slab(
-    data = part2_df %>%
-      left_join(
-        part2.ans_df %>% select(ogIndex, type, flip, noise),
-        by = join_by(type, ogIndex)
-      ),
-    aes(x = num.resp.y, group = NULL, thickness = after_stat(pdf)),
-    fill = NA,
-    color = "navy",
-    linewidth = 1,
-    # normalize = "all",
-    density = density_bounded(bounds = c(0, 1))
-  ) +
+  participant_resp +
   scale_thickness_shared() +
-  geom_vline(
-    data = part2.ans_df %>%
-      group_by(flip, noise) %>%
-      summarise(mean.y = mean(num.mean.y)),
-    aes(xintercept = mean.y),
-    linetype = "dashed",
-    color = "darkgray"
-  ) +
-  facet_grid(
-    noise ~ flip,
-    labeller = labeller(
-      noise = c("c(0, 0)" = "Variability 0", "c(0, 0.4)" = "Variability .4"),
-      flip = c("TRUE" = "Variability Upper", "FALSE" = "Variability Lower")
-    )
-  ) +
-  coord_cartesian(xlim = c(0, 1)) +
+  shared_layers +
   labs(y = "", x = "numerical value", title = "Sensor Fusion Strategy") +
   theme_light(base_size = 8)
 
