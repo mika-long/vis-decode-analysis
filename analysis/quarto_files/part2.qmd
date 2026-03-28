@@ -21,6 +21,7 @@ options(mc.cores = parallel::detectCores())
 library(posterior)
 library(bayesplot)
 library(purrr)
+library(here)
 theme_set(theme_tidybayes())
 bayesplot::bayesplot_theme_update(text = element_text(family = "sans"))
 # source the helper functions
@@ -792,7 +793,9 @@ saveRDS(
 )
 ```
 
-### Posterior checks 
+### Posterior checks with `bayesplot` 
+
+First we get the data in the right format to plot with `bayesplot`: 
 
 ```{r}
 #| code-fold: true
@@ -803,8 +806,8 @@ y <- response_ordered$num.resp.y
 
 # group can be any condition-level variable, or a combination
 group <- response_ordered %>%
-  left_join(part2_ans_df %>% select(ogIndex, type, flip, noise)) %>%
-  mutate(g = paste(type, noise, flip, sep = " | ")) %>%
+  left_join(part2.ans_df %>% select(ogIndex, type, flip, noise)) %>%
+  mutate(g = paste(noise, flip, sep = " | ")) %>% # we don't care about type, only care about noise and flip
   pull(g)
 
 yrep_mean <- posterior_predict_df %>%
@@ -847,10 +850,51 @@ yrep_weighted <- posterior_predict_df %>%
   as.matrix()
 ```
 
+**KDE-Overlay**: 
+
+```{r}
+#| layout-ncol: 3
+#| code-fold: true
+ppc_dens_overlay(y, yrep_mean[sample(nrow(yrep_mean), 100), ]) +
+  labs(title = "Mean Strategy") +
+  coord_cartesian(xlim = c(0, 1))
+ppc_dens_overlay(y, yrep_median[sample(nrow(yrep_median), 100), ]) +
+  labs(title = "Median Strategy") +
+  coord_cartesian(xlim = c(0, 1))
+ppc_dens_overlay(y, yrep_weighted[sample(nrow(yrep_weighted), 100), ]) +
+  labs(title = "Weighted Strategy") +
+  coord_cartesian(xlim = c(0, 1))
+```
+
+**KDE-Overlay faceted by factor**: 
+
+```{r}
+#| layout-ncol: 3
+#| code-fold: true
+ppc_dens_overlay_grouped(y, yrep_mean[sample(nrow(yrep_mean), 100), ], group) +
+  labs(title = "Mean Strategy") +
+  coord_cartesian(xlim = c(0, 1))
+ppc_dens_overlay_grouped(
+  y,
+  yrep_median[sample(nrow(yrep_median), 100), ],
+  group
+) +
+  labs(title = "Median Strategy") +
+  coord_cartesian(xlim = c(0, 1))
+ppc_dens_overlay_grouped(
+  y,
+  yrep_weighted[sample(nrow(yrep_weighted), 100), ],
+  group
+) +
+  labs(title = "Weighted Strategy") +
+  coord_cartesian(xlim = c(0, 1))
+```
+
 **PIT-ECDFs**: 
 
 ```{r}
 #| layout-ncol: 3
+#| code-fold: true
 ppc_pit_ecdf(y, yrep_mean) + labs(title = "Mean Strategy")
 ppc_pit_ecdf(y, yrep_median) + labs(title = "Median Strategy")
 ppc_pit_ecdf(y, yrep_weighted) + labs(title = "Weighted Strategy")
@@ -860,26 +904,18 @@ Grouped version:
 
 ```{r}
 #| layout-ncol: 3
+#| code-fold: true
 ppc_pit_ecdf_grouped(y, yrep_mean, group) + labs(title = "Mean Strategy")
 ppc_pit_ecdf_grouped(y, yrep_median, group) + labs(title = "Median Strategy")
 ppc_pit_ecdf_grouped(y, yrep_weighted, group) +
   labs(title = "Weighted Strategy")
 ```
 
-**KDE-Overlay**: 
-
-```{r}
-ppc_dens_overlay(y, yrep_mean[sample(nrow(yrep_mean), 100), ]) +
-  labs(title = "Mean Strategy")
-ppc_dens_overlay(y, yrep_median[sample(nrow(yrep_median), 100), ]) +
-  labs(title = "Median Strategy")
-ppc_dens_overlay(y, yrep_weighted[sample(nrow(yrep_weighted), 100), ]) +
-  labs(title = "Weighted Strategy")
-```
+This demonstrates that the fit is ... not that great. 
 
 ## Project Twice 
 
-Same step 1 and step 2 as before, so we reuse them. 
+Same step 1 and step 2 as before, so we don't generate anything new, but start from step 3 with generating `posterior_predict_df`: 
 
 **Step 3: Draw the posterior prediction for project once to the middle AND project twice to the y-axis:**
 
@@ -917,7 +953,7 @@ posterior_predict_df <- map_dfr(
       summarise(
         va.1proj.mean = mean(pred_y),
         va.1proj.median = median(pred_y),
-        va.1proj.weighted = sum(w * pred_y) / sum(w), # not sure if this is the right level ...? This feels more like across the things ...?
+        va.1proj.weighted = sum(w * pred_y) / sum(w),
         .groups = "drop_last"
       ) %>%
       mutate(
@@ -968,9 +1004,9 @@ posterior_predict_df <- readRDS(here::here(
 ))
 ```
 
-### Posterior Checks 
+### Posterior Checks with `bayesplot` 
 
-PIT-ECDF Plots 
+First we get the data format ready to be plotted using `bayesplot`: 
 
 ```{r}
 response_ordered <- part2_df %>% arrange(participantId, ogIndex)
@@ -982,7 +1018,6 @@ group <- response_ordered %>%
     part2_ans_df %>%
       select(ogIndex, type, flip, noise)
   ) %>%
-  # mutate(g = paste(type, noise, flip, sep = " | ")) %>%
   mutate(g = paste(noise, flip, sep = " | ")) %>%
   pull(g)
 
@@ -1026,28 +1061,29 @@ yrep_weighted <- posterior_predict_df %>%
   as.matrix()
 ```
 
+**PIT-ECDF**: 
+
 ```{r}
 ppc_pit_ecdf(y, yrep_mean) + labs(title = "Mean Strategy")
-ppc_pit_ecdf(y, yrep_mean, plot_diff = TRUE) +
-  labs(title = "Mean Strategy")
-ppc_pit_ecdf_grouped(y, yrep_mean, group) + labs(title = "Mean Strategy")
-```
-
-```{r}
 ppc_pit_ecdf(y, yrep_median) + labs(title = "Median Strategy")
-ppc_pit_ecdf(y, yrep_median, plot_diff = TRUE) + labs(title = "Median Strategy")
-ppc_pit_ecdf_grouped(y, yrep_median, group) + labs(title = "Median Strategy")
+ppc_pit_ecdf(y, yrep_weighted) + labs(title = "Weighted Mean Strategy")
+# ppc_pit_ecdf(y, yrep_mean, plot_diff = TRUE) +
+#   labs(title = "Mean Strategy")
+# ppc_pit_ecdf(y, yrep_median, plot_diff = TRUE) + labs(title = "Median Strategy")
+# ppc_pit_ecdf(y, yrep_weighted, plot_diff = TRUE) +
+#   labs(title = "Weighted Mean Strategy")
 ```
 
+**PIT-ECDF Grouped**: 
+
 ```{r}
-ppc_pit_ecdf(y, yrep_weighted) + labs(title = "Weighted Mean Strategy")
-ppc_pit_ecdf(y, yrep_weighted, plot_diff = TRUE) +
-  labs(title = "Weighted Mean Strategy")
+ppc_pit_ecdf_grouped(y, yrep_mean, group) + labs(title = "Mean Strategy")
+ppc_pit_ecdf_grouped(y, yrep_median, group) + labs(title = "Median Strategy")
 ppc_pit_ecdf_grouped(y, yrep_weighted, group) +
   labs(title = "Weighted Mean Strategy")
 ```
 
-### KDE plots 
+**KDE-plots**: 
 
 ```{r}
 #| layout-ncol: 3
@@ -1057,7 +1093,11 @@ ppc_dens_overlay(y, yrep_median[sample(nrow(yrep_median), 100), ]) +
   labs(title = "Median Strategy")
 ppc_dens_overlay(y, yrep_weighted[sample(nrow(yrep_weighted), 100), ]) +
   labs(title = "Weighted Mean Strategy")
+```
 
+**KDE grouped**: 
+
+```{r}
 ppc_dens_overlay_grouped(
   y,
   yrep_mean[sample(nrow(yrep_mean), 100), ],
@@ -1080,7 +1120,9 @@ ppc_dens_overlay_grouped(
   labs(title = "Weighted Mean Strategy")
 ```
 
-## Custom KDE plots with `ggdist` and `stat_slab` instead of `bayesplot::ppc_dens_overlay`
+### Posterior Checks with `ggdist` 
+
+For better customization and easier to manipulate dataframes, we will use `stat_slab` in `ggdist` instead of `bayesplot::ppc_dens_overlay`. 
 
 ```{r}
 library(ggdist)
@@ -1134,6 +1176,8 @@ p1 <- posterior_predict_df %>%
     )
   ) +
   coord_cartesian(xlim = c(0, 1)) +
+  scale_x_continuous(breaks = c(0, 0.5, 1)) +
+  scale_y_continuous(breaks = 0) +
   labs(y = "", x = "numerical value", title = "Mean Strategy") +
   theme_light(base_size = 8)
 
