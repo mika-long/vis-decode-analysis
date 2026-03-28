@@ -1,5 +1,11 @@
 ---
 title: "Analysis --- Task 2 --- HighestPoint"
+author: "Anonymous"
+date: today
+date-format: "iso"
+format:
+  html:
+    reference-location: margin
 ---
 
 ```{r}
@@ -47,7 +53,6 @@ For modeling the signed error on the **X-axis**, we ran the following models:
 
 - [Normal](@sec-x-normal) --- this is the one used for hyper-priors. 
 - [Laplace](@sec-x-laplace) --- this is the best-performing one. 
-- ~~[Student-t](@sec-x-studentT)~~ 
 
 # Set up
 
@@ -139,17 +144,9 @@ task2_df %>%
 
 task2_df %>%
   ggplot(aes(y = va.ans.y - va.resp.y, x = dist_to_screen)) +
-  geom_point()
+  geom_point(alpha = 0.5)
 
 task2_df %>% ggplot(aes(x = va.ans.y - va.resp.y)) + geom_dots()
-
-# task2_df %>%
-#   ggplot(aes(y = phy.ans.y - phy.select.y, x = dist_to_screen)) +
-#   geom_point()
-# task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
-# task2_df %>%
-#   ggplot(aes(x = (phy.ans.y - phy.select.y) / dist_to_screen)) +
-#   geom_dots()
 ```
 
 ```{r}
@@ -161,25 +158,21 @@ task2_df %>% ggplot(aes(x = va.ans.y - va.resp.y)) + geom_dots()
 
 task2_df %>% ggplot(aes(x = data.ans.x - data.select.x)) + geom_dots()
 
-task2_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + geom_dots()
+task2_df %>% ggplot(aes(x = va.resp.x - va.ans.x)) + geom_dots()
 
 task2_df %>%
-  ggplot(aes(x = (phy.ans.x - phy.select.x) / dist_to_screen)) +
-  geom_dots()
-
-task2_df %>%
-  ggplot(aes(x = va.select.x - va.ans.x)) +
+  ggplot(aes(x = va.resp.x - va.ans.x)) +
   geom_dots() +
   facet_wrap(~participantId)
 
 task2_df %>%
-  ggplot(aes(y = va.select.x - va.ans.x, x = dist_to_screen)) +
+  ggplot(aes(y = va.resp.x - va.ans.x, x = dist_to_screen)) +
   geom_point(alpha = 0.5)
 
 task2_df %>%
-  ggplot(aes(y = va.select.x - va.ans.x, x = param.lambda)) +
+  ggplot(aes(y = va.resp.x - va.ans.x, x = param.lambda)) +
   geom_point(alpha = 0.5) +
-  labs(title = "Signed error on x-axes against skewness")
+  labs(title = "Signed error on X-Axis against skewness")
 ```
 
 # Task 2 --- Error on Y
@@ -249,11 +242,11 @@ p <- c(
 #| echo: false
 
 # inspect prior set up
-task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% get_prior(f, data = .)
+task2_df %>% mutate(error.y = va.ans.y - va.resp.y) %>% get_prior(f, data = .)
 
 # generate stan model code
 task2_df %>%
-  mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  mutate(error.y = abs(va.ans.y - va.resp.y)) %>%
   make_stancode(f, data = ., prior = p)
 ```
 
@@ -264,7 +257,7 @@ Fit the model:
 #| label: fit lomax
 
 model.y.lomax <- task2_df %>%
-  mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  mutate(error.y = abs(va.ans.y - va.resp.y)) %>%
   brm(
     formula = f,
     data = .,
@@ -286,10 +279,10 @@ Check fit and posterior check:
 ```{r}
 #| warning: true
 summary(model.y.lomax)
-# plot(model.y.lomax)
+plot(model.y.lomax)
 ```
 
-Observe that the we still have three divergent transitions, even though we have taken the number of iterations to 10000^[for context other models took numb of iterations about 4000]. This suggests that the lomax model is likely not the right model. 
+Observe that we have `Rhat = 1.01` for the `sd(lambda_Intercept)`, suggesting that the model fit is not necessarily the best. 
 
 Nevertheless, we still check the posterior to further confirm: 
 
@@ -314,7 +307,7 @@ From the PIT-ECDF check it seems that indeed the lomax model is not a good one, 
 #| eval: false
 #| echo: false
 
-model.y.lomax %>% get_variables(.)
+# model.y.lomax %>% get_variables(.)
 
 model.y.lomax %>%
   spread_draws(b_lambda_Intercept, b_alpha_Intercept) %>%
@@ -332,12 +325,14 @@ model.y.lomax %>%
 ```{r}
 #| eval: false
 #| echo: false
+
+
 prediction <- task2_df %>%
-  mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  mutate(error.y = abs(va.ans.y - va.resp.y)) %>%
   add_predicted_draws(model.y.lomax, re_formula = NA)
 
 task2_df %>%
-  mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  mutate(error.y = abs(va.ans.y - va.resp.y)) %>%
   ggplot() +
   geom_dots(aes(x = error.y)) +
   stat_slab(
@@ -345,9 +340,10 @@ task2_df %>%
     aes(x = .prediction),
     fill = "skyblue",
     alpha = 1
-  ) # +
-# xlim(0, 0.05)
+  ) 
 ```
+
+We have a very big outlier around  `error.y = 10000`. 
 
 ## Exponential Distribution {#sec-y-exponential}
 
@@ -380,10 +376,10 @@ p <- c(
 ```{r}
 #| eval: false
 #| echo: false
-task2_df %>% mutate(error.y = va.ans.y - va.select.y) %>% get_prior(f, data = .)
+task2_df %>% mutate(error.y = va.ans.y - va.resp.y) %>% get_prior(f, data = .)
 
 task2_df %>%
-  mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  mutate(error.y = abs(va.ans.y - va.resp.y)) %>%
   make_stancode(f, data = ., prior = p)
 ```
 
@@ -394,7 +390,7 @@ Fit the model:
 #| label: fit exponential
 
 model.y.exponential <- task2_df %>%
-  mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  mutate(error.y = abs(va.ans.y - va.resp.y)) %>%
   brm(
     formula = f,
     data = .,
@@ -422,6 +418,8 @@ pp_check(model.y.exponential, ndraws = 100)
 pp_check(model.y.exponential, ndraws = 100, type = "pit_ecdf")
 ```
 
+The KDE density overlay looks more reasonable, but the PIT-ECDF chart tells us that's it not quite well-calibrated. 
+
 ```{r}
 #| eval: false
 #| echo: false
@@ -440,11 +438,11 @@ model.y.exponential %>%
 #| echo: false
 
 prediction <- task2_df %>%
-  mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  mutate(error.y = abs(va.ans.y - va.resp.y)) %>%
   add_predicted_draws(model.y.exponential, re_formula = NA)
 
 task2_df %>%
-  mutate(error.y = abs(va.ans.y - va.select.y)) %>%
+  mutate(error.y = abs(va.ans.y - va.resp.y)) %>%
   ggplot() +
   geom_dots(aes(x = error.y)) +
   stat_slab(
@@ -464,8 +462,8 @@ task2_df %>%
   add_predicted_draws(model.y.exponential, re_formula = NA) %>%
   ggplot() +
   stat_slab(aes(x = .prediction), fill = "lightblue", alpha = 1) +
-  geom_dots(data = task2_df, aes(x = va.ans.y - va.select.y)) +
-  labs(y = "Probability", x = "Signed error", title = "Task 2") +
+  geom_dots(data = task2_df, aes(x = va.ans.y - va.resp.y)) +
+  labs(y = "Probability", x = "Error", title = "HighestPointY") +
   theme_minimal(base_size = 8) -> p
 
 p
@@ -497,14 +495,14 @@ p <- c(
 #| echo: false
 
 task2_df %>%
-  mutate(error.y = va.ans.y - va.select.y) %>%
+  mutate(error.y = va.ans.y - va.resp.y) %>%
   mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>%
   get_prior(formula = f, data = .)
 
 task2_df %>%
   mutate(
     error = abs(
-      data_to_screen_slope(data.select.slope) -
+      data_to_screen_slope(data.resp.slope) -
         data_to_screen_slope(data.ans.slope)
     ) +
       epsilon
@@ -519,7 +517,7 @@ Fit the model:
 #| label: task 2 - y - fit weibull
 
 model.y.weibull <- task2_df %>%
-  mutate(error.y = va.ans.y - va.select.y) %>%
+  mutate(error.y = va.ans.y - va.resp.y) %>%
   mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>% # Weibull needs value to be > 0
   brm(
     formula = f,
@@ -560,8 +558,8 @@ p2
 #| eval: false 
 
 ggsave(here("figs", "task2.y.weibull.ppcheck.pdf"), p1, 
-  width = 10,
-  height = 5,
+  width = 12,
+  height = 6,
   units = "cm",
   dpi = 300)
 
@@ -583,15 +581,15 @@ task2_df %>%
   add_predicted_draws(model.y.weibull, re_formula = NA) %>%
   ggplot() +
   stat_slab(aes(x = .prediction), fill = "lightblue", alpha = 1) +
-  geom_dots(data = task2_df, aes(x = va.ans.y - va.select.y)) +
-  labs(y = "Probability", x = "Signed error") +
+  geom_dots(data = task2_df, aes(x = va.ans.y - va.resp.y)) +
+  labs(y = "Probability", x = "Error") +
   theme_minimal(base_size = 8) +
   coord_cartesian(xlim = c(0, 0.5)) -> p
 
 p
 ```
 
-Original output: 
+Posterior retrodictive plot: 
 
 ```{r}
 task2_df %>%
@@ -609,10 +607,10 @@ task2_df %>%
   ) +
   scale_thickness_shared() +
   coord_cartesian(xlim = c(0, 0.1)) +
-  geom_rug(data = task2_df, aes(x = va.ans.y - va.select.y), linewidth = 0.5) +
+  geom_rug(data = task2_df, aes(x = va.ans.y - va.resp.y), linewidth = 0.5) +
   stat_slab(
     data = task2_df,
-    aes(x = va.ans.y - va.select.y),
+    aes(x = va.ans.y - va.resp.y),
     color = "darkblue",
     fill = NA,
     n = 3000,
@@ -663,7 +661,7 @@ p <- c(
 #| echo: false
 
 task2_df %>%
-  mutate(error.y = va.ans.y - va.select.y) %>%
+  mutate(error.y = va.ans.y - va.resp.y) %>%
   mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>%
   get_prior(formula = f, data = .)
 
@@ -683,7 +681,7 @@ task2_df %>%
 #| label: fit lognormal
 
 model.y.lognormal <- task2_df %>%
-  mutate(error.y = va.ans.y - va.select.y) %>%
+  mutate(error.y = va.ans.y - va.resp.y) %>%
   mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>%
   brm(
     formula = f,
@@ -716,13 +714,14 @@ pp_check(model.y.lognormal, ndraws = 100, type = "pit_ecdf")
 #| eval: false
 #| echo: false
 
-# Overlay plot:
+# Overlay plot
+
 task2_df %>%
   modelr::data_grid(error.y = 0) %>%
   add_predicted_draws(model.y.lognormal, ndraws = 100, re_formula = NA) %>%
   ggplot() +
   stat_slab(aes(x = .prediction), fill = "lightblue", alpha = 1) +
-  geom_dots(data = task2_df, aes(x = va.ans.y - va.select.y)) +
+  geom_dots(data = task2_df, aes(x = va.ans.y - va.resp.y)) +
   labs(y = "Probability", x = "Signed error", title = "Task 2") +
   theme_minimal(base_size = 8) -> p
 
@@ -754,7 +753,7 @@ p <- c(
 #| echo: false
 
 task2_df %>%
-  mutate(error.y = va.ans.y - va.select.y) %>%
+  mutate(error.y = va.ans.y - va.resp.y) %>%
   mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>%
   get_prior(formula = f, data = .)
 
@@ -774,7 +773,7 @@ task2_df %>%
 #| label: fit gamma
 
 model.y.gamma <- task2_df %>%
-  mutate(error.y = va.ans.y - va.select.y) %>%
+  mutate(error.y = va.ans.y - va.resp.y) %>%
   mutate(error.y = ifelse(error.y < tolerance, tolerance, error.y)) %>%
   brm(
     formula = f,
@@ -790,16 +789,16 @@ model.y.gamma <- task2_df %>%
   )
 ```
 
-The above model have a lot of divergent transitions, suggesting that this is not perhaps the best fit. 
+Note that the above have a lot of divergent transitions, even though we took `adapt_delta = 0.99`, suggesting that this is a bad posterior fit, and that this is not the right model. 
 
-Check fit: 
+Nevertheless, we check its posterior fit for completeness: 
 
 ```{r}
 #| warning: true
 summary(model.y.gamma)
 ```
 
-Note that the above have a lot of divergent transitions, even though we took `adapt_delta = 0.99`, suggesting that this is not the right model. We can also check the PIC-ECDF plot to confirm:  
+Checking the PIT-ECDF plot to confirm that the posterior fit is bad:  
 
 ```{r}
 pp_check(model.y.gamma, type = "pit_ecdf")
@@ -823,7 +822,7 @@ loo(
 
 Weibull is the best model. 
 
-# Task 2 -- Error on X 
+# Task 2 -- HighestPoint -- Error on X 
 
 ## Normal distribution {#sec-x-normal}
 
