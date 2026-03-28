@@ -65,7 +65,7 @@ Read in data and relevant scales:
 task_df <- read_rds(here("data", "final", "task.rds"))
 participants <- read_rds(here("data", "final", "participants.rds"))
 exp1_x <- make_va_scale(data_min = -5, data_max = 5, px_min = 50, px_max = 585)
-exp1_y <- make_va_scale(data_min = 0,  data_max = 1, px_min = 410, px_max = 15)
+exp1_y <- make_va_scale(data_min = 0, data_max = 1, px_min = 410, px_max = 15)
 ```
 
 Load data specific for task 2: 
@@ -112,11 +112,11 @@ task2_df <- task_df %>%
   right_join(participants, by = join_by(participantId)) %>%
   # calculate things related to participants' selection
   mutate(
-    va.resp.x = exp1_x$px_to_va(pixel.select.x, dist_to_screen, pixelToMM), 
-    va.resp.y = exp1_y$px_to_va(pixel.select.y, dist_to_screen, pixelToMM), 
-    va.ans.x = exp1_x$data_to_va(data.ans.x, dist_to_screen, pixelToMM), 
-    va.ans.y = exp1_y$data_to_va(data.ans.y, dist_to_screen, pixelToMM), 
-  ) %>% 
+    va.resp.x = exp1_x$px_to_va(pixel.select.x, dist_to_screen, pixelToMM),
+    va.resp.y = exp1_y$px_to_va(pixel.select.y, dist_to_screen, pixelToMM),
+    va.ans.x = exp1_x$data_to_va(data.ans.x, dist_to_screen, pixelToMM),
+    va.ans.y = exp1_y$data_to_va(data.ans.y, dist_to_screen, pixelToMM),
+  ) %>%
   mutate(flat = (abs(data.left.grad) + abs(data.right.grad)) / 2)
 ```
 
@@ -326,7 +326,6 @@ model.y.lomax %>%
 #| eval: false
 #| echo: false
 
-
 prediction <- task2_df %>%
   mutate(error.y = abs(va.ans.y - va.resp.y)) %>%
   add_predicted_draws(model.y.lomax, re_formula = NA)
@@ -340,7 +339,7 @@ task2_df %>%
     aes(x = .prediction),
     fill = "skyblue",
     alpha = 1
-  ) 
+  )
 ```
 
 We have a very big outlier around  `error.y = 10000`. 
@@ -554,20 +553,26 @@ p2
 ```
 
 ```{r}
-#| label: ggsave the ppchecks for best model 
-#| eval: false 
+#| label: ggsave the ppchecks for best model
+#| eval: false
 
-ggsave(here("figs", "task2.y.weibull.ppcheck.pdf"), p1, 
+ggsave(
+  here("figs", "task2.y.weibull.ppcheck.pdf"),
+  p1,
   width = 12,
   height = 6,
   units = "cm",
-  dpi = 300)
+  dpi = 300
+)
 
-ggsave(here("figs", "task2.y.weibull.pit-ecdf.pdf"), p2, 
-width = 6,
+ggsave(
+  here("figs", "task2.y.weibull.pit-ecdf.pdf"),
+  p2,
+  width = 6,
   height = 6,
   units = "cm",
-  dpi = 300)
+  dpi = 300
+)
 
 ```
 
@@ -811,12 +816,13 @@ Note that we won't use [Lomax](#sec-y-lomax) and [Gamma](#sec-y-gamma) in the mo
 Loo comparison: 
 
 ```{r}
-loo(
+brms::loo(
   model.y.exponential,
   model.y.lognormal,
   model.y.weibull,
   moment_match = TRUE,
-  reloo = TRUE
+  reloo = FALSE,
+  cores = parallel::detectCores()
 )
 ```
 
@@ -841,28 +847,30 @@ $$
 Formula and prior: 
 
 ```{r}
-f <- bf(error.x ~ 0,
-        mu ~ (1 | participantId), 
-        sigma ~ (1 | participantId), 
-        family = gaussian)
+f <- bf(
+  error.x ~ 0,
+  mu ~ (1 | participantId),
+  sigma ~ (1 | participantId),
+  family = gaussian
+)
 
-# sigma has log-link, so we don't pose any bounds on it 
+# sigma has log-link, so we don't pose any bounds on it
 p <- c(
-  prior(normal(0, 1), class = Intercept), 
-  prior(normal(0, 1), class = sd, group = participantId, lb = 0), 
-  prior(normal(0, 1), class = Intercept, dpar = sigma), 
+  prior(normal(0, 1), class = Intercept),
+  prior(normal(0, 1), class = sd, group = participantId, lb = 0),
+  prior(normal(0, 1), class = Intercept, dpar = sigma),
   prior(normal(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
 )
 ```
 
 ```{r}
-#| eval: false 
-#| echo: false 
+#| eval: false
+#| echo: false
 
-task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>% 
-  get_prior(f, data = .)
+task2_df %>% mutate(error.x = va.resp.x - va.ans.x) %>% get_prior(f, data = .)
 
-task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>% 
+task2_df %>%
+  mutate(error.x = va.resp.x - va.ans.x) %>%
   make_stancode(f, data = ., prior = p)
 ```
 
@@ -871,17 +879,18 @@ Fit the model:
 ```{r}
 #| output: false
 
-model.x.normal <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
+model.x.normal <- task2_df %>%
+  mutate(error.x = va.resp.x - va.ans.x) %>%
   brm(
     formula = f,
     data = .,
     prior = p,
     chains = 4,
-    cores = 4, 
+    cores = 4,
     file = here("analysis", "fitted_models", "task2.x.normal"),
     file_refit = "on_change",
     control = list(adapt_delta = 0.99),
-    iter = 6000, 
+    iter = 6000,
     save_pars = save_pars(all = TRUE)
   )
 ```
@@ -895,40 +904,54 @@ plot(model.x.normal)
 
 ```{r}
 #| layout-ncol: 2
-pp_check(model.x.normal, ndraws= 100) + 
+pp_check(model.x.normal, ndraws = 100) +
   theme(legend.position = c(0.9, 0.5)) +
   theme(text = element_text(size = 10)) -> task2.x.gaussian
 
-pp_check(model.x.normal, ndraws= 100, type = "pit_ecdf") + theme(text = element_text(size = 10)) -> task2.x.gaussian.pit
+pp_check(model.x.normal, ndraws = 100, type = "pit_ecdf") +
+  theme(text = element_text(size = 10)) -> task2.x.gaussian.pit
 
 task2.x.gaussian
 task2.x.gaussian.pit
-```
+ ```
 
 ```{r}
-#| eval: false 
-#| echo: false 
+#| eval: false
+#| echo: false
 
-ggsave(here("figs", "task2.x.gaussian.ppcheck.pdf"), 
-       task2.x.gaussian, 
-       height = 5, width = 10, unit = "cm", dpi = 300)
+ggsave(
+  here("figs", "task2.x.gaussian.ppcheck.pdf"),
+  task2.x.gaussian,
+  height = 5,
+  width = 10,
+  unit = "cm",
+  dpi = 300
+)
 
-ggsave(here("figs", "task2.x.gaussian-pit.pdf"), task2.x.gaussian.pit, 
-       height = 6, width = 6, unit = "cm", dpi = 300)
+ggsave(
+  here("figs", "task2.x.gaussian-pit.pdf"),
+  task2.x.gaussian.pit,
+  height = 6,
+  width = 6,
+  unit = "cm",
+  dpi = 300
+)
 ```
 
 :::{.callout-caution}
-Get the posterior for fitting another task (i.e., task 1): 
+Get the posterior for fitting another task (i.e., Bisect Area): 
 
 ```{r}
 # model.x.normal %>% get_variables(.)
 
-model.x.normal %>% spread_draws(b_Intercept, b_sigma_Intercept) %>% 
-  mutate(b_sigma = exp(b_sigma_Intercept)) %>% 
-  pivot_longer(cols = c(b_Intercept, b_sigma)) %>% 
-  ggplot(aes(x = value, y = name)) + 
+model.x.normal %>%
+  spread_draws(b_Intercept, b_sigma_Intercept) %>%
+  mutate(b_sigma = exp(b_sigma_Intercept)) %>%
+  pivot_longer(cols = c(b_Intercept, b_sigma)) %>%
+  ggplot(aes(x = value, y = name)) +
   stat_halfeye()
 ```
+
 :::
 
 ## Laplace distribution {#sec-x-laplace}
@@ -950,19 +973,19 @@ There is a [wiki](https://en.wikipedia.org/wiki/Laplace_distribution) about Lapl
 :::
 
 ```{r}
-# log of the laplace pdf 
+# log of the laplace pdf
 laplace_lpdf <- "
 real laplace_lpdf(real y, real mu, real sigma) {
   return double_exponential_lpdf(y | mu, sigma);
 }
 "
 
-# define custom family 
+# define custom family
 laplace_family = custom_family(
-  "laplace", 
-  dpars = c("mu", "sigma"), 
-  links = c("identity", "log"), 
-  lb = c(NA, 0), 
+  "laplace",
+  dpars = c("mu", "sigma"),
+  links = c("identity", "log"),
+  lb = c(NA, 0),
   type = "real"
 )
 ```
@@ -970,58 +993,69 @@ laplace_family = custom_family(
 Formula and prior: 
 
 ```{r}
-f <- bf(error.x ~ 0, 
-        mu ~ (1 | participantId), 
-        sigma ~ (1 | participantId), 
-        family = laplace_family)
+f <- bf(
+  error.x ~ 0,
+  mu ~ (1 | participantId),
+  sigma ~ (1 | participantId),
+  family = laplace_family
+)
 
-# define prior 
+# define prior
 p <- c(
-  prior(normal(0, 1), class = "Intercept"), 
+  prior(normal(0, 1), class = "Intercept"),
   prior(normal(0, 1), class = "sd", group = participantId, lb = 0),
-  prior(normal(0, 1), class = "Intercept", dpar ="sigma"), 
-  prior(normal(0, 1), class = "sd", group = participantId, dpar ="sigma", lb = 0)
+  prior(normal(0, 1), class = "Intercept", dpar = "sigma"),
+  prior(
+    normal(0, 1),
+    class = "sd",
+    group = participantId,
+    dpar = "sigma",
+    lb = 0
+  )
 )
 ```
 
 ```{r}
-#| eval: false 
-#| echo: false 
+#| eval: false
+#| echo: false
 
 # get prior
-task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
-  get_prior(formula = f,
-            data = .)
+task2_df %>%
+  mutate(error.x = va.resp.x - va.ans.x) %>%
+  get_prior(formula = f, data = .)
 
-# get stan code 
-task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
-  make_stancode(formula = f, 
-                data = .,
-                prior = p, 
-                # stanvars = stanvar(scode = laplace_lpdf, block = "functions")
-                )
+# get stan code
+task2_df %>%
+  mutate(error.x = va.resp.x - va.ans.x) %>%
+  make_stancode(
+    formula = f,
+    data = .,
+    prior = p,
+    # stanvars = stanvar(scode = laplace_lpdf, block = "functions")
+  )
 ```
 
 Fit the model:
 
 ```{r}
-#| output: false 
-#| label: fix x laplace 
+#| output: false
+#| label: fix x laplace
 
-model.x.laplace <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
+model.x.laplace <- task2_df %>%
+  mutate(error.x = va.resp.x - va.ans.x) %>%
   brm(
-    formula = f, 
-    family = laplace_family, 
-    stanvars = stanvar(scode = laplace_lpdf, block = "functions"), 
-    prior = p, 
-    data = ., 
-    chains = 4, 
-    cores = 4, 
+    formula = f,
+    family = laplace_family,
+    stanvars = stanvar(scode = laplace_lpdf, block = "functions"),
+    prior = p,
+    data = .,
+    chains = 4,
+    cores = 4,
     file = here("analysis", "fitted_models", "task2.x.laplace"),
-    file_refit = "on_change", 
-    iter = 6000, 
-    control = list(adapt_delta = 0.99), 
-    save_pars = save_pars(all = TRUE), 
+    file_refit = "on_change",
+    iter = 6000,
+    control = list(adapt_delta = 0.99),
+    save_pars = save_pars(all = TRUE),
   )
 ```
 
@@ -1035,7 +1069,7 @@ plot(model.x.laplace)
 Given that we are using custom families, we also need to define our custom function to perform posterior predictive checks. Let's define custom functions for posterior predictive check: 
 
 ```{r}
-#| code-fold: true 
+#| code-fold: true
 expose_functions(model.x.laplace, vectorize = TRUE)
 
 # # Define a random number generator for Laplace distribution
@@ -1058,11 +1092,12 @@ Posterior predictive check:
 ```{r}
 #| layout-ncol: 2
 #| code-fold: true
-pp_check(model.x.laplace, ndraws = 100) + 
+
+pp_check(model.x.laplace, ndraws = 100) +
   theme(legend.position = c(0.9, 0.5)) +
   theme(text = element_text(size = 10)) -> task2.laplace
 
-pp_check(model.x.laplace, ndraws = 100, type = "pit_ecdf") + 
+pp_check(model.x.laplace, ndraws = 100, type = "pit_ecdf") +
   theme(text = element_text(size = 10)) -> task2.laplace.pit
 
 task2.laplace
@@ -1070,39 +1105,60 @@ task2.laplace.pit
 ```
 
 ```{r}
-#| eval: false 
-#| echo: false 
-ggsave(here("figs", "task2.x.laplace-ppcheck.pdf"), task2.laplace, 
-       height = 5, width = 10, units = "cm", dpi = 300)
-ggsave(here("figs", "task2.x.laplace-pit-ecdf.pdf"), task2.laplace.pit, 
-       height = 6, width = 6, units = "cm", dpi = 300)
+#| eval: false
+#| echo: false
+ggsave(
+  here("figs", "task2.x.laplace-ppcheck.pdf"),
+  task2.laplace,
+  height = 5,
+  width = 10,
+  units = "cm",
+  dpi = 300
+)
+ggsave(
+  here("figs", "task2.x.laplace-pit-ecdf.pdf"),
+  task2.laplace.pit,
+  height = 6,
+  width = 6,
+  units = "cm",
+  dpi = 300
+)
 ```
 
 Plot posterior distribution of model parameter: 
 
 ```{r}
 #| code-fold: true
-# model.x.laplace %>% get_variables(.) 
+# model.x.laplace %>% get_variables(.)
 
-model.x.laplace %>% spread_draws(b_Intercept, b_sigma_Intercept) %>% 
-  pivot_longer(4:5) %>% 
-  ggplot(aes(x = value, y = name)) + stat_halfeye()
+model.x.laplace %>%
+  spread_draws(b_Intercept, b_sigma_Intercept) %>%
+  pivot_longer(4:5) %>%
+  ggplot(aes(x = value, y = name)) +
+  stat_halfeye()
 ```
 
 Plot posterior predictive distribution on top:
 
 ```{r}
 #| code-fold: true
-prediction <- task2_df %>% mutate(error.x = va.select.x - va.ans.x, ) %>%
+prediction <- task2_df %>%
+  mutate(error.x = va.resp.x - va.ans.x) %>%
   add_predicted_draws(model.x.laplace, ndraws = 100)
 
 
-task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
-                    # error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)
-                    ) %>% 
-  ggplot() + 
-  stat_slab(data = prediction, aes(x = .prediction), 
-            fill = "skyblue", alpha = 0.6) +
+task2_df %>%
+  mutate(
+    error.x = va.resp.x - va.ans.x,
+    # error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)
+  ) %>%
+  ggplot() +
+  stat_slab(
+    data = prediction,
+    aes(x = .prediction),
+    fill = "skyblue",
+    alpha = 0.6
+  ) +
   geom_dots(aes(x = error.x)) +
   labs(
     title = "Posterior Predictive Distribution vs. Observed Data",
@@ -1115,20 +1171,32 @@ Plot strip plot:
 
 ```{r}
 #| code-fold: true
-task2_df %>% modelr::data_grid(error.x = 0, 
-                               participantId = unique(participantId)) %>% 
-  add_predicted_draws(model.x.laplace, ndraws = 100) %>% 
-  ggplot() + 
-  stat_slab(aes(x = .prediction, group = .draw), 
-               color = "skyblue", alpha = 0.2, linewidth = 0.5, fill = NA, n = 3000) + 
-  scale_thickness_shared() + 
-  stat_slab(data = task2_df, aes(x = va.select.x - va.ans.x),
-            color = "darkblue", fill = NA, n = 3000, linewidth = 0.5) + 
-  geom_rug(data = task2_df, aes(x = va.select.x - va.ans.x), linewidth = 0.5) + 
-  labs(y = "density", x = "Error (on X-Axis)") + 
-  theme_minimal(base_size = 8) + 
-  coord_cartesian(xlim = c(-1, 1.5)) + 
-  scale_y_continuous(breaks = 0) -> p 
+task2_df %>%
+  modelr::data_grid(error.x = 0, participantId = unique(participantId)) %>%
+  add_predicted_draws(model.x.laplace, ndraws = 100) %>%
+  ggplot() +
+  stat_slab(
+    aes(x = .prediction, group = .draw),
+    color = "skyblue",
+    alpha = 0.2,
+    linewidth = 0.5,
+    fill = NA,
+    n = 3000
+  ) +
+  scale_thickness_shared() +
+  stat_slab(
+    data = task2_df,
+    aes(x = va.resp.x - va.ans.x),
+    color = "darkblue",
+    fill = NA,
+    n = 3000,
+    linewidth = 0.5
+  ) +
+  geom_rug(data = task2_df, aes(x = va.resp.x - va.ans.x), linewidth = 0.5) +
+  labs(y = "density", x = "Error (on X-Axis)") +
+  theme_minimal(base_size = 8) +
+  coord_cartesian(xlim = c(-1, 1.5)) +
+  scale_y_continuous(breaks = 0) -> p
 
 p
 ```
@@ -1137,40 +1205,63 @@ p
 #| eval: false
 #| echo: false
 
-ggsave(here("figs", "task2.x.laplace.pdf"), plot = p, 
-       height = 6, width = 8, units = "cm", dpi = 300)
+ggsave(
+  here("figs", "task2.x.laplace.pdf"),
+  plot = p,
+  height = 6,
+  width = 8,
+  units = "cm",
+  dpi = 300
+)
 ```
 
 
 ```{r}
-task2_df %>% modelr::data_grid(error.y = 0, 
-                               participantId = unique(participantId)) %>% 
-  add_predicted_draws(model.y.weibull, ndraws = 100) %>% 
-  # group_by(.draw) %>% 
-  ggplot() + 
-  stat_slab(aes(x = .prediction, group = .draw), 
-               color = "lightblue", alpha = 0.5, fill = NA, n = 3000, size = 0.5) + 
-  scale_thickness_shared() + 
-  coord_cartesian(xlim = c(0, 0.1)) + 
-  geom_rug(data = task2_df, aes(x = va.ans.y - va.select.y), size = 0.5) + 
-  stat_slab(data = task2_df, aes(x = va.ans.y - va.select.y), 
-            color = "darkblue", fill = NA, n = 3000, size = 0.5) + 
-  labs(y = "density", x = "signed error" ) + 
+task2_df %>%
+  modelr::data_grid(error.y = 0, participantId = unique(participantId)) %>%
+  add_predicted_draws(model.y.weibull, ndraws = 100) %>%
+  # group_by(.draw) %>%
+  ggplot() +
+  stat_slab(
+    aes(x = .prediction, group = .draw),
+    color = "lightblue",
+    alpha = 0.5,
+    fill = NA,
+    n = 3000,
+    size = 0.5
+  ) +
+  scale_thickness_shared() +
+  coord_cartesian(xlim = c(0, 0.1)) +
+  geom_rug(data = task2_df, aes(x = va.ans.y - va.resp.y), size = 0.5) +
+  stat_slab(
+    data = task2_df,
+    aes(x = va.ans.y - va.resp.y),
+    color = "darkblue",
+    fill = NA,
+    n = 3000,
+    size = 0.5
+  ) +
+  labs(y = "density", x = "signed error") +
   scale_y_continuous(breaks = 0) -> p
-  
+
 p
 ```
 
 ```{r}
 #| eval: false
-#| echo: false 
+#| echo: false
 
-ggsave(here("figs", "task2.y.weibull.pdf"), plot = p, 
-       height = 6, width = 8, units = "cm")
+ggsave(
+  here("figs", "task2.y.weibull.pdf"),
+  plot = p,
+  height = 6,
+  width = 8,
+  units = "cm"
+)
 ```
 
 
-## Student-t distribution {#sec-x-studentT}
+## Student-t distribution {#sec-x-studentT} -- TLDR: does not converge, skipping
 
 The Cauchy distribution puts too much weight on its tails; we'll go for studente-t, which is more robust. 
 
@@ -1189,20 +1280,32 @@ Formula and prior:
 
 ```{r}
 f <- bf(
-  error.x ~ 0,           # No intercept in main formula
-  mu ~ (1 | participantId),                # Location parameter with intercept
-  sigma ~ (1 | participantId),             # Scale parameter with intercept, positive 
-  nu ~ (1 | participantId),                # Degrees of freedom with intercept, positive 
+  error.x ~ 0, # No intercept in main formula
+  mu ~ (1 | participantId), # Location parameter with intercept
+  sigma ~ (1 | participantId), # Scale parameter with intercept, positive
+  nu ~ (1 | participantId), # Degrees of freedom with intercept, positive
   family = student()
 )
 
 p <- c(
-  prior(normal(0, 1), class = "Intercept"), 
-  prior(cauchy(0, 1), class = "sd", group = "participantId", lb = 0), 
-  prior(normal(0, 1), class = "Intercept", dpar = "sigma"), 
-  prior(cauchy(0, 1), class = "sd", group = "participantId", dpar = "sigma", lb = 0),
-  prior(normal(0, 1), class = "Intercept", dpar = "nu"), 
-  prior(cauchy(0, 1), class = "sd", group = "participantId", dpar = "nu", lb = 0)
+  prior(normal(0, 1), class = "Intercept"),
+  prior(cauchy(0, 1), class = "sd", group = "participantId", lb = 0),
+  prior(normal(0, 1), class = "Intercept", dpar = "sigma"),
+  prior(
+    cauchy(0, 1),
+    class = "sd",
+    group = "participantId",
+    dpar = "sigma",
+    lb = 0
+  ),
+  prior(normal(0, 1), class = "Intercept", dpar = "nu"),
+  prior(
+    cauchy(0, 1),
+    class = "sd",
+    group = "participantId",
+    dpar = "nu",
+    lb = 0
+  )
 )
 ```
 
@@ -1211,15 +1314,14 @@ p <- c(
 #| eval: false
 
 # get prior
-task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
-get_prior(formula = f,
-          data = .)
+task2_df %>%
+  mutate(error.x = va.select.x - va.ans.x) %>%
+  get_prior(formula = f, data = .)
 
-# check stan code 
-task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
-make_stancode(formula = f,
-              data = ., 
-              prior = p)
+# check stan code
+task2_df %>%
+  mutate(error.x = va.select.x - va.ans.x) %>%
+  make_stancode(formula = f, data = ., prior = p)
 ```
 
 Note that `student` has a log link for sigma and a `logm1` link for nu. 
@@ -1227,20 +1329,21 @@ Note that `student` has a log link for sigma and a `logm1` link for nu.
 Fit the model: 
 
 ```{r}
-#| output: false 
+#| output: false
 #| label: fit-x-student-t
-#| warning: true 
+#| warning: true
 
-model.x.student <- task2_df %>% mutate(error.x = va.select.x - va.ans.x) %>%
+model.x.student <- task2_df %>%
+  mutate(error.x = va.select.x - va.ans.x) %>%
   brm(
-    formula = f, 
-    prior = p, 
-    data = ., 
-    chains = 4, 
-    cores = 4, 
+    formula = f,
+    prior = p,
+    data = .,
+    chains = 4,
+    cores = 4,
     file = here("fitted_models", "task2.x.student"),
-    file_refit = "on_change", 
-    iter = 6000, 
+    file_refit = "on_change",
+    iter = 6000,
     control = list(adapt_delta = 0.99)
   )
 ```
@@ -1268,40 +1371,53 @@ The model does appear to be well-calibrated, however.
 #| eval: false
 #| echo: false
 
-# The default `student` function has `student(link = "identity", link_sigma = "log", link_nu = "logm1")`. Which means that we need to transform the fitted `sigma` and `nu`. 
+# The default `student` function has `student(link = "identity", link_sigma = "log", link_nu = "logm1")`. Which means that we need to transform the fitted `sigma` and `nu`.
 
 # model.x.student %>% get_variables(.)
 
-model.x.student %>% spread_draws(b_Intercept, b_sigma_Intercept, b_nu_Intercept) %>% 
-  mutate(b_mu = b_Intercept, 
-         b_sigma = exp(b_sigma_Intercept), 
-         b_nu = exp(b_nu_Intercept) + 1) %>% 
-  pivot_longer(7:9) %>% 
-  ggplot(aes(x = value, y = name)) + stat_halfeye() + 
-  facet_wrap(~ name, scales = "free")
+model.x.student %>%
+  spread_draws(b_Intercept, b_sigma_Intercept, b_nu_Intercept) %>%
+  mutate(
+    b_mu = b_Intercept,
+    b_sigma = exp(b_sigma_Intercept),
+    b_nu = exp(b_nu_Intercept) + 1
+  ) %>%
+  pivot_longer(7:9) %>%
+  ggplot(aes(x = value, y = name)) +
+  stat_halfeye() +
+  facet_wrap(~name, scales = "free")
 ```
 
 ```{r}
 #| echo: false
 #| eval: false
 
-prediction <- task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
-                    # error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)
-                    ) %>%
+prediction <- task2_df %>%
+  mutate(
+    error.x = va.select.x - va.ans.x,
+    # error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)
+  ) %>%
   add_predicted_draws(model.x.student, ndraws = 100)
 
 
-task2_df %>% mutate(error.x = va.select.x - va.ans.x, 
-                    error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)) %>% 
-  ggplot() + 
-  stat_slab(data = prediction, aes(x = .prediction), 
-            fill = "skyblue", alpha = 0.6) +
+task2_df %>%
+  mutate(
+    error.x = va.select.x - va.ans.x,
+    error.x = ifelse(abs(error.x) < 1e-10, 0, error.x)
+  ) %>%
+  ggplot() +
+  stat_slab(
+    data = prediction,
+    aes(x = .prediction),
+    fill = "skyblue",
+    alpha = 0.6
+  ) +
   geom_dots(aes(x = error.x)) +
   labs(
     title = "Posterior Predictive Distribution vs. Observed Data",
     x = "error.x",
     y = NULL
-  ) + 
+  ) +
   coord_cartesian(xlim = c(-5, 5))
 ```
 
@@ -1334,24 +1450,42 @@ loo(model.x.normal, model.x.laplace, moment_match = TRUE)
 
 So we see that the laplace model is the best one for X. 
 
-# Plot the marginalized example 
+# Plot the marginalized example to use for paper
 
-So here's the particular example we're looking at: 
+So here are the parameters of the particular example we're looking at: 
 $\mu = -1.1, \sigma = 0.7, \lambda = -0.1, p = 4.6, q = 3.17$. 
 
 ```{r}
 x <- seq(-5, 5, length.out = 100)
-y <- dsgt(x, mu = -1.1, sigma = 0.9, lambda = -0.3, p = 4.6, q = 3.17, mean.cent = TRUE)
+y <- dsgt(
+  x,
+  mu = -1.1,
+  sigma = 0.9,
+  lambda = -0.3,
+  p = 4.6,
+  q = 3.17,
+  mean.cent = FALSE
+)
 
-# dsgt(-0.3, mu = -1.1, sigma = 0.9, lambda = -0.3, p = 4.6, q = 3.17)
-
-example_plot <- tibble(x = x, y = y) %>% 
-  ggplot(aes(x = x, y = y)) + 
-  geom_line() + 
-  coord_cartesian(xlim = c(-5, 5), ylim = c(0, 1)) + 
-  theme_tidybayes() + 
-  geom_vline(xintercept = -0.3, linetype = "dashed", color = "gray") + 
-  geom_hline(yintercept = dsgt(-0.3, mu = -1.1, sigma = 0.9, lambda = -0.3, p = 4.6, q = 3.17), linetype = "dashed", color = "gray")
+example_plot <- tibble(x = x, y = y) %>%
+  ggplot(aes(x = x, y = y)) +
+  geom_line() +
+  coord_cartesian(xlim = c(-5, 5), ylim = c(0, 1)) +
+  theme_tidybayes() +
+  geom_vline(xintercept = -0.3, linetype = "dashed", color = "gray") +
+  geom_hline(
+    yintercept = dsgt(
+      -0.3,
+      mu = -1.1,
+      sigma = 0.9,
+      lambda = -0.3,
+      p = 4.6,
+      q = 3.17,
+      mean.cent = FALSE
+    ),
+    linetype = "dashed",
+    color = "gray"
+  )
 ```
 
 
@@ -1359,8 +1493,8 @@ example_plot <- tibble(x = x, y = y) %>%
 So we will use this plot as our example for things to marginalize. 
 
 ```{r}
-avg_participant <- task2_df |> 
-  distinct(participantId, pixelToMM, dist_to_screen) %>% 
+avg_participant <- task2_df |>
+  distinct(participantId, pixelToMM, dist_to_screen) %>%
   summarise(pixelToMM = mean(pixelToMM), distToScreen = mean(dist_to_screen))
 ```
 
@@ -1370,29 +1504,42 @@ newdata <- avg_participant %>% mutate(participantId = "avg_participant")
 
 # Y-error draws
 y_draws <- newdata |>
-  add_predicted_draws(model.y.weibull, 
-                      re_formula = NULL,        # include random effects
-                      allow_new_levels = TRUE, 
-                      sample_new_levels = "gaussian",
-                      ndraws = 4000) %>% 
-  mutate(num.prediction = va_to_numerical_y(.prediction, pixelToMM, distToScreen))
+  add_predicted_draws(
+    model.y.weibull,
+    re_formula = NULL, # include random effects
+    allow_new_levels = TRUE,
+    sample_new_levels = "gaussian",
+    ndraws = 4000
+  ) %>%
+  mutate(
+    num.prediction = va_to_numerical_y(.prediction, pixelToMM, distToScreen)
+  )
 
 # X-error draws
 x_draws <- newdata |>
-  add_predicted_draws(model.x.laplace, 
-                      re_formula = NULL,        # include random effects
-                      allow_new_levels = TRUE, 
-                      sample_new_levels = "gaussian",
-                      ndraws = 4000) %>% 
-  mutate(num.prediction = va_to_numerical_x(.prediction, pixelToMM, distToScreen))
+  add_predicted_draws(
+    model.x.laplace,
+    re_formula = NULL, # include random effects
+    allow_new_levels = TRUE,
+    sample_new_levels = "gaussian",
+    ndraws = 4000
+  ) %>%
+  mutate(
+    num.prediction = va_to_numerical_x(.prediction, pixelToMM, distToScreen)
+  )
 
 y_val <- dsgt(-0.3, mu = -1.1, sigma = 0.9, lambda = -0.3, p = 4.6, q = 3.17)
 
-x_graph <- x_draws %>% ggplot(aes(x = .prediction - 0.3)) +
+x_graph <- x_draws %>%
+  ggplot(aes(x = .prediction - 0.3)) +
   stat_slab() + # + scale_y_reverse()
-  coord_cartesian(xlim = c(-5, 5)) + labs(x = "", y = "") 
-y_graph <- y_draws %>% ggplot(aes(y = -num.prediction)) +
-  stat_slab() + coord_cartesian(ylim = c(0, 1)) + labs(x = "", y = "") 
+  coord_cartesian(xlim = c(-5, 5)) +
+  labs(x = "", y = "")
+y_graph <- y_draws %>%
+  ggplot(aes(y = -num.prediction)) +
+  stat_slab() +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(x = "", y = "")
 ```
 
 Use patchwork to put things together: 
@@ -1400,11 +1547,23 @@ Use patchwork to put things together:
 ```{r}
 library(patchwork)
 
-new_output <- example_plot + y_graph + x_graph + plot_spacer() + plot_layout(
-    ncol = 2, nrow = 2,
-    widths  = c(4, 1),
+new_output <- example_plot +
+  y_graph +
+  x_graph +
+  plot_spacer() +
+  plot_layout(
+    ncol = 2,
+    nrow = 2,
+    widths = c(4, 1),
     heights = c(3, 1)
   )
 
-ggsave(here::here("figs", "new.svg"), new_output, units = "in", width = 3.5, height = 3.5 * 600 / 750, dpi = 300)
+ggsave(
+  here::here("figs", "new.svg"),
+  new_output,
+  units = "in",
+  width = 3.5,
+  height = 3.5 * 600 / 750,
+  dpi = 300
+)
 ```
