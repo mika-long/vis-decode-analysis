@@ -1362,40 +1362,7 @@ example_plot <- tibble(x = x, y = y) %>%
   geom_hline(yintercept = dsgt(-0.3, mu = -1.1, sigma = 0.9, lambda = -0.3, p = 4.6, q = 3.17), linetype = "dashed", color = "gray")
 ```
 
-# Plot a new example as inset graphs -- Max Slope
 
-```{r}
-library(sgt)
-x <- seq(-5, 5, length.out = 100)
-# cdf 
-y <- psgt(x, mu = 0.1, sigma = 1, lambda = 0.2, p = 2.6, q = 2.17, mean.cent = TRUE)
-
-example_plot <- tibble(x = x, y = y) %>% 
-  ggplot(aes(x = x, y = y)) + 
-  geom_line() + 
-  coord_cartesian(xlim = c(-5, 5), ylim = c(0, 1)) + 
-  theme_tidybayes()
-```
-
-# Plot a new example as inset graphs -- Bisect Area
-
-```{r}
-library(sgt)
-x <- seq(-5, 5, length.out = 100)
-# pdf
-y <- dsgt(x, mu = -0.1, sigma = 1.6, lambda = 0.3, p = 2.6, q = 2.17, mean.cent = TRUE)
-
-example_plot <- tibble(x = x, y = y) %>% 
-  ggplot(aes(x = x, y = y)) + 
-  geom_line() + 
-  coord_cartesian(xlim = c(-5, 5), ylim = c(0, 1)) + 
-  theme(
-    axis.title.x = element_blank(), # Removes only the x-axis title
-    axis.title.y = element_blank()  # Removes only the y-axis title
-  ) + 
-  theme_tidybayes() + 
-  labs(y = "", x = "")
-```
 
 So we will use this plot as our example for things to marginalize. 
 
