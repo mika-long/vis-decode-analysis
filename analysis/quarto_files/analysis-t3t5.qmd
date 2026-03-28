@@ -1,5 +1,5 @@
 ---
-title: "Analysis --- Task 3, Task 5"
+title: "Analysis --- Task 3, Task 5 --- Projection Tasks"
 author: "Anonymous"
 date: today
 date-format: "iso"
@@ -50,7 +50,7 @@ For both these tasks, we fitted the data using Gaussian models.
 
 # Set up
 
-Read in data 
+Read in data and scales: 
 
 ```{r}
 #| label: read-in-data
@@ -58,6 +58,8 @@ Read in data
 
 task_df <- read_rds(here("data", "final", "task.rds"))
 participants <- read_rds(here("data", "final", "participants.rds"))
+exp1_x <- make_va_scale(data_min = -5, data_max = 5, px_min = 50, px_max = 585)
+exp1_y <- make_va_scale(data_min = 0, data_max = 1, px_min = 410, px_max = 15)
 ```
 
 # Task 5 --- Project from dot to axes 
@@ -82,27 +84,16 @@ task5_df <- task_df %>%
   rename(
     data.ans.x = data.select.x,
     data.ans.y = data.select.y,
-    data.select.x = slider.x,
-    data.select.y = slider.y
+    data.resp.x = slider.x,
+    data.resp.y = slider.y
   ) %>%
   right_join(participants, by = join_by(participantId)) %>%
   # do all the calculations for user's selected
   mutate(
-    pixel.select.x = data_to_pixel_x(data.select.x),
-    pixel.select.y = data_to_pixel_y(data.select.y),
-    phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM),
-    phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM),
-    va.select.x = vis_angle(phy.select.x, dist_to_screen),
-    va.select.y = vis_angle(phy.select.y, dist_to_screen)
-  ) %>%
-  # do all the calculations for the actual answer
-  mutate(
-    pixel.ans.x = data_to_pixel_x(data.ans.x),
-    pixel.ans.y = data_to_pixel_y(data.ans.y),
-    phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM),
-    phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM),
-    va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
-    va.ans.y = vis_angle(phy.ans.y, dist_to_screen)
+    va.resp.x = exp1_x$data_to_va(data.resp.x, dist_to_screen, pixelToMM),
+    va.resp.y = exp1_y$data_to_va(data.resp.y, dist_to_screen, pixelToMM),
+    va.ans.x = exp1_x$data_to_va(data.ans.x, dist_to_screen, pixelToMM),
+    va.ans.y = exp1_y$data_to_va(data.ans.y, dist_to_screen, pixelToMM),
   )
 ```
 
@@ -120,30 +111,32 @@ task5_df %>% write.csv(here("data", "processed", "task5.csv"))
 #| code-fold: true
 
 task5_df %>%
-  ggplot(aes(y = va.ans.y, x = va.select.x - va.ans.x, color = participantId)) +
+  ggplot(aes(y = va.ans.y, x = va.resp.x - va.ans.x, color = participantId)) +
   geom_point(alpha = 0.5)
 
-# task5_df %>% filter(va.select.x - va.ans.x > 0.4) %>%
-#   count(participantId) %>%
-#   left_join(participants, by = join_by(participantId))
+task5_df %>%
+  filter(va.resp.x - va.ans.x > 0.4) %>%
+  count(participantId) %>%
+  left_join(participants, by = join_by(participantId))
 ```
 
-As can be seen, there are two participants, who have `va.select.x - va.ans.x` > 0.4. Let's also plot what the actual selected answers in data space is:  
+As can be seen, there are two participants, who have `va.resp.x - va.ans.x` > 0.4. Let's also plot what the actual selected answers in data space is:  
 
 ```{r}
 #| code-fold: true
 
 task5_df %>%
-  filter(va.select.x - va.ans.x > 0.4) %>%
+  filter(va.resp.x - va.ans.x > 0.4) %>%
   ggplot() +
-  geom_point(aes(x = data.select.x, y = data.select.y, color = "select")) +
+  geom_point(aes(x = data.resp.x, y = data.resp.y, color = "resp")) +
   geom_point(aes(x = data.ans.x, y = data.ans.y, color = "ans")) +
   facet_wrap(~participantId) +
   xlim(-5, 5) +
   ylim(0, 1)
 ```
 
-Recall that we are dealing with data that is already cleaned, so why are we still seeing data that is slightly shifted towards the right, for answers on the X-axis? Turns out these two participants were aligning things wrongly on the slider (i.e, they did not match the blue dot to the red dot but matched the thing on the slider to the red dot), hence the shift in their answers. **We exclude these two participants from our analysis for task 5**:  
+Recall that we are dealing with data that is already cleaned, so why are we still seeing data that is slightly shifted towards the right, for answers on the X-axis? Turns out these two participants were aligning things wrongly on the slider (i.e, they did not match the blue dot to the red dot but matched the thing on the slider to the red dot), hence the shift in their answers. 
+**Thus, we exclude these two participants from our analysis for task 5**:  
 
 ```{r}
 task5.x.exclude <- c("667433338e6cc9e53c828774", "67e2f5ebbe69a58c40a5d550")
@@ -183,11 +176,11 @@ p <- c(
 #| eval: false
 
 task5_df %>%
-  mutate(error_va = va.select.x - va.ans.x) %>%
+  mutate(error_va = va.resp.x - va.ans.x) %>%
   get_prior(formula = f, data = .)
 
 task5_df %>%
-  mutate(error_va = va.select.x - va.ans.x) %>%
+  mutate(error_va = va.resp.x - va.ans.x) %>%
   make_stancode(f, data = ., prior = p, family = gaussian())
 ```
 
@@ -198,7 +191,7 @@ Fit model:
 #| label: fit model for task 5, project to x-axis
 
 m.5.x.va <- task5_df %>%
-  mutate(error_va = va.select.x - va.ans.x) %>%
+  mutate(error_va = va.resp.x - va.ans.x) %>%
   # exclude the two participants who answered this task wrong
   filter(!participantId %in% task5.x.exclude) %>%
   brm(
@@ -301,7 +294,7 @@ Plot existing data on top of prediction:
 # for an average participant
 
 prediction_grid <- task5_df %>%
-  mutate(error_va = va.select.x - va.ans.x) %>%
+  mutate(error_va = va.resp.x - va.ans.x) %>%
   filter(!participantId %in% task5.x.exclude) %>%
   data_grid(
     va.ans.y = seq_range(va.ans.y, n = 100),
@@ -318,7 +311,7 @@ ggplot(prediction_grid, aes(x = va.ans.y, y = .prediction)) +
   scale_fill_brewer(palette = "Blues") +
   geom_point(
     data = filter(task5_df, !participantId %in% task5.x.exclude),
-    aes(y = va.select.x - va.ans.x, x = va.ans.y),
+    aes(y = va.resp.x - va.ans.x, x = va.ans.y),
     alpha = 0.5,
     size = 0.5
   ) +
@@ -352,7 +345,7 @@ ggsave(
 
 ```{r}
 task5_df %>%
-  ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
+  ggplot(aes(x = va.ans.x, y = va.resp.y - va.ans.y)) +
   geom_point(alpha = 0.5)
 ```
 
@@ -372,12 +365,12 @@ Formula and prior:
 
 ```{r}
 f <- bf(
-  error_va ~ 1 + (1 | participantId), # NEW CHANGE!
+  error_va ~ 1 + (1 | participantId),
   sigma ~ 1 + (1 | participantId) + offset(log(va.ans.x))
 )
 
 p <- c(
-  prior(normal(0, 1), class = Intercept), # NEW CHANGE!
+  prior(normal(0, 1), class = Intercept),
   prior(normal(0, 1), class = sd, group = participantId, lb = 0),
   prior(normal(0, 1), class = Intercept, dpar = "sigma"),
   prior(normal(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
@@ -390,11 +383,11 @@ p <- c(
 #| eval: false
 
 task5_df %>%
-  mutate(error_va = va.select.y - va.ans.y) %>%
+  mutate(error_va = va.resp.y - va.ans.y) %>%
   get_prior(formula = f, data = .)
 
 task5_df %>%
-  mutate(error_va = va.select.y - va.ans.y) %>%
+  mutate(error_va = va.resp.y - va.ans.y) %>%
   make_stancode(f, data = ., prior = p, family = gaussian())
 ```
 
@@ -405,7 +398,7 @@ Fit model:
 #| label: fit task 5 y-axis model
 
 m.5.y.va <- task5_df %>%
-  mutate(error_va = va.select.y - va.ans.y) %>%
+  mutate(error_va = va.resp.y - va.ans.y) %>%
   brm(
     formula = f,
     data = .,
@@ -483,7 +476,7 @@ ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) +
   scale_fill_brewer(palette = "Blues") +
   geom_point(
     data = task5_df,
-    aes(y = va.select.y - va.ans.y, x = va.ans.x),
+    aes(y = va.resp.y - va.ans.y, x = va.ans.x),
     alpha = 0.5,
     size = 0.5
   ) +
@@ -537,15 +530,6 @@ task3_df <- task_df %>%
   filter(task == "task3") %>%
   select(-slider.x, -slider.y) %>%
   right_join(participants, by = join_by(participantId)) %>%
-  # do all the calculations for user's selected
-  mutate(
-    pixel.select.x = data_to_pixel_x(data.select.x),
-    pixel.select.y = data_to_pixel_y(data.select.y),
-    phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM),
-    phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM),
-    va.select.x = vis_angle(phy.select.x, dist_to_screen),
-    va.select.y = vis_angle(phy.select.y, dist_to_screen)
-  ) %>%
   mutate(
     data.ans.y = 0.5,
     data.ans.x = qsgt(
@@ -560,12 +544,10 @@ task3_df <- task_df %>%
   ) %>%
   # do all the calculations for the actual answer
   mutate(
-    pixel.ans.x = data_to_pixel_x(data.ans.x),
-    pixel.ans.y = data_to_pixel_y(data.ans.y),
-    phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM),
-    phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM),
-    va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
-    va.ans.y = vis_angle(phy.ans.y, dist_to_screen)
+    va.resp.x = exp1_x$data_to_va(data.select.x, dist_to_screen, pixelToMM),
+    va.resp.y = exp1_y$data_to_va(data.select.y, dist_to_screen, pixelToMM),
+    va.ans.x = exp1_x$data_to_va(data.ans.x, dist_to_screen, pixelToMM),
+    va.ans.y = exp1_y$data_to_va(data.ans.y, dist_to_screen, pixelToMM)
   )
 ```
 
@@ -581,10 +563,10 @@ Descriptive plots:
 #| layout-ncol: 2
 #| code-fold: true
 task3_df %>%
-  ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
+  ggplot(aes(x = va.ans.x, y = va.resp.y - va.ans.y)) +
   geom_point(alpha = 0.5)
 
-task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) + geom_dots()
+task3_df %>% ggplot(aes(x = va.resp.y - va.ans.y)) + geom_dots()
 ```
 
 Math: 
@@ -635,7 +617,7 @@ Fit model:
 #| label: task 3 fit normal
 
 m3 <- task3_df %>%
-  mutate(error_va = va.select.y - va.ans.y, log.va.ans.x = log(va.ans.x)) %>%
+  mutate(error_va = va.resp.y - va.ans.y, log.va.ans.x = log(va.ans.x)) %>%
   brm(
     formula = f,
     data = .,
@@ -699,7 +681,7 @@ Plot:
 ```{r}
 #| label: Task 3 - Results
 prediction_grid <- task3_df %>%
-  mutate(error_va = va.select.y - va.ans.y) %>%
+  mutate(error_va = va.resp.y - va.ans.y) %>%
   data_grid(
     va.ans.x = seq_range(va.ans.x, n = 100),
     participantId = unique(participantId)
@@ -716,7 +698,7 @@ prediction_grid %>%
   scale_fill_brewer(palette = "Blues") +
   geom_point(
     data = task3_df,
-    aes(y = va.select.y - va.ans.y, x = va.ans.x),
+    aes(y = va.resp.y - va.ans.y, x = va.ans.x),
     alpha = 0.5,
     size = 0.5
   ) +

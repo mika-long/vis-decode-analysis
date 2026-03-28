@@ -1,5 +1,5 @@
 ---
-title: "Analysis --- Task 2"
+title: "Analysis --- Task 2 --- HighestPoint"
 ---
 
 ```{r}
@@ -51,7 +51,7 @@ For modeling the signed error on the **X-axis**, we ran the following models:
 
 # Set up
 
-Read in data 
+Read in data and relevant scales: 
 
 ```{r}
 #| label: read-in-data
@@ -59,6 +59,8 @@ Read in data
 
 task_df <- read_rds(here("data", "final", "task.rds"))
 participants <- read_rds(here("data", "final", "participants.rds"))
+exp1_x <- make_va_scale(data_min = -5, data_max = 5, px_min = 50, px_max = 585)
+exp1_y <- make_va_scale(data_min = 0,  data_max = 1, px_min = 410, px_max = 15)
 ```
 
 Load data specific for task 2: 
@@ -105,20 +107,11 @@ task2_df <- task_df %>%
   right_join(participants, by = join_by(participantId)) %>%
   # calculate things related to participants' selection
   mutate(
-    phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM),
-    phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM),
-    va.select.x = vis_angle(phy.select.x, dist_to_screen),
-    va.select.y = vis_angle(phy.select.y, dist_to_screen)
-  ) %>%
-  # calculate things related to answer
-  mutate(
-    pixel.ans.x = data_to_pixel_x(data.ans.x),
-    pixel.ans.y = data_to_pixel_y(data.ans.y),
-    phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM),
-    phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM),
-    va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
-    va.ans.y = vis_angle(phy.ans.y, dist_to_screen)
-  ) %>%
+    va.resp.x = exp1_x$px_to_va(pixel.select.x, dist_to_screen, pixelToMM), 
+    va.resp.y = exp1_y$px_to_va(pixel.select.y, dist_to_screen, pixelToMM), 
+    va.ans.x = exp1_x$data_to_va(data.ans.x, dist_to_screen, pixelToMM), 
+    va.ans.y = exp1_y$data_to_va(data.ans.y, dist_to_screen, pixelToMM), 
+  ) %>% 
   mutate(flat = (abs(data.left.grad) + abs(data.right.grad)) / 2)
 ```
 
@@ -139,24 +132,24 @@ write_csv(task2_df, here("data", "processed", "task2.csv"))
 # Checking relations, focusing on the **Y** Axis
 
 task2_df %>%
-  mutate(error_va = va.select.x - va.ans.x) %>%
+  mutate(error_va = va.resp.x - va.ans.x) %>%
   mutate(error_va = ifelse(error_va < tolerance, 0, error_va)) %>%
   ggplot(aes(x = error_va)) +
   geom_dots()
 
 task2_df %>%
-  ggplot(aes(y = phy.ans.y - phy.select.y, x = dist_to_screen)) +
+  ggplot(aes(y = va.ans.y - va.resp.y, x = dist_to_screen)) +
   geom_point()
 
-task2_df %>%
-  ggplot(aes(y = va.ans.y - va.select.y, x = dist_to_screen)) +
-  geom_point()
+task2_df %>% ggplot(aes(x = va.ans.y - va.resp.y)) + geom_dots()
 
-task2_df %>% ggplot(aes(x = va.ans.y - va.select.y)) + geom_dots()
-task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
-task2_df %>%
-  ggplot(aes(x = (phy.ans.y - phy.select.y) / dist_to_screen)) +
-  geom_dots()
+# task2_df %>%
+#   ggplot(aes(y = phy.ans.y - phy.select.y, x = dist_to_screen)) +
+#   geom_point()
+# task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
+# task2_df %>%
+#   ggplot(aes(x = (phy.ans.y - phy.select.y) / dist_to_screen)) +
+#   geom_dots()
 ```
 
 ```{r}
