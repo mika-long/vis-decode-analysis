@@ -1462,8 +1462,19 @@ y <- dsgt(
   mu = -1.1,
   sigma = 0.9,
   lambda = -0.3,
-  p = 4.6,
-  q = 3.17,
+  p = 2.6,
+  q = 2.17,
+  mean.cent = FALSE
+)
+
+x_val = -1.1
+y_val = dsgt(
+  x_val,
+  mu = -1.1,
+  sigma = 0.9,
+  lambda = -0.3,
+  p = 2.6,
+  q = 2.17,
   mean.cent = FALSE
 )
 
@@ -1472,31 +1483,16 @@ example_plot <- tibble(x = x, y = y) %>%
   geom_line() +
   coord_cartesian(xlim = c(-5, 5), ylim = c(0, 1)) +
   theme_tidybayes() +
-  geom_vline(xintercept = -0.3, linetype = "dashed", color = "gray") +
+  geom_vline(xintercept = x_val, linetype = "dashed", color = "gray") +
   geom_hline(
-    yintercept = dsgt(
-      -0.3,
-      mu = -1.1,
-      sigma = 0.9,
-      lambda = -0.3,
-      p = 4.6,
-      q = 3.17,
-      mean.cent = FALSE
-    ),
+    yintercept = y_val,
     linetype = "dashed",
     color = "gray"
   )
+example_plot
 ```
-
-
 
 So we will use this plot as our example for things to marginalize. 
-
-```{r}
-avg_participant <- task2_df |>
-  distinct(participantId, pixelToMM, dist_to_screen) %>%
-  summarise(pixelToMM = mean(pixelToMM), distToScreen = mean(dist_to_screen))
-```
 
 ```{r}
 theme_set(theme_tidybayes(base_size = 8))
@@ -1510,9 +1506,6 @@ y_draws <- newdata |>
     allow_new_levels = TRUE,
     sample_new_levels = "gaussian",
     ndraws = 4000
-  ) %>%
-  mutate(
-    num.prediction = va_to_numerical_y(.prediction, pixelToMM, distToScreen)
   )
 
 # X-error draws
@@ -1523,12 +1516,7 @@ x_draws <- newdata |>
     allow_new_levels = TRUE,
     sample_new_levels = "gaussian",
     ndraws = 4000
-  ) %>%
-  mutate(
-    num.prediction = va_to_numerical_x(.prediction, pixelToMM, distToScreen)
   )
-
-y_val <- dsgt(-0.3, mu = -1.1, sigma = 0.9, lambda = -0.3, p = 4.6, q = 3.17)
 
 x_graph <- x_draws %>%
   ggplot(aes(x = .prediction - 0.3)) +

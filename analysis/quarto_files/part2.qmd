@@ -20,6 +20,7 @@ options(brms.backend = "cmdstanr")
 options(mc.cores = parallel::detectCores())
 library(posterior)
 library(bayesplot)
+library(ggdist)
 library(purrr)
 library(here)
 theme_set(theme_tidybayes())
@@ -807,7 +808,8 @@ y <- response_ordered$num.resp.y
 # group can be any condition-level variable, or a combination
 group <- response_ordered %>%
   left_join(part2.ans_df %>% select(ogIndex, type, flip, noise)) %>%
-  mutate(g = paste(noise, flip, sep = " | ")) %>% # we don't care about type, only care about noise and flip
+  # we don't care about type, only care about noise and flip
+  mutate(g = paste(noise, flip, sep = " | ")) %>%
   pull(g)
 
 yrep_mean <- posterior_predict_df %>%
@@ -888,6 +890,9 @@ ppc_dens_overlay_grouped(
 ) +
   labs(title = "Weighted Strategy") +
   coord_cartesian(xlim = c(0, 1))
+
+# save these
+
 ```
 
 **PIT-ECDFs**: 
@@ -1130,20 +1135,12 @@ For better customization and easier to manipulate dataframes, we will use `stat_
 We extract the shared layers across all three strategies first: 
 
 ```{r}
-library(ggdist)
-
 # get the plotting relevant data ready
 
 part2_joined <- part2_df %>%
   left_join(
     part2.ans_df %>% select(ogIndex, type, flip, noise),
     by = join_by(type, ogIndex)
-  )
-
-posterior_joined <- posterior_predict_df %>%
-  ungroup() %>%
-  left_join(
-    part2.ans_df %>% select(ogIndex, type, flip, noise)
   )
 
 # the density of the response that participants did
@@ -1180,9 +1177,19 @@ shared_layers <- list(
 ```
 
 ```{r}
-library(ggdist)
-
 draw_subset <- sample(unique(posterior_predict_df$.draw), 100)
+
+# bias + var for facets
+biasVar <- posterior_predict_df %>%
+  ungroup(.) %>%
+  select(.draw, ogIndex, num.2proj.mean) %>%
+  left_join(
+    part2.ans_df %>%
+      select(ogIndex, type, flip, noise)
+  ) %>%
+  group_by(flip, noise) %>%
+  mean_qi(num.2proj.mean, .width = 0.68)
+
 
 p1 <- posterior_predict_df %>%
   ungroup(.) %>%
@@ -1202,25 +1209,27 @@ p1 <- posterior_predict_df %>%
   ) +
   participant_resp +
   scale_thickness_shared() +
+  # bias and variannce from response
   stat_pointinterval(
     data = part2_joined,
     aes(x = num.resp.y, group = NULL),
     color = "darkblue",
     point_interval = mean_qi,
     .width = .68, # about +/- 1SD
-    inherit.aes = FALSE
+    inherit.aes = FALSE,
+    position = position_nudge(y = 0.05),
+    size = 1
   ) +
-  stat_pointinterval(
-    data = posterior_predict_df,
-    aes(x = num.2proj.mean, group = NULL),
+  geom_pointinterval(
+    data = biasVar,
+    aes(x = num.2proj.mean, xmin = .lower, xmax = .upper),
     color = "#7CCBA2",
-    point_interval = mean_qi,
-    .width = .68,
-    position = position_nudge(y = -0.02),
-    inherit.aes = FALSE
+    position = position_nudge(y = -0.05),
+    inherit.aes = FALSE,
+    size = 1
   ) +
   shared_layers +
-  labs(y = "density", x = "numerical value", title = "Mean Strategy") +
+  labs(y = "", x = "numerical value", title = "Mean Strategy") +
   theme_light(base_size = 8)
 
 p1
@@ -1230,6 +1239,17 @@ Median stategy with ggdist:
 
 ```{r}
 draw_subset <- sample(unique(posterior_predict_df$.draw), 100)
+
+# bias + var for facets
+biasVar <- posterior_predict_df %>%
+  ungroup(.) %>%
+  select(.draw, ogIndex, num.2proj.median) %>%
+  left_join(
+    part2.ans_df %>%
+      select(ogIndex, type, flip, noise)
+  ) %>%
+  group_by(flip, noise) %>%
+  mean_qi(num.2proj.median, .width = 0.68)
 
 p2 <- posterior_predict_df %>%
   ungroup(.) %>%
@@ -1259,19 +1279,20 @@ p2 <- posterior_predict_df %>%
     color = "darkblue",
     point_interval = mean_qi,
     .width = .68, # about +/- 1SD
-    inherit.aes = FALSE
+    inherit.aes = FALSE,
+    position = position_nudge(y = 0.05),
+    size = 1
   ) +
-  stat_pointinterval(
-    data = posterior_predict_df,
-    aes(x = num.2proj.median, group = NULL),
+  geom_pointinterval(
+    data = biasVar,
+    aes(x = num.2proj.median, xmin = .lower, xmax = .upper),
     color = "#7CCBA2",
-    point_interval = mean_qi,
-    .width = .68,
-    position = position_nudge(y = -0.02),
-    inherit.aes = FALSE
+    position = position_nudge(y = -0.05),
+    inherit.aes = FALSE,
+    size = 1
   ) +
   shared_layers +
-  labs(y = "density", x = "numerical value", title = "Median Strategy") +
+  labs(y = "", x = "numerical value", title = "Median Strategy") +
   theme_light(base_size = 8)
 
 p2
@@ -1281,6 +1302,17 @@ Weighted mean strategy:
 
 ```{r}
 draw_subset <- sample(unique(posterior_predict_df$.draw), 100)
+
+# bias + var for facets
+biasVar <- posterior_predict_df %>%
+  ungroup(.) %>%
+  select(.draw, ogIndex, num.2proj.weighted) %>%
+  left_join(
+    part2.ans_df %>%
+      select(ogIndex, type, flip, noise)
+  ) %>%
+  group_by(flip, noise) %>%
+  mean_qi(num.2proj.weighted, .width = 0.68)
 
 p3 <- posterior_predict_df %>%
   ungroup(.) %>%
@@ -1311,16 +1343,17 @@ p3 <- posterior_predict_df %>%
     color = "darkblue",
     point_interval = mean_qi,
     .width = .68, # about +/- 1SD
-    inherit.aes = FALSE
+    inherit.aes = FALSE,
+    position = position_nudge(y = 0.05),
+    size = 1
   ) +
-  stat_pointinterval(
-    data = posterior_predict_df,
-    aes(x = num.2proj.weighted, group = NULL),
+  geom_pointinterval(
+    data = biasVar,
+    aes(x = num.2proj.weighted, xmin = .lower, xmax = .upper),
     color = "#7CCBA2",
-    point_interval = mean_qi,
-    .width = .68,
-    position = position_nudge(y = -0.02),
-    inherit.aes = FALSE
+    position = position_nudge(y = -0.05),
+    inherit.aes = FALSE,
+    size = 1
   ) +
   scale_thickness_shared() +
   shared_layers +
