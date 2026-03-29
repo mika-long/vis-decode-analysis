@@ -1147,24 +1147,13 @@ posterior_joined <- posterior_predict_df %>%
   )
 
 # the density of the response that participants did
-participant_resp <- list(
-  stat_slab(
-    data = part2_joined,
-    aes(x = num.resp.y, group = NULL, thickness = after_stat(pdf)),
-    fill = NA,
-    color = "darkblue",
-    linewidth = 1,
-    density = density_bounded(bounds = c(0, 1))
-  ),
-  stat_pointinterval(
-    data = part2_joined,
-    aes(x = num.resp.y, group = NULL),
-    color = "darkblue",
-    point_interval = mean_qi,
-    .width = .68, # about +/- 1SD
-    # position = position_nudge(y = -0.02),
-    inherit.aes = FALSE
-  )
+participant_resp <- stat_slab(
+  data = part2_joined,
+  aes(x = num.resp.y, group = NULL, thickness = after_stat(pdf)),
+  fill = NA,
+  color = "darkblue",
+  linewidth = 1,
+  density = density_bounded(bounds = c(0, 1))
 )
 
 # the shared "annotation-like" details
@@ -1184,9 +1173,9 @@ shared_layers <- list(
       flip = c("TRUE" = "Variability Upper", "FALSE" = "Variability Lower")
     )
   ),
-  coord_cartesian(xlim = c(0, 1)),
+  coord_cartesian(xlim = c(0, 1), ylim = c(-0.05, 1)),
   scale_x_continuous(breaks = c(0, 0.5, 1)),
-  scale_y_continuous(breaks = 0, expand = expansion(mult = c(0.15, 0.05)))
+  scale_y_continuous(breaks = 0)
 )
 ```
 
@@ -1195,9 +1184,14 @@ library(ggdist)
 
 draw_subset <- sample(unique(posterior_predict_df$.draw), 100)
 
-p1 <- posterior_joined %>%
+p1 <- posterior_predict_df %>%
+  ungroup(.) %>%
   filter(.draw %in% draw_subset) %>%
   select(.draw, ogIndex, num.2proj.mean) %>%
+  left_join(
+    part2.ans_df %>%
+      select(ogIndex, type, flip, noise)
+  ) %>%
   ggplot(aes(x = num.2proj.mean, group = .draw, thickness = after_stat(pdf))) +
   stat_slab(
     fill = NA,
@@ -1207,20 +1201,24 @@ p1 <- posterior_joined %>%
     density = density_bounded(bounds = c(0, 1))
   ) +
   participant_resp +
+  scale_thickness_shared() +
   stat_pointinterval(
-    data = posterior_predict_df %>%
-      ungroup(.) %>%
-      left_join(
-        part2.ans_df %>%
-          select(ogIndex, type, flip, noise)
-      ),
+    data = part2_joined,
+    aes(x = num.resp.y, group = NULL),
+    color = "darkblue",
+    point_interval = mean_qi,
+    .width = .68, # about +/- 1SD
+    inherit.aes = FALSE
+  ) +
+  stat_pointinterval(
+    data = posterior_predict_df,
     aes(x = num.2proj.mean, group = NULL),
     color = "#7CCBA2",
     point_interval = mean_qi,
     .width = .68,
+    position = position_nudge(y = -0.02),
     inherit.aes = FALSE
   ) +
-  scale_thickness_shared() +
   shared_layers +
   labs(y = "density", x = "numerical value", title = "Mean Strategy") +
   theme_light(base_size = 8)
@@ -1250,12 +1248,28 @@ p2 <- posterior_predict_df %>%
     fill = NA,
     color = "#7CCBA2",
     alpha = 0.7,
-    # normalize = "all",
     size = 0.25,
     density = density_bounded(bounds = c(0, 1))
   ) +
   participant_resp +
   scale_thickness_shared() +
+  stat_pointinterval(
+    data = part2_joined,
+    aes(x = num.resp.y, group = NULL),
+    color = "darkblue",
+    point_interval = mean_qi,
+    .width = .68, # about +/- 1SD
+    inherit.aes = FALSE
+  ) +
+  stat_pointinterval(
+    data = posterior_predict_df,
+    aes(x = num.2proj.median, group = NULL),
+    color = "#7CCBA2",
+    point_interval = mean_qi,
+    .width = .68,
+    position = position_nudge(y = -0.02),
+    inherit.aes = FALSE
+  ) +
   shared_layers +
   labs(y = "density", x = "numerical value", title = "Median Strategy") +
   theme_light(base_size = 8)
@@ -1263,7 +1277,7 @@ p2 <- posterior_predict_df %>%
 p2
 ```
 
-Sensor fusion strategy: 
+Weighted mean strategy: 
 
 ```{r}
 draw_subset <- sample(unique(posterior_predict_df$.draw), 100)
@@ -1291,9 +1305,26 @@ p3 <- posterior_predict_df %>%
     density = "unbounded"
   ) +
   participant_resp +
+  stat_pointinterval(
+    data = part2_joined,
+    aes(x = num.resp.y, group = NULL),
+    color = "darkblue",
+    point_interval = mean_qi,
+    .width = .68, # about +/- 1SD
+    inherit.aes = FALSE
+  ) +
+  stat_pointinterval(
+    data = posterior_predict_df,
+    aes(x = num.2proj.weighted, group = NULL),
+    color = "#7CCBA2",
+    point_interval = mean_qi,
+    .width = .68,
+    position = position_nudge(y = -0.02),
+    inherit.aes = FALSE
+  ) +
   scale_thickness_shared() +
   shared_layers +
-  labs(y = "", x = "numerical value", title = "Sensor Fusion Strategy") +
+  labs(y = "", x = "numerical value", title = "Weighted Mean Strategy") +
   theme_light(base_size = 8)
 
 p3
@@ -1338,525 +1369,3 @@ ggsave(
   dpi = 300
 )
 ```
-
-### SKIP --- Group-level checks 
-
-```{r}
-# average observed response per stimulus
-y_avg <- part2_df %>%
-  group_by(ogIndex) %>%
-  summarise(response = mean(num.resp.y), .groups = "drop") %>%
-  arrange(ogIndex)
-
-# average predicted response per stimulus per draw
-yrep_avg <- posterior_predict_df %>%
-  group_by(.draw, ogIndex) %>%
-  summarise(pred = mean(num.2proj.mean), .groups = "drop") %>%
-  arrange(ogIndex, .draw) %>%
-  pivot_wider(id_cols = .draw, names_from = ogIndex, values_from = pred) %>%
-  select(-.draw) %>%
-  as.matrix()
-
-ppc_pit_ecdf(y_avg$response, yrep_avg, prob = 0.99, plot_diff = TRUE)
-ppc_dens_overlay(y_avg$response, yrep_avg[sample(nrow(yrep_avg), 100), ])
-```
-
-Hmm nope doesn't really capture this two hump thing going on here ... 
-
-<!-- 
-### Checking Results across participants 
-
-We can also plot them by the diagonal to see whether they predict things correcty: 
-
-```{r}
-#| code-fold: true
-combined <- posterior_predict_df %>%
-  group_by(ogIndex, participantId) %>%
-  median_qi(num.pred.avg, .width = .95) %>%
-  left_join(part2_df %>% select(ogIndex, participantId, num.resp.y))
-
-ggplot(combined, aes(x = num.pred.avg, y = num.resp.y)) +
-  geom_point(alpha = 0.3) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray") +
-  labs(x = "Predicted", y = "Observed", title = "Mean Strategy") +
-  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1))
-```
-
-```{r}
-#| code-fold: true
-combined <- posterior_predict_df %>%
-  group_by(ogIndex, participantId) %>%
-  median_qi(num.pred.median, .width = .95) %>%
-  left_join(part2_df %>% select(ogIndex, participantId, num.resp.y))
-
-ggplot(combined, aes(x = num.pred.median, y = num.resp.y)) +
-  geom_point(alpha = 0.3) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray") +
-  labs(x = "Predicted", y = "Observed", title = "Median Strategy") +
-  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1))
-```
-
-Let's also do **coverage check for mean**: 
-
-```{r}
-#| code-fold: true
-combined <- posterior_predict_df %>%
-  group_by(ogIndex, participantId) %>%
-  summarise(
-    lo95 = quantile(num.pred.avg, 0.025),
-    hi95 = quantile(num.pred.avg, 0.975),
-    .groups = "drop"
-  ) %>%
-  left_join(part2_df %>% select(ogIndex, participantId, num.resp.y)) %>%
-  mutate(covered = num.resp.y >= lo95 & num.resp.y <= hi95)
-
-mean(combined$covered)
-```
-
-**coverage check for median**:
-
-```{r}
-#| code-fold: true
-combined <- posterior_predict_df %>%
-  group_by(ogIndex, participantId) %>%
-  summarise(
-    lo95 = quantile(num.pred.median, 0.025),
-    hi95 = quantile(num.pred.median, 0.975),
-    .groups = "drop"
-  ) %>%
-  left_join(part2_df %>% select(ogIndex, participantId, num.resp.y)) %>%
-  mutate(covered = num.resp.y >= lo95 & num.resp.y <= hi95)
-
-mean(combined$covered)
-```
-
-**create PIT-ECDF plot**: 
-
-
-
-```{r}
-ppc_dens_overlay(y, yrep[sample(nrow(yrep), 50), ]) +
-  labs(title = "Mean Strategy")
-```
-
-```{r}
-response_ordered <- part2_df %>% arrange(participantId, ogIndex)
-y <- response_ordered$num.resp.y
-
-yrep <- posterior_predict_df %>%
-  ungroup() %>%
-  select(participantId, ogIndex, .draw, num.pred.median) %>%
-  arrange(participantId, ogIndex, .draw) %>%
-  unite("obs_id", participantId, ogIndex) %>%
-  pivot_wider(
-    id_cols = .draw,
-    names_from = obs_id,
-    values_from = num.pred.median
-  ) %>%
-  select(-.draw) %>%
-  as.matrix()
-
-bayesplot::ppc_pit_ecdf(y, yrep) + labs(title = "Median Strategy")
-```
-
-We can also try KDE overlay: 
-
-```{r}
-ppc_dens_overlay(y, yrep[sample(nrow(yrep), 50), ]) +
-  labs(title = "Median Strategy")
-```
-
-```{r}
-# boxplots: observed vs replicated summary stats
-ppc_stat(y, yrep, stat = "mean")
-ppc_stat(y, yrep, stat = "sd")
-
-# histogram of y with density lines from yrep
-ppc_hist(y, yrep[sample(nrow(yrep), 8), ])
-
-# ECDF overlay (non-PIT — just raw values)
-ppc_ecdf_overlay(y, yrep[sample(nrow(yrep), 50), ])
-```
-
-
-
----
-
-Note that increasing the number of draws does not significantly increase the coverage we have, suggesting that these likely do not capture important structure that humans might actually be using. 
-
-### Checking results for one participant -- skipping for now 
-
-```{r}
-# Pick one participant
-#| eval: false
-pid <- unique(part1_df$participantId)[1]
-
-pred_one <- preds %>%
-  filter(participantId == pid)
-
-obs_one <- part2_df %>%
-  filter(participantId == pid)
-```
-
-Let's first plot mean strategy: 
-
-```{r}
-#| code-fold: true
-#| eval: false
-
-ggplot() +
-  stat_pointinterval(
-    data = pred_one,
-    aes(y = ogIndex, x = num.pred.mean.y),
-    .width = c(.50, .95)
-  ) +
-  geom_point(
-    data = obs_one,
-    aes(y = ogIndex, x = num.resp.y),
-    color = "red",
-    size = 2
-  ) +
-  labs(y = "Trial", x = "Response (numeric)", title = "Mean Strategy") +
-  facet_wrap(~flip)
-```
-
-Then let's plot median strategy: 
-
-```{r}
-#| code-fold: true
-#| eval: false
-ggplot() +
-  stat_pointinterval(
-    data = pred_one,
-    aes(y = ogIndex, x = num.pred.median.y),
-    .width = c(.50, .95)
-  ) +
-  geom_point(
-    data = obs_one,
-    aes(y = ogIndex, x = num.resp.y),
-    color = "red",
-    size = 2
-  ) +
-  labs(y = "Trial", x = "Response (numeric)", title = "Median Strategy") +
-  facet_wrap(~flip)
-```
-
-## Sensor Fusion Strategy 
-
-$$
-\hat{y} = \sum w_i \times y_i, \text{ where } w_i = \frac{MSE^{-1}(y_i)}{\sum_j MSE(y_j)}
-$$
-
-```{r}
-# remove values that are no longer useful
-if (exists("preds")) {
-  rm(preds)
-}
-if (exists("combined")) {
-  rm(combined)
-}
-if (exists("predict_df")) {
-  rm(predict_df)
-}
-```
-
-**Step 0:** Redefine `predict_df`, since we're now projecting to the vertical line of `xintercept == 60`: 
-
-```{r}
-predict_df <- participant_df %>%
-  rename(type = condition) %>%
-  mutate(type = ifelse(type == "pointArc", "point_arc", "point")) %>%
-  inner_join(
-    stimuli_df %>% filter(type != "line") %>% rename(ogIndex = index),
-    by = "type",
-    relationship = "many-to-many"
-  ) %>%
-  unnest(col = data) %>%
-  rename(num.ans.x = x, num.ans.y = y) %>%
-  mutate(
-    va_60 = x_moritz$data_to_va(60, distToScreen, pixelsPerMM),
-    va.ans.x = abs(
-      va_60 - x_moritz$data_to_va(num.ans.x, distToScreen, pixelsPerMM)
-    ),
-    va.ans.y = y_moritz$data_to_va(num.ans.y, distToScreen, pixelsPerMM),
-  )
-```
-
-**Step 1:** Extract participant-level draws (20 participants $\times$ 3000 per chain $\times$ 4 chains)
-
-```{r}
-m1_draws_df <- m1 %>%
-  spread_draws(
-    b_Intercept,
-    r_participantId[participantId, ],
-    b_sigma_Intercept,
-    r_participantId__sigma[participantId, ]
-  ) %>%
-  mutate(
-    mu = b_Intercept + r_participantId,
-    log_sigma_base = b_sigma_Intercept + r_participantId__sigma
-  ) %>%
-  select(participantId, .draw, mu, log_sigma_base)
-```
-
-Step 2: Do it for a single participant and then extend it to all participants using `purrr::map_dfr`: 
-
-```{r}
-# Step 2: Loop over participants, use matrix ops, summarize per trial
-posterior_predict_df <- map_dfr(
-  .progress = TRUE,
-  unique(predict_df$participantId),
-  function(pid) {
-    # 12,000 draws for this participant
-    d <- m1_draws_df %>%
-      filter(participantId == pid) %>%
-      arrange(.draw)
-    n_draws <- nrow(d)
-
-    # 2,880 observations (48 trials × 60 dots)
-    obs <- predict_df %>% filter(participantId == pid)
-    n_obs <- nrow(obs)
-
-    mu_vec <- d$mu # length 12,000
-    log_sb <- d$log_sigma_base # length 12,000
-    log_vax <- log(obs$va.ans.x) # length 2,880
-    log_va_proj <- log(obs$va_60)
-
-    # sigma matrix: 12,000 × 2,880 (~276 MB)
-    sigma_mat <- exp(outer(log_sb, log_vax, "+"))
-
-    # weights: 1 / (mu^2 + sigma^2)
-    w_mat <- 1 / (outer(mu_vec^2, rep(1, n_obs)) + sigma_mat^2)
-
-    # predicted y: va.ans.y + rnorm(mu, sigma)
-    Z <- matrix(rnorm(n_draws * n_obs), nrow = n_draws, ncol = n_obs)
-    pred_y_mat <- matrix(obs$va.ans.y, n_draws, n_obs, byrow = TRUE) +
-      mu_vec +
-      sigma_mat * Z
-    rm(Z, sigma_mat)
-    gc()
-
-    # weighted average per trial per draw
-    trial_ids <- obs$ogIndex
-    trial_results <- map_dfr(unique(trial_ids), function(tr) {
-      cols <- which(trial_ids == tr)
-      w_sub <- w_mat[, cols, drop = FALSE]
-      pred_sub <- pred_y_mat[, cols, drop = FALSE]
-
-      tibble(
-        participantId = pid,
-        ogIndex = tr,
-        .draw = seq_len(n_draws),
-        va.weighted_pred = rowSums(w_sub * pred_sub) / rowSums(w_sub)
-      )
-    })
-    # second projection
-    n_trials <- length(unique(trial_ids))
-    trial_results %>%
-      mutate(
-        sigma_proj = exp(rep(log_sb, times = n_trials) + log_va_proj[1]),
-        va.final_pred = va.weighted_pred +
-          rnorm(n(), mean = rep(mu_vec, times = n_trials), sd = sigma_proj)
-      )
-  }
-)
-```
-
-This will give us 12000 draws per participant-trial, and we have `20 * 48` trials, which is overall speaking, `11520000` rows. Which is the same as `nrow(posterior_predict_df)`. 
-
-We will translate from visual angle space back to numeric space: 
-
-```{r}
-full_pp_df <- posterior_predict_df %>%
-  left_join(participant_df, by = join_by(participantId)) %>%
-  mutate(
-    num.weighted_pred = y_moritz$va_to_data(
-      va.final_pred,
-      distToScreen,
-      pixelsPerMM
-    )
-  )
-```
-
-We can then compare this against the actual response, starting with the **coverage check**:
-
-```{r}
-#| code-fold: true
-combined <- full_pp_df %>%
-  group_by(ogIndex, participantId) %>%
-  median_qi(num.weighted_pred, .width = .95) %>%
-  left_join(part2_df %>% select(ogIndex, participantId, num.resp.y)) %>%
-  mutate(covered = num.resp.y >= .lower & num.resp.y <= .upper)
-
-mean(combined$covered) # should be close to 0.95 if well-calibrated
-```
-
-Note this is twice the coverage compared to the median strategy. 
-
-```{r}
-combined <- full_pp_df %>%
-  group_by(ogIndex, participantId) %>%
-  median_qi(num.weighted_pred, .width = .95) %>%
-  left_join(part2_df %>% select(ogIndex, participantId, num.resp.y))
-
-ggplot(combined, aes(x = num.weighted_pred, y = num.resp.y)) +
-  geom_point(alpha = 0.3) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray") +
-  labs(x = "Predicted", y = "Observed", title = "Weighted Mean Strategy") +
-  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1))
-```
-
-And then there's also the PIT histogram: 
-
-```{r}
-pit_df <- posterior_predict_df %>%
-  left_join(part2_df %>% select(ogIndex, participantId, num.resp.y)) %>%
-  group_by(ogIndex, participantId) %>%
-  summarize(
-    pit = mean(num.pred.median <= num.resp.y),
-    .groups = "drop"
-  )
-
-ggplot(pit_df, aes(x = pit)) +
-  geom_histogram(bins = 20, boundary = 0) +
-  geom_hline(
-    yintercept = nrow(pit_df) / 20,
-    linetype = "dashed",
-    color = "gray"
-  ) +
-  labs(
-    x = "PIT value",
-    y = "Count",
-    title = "PIT Histogram (uniform = well-calibrated)"
-  )
-```
-
-This seems like a good source of inference ...? 
-https://topmodels.r-forge.r-project.org/articles/topmodels.html
-
-  
-## pre-process data 
-  
-Look at the empirical distribution: 
-  
-```{r}
-part2_df %>%
-  left_join(part2_ans_df) %>%
-  mutate(diff = num.resp.y - num.ans.y) %>%
-  ggplot(aes(x = diff, y = noise, fill = type)) +
-  stat_halfeye(alpha = 0.5) +
-  facet_wrap(~flip, ncol = 1) +
-  geom_vline(xintercept = 0, linetype = "dashed")
-```
-
-```{r}
-# plotting function for Moritz result
-plot_results <- function(data, xvar) {
-  data %>%
-    ggplot(aes(
-      y = noise,
-      x = {{ xvar }},
-      dist = "norm",
-      arg1 = {{ xvar }},
-      arg2 = se,
-      fill = type
-    )) + #uncertainty
-    stat_dist_halfeye(
-      show_interval = TRUE,
-      position = position_dodge(width = 0.2),
-      .width = 0.95,
-      size = .5,
-      alpha = .8
-    ) +
-    theme(legend.position = "top") +
-    geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
-    scale_fill_manual(values = c("#76B7B2", "#E15759")) + # take out "#59A14F"
-    ylab("Variability") # + #add x label
-  # xlab("Error") #add y label
-}
-```
-
-```{r}
-part2_df %>%
-  left_join(part2_ans_df) %>%
-  mutate(
-    error = num.resp.y - num.ans.y,
-    noise = factor(noise, levels = c("c(0, 0)", "c(0, 0.4)"))
-  ) %>%
-  summarySEwithin(
-    data = .,
-    measurevar = "error",
-    withinvars = c("noise", "flip"),
-    betweenvars = "type",
-    idvar = "participantId"
-  ) %>%
-  mutate(
-    flip_lab = ifelse(
-      flip == FALSE,
-      "Variability in top",
-      "Variability in bottom"
-    ),
-    flip_lab = factor(
-      flip_lab,
-      levels = c("Variability in top", "Variability in bottom")
-    )
-  ) %>%
-  # change error to the direction of "variability"
-  # mutate(error = ifelse(flip == FALSE, error, -error)) %>%
-  plot_results(., error) +
-  # xlab("Error (in the direction of variability)") +
-  facet_wrap(~flip_lab, ncol = 1) +
-  labs(title = "N = 20")
-```
-
-Now this is not something that you would see in Moritz ... 
-
-Posterior distribution of answer for a particular stimuli, for all participants who saw the stimuli: 
-
-```{r}
-#| code-fold: true
-#| label: plot_stimuli_forAll
-
-# define a helper function for this plot
-plot_stimuli_forAll <- function(i, s) {
-  target_col <- switch(
-    s,
-    "mean" = "num.pred.avg",
-    "median" = "num.pred.median",
-    stop("Error: 's' must be either 'mean' or 'median'.")
-  )
-  posterior_predict_df %>%
-    ungroup(.) %>%
-    filter(ogIndex == i) %>%
-    ggplot(aes(y = .data[[target_col]])) +
-    stat_halfeye() +
-    geom_hline(
-      data = part2_df %>% filter(ogIndex == i),
-      aes(yintercept = num.resp.y),
-      color = "red",
-      linetype = "dashed"
-    ) +
-    facet_wrap(~participantId) +
-    labs(
-      title = paste0(
-        "Stimuli Index ",
-        i,
-        " across 10 participants, ",
-        s,
-        " strategy"
-      )
-    )
-}
-```
-
-```{r}
-#| layout-ncol: 2
-plot_stimuli_forAll(4, "mean") # point
-plot_stimuli_forAll(5, "mean")
-```
-
-```{r}
-#| layout-ncol: 2
-plot_stimuli_forAll(8, "median") # point_arc
-plot_stimuli_forAll(9, "median")
-``` -->
