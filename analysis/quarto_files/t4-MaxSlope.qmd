@@ -143,69 +143,6 @@ task4_df <- task_df %>%
         pixelToMM
       )
   )
-# old code
-# mutate(
-#   data.select.slope = dsgt(
-#     data.select.x,
-#     param.mu,
-#     param.sigma,
-#     param.lambda,
-#     param.p,
-#     param.q,
-#     mean.cent = FALSE
-#   ),
-#   data.ans.slope = dsgt(
-#     param.mu,
-#     param.mu,
-#     param.sigma,
-#     param.lambda,
-#     param.p,
-#     param.q,
-#     mean.cent = FALSE
-#   )
-# ) %>%
-# mutate(
-#   phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM),
-#   phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM),
-#   va.select.x = vis_angle(phy.select.x, dist_to_screen),
-#   va.select.y = vis_angle(phy.select.y, dist_to_screen)
-# ) %>%
-# mutate(
-#   data.ans.x = param.mu,
-#   data.ans.y = 1 /
-#     2 *
-#     (psgt(
-#       data.ans.x + tolerance,
-#       param.mu,
-#       param.sigma,
-#       param.lambda,
-#       param.p,
-#       param.q,
-#       mean.cent = FALSE
-#     ) +
-#       psgt(
-#         data.ans.x - tolerance,
-#         param.mu,
-#         param.sigma,
-#         param.lambda,
-#         param.p,
-#         param.q,
-#         mean.cent = FALSE
-#       ))
-# ) %>%
-# mutate(
-#   pixel.ans.x = data_to_pixel_x(data.ans.x),
-#   pixel.ans.y = data_to_pixel_y(data.ans.y)
-# ) %>%
-# mutate(
-#   phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM),
-#   phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM)
-# ) %>%
-# mutate(
-#   va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
-#   va.ans.y = vis_angle(phy.ans.y, dist_to_screen)
-# )
-
 ```
 
 ```{r}
@@ -590,7 +527,7 @@ model.weibull <- task4_df %>%
     chains = 4,
     cores = 4,
     file = here("analysis", "fitted_models", "task4.weibull"),
-    file_refit = "always",
+    file_refit = "on_change",
     save_pars = save_pars(all = TRUE),
     iter = 6000
   )
@@ -608,11 +545,11 @@ plot(model.weibull)
 
 pp_check(model.weibull, ndraws = 100) +
   coord_cartesian(xlim = c(0, 10)) +
-  theme(text = element_text(size = 10)) +
+  theme(text = element_text(size = 12)) +
   theme(legend.position = c(0.9, 0.5)) -> p1
 
 pp_check(model.weibull, ndraws = 100, type = "pit_ecdf") +
-  theme(text = element_text(size = 10)) -> p2
+  theme(text = element_text(size = 4)) -> p2
 
 p1
 p2
@@ -633,9 +570,9 @@ ggsave(
 ggsave(
   here("figs", "task4-pit-ecdf.pdf"),
   p2,
-  height = 6,
-  width = 6,
-  units = "cm",
+  height = 2,
+  width = 2,
+  units = "in",
   dpi = 300
 )
 ```
@@ -732,7 +669,7 @@ ggsave(
   here("figs", "task4.pdf"),
   plot = p,
   height = 6,
-  width = 8,
+  width = 12,
   units = "cm",
   dpi = 300
 )
