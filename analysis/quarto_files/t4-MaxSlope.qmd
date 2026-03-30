@@ -1,5 +1,8 @@
 ---
 title: "Analysis --- Task 4 --- MaxSlope"
+html:
+  embed-resources: true
+author: "Anonymous"
 ---
 
 ```{r}

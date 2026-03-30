@@ -6,6 +6,7 @@ date-format: "iso"
 format:
   html:
     reference-location: margin
+    embed-resources: true
 ---
 
 ```{r}
@@ -1450,12 +1451,41 @@ loo(model.x.normal, model.x.laplace, moment_match = TRUE)
 
 So we see that the laplace model is the best one for X. 
 
+## From error on Y to error on X 
+
+Get the "average participant": 
+
+```{r}
+avg_pixelToMM <- participants %>% pull(pixelToMM) %>% mean(.)
+avg_distToScreen <- participants %>% pull(dist_to_screen) %>% mean(.)
+avg_participant <- tibble(
+  pixelToMM = avg_pixelToMM,
+  distToScreen = avg_distToScreen
+)
+```
+
+Create dataframe for average participant and do posterior draws: 
+
+```{r}
+newdata <- avg_participant %>% mutate(participantId = "avg_participant")
+
+# Y-error draws in visual angle space
+y_draws <- newdata %>%
+  add_predicted_draws(
+    model.y.weibull,
+    re_formula = NULL, # include random effects
+    allow_new_levels = TRUE,
+    # ndraws = 4000
+  )
+```
+
 # Plot the marginalized example to use for paper
 
 So here are the parameters of the particular example we're looking at: 
-$\mu = -1.1, \sigma = 0.7, \lambda = -0.1, p = 4.6, q = 3.17$. 
+$\mu = -1.1, \sigma = 0.9, \lambda = -0.3, p = 2.6, q = 2.17$. The highest point has x coordinate `-1.1` and y coordinate `dsgt(-1.1, ...)`. 
 
 ```{r}
+#| code-fold: true
 x <- seq(-5, 5, length.out = 100)
 y <- dsgt(
   x,
@@ -1492,42 +1522,55 @@ example_plot <- tibble(x = x, y = y) %>%
 example_plot
 ```
 
+```{r}
+# specific pdf we're working with
+f <- function(x) {
+  dsgt(
+    x,
+    mu = -1.1,
+    sigma = 0.9,
+    lambda = -0.3,
+    p = 2.6,
+    q = 2.17,
+    mean.cent = FALSE
+  )
+}
+
+va.ans.y <- exp1_y$data_to_va(y_val, avg_distToScreen, avg_pixelToMM)
+
+x_errors <- y_draws %>%
+  mutate(
+    va.pred.y = va.ans.y - .prediction,
+    num.pred.y = exp1_y$va_to_data(va.pred.y, avg_distToScreen, avg_pixelToMM),
+    eps_data = y_val - num.pred.y
+  ) %>%
+  rowwise() %>%
+  mutate(
+    x_left = uniroot(function(x) f(x) - num.pred.y, c(-5, x_val))$root,
+    x_right = uniroot(function(x) f(x) - num.pred.y, c(x_val, 5))$root,
+    # random flip betwee x_left and x_right
+    num.pred.x = if (sample(c(TRUE, FALSE), 1)) x_left else x_right
+  )
+```
+
 So we will use this plot as our example for things to marginalize. 
 
 ```{r}
 theme_set(theme_tidybayes(base_size = 8))
-newdata <- avg_participant %>% mutate(participantId = "avg_participant")
 
-# Y-error draws
-y_draws <- newdata |>
-  add_predicted_draws(
-    model.y.weibull,
-    re_formula = NULL, # include random effects
-    allow_new_levels = TRUE,
-    sample_new_levels = "gaussian",
-    ndraws = 4000
-  )
-
-# X-error draws
-x_draws <- newdata |>
-  add_predicted_draws(
-    model.x.laplace,
-    re_formula = NULL, # include random effects
-    allow_new_levels = TRUE,
-    sample_new_levels = "gaussian",
-    ndraws = 4000
-  )
-
-x_graph <- x_draws %>%
-  ggplot(aes(x = .prediction - 0.3)) +
-  stat_slab() + # + scale_y_reverse()
+x_graph <- x_errors %>%
+  ggplot(aes(x = num.pred.x)) +
+  stat_slab() +
   coord_cartesian(xlim = c(-5, 5)) +
-  labs(x = "", y = "")
-y_graph <- y_draws %>%
-  ggplot(aes(y = -num.prediction)) +
+  scale_y_continuous(breaks = 0) +
+  labs(x = "", y = "density")
+
+y_graph <- x_errors %>%
+  ggplot(aes(y = num.pred.y)) +
   stat_slab() +
   coord_cartesian(ylim = c(0, 1)) +
-  labs(x = "", y = "")
+  scale_x_continuous(breaks = 0) +
+  labs(x = "density", y = "")
 ```
 
 Use patchwork to put things together: 
@@ -1542,16 +1585,37 @@ new_output <- example_plot +
   plot_layout(
     ncol = 2,
     nrow = 2,
-    widths = c(4, 1),
-    heights = c(3, 1)
+    widths = c(4, 0.5),
+    heights = c(3, 0.5)
   )
+
+new_output
 
 ggsave(
   here::here("figs", "new.svg"),
   new_output,
   units = "in",
   width = 3.5,
-  height = 3.5 * 600 / 750,
+  height = 3.5 / 4.6 * 3.5,
+  dpi = 300
+)
+# save the small plot for y_graph
+
+y_zoom <- y_graph +
+  coord_cartesian(ylim = c(0.45, 0.5)) +
+  labs(x = "") +
+  theme_tidybayes(base_size = 6) +
+  scale_y_continuous(breaks = c(0.45, 0.50))
+
+ggsave(
+  here::here("figs", "new_y_zoom.svg"),
+  y_zoom,
+  height = 300,
+  width = 450,
+  units = "px",
   dpi = 300
 )
 ```
+
+
+
