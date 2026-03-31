@@ -174,7 +174,7 @@ y_block5 <- make_va_scale(
   px_max = 15
 )
 
-# Second part -- Mortiz
+# Second part -- Mortiz et al. related
 x_moritz <- make_va_scale(
   data_min = 0,
   data_max = 120,
@@ -182,92 +182,6 @@ x_moritz <- make_va_scale(
   px_max = 500
 )
 y_moritz <- make_va_scale(data_min = 0, data_max = 1, px_min = 200, px_max = 0)
-
-# # --- share helper functions
-# # return visual angle in degrees and not radian
-# vis_angle <- function(size, distance) {
-#   return(2 * atan(size / (2 * distance)) * 180 / pi)
-# }
-
-# # define function for turning vis angle to phy size
-# phys_size <- function(va, distance) {
-#   return(2 * distance * tan(va * pi / 360))
-# }
-
-# px_to_phys = \(px, px_per_mm) px / px_per_mm
-# phys_to_px = \(phys, px_per_mm) phys * px_per_mm
-
-# # --- Factory function
-# make_va_scale <- function(data_min, data_max, px_min, px_max) {
-#   px_extent <- abs(px_max - px_min)
-#   data_range <- data_max - data_min
-
-#   data_to_phys <- function(data, px_per_mm) {
-#     (data - data_min) / data_range * px_extent / px_per_mm
-#   }
-#   phys_to_data <- function(phys, px_per_mm) {
-#     phys * px_per_mm / px_extent * data_range + data_min
-#   }
-
-#   data_to_va <- function(data, distance, px_per_mm) {
-#     data |> data_to_phys(px_per_mm) |> vis_angle(distance = distance)
-#   }
-#   va_to_data <- function(va, distance, px_per_mm) {
-#     va |> phys_size(distance = distance) |> phys_to_data(px_per_mm)
-#   }
-
-#   data_to_px <- function(data) {
-#     (data - data_min) / data_range * (px_max - px_min) + px_min
-#   }
-#   px_to_data <- function(px) {
-#     (px - px_min) / (px_max - px_min) * data_range + data_min
-#   }
-
-#   list(
-#     data_to_va = data_to_va,
-#     va_to_data = va_to_data,
-#     data_to_phys = data_to_phys,
-#     phys_to_data = phys_to_data,
-#     data_to_px = data_to_px,
-#     px_to_data = px_to_data
-#   )
-# }
-
-# # Code copied from Matt; this prevents us from having mistakes
-# x_num_to_px = \(x, x_range = 120, px_range = 500) x / x_range * px_range
-# y_num_to_px = \(y, y_range = 1, px_range = 200) y / y_range * px_range
-
-# x_px_to_num = \(x, x_range = 120, px_range = 500) x * x_range / px_range
-# y_px_to_num = \(y, y_range = 1, px_range = 200) y * y_range / px_range
-
-# x_va_to_num = \(va, distance, px_per_mm, x_range = 120, px_range = 500) {
-#   va |>
-#     phys_size(distance) |>
-#     phys_to_px(px_per_mm) |>
-#     x_px_to_num(x_range, px_range)
-# }
-
-# y_va_to_num = \(va, distance, px_per_mm, y_range = 1, px_range = 200) {
-#   va |>
-#     phys_size(distance) |>
-#     phys_to_px(px_per_mm) |>
-#     y_px_to_num(y_range, px_range)
-# }
-
-# data_to_pixel_y <- function(data_y) {
-#   return(-395 * data_y + 410)
-# }
-# data_to_pixel_x <- function(data_x) {
-#   return(53.5 * data_x + 317.5)
-# }
-
-# # origin is bottom left
-# pixel_to_phy_x <- function(pixel, pxMM) {
-#   (pixel - 50) / pxMM
-# }
-# pixel_to_phy_y <- function(pixel, pxMM) {
-#   (410 - pixel) / pxMM
-# }
 ```
 
 # See whether data is sampling correctly 
@@ -792,6 +706,10 @@ saveRDS(
   posterior_predict_df,
   file = here::here("analysis/fitted_models/exp2/part2_posterior_1proj.rds")
 )
+
+posterior_predict_df <- readRDS(
+  file = here::here("analysis/fitted_models/exp2/part2_posterior_1proj.rds")
+)
 ```
 
 ### Posterior checks with `bayesplot` 
@@ -809,7 +727,11 @@ y <- response_ordered$num.resp.y
 group <- response_ordered %>%
   left_join(part2.ans_df %>% select(ogIndex, type, flip, noise)) %>%
   # we don't care about type, only care about noise and flip
-  mutate(g = paste(noise, flip, sep = " | ")) %>%
+  mutate(
+    noise_label = ifelse(noise == "c(0, 0)", "Var 0", "Var 0.4"),
+    flip_label = ifelse(flip == FALSE, "Var Lower", "Var Upper")
+  ) %>%
+  mutate(g = paste(noise_label, flip_label, sep = " | ")) %>%
   pull(g)
 
 yrep_mean <- posterior_predict_df %>%
@@ -873,27 +795,47 @@ ppc_dens_overlay(y, yrep_weighted[sample(nrow(yrep_weighted), 100), ]) +
 ```{r}
 #| layout-ncol: 3
 #| code-fold: true
-ppc_dens_overlay_grouped(y, yrep_mean[sample(nrow(yrep_mean), 100), ], group) +
+p1 <- ppc_dens_overlay_grouped(
+  y,
+  yrep_mean[sample(nrow(yrep_mean), 100), ],
+  group
+) +
   labs(title = "Mean Strategy") +
   coord_cartesian(xlim = c(0, 1))
-ppc_dens_overlay_grouped(
+p2 <- ppc_dens_overlay_grouped(
   y,
   yrep_median[sample(nrow(yrep_median), 100), ],
   group
 ) +
   labs(title = "Median Strategy") +
   coord_cartesian(xlim = c(0, 1))
-ppc_dens_overlay_grouped(
+p3 <- ppc_dens_overlay_grouped(
   y,
   yrep_weighted[sample(nrow(yrep_weighted), 100), ],
   group
 ) +
   labs(title = "Weighted Strategy") +
   coord_cartesian(xlim = c(0, 1))
-
-# save these
-
+p1
+p2
+p3
 ```
+
+```{r}
+#| echo: false
+#| eval: false
+
+ggsave(
+  here::here("figs/1proj_mean.pdf"),
+  p1 + scale_y_continuous(breaks = 0) + theme_tidybayes(base_size = 8),
+  width = 3.5,
+  height = 3.5 / 4 * 3,
+  unit = "in",
+  dpi = 300
+)
+```
+
+---
 
 **PIT-ECDFs**: 
 
@@ -1023,7 +965,11 @@ group <- response_ordered %>%
     part2.ans_df %>%
       select(ogIndex, type, flip, noise)
   ) %>%
-  mutate(g = paste(noise, flip, sep = " | ")) %>%
+  mutate(
+    noise_label = ifelse(noise == "c(0, 0)", "Var 0", "Var 0.4"),
+    flip_label = ifelse(flip == FALSE, "Var Lower", "Var Upper")
+  ) %>%
+  mutate(g = paste(noise_label, flip_label, sep = " | ")) %>%
   pull(g)
 
 yrep_mean <- posterior_predict_df %>%
@@ -1066,6 +1012,61 @@ yrep_weighted <- posterior_predict_df %>%
   as.matrix()
 ```
 
+**KDE-plots**: 
+
+```{r}
+#| layout-ncol: 3
+ppc_dens_overlay(y, yrep_mean[sample(nrow(yrep_mean), 100), ]) +
+  labs(title = "Mean Strategy")
+ppc_dens_overlay(y, yrep_median[sample(nrow(yrep_median), 100), ]) +
+  labs(title = "Median Strategy")
+ppc_dens_overlay(y, yrep_weighted[sample(nrow(yrep_weighted), 100), ]) +
+  labs(title = "Weighted Mean Strategy")
+```
+
+**KDE grouped**: 
+
+```{r}
+p1 <- ppc_dens_overlay_grouped(
+  y,
+  yrep_mean[sample(nrow(yrep_mean), 100), ],
+  group = group
+) +
+  labs(title = "Mean Strategy") +
+  coord_cartesian(xlim = c(0, 1))
+p2 <- ppc_dens_overlay_grouped(
+  y,
+  yrep_median[sample(nrow(yrep_median), 100), ],
+  group = group
+) +
+  labs(title = "Median Strategy")
+p3 <- ppc_dens_overlay_grouped(
+  y,
+  yrep_weighted[sample(nrow(yrep_weighted), 100), ],
+  group = group
+) +
+  labs(title = "Weighted Mean Strategy")
+p1
+p2
+p3
+```
+
+```{r}
+#| echo: false
+#| eval: false
+
+ggsave(
+  here::here("figs/2proj_weighted.pdf"),
+  p3 + scale_y_continuous(breaks = 0) + theme_tidybayes(base_size = 8),
+  width = 3.5,
+  height = 3.5 / 4 * 3,
+  unit = "in",
+  dpi = 300
+)
+```
+
+---
+
 **PIT-ECDF**: 
 
 ```{r}
@@ -1089,42 +1090,6 @@ ppc_pit_ecdf(y, yrep_weighted) + labs(title = "Weighted Mean Strategy")
 ppc_pit_ecdf_grouped(y, yrep_mean, group) + labs(title = "Mean Strategy")
 ppc_pit_ecdf_grouped(y, yrep_median, group) + labs(title = "Median Strategy")
 ppc_pit_ecdf_grouped(y, yrep_weighted, group) +
-  labs(title = "Weighted Mean Strategy")
-```
-
-**KDE-plots**: 
-
-```{r}
-#| layout-ncol: 3
-ppc_dens_overlay(y, yrep_mean[sample(nrow(yrep_mean), 100), ]) +
-  labs(title = "Mean Strategy")
-ppc_dens_overlay(y, yrep_median[sample(nrow(yrep_median), 100), ]) +
-  labs(title = "Median Strategy")
-ppc_dens_overlay(y, yrep_weighted[sample(nrow(yrep_weighted), 100), ]) +
-  labs(title = "Weighted Mean Strategy")
-```
-
-**KDE grouped**: 
-
-```{r}
-ppc_dens_overlay_grouped(
-  y,
-  yrep_mean[sample(nrow(yrep_mean), 100), ],
-  group = group
-) +
-  labs(title = "Mean Strategy") +
-  coord_cartesian(xlim = c(0, 1))
-ppc_dens_overlay_grouped(
-  y,
-  yrep_median[sample(nrow(yrep_median), 100), ],
-  group = group
-) +
-  labs(title = "Median Strategy")
-ppc_dens_overlay_grouped(
-  y,
-  yrep_weighted[sample(nrow(yrep_weighted), 100), ],
-  group = group
-) +
   labs(title = "Weighted Mean Strategy")
 ```
 

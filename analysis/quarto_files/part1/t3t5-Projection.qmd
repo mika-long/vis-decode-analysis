@@ -1,5 +1,5 @@
 ---
-title: "Analysis --- Task 3, Task 5 --- Projection Tasks"
+title: "Analysis --- Task 3, Task 5 --- Projection Operators"
 author: "Anonymous"
 date: today
 date-format: "iso"
