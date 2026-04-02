@@ -1,0 +1,816 @@
+---
+title: "Data Cleaning and Descriptive Checks"
+format:
+    html:
+        callout-appearance: simple
+---
+
+```{r}
+#| echo: false
+#| output: false
+#| label: setup
+
+library(tidyverse)
+library(ggplot2)
+library(sgt)
+library(numDeriv)
+library(ggdist)
+# setting the theme 
+theme_set(theme_minimal())
+# model
+library(brms)
+# plot results 
+library(tidybayes)
+```
+
+# Set up 
+
+Read in data and write functions for processing: 
+
+```{r}
+#| label: read-in-data
+#| code-fold: true
+
+# read in data from the three studies 
+df1 <- read.csv("../../data/final/pilot-01.csv") %>% as_tibble(.)
+df2 <- read.csv("../../data/final/pilot-02.csv") %>% as_tibble(.)
+df3 <- read.csv("../../data/final/pilot-03.csv") %>% as_tibble(.)
+
+# combine data from the three studies 
+combined_df <- bind_rows(df1, df2, df3)
+
+df <- combined_df %>% filter(status == "completed") %>% 
+  mutate(rsp_time = as.numeric(cleanedDuration) / 1000) %>% # seconds
+  select(participantId, trialId, responseId, answer, rsp_time, status)
+  
+task_df <- df %>% filter(str_detect(trialId, "task")) %>%
+  mutate(answer = as.numeric(answer)) %>% 
+  pivot_wider(names_from = responseId, values_from = answer, names_repair = "universal") %>% 
+  separate_wider_delim(trialId, delim = "_", names = c("task", "type", "id")) %>% 
+  filter(type != "train") %>% 
+  select(-type) %>% 
+  rename(data.select.x = location.x, 
+         data.select.y = location.y,
+         pixel.select.x = pixel.x, 
+         pixel.select.y = pixel.y)
+
+# initialize empty list of participants to be excluded from analysis 
+exclude_participants <- c()
+```
+
+Define the necessary functions for transforming between pixel space, physical space, and visual angle space: 
+
+```{r}
+#| label: define-function
+#| code-fold: true
+
+# origin is top left  
+data_to_pixel_y <- function(data_y) {
+  return(-395 * data_y + 410)
+}
+data_to_pixel_x <- function(data_x) {
+  return (53.5 * data_x + 317.5)
+}
+
+# origin is bottom left 
+pixel_to_phy_x <- function(pixel, pxMM){
+  (pixel - 50) / pxMM
+}
+pixel_to_phy_y <- function(pixel, pxMM){
+  (410 - pixel) / pxMM
+}
+
+# return visual angle in degrees and not radian
+vis_angle <- function(size, distance){
+  return(2 * atan(size / (2 * distance)) * 180 / pi)
+}
+
+# tolerance for numerical precision 
+tolerance <- 1e-10
+```
+
+Some participants did not answer the calibration tasks truthfully. Therefore, we need to reverse engineer the pixel location of `squarePos` to verify if participants actually put in the correct effort into the calibration tasks. 
+
+```{r}
+#| label: define-special-dfs
+#| code-fold: true
+
+p <- df %>% filter(status == "completed") %>% 
+  select(participantId, trialId, responseId, answer) %>% 
+  filter(grepl("calibration", trialId))
+
+ball_positions <- df %>% filter(status == "completed") %>% 
+  filter(grepl("calibration", trialId)) %>% 
+  select(participantId, responseId, answer) %>% 
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  # filter(!is.na(`square-position`)) %>% 
+  mutate(`ball-positions` = gsub("\\[|\\]", "", `ball-positions`)) %>%
+  mutate(split_answer = str_split(`ball-positions`, ",")) %>% 
+  mutate(numeric_vectors = map(split_answer, ~ as.numeric(.x))) %>% 
+  unnest(split_answer) %>% 
+  mutate(split_answer = as.numeric(split_answer)) %>% 
+  group_by(participantId) %>% 
+  summarise(avg.ball.pos = sum(split_answer) / 5, 
+            min.ball.pos = min(split_answer),
+            max.ball.pos = max(split_answer), 
+            true_ball_pos = (avg.ball.pos * 5 - min.ball.pos - max.ball.pos)/3)
+
+calibrations <- p %>% filter(grepl("pixelsPerMM|dist-calibration-MM", responseId)) %>%
+  select(-trialId) %>%
+  mutate(answer = as.numeric(answer)) %>%
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  rename(pixelToMM = pixelsPerMM, dist_to_screen = `dist-calibration-MM`) 
+participants <- calibrations %>% right_join(ball_positions, by = join_by(participantId)) %>% 
+  mutate(phy = dist_to_screen * tan(13.5 * pi / 180), 
+         px = phy * pixelToMM, 
+         square_pos = round(px + avg.ball.pos)) %>% 
+  mutate(ball.square.dist = (square_pos - true_ball_pos) / pixelToMM, 
+         d = ball.square.dist / tan(13.5 * pi / 180)) %>% 
+  select(participantId, pixelToMM, d) %>% 
+  rename(dist_to_screen = d)
+
+# plot distance to screen distribution 
+participants %>% ggplot(aes(x = dist_to_screen)) + 
+  geom_histogram() + 
+  labs(x = "distance to screen (mm)")
+```
+
+From the above histogram, two participants have `dist_to_screen` less than 200 mm. This indicates that they did not press the space bar in the calibration tasks as instructed, thus we do not include these participants in our analysis. 
+
+```{r}
+participants %>% filter(dist_to_screen > 200) -> participants
+```
+
+# Task 1 -- Split area into equal halves
+
+Load data: 
+
+```{r}
+#| label: get task 1 data 
+#| code-fold: true 
+
+task1_df <- task_df %>% filter(task == "task1") %>%
+  select(-slider.x, -slider.y) %>% 
+  right_join(participants, by = join_by(participantId)) %>% 
+  mutate(data.select.left_area = psgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE), 
+         data.ans.x = qsgt(0.5, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)) %>% 
+  # pixel related 
+  mutate(pixel.med.x = data_to_pixel_x(data.ans.x), 
+         pixel.mod.x = data_to_pixel_x(param.mu)) %>% 
+  # phy related 
+  mutate(phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM), 
+         phy.med.x = pixel_to_phy_x(pixel.med.x, pixelToMM), 
+         phy.mod.x = pixel_to_phy_x(pixel.mod.x, pixelToMM)) %>% 
+  # visual angle related 
+  mutate(va.select.x = vis_angle(phy.select.x, dist_to_screen), 
+         va.med.x = vis_angle(phy.med.x, dist_to_screen), 
+         va.mod.x = vis_angle(phy.mod.x, dist_to_screen))
+```
+
+Calculate correlation: 
+
+```{r}
+#| code-fold: true 
+
+task1_corr <- task1_df %>% group_by(participantId) %>%
+  summarise(correlation.x = cor(data.select.x, data.ans.x)) %>%
+  mutate(mean = mean(correlation.x), sd = sd(correlation.x),
+         lb = mean - 2 * sd, ub = mean + 2 * sd) %>%
+  filter(correlation.x  < 0.5)
+
+task1_df %>% group_by(participantId) %>% 
+  summarise(correlation.x = cor(data.select.x, data.ans.x)) %>% 
+  mutate(mean = mean(correlation.x), sd = sd(correlation.x), 
+         lb = mean - 2 * sd, ub = mean + 2 * sd) %>% 
+  ggplot(aes(x = correlation.x)) + 
+  geom_histogram()
+```
+
+Given that most participants have correlation > 0.5, we filter out participant whose selection's correlation to the actual answer has correlation < 0.5. 
+
+```{r}
+exclude_participants <- c(task1_corr %>% pull(participantId), exclude_participants)
+```
+
+:::{.callout-note collapse="true" title="Further examination" appearance="simple"}
+Let's also examine the two participants who have correlation < 0.5 for task 1, by plotting the actual answer (in red) and the participants' selection (in black): 
+
+```{r}
+#| layout-ncol: 2
+#| code-fold: true 
+
+task1_df %>% filter(participantId == "67f44a0314ad081a761de62c") %>% 
+  ggplot(aes(x = data.select.x, y = data.select.y)) + 
+  geom_point() + xlim(-5, 5) + ylim(0, 1) + 
+  geom_point(data = filter(task1_df, 
+                           participantId == "67f44a0314ad081a761de62c"), 
+             aes(x = data.ans.x, color = "answer")) + 
+  labs(title = "PID --- 67f44a0314ad081a761de62c")
+
+task1_df %>% filter(participantId == "67ea39f872546624b6b520bf") %>% 
+  ggplot(aes(x = data.select.x, y = data.select.y)) + 
+  geom_point() + xlim(-5, 5) + ylim(0, 1) + 
+  geom_point(data = filter(task1_df, participantId == "67ea39f872546624b6b520bf"), aes(x = data.ans.x, color = "answer")) + 
+  labs(title = "PID --- 67ea39f872546624b6b520bf")
+```
+
+This participant is selecting -5 or 5 all the time. Clearly demonstrated low effort. We exclude their answers from the final analysis. 
+:::
+
+Plotting other relations descriptively: 
+
+```{r}
+#| layout-ncol: 2
+#| code-fold: true 
+#| eval: false 
+
+# Plotting selection, answer, and `x` coordinate for highest point against lambda: 
+
+task1_df %>% filter(!participantId %in% exclude_participants) %>% 
+  ggplot(aes(y = data.select.x - data.ans.x, x = param.lambda)) + 
+  geom_point(alpha = 0.5) # + ylim(-1, 1)
+  
+task1_df %>% filter(!participantId %in% exclude_participants) %>% 
+  ggplot(aes(y = data.select.left_area - 0.5, x = param.lambda)) + 
+  geom_point(alpha = 0.5)
+
+task1_df %>% filter(!participantId %in% exclude_participants) %>% 
+  ggplot(aes(y = va.select.x - va.med.x, x = param.lambda)) + 
+  geom_point(alpha = 0.5)
+
+
+task1_df %>% ggplot(aes(x = param.lambda, y = data.select.x - param.mu)) + geom_point(alpha = 0.5)
+
+task1_df %>% ggplot(aes(x =  data.select.x - param.mu)) + 
+  geom_dots()
+
+task1_df %>% ggplot(aes(y =  data.select.x - param.mu, x = dist_to_screen)) + 
+  geom_point()
+
+task1_df %>% ggplot(aes(y =  data.select.left_area - 0.5, x = dist_to_screen)) + 
+  geom_point()
+
+task1_df %>% ggplot(aes(x = data.ans.x - data.select.x)) + 
+  geom_dots()
+
+task1_df %>% ggplot(aes(y = data.ans.x - data.select.x, x = dist_to_screen)) + 
+  geom_point()
+
+task1_df %>% ggplot(aes(y = data.select.left_area^(1/0.7), x = param.lambda)) + 
+  geom_point()
+```
+
+# Task 2 -- Find highest point on curve 
+
+First we get the data: 
+
+```{r}
+#| label: get task 2 data
+#| code-fold: true 
+
+task2_df <- task_df %>% filter(task == "task2") %>% 
+  select(-slider.x, -slider.y) %>% 
+  mutate(data.ans.x = param.mu, 
+         data.ans.y = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE),
+         # this is the gradient of the left of the highest point 
+         data.left.grad = numDeriv::grad(dsgt, param.mu - 1, mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
+         data.right.grad = numDeriv::grad(dsgt, param.mu + 1, mu = param.mu, sigma = param.sigma, lambda = param.lambda, p = param.p, q = param.q, mean.cent = FALSE), 
+         ) %>% 
+  right_join(participants, by = join_by(participantId)) %>% 
+  # calculate things related to participants' selection 
+  mutate(phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM), 
+         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM),
+         va.select.x = vis_angle(phy.select.x, dist_to_screen), 
+         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>% 
+  # calculate things related to answer 
+  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x), 
+         pixel.ans.y = data_to_pixel_y(data.ans.y), 
+         phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM), 
+         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM),
+         va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
+         va.ans.y = vis_angle(phy.ans.y, dist_to_screen)) %>% 
+  mutate(flat = (abs(data.left.grad) + abs(data.right.grad))/2)
+```
+
+Calculate correlation^[similar to what we did for Task 1, exclude those who have correlation to the true answer < 0.5]: 
+
+```{r}
+task2_corr <- task2_df %>% group_by(participantId) %>% 
+  summarise(correlation.y = cor(data.select.y,  data.ans.y), 
+            correlation.x = cor(data.select.x, data.ans.x)) %>% 
+  filter(correlation.y < 0.5 | correlation.x < 0.5)
+
+task2_corr
+
+exclude_participants <- c(exclude_participants, task2_corr %>% pull(participantId))
+```
+
+:::{.callout-note title="Further examination" collapse="true"}
+Examine particular participants: 
+
+```{r}
+#| code-fold: true 
+#| layout-ncol: 2
+
+task2_df %>% filter(participantId == "67ea39f872546624b6b520bf") %>% 
+  ggplot(aes(x = data.select.x, y = data.select.y)) + 
+  geom_point() + xlim(-5, 5) + ylim(0, 1) + 
+  geom_point(data = filter(task2_df, participantId == "67ea39f872546624b6b520bf"), aes(x = data.ans.x, color = "answer"))
+
+task2_df %>% filter(participantId == "67eedf7be13ffb77c677d4dd") %>% 
+  ggplot(aes(x = data.select.x, y = data.select.y)) + 
+  geom_point() + xlim(-5, 5) + ylim(0, 1) + 
+  geom_point(data = filter(task2_df, participantId == "67eedf7be13ffb77c677d4dd"), aes(x = data.ans.x, y = data.ans.y, color = "answer"))
+```
+
+:::
+
+
+
+Checking relations, focusing on the **y** axes: 
+
+```{r}
+#| layout-ncol: 2
+#| code-fold: true
+#| eval: false 
+
+# task2_df %>% ggplot(aes(y = phy.ans.y - phy.select.y, x = dist_to_screen)) + 
+#   geom_point()
+# 
+# task2_df %>% ggplot(aes(y = va.ans.y - va.select.y, x = dist_to_screen)) + 
+#   geom_point()
+
+task2_df %>% filter(!participantId %in% exclude_participants) %>% 
+  ggplot(aes(x = va.ans.y - va.select.y)) + 
+  geom_dots()
+
+
+task2_df %>% ggplot(aes(x = data.ans.y - data.select.y)) + geom_dots()
+
+task2_df %>% ggplot(aes(x = phy.ans.y - phy.select.y)) + geom_dots()
+task2_df %>% ggplot(aes(x = (phy.ans.y - phy.select.y) / dist_to_screen)) + geom_dots()
+```
+
+Checking relations, focusing on the **x** axes: 
+
+```{r}
+#| layout-ncol: 2
+#| code-fold: true
+#| eval: false 
+
+task2_df %>% filter(!participantId %in% exclude_participants) %>% 
+  ggplot(aes(x = va.select.x - va.ans.x)) + 
+  geom_dots()
+
+task2_df %>% ggplot(aes(x = data.ans.x - data.select.x)) +
+  geom_dots()
+
+task2_df %>% ggplot(aes(x = (phy.ans.x - phy.select.x)/dist_to_screen)) +
+  geom_dots()
+
+task2_df %>% ggplot(aes(x = va.select.x - va.ans.x)) +
+  geom_dots() +
+  facet_wrap(~participantId)
+
+task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = dist_to_screen)) +
+  geom_point(alpha = 0.5)
+
+task2_df %>% ggplot(aes(y = va.select.x - va.ans.x, x = param.lambda)) +
+  geom_point(alpha = 0.5) +
+  labs(title = "Signed error on x-axes against skewness")
+```
+
+# Task 3 -- Find point on curve where `y == 0.5`
+
+First we get the data:
+
+```{r}
+#| code-fold: true 
+
+task3_df <- task_df %>% filter(task == "task3") %>%
+  select(-slider.x, -slider.y) %>%
+  right_join(participants, by = join_by(participantId)) %>%
+  # do all the calculations for user's selected
+  mutate(pixel.select.x = data_to_pixel_x(data.select.x),
+         pixel.select.y = data_to_pixel_y(data.select.y),
+         phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM),
+         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM),
+         va.select.x = vis_angle(phy.select.x, dist_to_screen),
+         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>%
+  mutate(data.ans.y = 0.5,
+         data.ans.x = qsgt(0.5, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE)) %>%
+  # do all the calculations for the actual answer
+  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x),
+         pixel.ans.y = data_to_pixel_y(data.ans.y),
+         phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM),
+         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM),
+         va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
+         va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
+```
+
+Calculation correlation and exclude participants: 
+
+```{r}
+# can't calculat correlation on y because the standard deviation is 0. 
+# we use x as an approximation 
+
+task3_corr <- task3_df %>% group_by(participantId) %>% 
+  summarise(correlation = suppressWarnings(cor(data.select.x, data.ans.x))) %>% 
+  filter(is.na(correlation) | correlation < 0.9)
+
+task3_corr
+
+exclude_participants <- c(exclude_participants, pull(task3_corr, participantId))
+```
+
+:::{.callout-note title="Further examine" collapse="true"}
+
+Examine particular participants: 
+
+```{r}
+#| layout-ncol: 2
+
+task3_plot <- function(pid){
+  task3_df %>% filter(participantId == pid) %>% 
+    ggplot() + 
+    geom_point(aes(x = data.select.x, y = data.select.y, color = "select")) + 
+    geom_point(aes(x = data.ans.x, y = 0.5, color = "answer")) + 
+    ylim(0, 1) + xlim(-5, 5) +
+    geom_vline(xintercept = 0.5, linetype = "dashed", color = "gray") + 
+    labs(title = pid)
+}
+
+task3_plot("67ea39f872546624b6b520bf")
+task3_plot("67ee9fb880b10fe380af1803")
+task3_plot("67eedf7be13ffb77c677d4dd")
+task3_plot("67fd4f955123c6d79ae66a3a")
+```
+:::
+
+Verify that the scales are correct:
+
+```{r}
+#| eval: false
+#| code-fold: true
+#| label: task 3 verify
+
+# verify that the results are of correct scale
+task3_df %>% ggplot(aes(x = data.select.x - data.ans.x)) +
+  geom_dots()
+
+task3_df %>% ggplot(aes(x = data.select.y - data.ans.y)) +
+  geom_dots()
+
+task3_df %>% ggplot(aes(x = pixel.select.x - pixel.ans.x)) +
+  geom_dots()
+
+task3_df %>% ggplot(aes(x = pixel.select.y - pixel.ans.y)) +
+  geom_dots()
+
+task3_df %>% ggplot(aes(x = phy.select.x - phy.ans.x)) +
+  geom_dots()
+
+task3_df %>% ggplot(aes(x = phy.select.y - phy.ans.y)) +
+  geom_dots()
+
+task3_df %>% ggplot(aes(x = va.select.x - va.ans.x)) +
+  geom_dots()
+
+task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
+  geom_dots()
+```
+
+It is not very normal that we have a bunch of selections that have this big of a variation on y ... 
+
+```{r}
+task3_df %>% filter(abs(data.select.y - data.ans.y) > 0.2)
+```
+
+Hmm it is very clear that this participant only selected values very close to 1 ... which is NOT what we wanted ... 
+
+Distribution of signed error:
+
+```{r}
+#| code-fold: true
+
+task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
+  geom_dots() +
+  geom_vline(xintercept = 0, linetype="dashed", color="black") +
+  labs(title="Task 3 -- Find dot on curve where y == 0.5")
+```
+
+Relationship between distance from the y-axes and the signed distribution:
+
+```{r}
+#| code-fold: true 
+#| layout-ncol: 2
+
+task3_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, linetype="dashed", color="black") # +
+  labs(title="Task 3 -- CDF Median")
+  
+task3_df %>% ggplot(aes(x = va.select.y - va.ans.y)) +
+  geom_dots()
+```
+
+# Task 4 -- Find slope 
+
+Get data: 
+
+```{r}
+#| label: get task 4 data 
+#| code-fold: true 
+
+epsilon <- 1e-10
+
+data_to_screen_slope <- function(k){
+  return(k * 395 / 53.5)
+}
+
+task4_df <- task_df %>% filter(task == "task4") %>% 
+  select(-slider.x, -slider.y) %>% 
+  mutate(data.select.slope = dsgt(data.select.x, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE), 
+         data.ans.slope = dsgt(param.mu, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent=FALSE)) %>% 
+  right_join(participants, by = join_by(participantId)) %>% 
+  mutate(phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM), 
+         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM),
+         va.select.x = vis_angle(phy.select.x, dist_to_screen), 
+         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>%
+  mutate(data.ans.x = param.mu, 
+         data.ans.y = 1 / 2 * (psgt(data.ans.x + epsilon, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE) +  
+                                            psgt(data.ans.x - epsilon, param.mu, param.sigma, param.lambda, param.p, param.q, mean.cent = FALSE))) %>%
+  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x), 
+         pixel.ans.y = data_to_pixel_y(data.ans.y)) %>% 
+  mutate(phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM), 
+         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM)) %>% 
+  mutate(va.ans.x = vis_angle(phy.ans.x, dist_to_screen), 
+         va.ans.y = vis_angle(phy.ans.y, dist_to_screen)) 
+```
+
+Calculate correlation: 
+
+```{r}
+task4_corr <- task4_df %>% group_by(participantId) %>% 
+  summarise(correlation = cor(data_to_screen_slope(data.select.slope), data_to_screen_slope(data.ans.slope))) %>% 
+  filter(correlation < 0.5)
+
+task4_corr
+
+exclude_participants <- c(exclude_participants, pull(task4_corr, participantId))
+```
+
+Check relations: 
+
+```{r}
+#| code-fold: true 
+#| eval: false 
+
+task4_df %>% ggplot(aes(x = va.ans.x - va.select.x)) + geom_dots()
+task4_df %>% ggplot(aes(x = va.ans.y - va.select.y)) + geom_dots()
+task4_df %>% ggplot(aes(x = atan(va.ans.y / va.ans.x) * 180 / pi)) + geom_dots()
+task4_df %>% ggplot(aes(x = va.ans.y / va.ans.x, y = data.ans.slope)) + 
+  geom_point() + coord_equal()
+
+task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) + 
+  geom_dots()
+
+task4_df %>% filter(data.select.slope - data.ans.slope == 0)
+
+task4_df %>% ggplot(aes(x = atan(data.select.slope) * 180 / pi - atan(data.ans.slope) * 180 / pi)) + 
+  geom_dots()
+
+task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) + 
+  geom_dots()
+
+task4_df %>% ggplot(aes(x = atan(data_to_screen_slope(data.select.slope)) * 180 / pi - atan(data_to_screen_slope(data.ans.slope)) * 180 / pi)) + 
+  stat_ecdf()
+```
+
+If we map the mathematical slope to the actual slope, this is what we get: 
+
+- y axis range [0, 1] correspond to 395 px -> 395px / unit 
+- x axis range [-5, 5] correspond to 535 px -> 53.5 px / unit 
+
+```{r}
+task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope), y = data_to_screen_slope(data.ans.slope))) + 
+  geom_point(alpha = 0.5) + 
+  coord_equal()
+
+task4_df %>% ggplot(aes(x = data_to_screen_slope(data.select.slope) - data_to_screen_slope(data.ans.slope))) + 
+  geom_dots()
+```
+
+
+Let's first see the distribution of signed error: 
+
+```{r}
+task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) + 
+  geom_dots()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = dist_to_screen)) + 
+  geom_point(alpha = 0.5)
+```
+
+It seems that the selected slope is consistently smaller than the actual slope of the answer. 
+
+Let's see if there's any obvious relation between signed error and parameters of the distribution: 
+
+```{r}
+#| layout-ncol: 2
+#| code-fold: true 
+#| output: false 
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = dist_to_screen)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.mu)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.sigma)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.lambda)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.p)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(y = data.select.slope - data.ans.slope, x = param.q)) + 
+  geom_point()
+
+task4_df %>% ggplot(aes(x = data.select.slope - data.ans.slope)) + 
+  geom_dots()
+```
+
+# Task 5 --- Project from dot to axes 
+
+Get data: 
+
+```{r}
+#| label: task 5 load data
+#| code-fold: true 
+
+task5_df <- task_df %>% filter(task == "task5") %>% 
+  select(participantId, task, id, data.select.x, data.select.y, slider.x, slider.y) %>% 
+  rename(data.ans.x = data.select.x, 
+         data.ans.y = data.select.y, 
+         data.select.x = slider.x, 
+         data.select.y = slider.y) %>% 
+  right_join(participants, by = join_by(participantId)) %>% 
+  # do all the calculations for user's selected 
+  mutate(pixel.select.x = data_to_pixel_x(data.select.x), 
+         pixel.select.y = data_to_pixel_y(data.select.y), 
+         phy.select.x = pixel_to_phy_x(pixel.select.x, pixelToMM),
+         phy.select.y = pixel_to_phy_y(pixel.select.y, pixelToMM), 
+         va.select.x = vis_angle(phy.select.x, dist_to_screen),
+         va.select.y = vis_angle(phy.select.y, dist_to_screen)) %>% 
+  # do all the calculations for the actual answer
+  mutate(pixel.ans.x = data_to_pixel_x(data.ans.x),
+         pixel.ans.y = data_to_pixel_y(data.ans.y),
+         phy.ans.x = pixel_to_phy_x(pixel.ans.x, pixelToMM),
+         phy.ans.y = pixel_to_phy_y(pixel.ans.y, pixelToMM), 
+         va.ans.x = vis_angle(phy.ans.x, dist_to_screen),
+         va.ans.y = vis_angle(phy.ans.y, dist_to_screen))
+```
+
+Check correlation:  
+
+```{r}
+task5_corr <- task5_df %>% group_by(participantId) %>% 
+  summarise(correlation.x = cor(data.select.x, data.ans.x), 
+            correlation.y = cor(data.select.y, data.ans.y)) %>% 
+  filter(correlation.x < 0.9 | correlation.y < 0.9)
+
+task5_corr
+
+exclude_participants <- c(exclude_participants, task5_corr %>% pull(participantId))
+```
+
+:::{.callout-note title="Further examination" collapse="true"}
+Examine specific participants: 
+
+```{r}
+#| layout-ncol: 2
+
+task5_plot <- function(pid){
+  task5_df %>% filter(participantId == pid) %>% 
+    ggplot() + 
+    geom_point(aes(x = data.ans.x, y = data.ans.y, color = "answer")) + 
+    geom_point(aes(x = data.select.x, y = data.select.y, color = "select")) + 
+    xlim(-5, 5) + ylim(0, 1)
+}
+
+task5_plot("6443ebb84fc33e703937a6f9")
+task5_plot("67ea39f872546624b6b520bf")
+task5_plot("67eedf7be13ffb77c677d4dd")
+```
+:::
+
+Verify that the results are in the right scale: 
+
+```{r}
+#| eval: false 
+#| code-fold: true
+#| label: task 5 verify 
+
+task5_df %>% ggplot(aes(x = data.ans.x - data.select.x)) + geom_dots()
+
+task5_df %>% ggplot(aes(x = pixel.select.x - pixel.ans.x)) + 
+  geom_dots()
+
+task5_df %>% ggplot(aes(x = pixel.select.y - pixel.ans.y)) + 
+  geom_dots()
+
+task5_df %>% ggplot(aes(x = phy.select.x - phy.ans.x)) + 
+  geom_dots()  
+
+task5_df %>% ggplot(aes(x = phy.select.y - phy.ans.y)) + 
+  geom_dots() 
+
+task5_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + 
+  #ggdist::geom_swarm()
+  geom_dots()
+
+task5_df %>% ggplot(aes(x = va.select.y - va.ans.y)) + 
+  geom_dots()  
+
+```
+
+## Task 5.1 --- Project from dot to X axes
+
+Distribution of signed error: 
+
+```{r}
+#| code-fold: true
+
+task5_df %>% ggplot(aes(x = va.select.x - va.ans.x)) + 
+  geom_dots() +
+  geom_vline(xintercept = 0, linetype="dashed", color="black") + 
+  labs(title="Task 5 - Project from Dot to X-Axes - Vis Angle") 
+```
+
+Relationship between signed error (in visual angle space) and distance to X-axes: 
+
+```{r}
+#| code-fold: true
+
+task5_df %>% ggplot(aes(x = va.ans.y, y = va.select.x - va.ans.x)) + 
+  geom_point(alpha = 0.5) +
+  geom_vline(xintercept = 0, linetype="dashed", color="gray") + 
+  labs(title="Task 5 - Project from Dot to X-Axes") 
+```
+
+```{r}
+#| code-fold: true
+
+task5_df %>% ggplot(aes(x = va.ans.x, y = va.select.y - va.ans.y)) + 
+  geom_point(alpha = 0.5) +
+  geom_vline(xintercept = 0, linetype="dashed", color="gray") + 
+  labs(title="Task 5 - Project from Dot to Y-Axes") 
+  
+task5_df %>% filter(va.select.y - va.ans.y > 1)
+```
+
+```{r}
+task5_df %>% filter(va.select.y - va.ans.y > 1) %>% 
+  ggplot(aes(x = data.ans.x, y = data.ans.y, color = "answer")) + 
+  geom_point() + 
+  geom_point(aes(x = data.select.x, y = data.select.y, color = "select")) + 
+  xlim(-5, 5) + ylim(0, 1)
+```
+
+Have reason to suspect that this participant really isn't answering the questions nicely ... 
+
+# Calculate average time 
+
+```{r}
+df %>% filter(!participantId %in% exclude_participants) %>% 
+  filter(grepl("task", trialId)) %>% 
+  group_by(participantId, trialId, rsp_time) %>%
+  summarise(.) %>% 
+  group_by(participantId) %>% 
+  summarise(sum_rsp = sum(rsp_time)) %>% 
+  pull(sum_rsp) %>% mean(.) / 60
+```
+
+# Save the cleaned data
+
+Count the number of times participants are excluded^[Given that we have five tasks, the maximum number of times that a participant can be excluded is 5]: 
+
+```{r}
+exclude_participants %>% as_tibble() %>% 
+  count(value)
+```
+
+Save the cleaned files: 
+
+```{r}
+task_df %>% filter(!participantId %in% exclude_participants) -> task_df
+saveRDS(task_df, file = "../../data/final/task.rds")
+
+participants %>% filter(!participantId %in% exclude_participants) %>% 
+  saveRDS(., "../../data/final/participants.rds")
+```
+
+

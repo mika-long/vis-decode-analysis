@@ -1,0 +1,70 @@
+---
+title: "Difference between mixture and weighted"
+format: html
+---
+
+```{r}
+#| echo: false 
+
+library(ggplot2)
+library(tidyverse)
+# setting the theme 
+theme_set(theme_minimal())
+```
+
+Suppose we have two Normal distribution, `N(0, 0.5)` and `N(2, 1)`. 
+
+This is what it looks like: 
+
+```{r}
+#| code-fold: true 
+
+
+x <- seq(-5, 5, 0.01)
+y1 <- dnorm(x, mean = 0, sd = 0.5)
+y2 <- dnorm(x, mean = 2, sd = 1)
+
+data.frame(x = x, y1 = y1, y2 = y2) %>% 
+  pivot_longer(2:3) %>% 
+  ggplot(aes(x = x, y = value, color = name)) + 
+  geom_line() + ylim(0, 1) + 
+  labs(title = "Probability density of two normal distributions") + 
+  scale_color_manual(values = c("y1" = "blue", "y2" = "green", "mix" = "red"))
+```
+
+# Mixture between the two 
+
+Suppose the first distribution is selected with probability $\theta = 0.4$. 
+
+```{r}
+#| code-fold: true 
+
+
+mixture <- 0.4 * y1 + 0.6 * y2
+
+data.frame(x = x, y1 = y1, y2 = y2, mix = mixture) %>% 
+  pivot_longer(2:4) %>% 
+  ggplot(aes(x = x, y = value, color = name)) + 
+  geom_line() + ylim(0, 1) + 
+  scale_color_manual(values = c("y1" = "blue", "y2" = "green", "mix" = "red")) + 
+  labs(title = "Probability density of two normal distributions")
+
+```
+
+# Weighted average between the two 
+
+Note that when we add two normal distributions, we result in another normal distribution. Suppose the weight for the first one is also $\theta = 0.4$, then we get 
+
+$0.4 \times N(0, 0.5) + 0.6 \times N(2, 1) = N(0, 0.2) + N(1.2, 0.6) = N(1.2, \sqrt{0.2^2 + 0.6^2}) = N(1.2, 0.63)$
+
+```{r}
+weighted_average <- dnorm(x, mean = 1.2, sd = 0.63)
+
+data.frame(x = x, y1 = y1, y2 = y2, weighted = weighted_average) %>% 
+  pivot_longer(2:4) %>% 
+  ggplot(aes(x = x, y = value, color = name)) + 
+  geom_line() + ylim(0, 1) + 
+  scale_color_manual(values = c("y1" = "blue", "y2" = "green", "weight" = "darkred")) + 
+  labs(title = "Probability density of two normal distributions")
+```
+
