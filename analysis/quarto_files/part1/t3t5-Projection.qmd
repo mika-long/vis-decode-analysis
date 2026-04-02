@@ -57,8 +57,8 @@ Read in data and scales:
 #| label: read-in-data
 #| code-fold: true
 
-task_df <- read_rds(here("data", "final", "task.rds"))
-participants <- read_rds(here("data", "final", "participants.rds"))
+task_df <- read_rds(here("data", "part1", "task.rds"))
+participants <- read_rds(here("data", "part1", "participants.rds"))
 exp1_x <- make_va_scale(data_min = -5, data_max = 5, px_min = 50, px_max = 585)
 exp1_y <- make_va_scale(data_min = 0, data_max = 1, px_min = 410, px_max = 15)
 ```
