@@ -1,8 +1,9 @@
 ## Repository structure 
 
 - 📁 `analysis\`: contains Quarto notebooks for analyzing results for each task 
-  - `pymc_files\`: python files using `PyMC` and `arivz` to analyze results 
-  - `quarto_files\`: R files using `brms` and `ggplot2` to analyze results 
+  - `quarto_files\`: R files using `brms` and `ggplot2` to analyze results. 
+    - `part1`: files related to Section 4 of the paper. 
+    - `part2`: files related to Section 5 of the paper.  
   - 📁 `fitted_models`: contains fitted `brms` models as well as `.nc` models, available on [OSF](https://osf.io/prtfq/files/osfstorage?view_only=1c7104a9488940a6aa5a042d41bb1232).  
   - `stan_files`: the `Stan` makefiles, shared by both workflows (R uses `cmdstanr` while python uses `cmdstanpy`)
   - `stan_bin_files`: compiled stan binaries; not tracked 

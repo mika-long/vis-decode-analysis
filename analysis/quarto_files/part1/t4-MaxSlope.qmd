@@ -1,8 +1,11 @@
 ---
-title: "Analysis --- Task 4 --- MaxSlope"
+title: "MaxSlope Operator"
 html:
+  reference-location: margin
   embed-resources: true
 author: "Anonymous"
+execute: 
+  freeze: auto
 ---
 
 ```{r}
@@ -53,8 +56,8 @@ Read in data and relevant scales:
 #| label: read-in-data
 #| code-fold: true
 
-task_df <- read_rds(here("data", "final", "task.rds"))
-participants <- read_rds(here("data", "final", "participants.rds"))
+task_df <- read_rds(here("data", "part1", "task.rds"))
+participants <- read_rds(here("data", "part1", "participants.rds"))
 exp1_x <- make_va_scale(data_min = -5, data_max = 5, px_min = 50, px_max = 585)
 exp1_y <- make_va_scale(data_min = 0, data_max = 1, px_min = 410, px_max = 15)
 ```
@@ -83,7 +86,7 @@ data_to_va_slope <- function(data_x, data_y, dist, px_per_mm) {
 }
 ```
 
-Get task 4 specific data: 
+Get task-related specific data: 
 
 ```{r}
 #| label: get task 4 data
@@ -149,10 +152,9 @@ task4_df <- task_df %>%
 ```
 
 ```{r}
-#| code-fold: true
+#| echo: false
 #| eval: false
 
-# save this data for python analysis
 write_csv(task4_df, here("data", "processed", "task4.csv"))
 ```
 
@@ -174,7 +176,7 @@ task4_df %>%
 ```{r}
 #| layout-ncol: 2
 #| code-fold: true
-#| output: false
+#| eval: false
 
 # Checking to see if there's any obvious relation between signed error and parameters of the distribution.
 # nothing apparent.
@@ -211,12 +213,12 @@ task4_df %>% ggplot(aes(x = data.resp.slope - data.ans.slope)) + geom_dots()
 Math model: 
 
 $$
-\begin{align}
+\begin{align*}
 \text{error_i} &\sim \text{Exponential}(\lambda_{\text{PID}[i]}) \\ 
 \log(\lambda_j) &\sim \mathcal{N}(\mu_\lambda, \sigma_\lambda) \\ 
 \mu_\lambda &\sim \mathcal{N}(0, 1) \\ 
 \sigma_\lambda &\sim \mathcal{N}^+(0, 1) 
-\end{align}
+\end{align*}
 $$
 
 Formula and prior: 
@@ -277,6 +279,7 @@ plot(model.exponential)
 
 ```{r}
 #| layout-ncol: 2
+#| code-fold: true
 pp_check(model.exponential, ndraws = 100)
 pp_check(model.exponential, ndraws = 100, type = "pit_ecdf")
 ```
@@ -298,6 +301,7 @@ model.exponential %>%
 Overlay plot: 
 
 ```{r}
+#| code-fold: true
 prediction <- task4_df %>%
   mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
   mutate(error = ifelse(error < tolerance, tolerance, error)) %>%
@@ -313,6 +317,7 @@ prediction %>%
 ```
 
 ```{r}
+#| code-fold: true
 task4_df %>%
   modelr::data_grid(error = 0) %>%
   add_predicted_draws(model.exponential, re_formula = NA) %>%
@@ -434,6 +439,7 @@ model.lomax %>%
 Define custom functions^[Check out this [link](https://cran.r-project.org/web/packages/brms/vignettes/brms_customfamilies.html?utm_source=chatgpt.com) for more details.] for posterior predictive check (`pp_check`) and model comparison (`loo`):
 
 ```{r}
+#| eval: false
 # update(model.lomax, recompile = TRUE)
 # TODO: use this https://rok-cesnovar.github.io/misc/exposing_cmdstanr_udf.html to debug
 expose_functions(model.lomax, vectorize = TRUE)
@@ -456,6 +462,7 @@ log_lik_lomax <- function(i, prep) {
 
 ```{r}
 #| layout-ncol: 2
+#| eval: false
 pp_check(model.lomax, ndraws = 100)
 pp_check(model.lomax, ndraws = 100, type = "pit_ecdf")
 ```
@@ -463,6 +470,7 @@ pp_check(model.lomax, ndraws = 100, type = "pit_ecdf")
 Overlay plot:
 
 ```{r}
+#| eval: false
 prediction <- task4_df %>%
   mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
   add_predicted_draws(model.lomax, ndraws = 100)
@@ -545,6 +553,7 @@ plot(model.weibull)
 
 ```{r}
 #| layout-ncol: 2
+#| code-fold: true
 
 pp_check(model.weibull, ndraws = 100) +
   coord_cartesian(xlim = c(0, 10)) +
@@ -560,6 +569,7 @@ p2
 
 ```{r}
 #| echo: false
+#| eval: false
 
 ggsave(
   here("figs", "task4-pp-check.pdf"),
@@ -668,6 +678,7 @@ p
 
 ```{r}
 #| echo: false
+#| eval: false
 ggsave(
   here("figs", "task4.pdf"),
   plot = p,
@@ -739,6 +750,7 @@ plot(model.lognormal)
 
 ```{r}
 #| layout-ncol: 2
+#| code-fold: true
 pp_check(model.lognormal, ndraws = 100)
 pp_check(model.lognormal, ndraws = 100, type = "pit_ecdf")
 ```
@@ -746,6 +758,7 @@ pp_check(model.lognormal, ndraws = 100, type = "pit_ecdf")
 Overlay plot:
 
 ```{r}
+#| code-fold: true
 prediction <- task4_df %>%
   mutate(
     error = abs(va.resp.slope - va.ans.slope)
@@ -764,6 +777,7 @@ prediction %>%
 ```
 
 ```{r}
+#| code-fold: true
 task4_df %>%
   modelr::data_grid(error = 0) %>%
   add_predicted_draws(model.lognormal, re_formula = NA, ndraws = 100) %>%
@@ -780,6 +794,7 @@ task4_df %>%
 # Model Comparison {#sec-model-compare}
 
 ```{r}
+#| eval: false
 loo(
   model.exponential,
   model.laplace,
@@ -797,10 +812,10 @@ The Weibull model performs the best.
 
 pp_check(model.exponential, ndraws = 100, type = "pit_ecdf") +
   labs(title = "Exponential")
-pp_check(model.lomax, ndraws = 100, type = "pit_ecdf") +
-  labs(title = "Lomax")
-pp_check(model.weibull, ndraws = 100, type = "pit_ecdf") +
-  labs(title = "Weibull")
+# pp_check(model.lomax, ndraws = 100, type = "pit_ecdf") +
+#   labs(title = "Lomax")
+# pp_check(model.weibull, ndraws = 100, type = "pit_ecdf") +
+#   labs(title = "Weibull")
 pp_check(model.lognormal, ndraws = 100, type = "pit_ecdf") +
   labs(title = "Log-Normal")
 ```
