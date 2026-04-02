@@ -1,6 +1,6 @@
 ## Repository structure 
 
-- 📁 `analysis\`: contains Quarto and Jupyter notebooks for analyzing results for each task 
+- 📁 `analysis\`: contains Quarto notebooks for analyzing results for each task 
   - `pymc_files\`: python files using `PyMC` and `arivz` to analyze results 
   - `quarto_files\`: R files using `brms` and `ggplot2` to analyze results 
   - 📁 `fitted_models`: contains fitted `brms` models as well as `.nc` models, available on [OSF](https://osf.io/prtfq/files/osfstorage?view_only=1c7104a9488940a6aa5a042d41bb1232).  
