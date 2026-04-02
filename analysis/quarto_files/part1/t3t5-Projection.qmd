@@ -1,11 +1,14 @@
 ---
-title: "Analysis --- Task 3, Task 5 --- Projection Operators"
+title: "Projection Operators"
 author: "Anonymous"
 date: today
 date-format: "iso"
 format:
   html:
     reference-location: margin
+    embed-resources: true
+execute: 
+  freeze: auto
 ---
 
 ```{r}
@@ -42,13 +45,6 @@ source(here("R", "helpers.R"))
 bayesplot::bayesplot_theme_update(text = element_text(family = "sans"))
 ```
 
-# TLDR --- Task 3 and Task 5 are both `project_to_axis` tasks 
-
-- Task 3 is about median identification on a CDF 
-- Task 5 is about selecting answers from past answers and ask participants to project to both x-axis and y-axis 
-
-For both these tasks, we fitted the data using Gaussian models. 
-
 # Set up
 
 Read in data and scales: 
@@ -63,9 +59,9 @@ exp1_x <- make_va_scale(data_min = -5, data_max = 5, px_min = 50, px_max = 585)
 exp1_y <- make_va_scale(data_min = 0, data_max = 1, px_min = 410, px_max = 15)
 ```
 
-# Task 5 --- Project from dot to axes 
+# `ProjectToAxis`: Project from dot to axes 
 
-Get the data: 
+We denote this task as `task5` in the configuration file. First, we get the data: 
 
 ```{r}
 #| label: task 5 load data
@@ -89,7 +85,7 @@ task5_df <- task_df %>%
     data.resp.y = slider.y
   ) %>%
   right_join(participants, by = join_by(participantId)) %>%
-  # do all the calculations for user's selected
+  # convert from data space to visual angle space
   mutate(
     va.resp.x = exp1_x$data_to_va(data.resp.x, dist_to_screen, pixelToMM),
     va.resp.y = exp1_y$data_to_va(data.resp.y, dist_to_screen, pixelToMM),
@@ -98,15 +94,14 @@ task5_df <- task_df %>%
   )
 ```
 
-Export data for python processing: 
-
 ```{r}
 #| eval: false
 #| code-fold: true
+#| echo: false
 task5_df %>% write.csv(here("data", "processed", "task5.csv"))
 ```
 
-## Task 5 -- Project to X-Axis 
+## `ProjectToAxisX`: Project to X-Axis 
 
 ```{r}
 #| code-fold: true
@@ -142,6 +137,8 @@ Recall that we are dealing with data that is already cleaned, so why are we stil
 ```{r}
 task5.x.exclude <- c("667433338e6cc9e53c828774", "67e2f5ebbe69a58c40a5d550")
 ```
+
+---
 
 Math model:
 
@@ -226,6 +223,8 @@ summary(m.5.x.va)
 plot(m.5.x.va)
 ```
 
+Posterior predictive checks:
+
 ```{r}
 #| layout-ncol: 2
 
@@ -245,6 +244,7 @@ p3
 
 ```{r}
 #| eval: false
+#| echo: false
 #| label: saving all plots for task 5 project to x-axis
 
 ggsave(
@@ -294,6 +294,7 @@ Plot existing data on top of prediction:
 
 ```{r}
 #| label: Task 5 - X - Results
+#| code-fold: true
 # for an average participant
 
 prediction_grid <- task5_df %>%
@@ -345,7 +346,9 @@ ggsave(
 )
 ```
 
-## Task 5 -- Project to Y-Axis 
+## `ProjectToAxisY` 
+
+This time we look at error on $y$-axis: 
 
 ```{r}
 task5_df %>%
@@ -353,7 +356,7 @@ task5_df %>%
   geom_point(alpha = 0.5)
 ```
 
-Math: 
+We use a similar model: 
 
 $$
 \begin{align*}
@@ -361,11 +364,11 @@ $$
 \log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.x}_i) \\ 
 \alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
 \mu_\alpha &\sim N(0, 1) \\ 
-\sigma_\alpha &\sim \text{Half-Cauchy}(0, 1)
+\sigma_\alpha &\sim N^+(0, 1)
 \end{align*}
 $$
 
-Formula and prior: 
+Which corresponds to this `brms` formula and prior: 
 
 ```{r}
 f <- bf(
@@ -427,6 +430,7 @@ plot(m.5.y.va)
 
 ```{r}
 #| layout-ncol: 2
+#| code-fold: true
 
 pp_check(m.5.y.va, ndraws = 100) +
   theme(text = element_text(size = 10)) +
@@ -441,6 +445,7 @@ p2
 
 ```{r}
 #| eval: false
+#| echo: false
 
 ggsave(
   here("figs", "task5-y-pp-check.pdf"),
@@ -460,10 +465,11 @@ ggsave(
 )
 ```
 
-
 Plot results: 
 
 ```{r}
+#| code-fold: true
+
 prediction_grid <- task5_df %>%
   data_grid(
     va.ans.x = seq_range(va.ans.x, n = 100),
@@ -523,9 +529,9 @@ ggsave(
 # ggsave("plots/task5-combined.pdf", combined, height = 5, width = 10, units = "cm", dpi = 300)
 ```
 
-# Task 3 --- Find where y == 0.5 
+# `ProjectToCurve`: Project from where y == 0.5 to Curve
 
-Get task 3 specific data: 
+We denote this as `task 3` in the configuration json. First, we get task 3 specific data: 
 
 ```{r}
 #| label: Get task 3 data
@@ -556,9 +562,10 @@ task3_df <- task_df %>%
   )
 ```
 
-Export data for python processing: 
-
 ```{r}
+#| echo: false
+#| eval: false
+#| label: Export data of task 3 for python processing
 task3_df %>% write.csv(here("data", "processed", "task3.csv"))
 ```
 
@@ -582,11 +589,11 @@ $$
 \log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.x}_i) \\ 
 \alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
 \mu_\alpha &\sim N(0, 1) \\ 
-\sigma_\alpha &\sim \text{Half-Cauchy}(0, 1)
+\sigma_\alpha &\sim N(0, 1)
 \end{align*}
 $$
 
-Formula and prior: 
+`brms` formula and prior: 
 
 ```{r}
 f <- bf(
@@ -648,6 +655,7 @@ plot(m3)
 ```{r}
 #| layout-ncol: 2
 #| label: task 3
+#| code-fold: true
 
 pp_check(m3, ndraws = 100) +
   theme(text = element_text(size = 10)) +
@@ -662,6 +670,7 @@ p2
 
 ```{r}
 #| eval: false
+#| echo: false
 
 ggsave(
   here("figs", "task3-pp-check.pdf"),
@@ -681,10 +690,12 @@ ggsave(
 )
 ```
 
-Plot: 
+Plot result: 
 
 ```{r}
 #| label: Task 3 - Results
+#| code-fold: true
+
 prediction_grid <- task3_df %>%
   mutate(error_va = va.resp.y - va.ans.y) %>%
   data_grid(
@@ -707,7 +718,7 @@ prediction_grid %>%
     alpha = 0.5,
     size = 0.5
   ) +
-  theme_minimal(base_size = 4) +
+  theme_minimal(base_size = 12) +
   theme(legend.position = "none") +
   coord_cartesian(ylim = c(-0.25, 0.4)) +
   labs(title = "Project To Curve", y = "Error", x = "Distance to Y-Axis") -> p3
@@ -717,6 +728,7 @@ p3
 
 ```{r}
 #| eval: false
+#| echo: false
 
 ggsave(
   here("figs", "task3.svg"),
