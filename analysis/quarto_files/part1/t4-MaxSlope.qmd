@@ -1,0 +1,809 @@
+---
+title: "Analysis --- Task 4 --- MaxSlope"
+html:
+  embed-resources: true
+author: "Anonymous"
+---
+
+```{r}
+#| echo: false
+#| output: false
+#| label: setup
+
+library(tidyverse)
+library(ggplot2)
+library(sgt)
+library(numDeriv)
+library(ggdist)
+# setting the theme
+theme_set(theme_minimal(base_size = 12))
+# model
+library(brms)
+library(cmdstanr)
+options(brms.backend = "cmdstanr")
+options(mc.cores = parallel::detectCores())
+# plot results
+library(tidybayes)
+library(here)
+
+# source the helper functions
+source(here("R", "helpers.R"))
+# theme setting for bayesplot
+bayesplot::bayesplot_theme_update(text = element_text(family = "sans"))
+```
+
+# Overview / TLDR 
+
+Recall that Task 4 is the task where we ask the participant to find the highest sloped on the CDF (i.e., find mode on CDF). Aka `MaxSlope` Operator. 
+
+We ran the following models: 
+
+- The [Exponential model](@sec-exponential)
+- The [Lomax model](@sec-lomax)
+- **best-performing model**^[... by LOO model comparison] The [Weibull model](@sec-weibull)
+- The [Log-Normal model](@sec-logNormal)
+
+Finally we compared all models in [here](@sec-model-compare). 
+
+# Set up
+
+Read in data and relevant scales: 
+
+```{r}
+#| label: read-in-data
+#| code-fold: true
+
+task_df <- read_rds(here("data", "final", "task.rds"))
+participants <- read_rds(here("data", "final", "participants.rds"))
+exp1_x <- make_va_scale(data_min = -5, data_max = 5, px_min = 50, px_max = 585)
+exp1_y <- make_va_scale(data_min = 0, data_max = 1, px_min = 410, px_max = 15)
+```
+
+Ratio related helper function: 
+
+```{r}
+# x: one unit in data maps to (585 - 50)/(5 - (-5)) in pixel
+# y: one unit in data maps to (410 - 15)/(1 - 0) in pixel
+data_to_screen_slope <- function(k) {
+  return(k * 395 / 53.5)
+}
+data_to_va_slope <- function(data_x, data_y, dist, px_per_mm) {
+  eps <- 1e-6
+  s_y <- abs(
+    exp1_y$data_to_va(data_y + eps, dist, px_per_mm) -
+      exp1_y$data_to_va(data_y, dist, px_per_mm)
+  ) /
+    eps
+  s_x <- (abs(
+    exp1_x$data_to_va(data_x + eps, dist, px_per_mm) -
+      exp1_x$data_to_va(data_x, dist, px_per_mm)
+  ) /
+    eps)
+  return(s_y / s_x)
+}
+```
+
+Get task 4 specific data: 
+
+```{r}
+#| label: get task 4 data
+
+task4_df <- task_df %>%
+  filter(task == "task4") %>%
+  select(-slider.x, -slider.y) %>%
+  right_join(participants, by = join_by(participantId)) %>%
+  mutate(
+    data.resp.slope = dsgt(
+      data.select.x,
+      param.mu,
+      param.sigma,
+      param.lambda,
+      param.p,
+      param.q,
+      mean.cent = FALSE
+    ),
+    data.ans.slope = dsgt(
+      param.mu,
+      param.mu,
+      param.sigma,
+      param.lambda,
+      param.p,
+      param.q,
+      mean.cent = FALSE
+    ),
+    data.ans.x = param.mu,
+    data.ans.y = 0.5 *
+      (psgt(
+        data.ans.x + tolerance,
+        param.mu,
+        param.sigma,
+        param.lambda,
+        param.p,
+        param.q,
+        mean.cent = FALSE
+      ) +
+        psgt(
+          data.ans.x - tolerance,
+          param.mu,
+          param.sigma,
+          param.lambda,
+          param.p,
+          param.q,
+          mean.cent = FALSE
+        )),
+    va.resp.slope = data.resp.slope *
+      data_to_va_slope(
+        data.select.x,
+        data.select.y,
+        dist_to_screen,
+        pixelToMM
+      ),
+    va.ans.slope = data.ans.slope *
+      data_to_va_slope(
+        data.ans.x,
+        data.ans.y,
+        dist_to_screen,
+        pixelToMM
+      )
+  )
+```
+
+```{r}
+#| code-fold: true
+#| eval: false
+
+# save this data for python analysis
+write_csv(task4_df, here("data", "processed", "task4.csv"))
+```
+
+```{r}
+#| code-fold: true
+#| layout-ncol: 2
+#| eval: false
+
+## Plot relations
+
+task4_df %>% ggplot(aes(x = data.resp.slope - data.ans.slope)) + geom_dots()
+task4_df %>% ggplot(aes(x = va.resp.slope - va.ans.slope)) + geom_dots()
+task4_df %>% ggplot(aes(x = abs(va.resp.slope - va.ans.slope))) + geom_dots()
+task4_df %>%
+  ggplot(aes(x = va.resp.slope - va.ans.slope, y = dist_to_screen)) +
+  geom_point(alpha = 0.5)
+```
+
+```{r}
+#| layout-ncol: 2
+#| code-fold: true
+#| output: false
+
+# Checking to see if there's any obvious relation between signed error and parameters of the distribution.
+# nothing apparent.
+
+task4_df %>%
+  ggplot(aes(y = data.resp.slope - data.ans.slope, x = dist_to_screen)) +
+  geom_point()
+
+task4_df %>%
+  ggplot(aes(y = data.resp.slope - data.ans.slope, x = param.mu)) +
+  geom_point()
+
+task4_df %>%
+  ggplot(aes(y = data.resp.slope - data.ans.slope, x = param.sigma)) +
+  geom_point()
+
+task4_df %>%
+  ggplot(aes(y = data.resp.slope - data.ans.slope, x = param.lambda)) +
+  geom_point()
+
+task4_df %>%
+  ggplot(aes(y = data.resp.slope - data.ans.slope, x = param.p)) +
+  geom_point()
+
+task4_df %>%
+  ggplot(aes(y = data.resp.slope - data.ans.slope, x = param.q)) +
+  geom_point()
+
+task4_df %>% ggplot(aes(x = data.resp.slope - data.ans.slope)) + geom_dots()
+```
+
+# Exponential Model {#sec-exponential}
+
+Math model: 
+
+$$
+\begin{align}
+\text{error_i} &\sim \text{Exponential}(\lambda_{\text{PID}[i]}) \\ 
+\log(\lambda_j) &\sim \mathcal{N}(\mu_\lambda, \sigma_\lambda) \\ 
+\mu_\lambda &\sim \mathcal{N}(0, 1) \\ 
+\sigma_\lambda &\sim \mathcal{N}^+(0, 1) 
+\end{align}
+$$
+
+Formula and prior: 
+
+```{r}
+f <- bf(error ~ 0, mu ~ (1 | participantId), family = exponential())
+
+# mu has log-link, so we don't pose any bounds on it
+p <- c(
+  prior(normal(0, 1), class = Intercept),
+  prior(normal(0, 1), class = sd, group = participantId, lb = 0)
+)
+```
+
+```{r}
+#| eval: false
+#| echo: false
+#| label: check stan code
+
+task4_df %>%
+  mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
+  get_prior(f, data = .)
+
+task4_df %>%
+  mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
+  make_stancode(f, data = ., prior = p)
+```
+
+Fit the model: 
+
+```{r}
+#| output: false
+#| label: fit exponential
+
+model.exponential <- task4_df %>%
+  mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
+  # brms need rsp > 0 for exp
+  mutate(error = ifelse(error < tolerance, tolerance, error)) %>%
+  brm(
+    formula = f,
+    data = .,
+    prior = p,
+    chains = 4,
+    cores = 4,
+    file = here("analysis", "fitted_models", "task4.exponential"),
+    file_refit = "on_change",
+    save_pars = save_pars(all = TRUE),
+    iter = 6000
+  )
+```
+
+Check fit and posterior:
+
+```{r}
+summary(model.exponential)
+plot(model.exponential)
+```
+
+```{r}
+#| layout-ncol: 2
+pp_check(model.exponential, ndraws = 100)
+pp_check(model.exponential, ndraws = 100, type = "pit_ecdf")
+```
+
+```{r}
+#| eval: false
+#| echo: false
+
+# model.exponential %>% get_variables()
+
+model.exponential %>%
+  spread_draws(b_Intercept, sd_participantId__Intercept) %>%
+  mutate(lambda = exp(b_Intercept)) %>%
+  pivot_longer(5:6) %>%
+  ggplot(aes(x = value, y = name)) +
+  stat_halfeye()
+```
+
+Overlay plot: 
+
+```{r}
+prediction <- task4_df %>%
+  mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
+  mutate(error = ifelse(error < tolerance, tolerance, error)) %>%
+  add_predicted_draws(model.exponential, re_formula = NA)
+
+prediction %>%
+  ggplot() +
+  stat_slab(aes(x = .prediction), fill = "skyblue", alpha = 0.8) +
+  geom_dots(
+    data = task4_df,
+    aes(x = abs(va.resp.slope - va.ans.slope))
+  )
+```
+
+```{r}
+task4_df %>%
+  modelr::data_grid(error = 0) %>%
+  add_predicted_draws(model.exponential, re_formula = NA) %>%
+  ggplot() +
+  stat_slab(aes(x = .prediction), fill = "lightblue", alpha = 1) +
+  geom_dots(
+    data = task4_df,
+    aes(x = abs(va.resp.slope - va.ans.slope))
+  )
+```
+
+# Lomax Model {#sec-lomax}
+
+Lomax is Pareto Type II distribution, which is implemented in `cmdstanr`. We had similar models for task 2. 
+
+```{r}
+lomax_family <- custom_family(
+  "lomax",
+  dpars = c("mu", "lambda", "alpha"), # includes mu as required
+  links = c("identity", "log", "log"), # appropriate links
+  lb = c(-Inf, 0, 0), # appropriate bounds
+  type = "real"
+)
+
+stan_funs <- "
+  real lomax_lpdf(real y, real mu, real lambda, real alpha) {
+    return pareto_type_2_lpdf(y | 0, lambda, alpha);  
+  }
+
+  real lomax_rng(real mu, real lambda, real alpha) {
+    return pareto_type_2_rng(0, lambda, alpha);  
+  }
+"
+```
+
+Specify formula and prior^[Note that the Half-Cauchy prior for hyperpriors led to divergent transitions, so we switched to truncated normal for priors]: 
+
+```{r}
+# Define the formula for the model
+f <- bf(
+  error ~ 0,
+  mu ~ 0,
+  alpha ~ (1 | participantId),
+  lambda ~ (1 | participantId)
+)
+
+p <- c(
+  prior(normal(0, 1), class = Intercept, dpar = alpha),
+  prior(normal(0, 1), class = sd, group = participantId, dpar = alpha, lb = 0),
+  prior(normal(0, 1), class = Intercept, dpar = lambda),
+  prior(normal(0, 1), class = sd, group = participantId, dpar = lambda, lb = 0)
+)
+```
+
+```{r}
+#| eval: false
+#| echo: false
+
+task4_df %>%
+  mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
+  mutate(error = ifelse(error < tolerance, tolerance, error)) %>%
+  get_prior(formula = f, family = lomax_family)
+
+task4_df %>%
+  mutate(error = abs(va.resp.slope - va.ans.slope) + tolerance) %>%
+  make_stancode(formula = f, family = lomax_family, prior = p)
+```
+
+```{r}
+#| output: false
+#| label: fit lomax
+
+model.lomax <- task4_df %>%
+  mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
+  mutate(error = ifelse(error < tolerance, tolerance, error)) %>%
+  brm(
+    formula = f,
+    data = .,
+    family = lomax_family,
+    prior = p,
+    stanvars = stanvar(scode = stan_funs, block = "functions"),
+    chains = 4,
+    cores = 4,
+    file = here("analysis", "fitted_models", "task4.lomax"),
+    file_refit = "always",
+    control = list(adapt_delta = 0.99),
+    iter = 6000,
+    save_pars = save_pars(all = TRUE)
+  )
+```
+
+Check fit:
+
+```{r}
+# pairs(model.lomax)
+summary(model.lomax)
+plot(model.lomax)
+```
+
+```{r}
+#| eval: false
+#| echo: false
+
+# Check the posterior distribution of parameters, alpha and lambda:
+
+model.lomax %>%
+  spread_draws(`^b_.*`, regex = TRUE) %>%
+  mutate(
+    b_alpha = exp(b_alpha_Intercept),
+    b_lambda = exp(b_lambda_Intercept)
+  ) %>%
+  pivot_longer(6:7) %>%
+  ggplot(aes(x = value, y = name)) +
+  stat_halfeye() +
+  facet_wrap(~name, scales = "free") +
+  geom_vline(xintercept = 1e-10, linetype = "dashed", color = "gray")
+```
+
+Define custom functions^[Check out this [link](https://cran.r-project.org/web/packages/brms/vignettes/brms_customfamilies.html?utm_source=chatgpt.com) for more details.] for posterior predictive check (`pp_check`) and model comparison (`loo`):
+
+```{r}
+# update(model.lomax, recompile = TRUE)
+# TODO: use this https://rok-cesnovar.github.io/misc/exposing_cmdstanr_udf.html to debug
+expose_functions(model.lomax, vectorize = TRUE)
+
+# Define the posterior_predict function in R as per vignette
+posterior_predict_lomax <- function(i, draws, ...) {
+  alpha <- draws$dpars$alpha[i]
+  lambda <- draws$dpars$lambda[i]
+  # Use Stan's rng function indirectly via brms
+  lomax_rng(0, lambda, alpha)
+}
+
+log_lik_lomax <- function(i, prep) {
+  alpha <- brms::get_dpar(prep, "alpha", i = i)
+  lambda <- brms::get_dpar(prep, "lambda", i = i)
+  y <- prep$data$Y[i]
+  lomax_lpdf(y, 0, lambda, alpha)
+}
+```
+
+```{r}
+#| layout-ncol: 2
+pp_check(model.lomax, ndraws = 100)
+pp_check(model.lomax, ndraws = 100, type = "pit_ecdf")
+```
+
+Overlay plot:
+
+```{r}
+prediction <- task4_df %>%
+  mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
+  add_predicted_draws(model.lomax, ndraws = 100)
+
+prediction %>%
+  ggplot() +
+  stat_slab(aes(x = .prediction), fill = "lightblue", alpha = 1) +
+  geom_dots(
+    data = task4_df,
+    aes(x = abs(va.resp.slope - va.ans.slope))
+  )
+```
+
+# Weibull distribution {#sec-weibull}
+
+- [wikipedia](https://en.wikipedia.org/wiki/Weibull_distribution)
+- [stan](https://mc-stan.org/docs/functions-reference/positive_continuous_distributions.html#weibull-distribution)
+- it's also implemented in brms! So unlike the [Lomax model](@sec-lomax), we don't need to write custom functions. 
+
+Specify formula and prior: 
+
+```{r}
+f <- bf(
+  error ~ 0,
+  mu ~ (1 | participantId), # log link
+  shape ~ (1 | participantId), # log link
+  family = weibull
+)
+
+p <- c(
+  prior(normal(0, 1), class = Intercept),
+  prior(normal(0, 1), class = sd, group = participantId, lb = 0),
+  prior(normal(0, 1), class = Intercept, dpar = shape),
+  prior(normal(0, 1), class = sd, group = participantId, dpar = shape, lb = 0)
+)
+```
+
+```{r}
+#| eval: false
+#| echo: false
+
+task4_df %>%
+  mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
+  mutate(error = ifelse(error < tolerance, tolerance, error)) %>%
+  get_prior(formula = f)
+
+task4_df %>%
+  mutate(error = abs(va.resp.slope - va.ans.slope) + tolerance) %>%
+  make_stancode(formula = f, prior = p)
+```
+
+Fit the model:
+
+```{r}
+#| output: false
+#| label: fit weibull
+
+model.weibull <- task4_df %>%
+  mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
+  mutate(error = ifelse(error < tolerance, tolerance, error)) %>% # brms needs value to be > 0
+  brm(
+    formula = f,
+    data = .,
+    prior = p,
+    chains = 4,
+    cores = 4,
+    file = here("analysis", "fitted_models", "task4.weibull"),
+    file_refit = "on_change",
+    save_pars = save_pars(all = TRUE),
+    iter = 6000
+  )
+```
+
+Check fit and posterior:
+
+```{r}
+summary(model.weibull)
+plot(model.weibull)
+```
+
+```{r}
+#| layout-ncol: 2
+
+pp_check(model.weibull, ndraws = 100) +
+  coord_cartesian(xlim = c(0, 10)) +
+  theme(text = element_text(size = 12)) +
+  theme(legend.position = c(0.9, 0.5)) -> p1
+
+pp_check(model.weibull, ndraws = 100, type = "pit_ecdf") +
+  theme(text = element_text(size = 4)) -> p2
+
+p1
+p2
+```
+
+```{r}
+#| echo: false
+
+ggsave(
+  here("figs", "task4-pp-check.pdf"),
+  p1,
+  height = 5,
+  width = 10,
+  units = "cm",
+  dpi = 300
+)
+
+ggsave(
+  here("figs", "task4-pit-ecdf.pdf"),
+  p2,
+  height = 2,
+  width = 2,
+  units = "in",
+  dpi = 300
+)
+```
+
+```{r}
+#| eval: false
+#| echo: false
+
+# model.weibull %>% get_variables()
+
+model.weibull %>%
+  spread_draws(b_Intercept, b_shape_Intercept) %>%
+  mutate(mu = exp(b_Intercept), shape = exp(b_shape_Intercept)) %>%
+  pivot_longer(6:7) %>%
+  ggplot(aes(x = value, y = name)) +
+  stat_halfeye()
+```
+
+Overlay plot:
+
+```{r}
+#| code-fold: true
+#| layout-ncol: 2
+
+# prediction <- task4_df %>%
+#   mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>%
+#   add_predicted_draws(model.weibull, ndraws = 100)
+
+task4_df %>%
+  modelr::data_grid(error = 0) %>%
+  add_predicted_draws(model.weibull, re_formula = NA) %>%
+  ggplot() +
+  stat_slab(aes(x = .prediction), fill = "lightblue", alpha = 1) +
+  geom_dots(
+    data = task4_df,
+    aes(x = abs(va.resp.slope - va.ans.slope))
+  )
+
+task4_df %>%
+  modelr::data_grid(error = 0) %>%
+  add_predicted_draws(model.weibull, re_formula = NA) %>%
+  ggplot() +
+  stat_slab(aes(x = .prediction), fill = "lightblue", alpha = 1) +
+  geom_dots(
+    data = task4_df,
+    aes(x = abs(va.resp.slope - va.ans.slope))
+  ) +
+  labs(y = "Probability", x = "Signed error") +
+  coord_cartesian(xlim = c(0, 5))
+```
+
+Posterior draws + strip plot of actual answers: 
+
+```{r}
+#| code-fold: true
+#| layout-ncol: 3
+
+task4_df %>%
+  modelr::data_grid(error = 0, participantId = unique(participantId)) %>%
+  add_predicted_draws(model.weibull, ndraws = 100) %>% # ndraws = 100
+  ggplot() +
+  stat_slab(
+    aes(x = .prediction, group = .draw),
+    color = "lightblue",
+    alpha = 0.5,
+    fill = NA,
+    n = 3000,
+    linewidth = 0.5
+  ) +
+  scale_thickness_shared() +
+  geom_rug(
+    data = task4_df,
+    aes(x = abs(va.resp.slope - va.ans.slope)),
+    linewidth = 0.5
+  ) +
+  stat_slab(
+    data = task4_df,
+    aes(x = abs(va.resp.slope - va.ans.slope)),
+    color = "darkblue",
+    fill = NA,
+    n = 3000,
+    linewidth = 0.5
+  ) +
+  labs(y = "density", x = "signed error") +
+  coord_cartesian(xlim = c(0, 4)) +
+  scale_y_continuous(breaks = 0) -> p
+
+p
+```
+
+```{r}
+#| echo: false
+ggsave(
+  here("figs", "task4.pdf"),
+  plot = p,
+  height = 6,
+  width = 12,
+  units = "cm",
+  dpi = 300
+)
+```
+
+# Log-Normal distribution {#sec-logNormal}
+
+Formula and prior: 
+
+```{r}
+f <- bf(
+  error ~ 0,
+  mu ~ (1 | participantId),
+  sigma ~ (1 | participantId),
+  family = lognormal()
+)
+
+p <- c(
+  prior(normal(0, 1), class = Intercept),
+  prior(normal(0, 1), class = sd, group = participantId, lb = 0),
+  prior(normal(0, 1), class = Intercept, dpar = sigma),
+  prior(normal(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
+)
+```
+
+```{r}
+#| echo: false
+#| eval: false
+
+task4_df %>%
+  mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
+  get_prior(data = ., formula = f)
+```
+
+Fit the model: 
+
+```{r}
+#| output: false
+#| label: fit lognormal
+
+model.lognormal <- task4_df %>%
+  mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
+  mutate(error = ifelse(error < tolerance, tolerance, error)) %>% # brms needs value to be > 0
+  brm(
+    formula = f,
+    data = .,
+    prior = p,
+    chains = 4,
+    cores = 4,
+    file = here("analysis", "fitted_models", "task4.lognormal"),
+    file_refit = "always",
+    save_pars = save_pars(all = TRUE),
+    control = list(adapt_delta = 0.95),
+    iter = 6000
+  )
+```
+
+Check fit and posterior:
+
+```{r}
+summary(model.lognormal)
+plot(model.lognormal)
+```
+
+```{r}
+#| layout-ncol: 2
+pp_check(model.lognormal, ndraws = 100)
+pp_check(model.lognormal, ndraws = 100, type = "pit_ecdf")
+```
+
+Overlay plot:
+
+```{r}
+prediction <- task4_df %>%
+  mutate(
+    error = abs(va.resp.slope - va.ans.slope)
+  ) %>%
+  add_predicted_draws(model.lognormal, ndraws = 100)
+
+prediction %>%
+  ggplot() +
+  stat_slab(aes(x = .prediction), fill = "lightblue", alpha = 1) +
+  geom_dots(
+    data = task4_df,
+    aes(
+      x = abs(va.resp.slope - va.ans.slope)
+    )
+  )
+```
+
+```{r}
+task4_df %>%
+  modelr::data_grid(error = 0) %>%
+  add_predicted_draws(model.lognormal, re_formula = NA, ndraws = 100) %>%
+  ggplot() +
+  stat_slab(aes(x = .prediction), fill = "lightblue", alpha = 1) +
+  geom_dots(
+    data = task4_df,
+    aes(
+      x = abs(va.resp.slope - va.ans.slope)
+    )
+  )
+```
+
+# Model Comparison {#sec-model-compare}
+
+```{r}
+loo(
+  model.exponential,
+  model.laplace,
+  # model.lomax,
+  model.weibull,
+  model.lognormal #,
+  # moment_match = TRUE
+)
+```
+
+The Weibull model performs the best. 
+
+```{r}
+#| layout-ncol: 2
+
+pp_check(model.exponential, ndraws = 100, type = "pit_ecdf") +
+  labs(title = "Exponential")
+pp_check(model.lomax, ndraws = 100, type = "pit_ecdf") +
+  labs(title = "Lomax")
+pp_check(model.weibull, ndraws = 100, type = "pit_ecdf") +
+  labs(title = "Weibull")
+pp_check(model.lognormal, ndraws = 100, type = "pit_ecdf") +
+  labs(title = "Log-Normal")
+```
+
+`pit_ecdf` is the empirical CDF of PIT (Probability Integral Transform) values. This helps us assess whether the model is well-calibrated; if it is, then the PIT ECDF plot should follow the 45 degree diagonal line, which is what we see for Weibull. 
+

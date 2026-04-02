@@ -1,0 +1,100 @@
+---
+title: "Data Cleaning and Descriptive Checks"
+format:
+  html:
+    callout-appearance: simple
+---
+
+```{r}
+#| echo: false
+#| output: false
+#| label: setup
+
+library(tidyverse)
+library(ggplot2)
+library(sgt)
+library(numDeriv)
+library(ggdist)
+# setting the theme
+theme_set(theme_minimal())
+# model
+library(brms)
+# plot results
+library(tidybayes)
+library(here)
+```
+
+Read in response data
+
+```{r}
+raw_df <- read_csv(here::here("data", "part_2", "exp2-pilot.csv")) %>%
+  as_tibble(.) %>%
+  filter(status != "rejected")
+
+pilot_df <- raw_df %>% filter(responseId != "windowEvents")
+```
+
+On average, how long did people take? 
+
+```{r}
+pilot_df %>%
+  # no need for introduction
+  filter(trialOrder >= 3, trialOrder <= 72) %>%
+  group_by(participantId, trialOrder, cleanedDuration) %>%
+  summarise(.) %>%
+  group_by(participantId) %>%
+  summarise(sum_cleanedDuration = sum(cleanedDuration)) %>%
+  mutate(totalDuration = sum_cleanedDuration / (1000 * 60))
+```
+
+So the average across participants is ... 
+
+```{r}
+#| code-fold: true
+pilot_df %>%
+  # no need for introduction
+  filter(trialOrder >= 3, trialOrder <= 72) %>%
+  group_by(participantId, trialOrder, cleanedDuration) %>%
+  summarise(.) %>%
+  group_by(participantId) %>%
+  summarise(sum_cleanedDuration = sum(cleanedDuration)) %>%
+  mutate(totalDuration = sum_cleanedDuration / (1000 * 60)) %>%
+  pull(totalDuration) %>%
+  mean(.)
+```
+
+What about demographics? 
+
+```{r}
+pilot_df %>%
+  filter(trialId == "post_study") %>%
+  select(participantId, responseId, answer) %>%
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  select(-`gender-other`, -`feedback-text`)
+```
+
+Gender is balanced: 
+
+```{r}
+pilot_df %>%
+  filter(trialId == "post_study") %>%
+  select(participantId, responseId, answer) %>%
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  select(-`gender-other`, -`feedback-text`) %>%
+  count(gender)
+```
+
+Mean age is 38. 
+
+```{r}
+pilot_df %>%
+  filter(trialId == "post_study") %>%
+  select(participantId, responseId, answer) %>%
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  select(-`gender-other`, -`feedback-text`) %>%
+  mutate(age = as.numeric(age)) %>%
+  pull(age) %>%
+  mean(.)
+```
+
+4 our of 20 people provided textual feedback; similar to the ones that Moritz et al. obtained. 

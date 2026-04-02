@@ -1,0 +1,1369 @@
+---
+title: "Part 2"
+author: "Anonymous"
+date: today
+date-format: "iso"
+format:
+  html:
+    reference-location: margin
+---
+
+```{r}
+#| code-fold: true
+
+library(tidyverse)
+library(jsonlite)
+library(ggplot2)
+library(tidybayes)
+library(brms)
+options(brms.backend = "cmdstanr")
+options(mc.cores = parallel::detectCores())
+library(posterior)
+library(bayesplot)
+library(ggdist)
+library(purrr)
+library(here)
+theme_set(theme_tidybayes())
+bayesplot::bayesplot_theme_update(text = element_text(family = "sans"))
+# source the helper functions
+source(here("R", "helpers.R"))
+```
+
+Read in response data: 
+
+```{r}
+raw_df <- read_csv(here::here("data", "part_2", "exp2-pilot.csv")) %>%
+  as_tibble(.) %>%
+  filter(status != "rejected")
+
+pilot_df <- raw_df %>% filter(responseId != "windowEvents")
+
+# participant-relevant df
+# i.e., the part that is relevant for pixelsPerMM and distToScreen
+participant_df <- pilot_df %>%
+  filter(str_detect(trialId, "chinrest")) %>%
+  select(participantId, responseId, answer) %>%
+  filter(
+    str_detect(responseId, "pixelsPerMM") |
+      str_detect(responseId, "dist-calibration-MM")
+  ) %>%
+  mutate(answer = as.numeric(answer)) %>%
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  dplyr::rename(distToScreen = `dist-calibration-MM`)
+
+# part 1 relevant df
+part1_df <- pilot_df %>%
+  filter(str_detect(trialId, "block5_test")) %>%
+  select(participantId, trialOrder, responseId, answer) %>%
+  mutate(answer = as.numeric(answer)) %>%
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  dplyr::rename(
+    num.ans.x = `location-x`,
+    num.ans.y = `location-y`,
+    num.resp.x = `slider-x`,
+    num.resp.y = `slider-y`,
+    px.resp.x = `px-slider-x`,
+    px.resp.y = `px-slider-y`,
+    px.ans.x = `px-location-x`,
+    px.ans.y = `px-location-y`
+  )
+
+# part 2 relevant df
+part2_df <- pilot_df %>%
+  filter(str_detect(trialId, "task")) %>%
+  select(
+    participantId,
+    trialOrder,
+    trialId,
+    responseId,
+    condition,
+    answer,
+    parameters_taskType,
+    parameters_taskIndex
+  ) %>%
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  dplyr::rename(
+    type = parameters_taskType,
+    ogIndex = parameters_taskIndex,
+    px.resp.y = pixelResponse,
+    num.resp.y = numericResponse
+  ) %>%
+  mutate(
+    px.resp.y = as.numeric(px.resp.y),
+    num.resp.y = as.numeric(num.resp.y),
+    type = ifelse(type == "pointArc", "point_arc", "point")
+  )
+
+# join to make the participant_df also contain condition
+participant_df <- participant_df %>%
+  left_join(
+    part2_df %>%
+      select(-condition) %>%
+      separate_wider_delim(
+        trialId,
+        delim = "_",
+        names = c("condition", "A", "B")
+      ) %>%
+      select(participantId, condition) %>%
+      unique(.)
+  )
+```
+
+Read in stimuli data for experiment 2 from Moritz et al.: 
+
+```{r}
+exp_json_data <- jsonlite::fromJSON(here::here(
+  "data",
+  "moritz",
+  "stimuli",
+  "exp2-stimuli.json"
+)) %>%
+  as_tibble(.)
+
+stimuli_df <- exp_json_data %>%
+  select(index, seed, noise, flip, type, data) %>%
+  mutate(noise = as.character(noise))
+
+# get the mapping between og index and the index used in exp
+stimuli_df %>%
+  filter(type == "point") %>%
+  mutate(expIndex = 1:nrow(.)) %>%
+  select(index, type, expIndex) -> point_map
+stimuli_df %>%
+  filter(type == "point_arc") %>%
+  mutate(expIndex = 1:nrow(.)) %>%
+  select(index, type, expIndex) -> pointArc_map
+
+# get rid of the type that we don't use
+stimuli_df <- stimuli_df %>% filter(type != "line")
+
+# get the answer
+part2.ans_df <- stimuli_df %>%
+  unnest(col = data) %>%
+  dplyr::rename(num.x = x, num.y = y, ogIndex = index) %>%
+  dplyr::summarise(
+    num.mean.y = mean(num.y),
+    num.median.y = median(num.y),
+    .by = c(ogIndex, type, flip, noise, seed)
+  ) %>%
+  mutate(
+    # this is what Moritz did, and what we're not doing
+    # num.ans.y = num.mean.y[type == "point"][[1]],
+    num.ans.y = num.mean.y,
+    .by = c(flip, noise, seed)
+  )
+```
+
+Read in helper functions for transforming between spaces: 
+
+```{r}
+#| code-fold: true
+#| label: helper-functions
+
+# First Part -- Block 5
+x_block5 <- make_va_scale(
+  data_min = -5,
+  data_max = 5,
+  px_min = 50,
+  px_max = 585
+)
+y_block5 <- make_va_scale(
+  data_min = 0,
+  data_max = 10,
+  px_min = 410,
+  px_max = 15
+)
+
+# Second part -- Mortiz et al. related
+x_moritz <- make_va_scale(
+  data_min = 0,
+  data_max = 120,
+  px_min = 0,
+  px_max = 500
+)
+y_moritz <- make_va_scale(data_min = 0, data_max = 1, px_min = 200, px_max = 0)
+```
+
+# See whether data is sampling correctly 
+
+```{r}
+# get a sense of the distribution of part1_df
+part1_df %>%
+  ggplot(aes(y = num.resp.y)) +
+  stat_halfeye() +
+  coord_cartesian(ylim = c(0, 10))
+part1_df %>%
+  ggplot(aes(x = num.resp.x)) +
+  stat_halfeye() +
+  coord_cartesian(xlim = c(-5, 5))
+part1_df %>% ggplot(aes(x = num.resp.x, y = num.resp.y)) + geom_bin2d()
+```
+
+The above tells us that data is being sampled correctly. 
+
+--- 
+
+Get a sense of whether participants answered the calibration task correctly: 
+
+```{r}
+participant_df %>% ggplot(aes(x = pixelsPerMM)) + geom_dotplot()
+participant_df %>% ggplot(aes(x = distToScreen)) + geom_dotplot()
+```
+
+These numbers look normal. 
+
+---
+
+Calculate spearman correlation to determine whether we want to filter out participant who fail our check: 
+
+```{r}
+part1_df %>%
+  summarise(
+    rho = cor(num.ans.x, num.resp.x, method = "spearman"),
+    .by = participantId
+  )
+
+part1_df %>%
+  summarise(
+    rho = cor(num.ans.y, num.resp.y, method = "spearman"),
+    .by = participantId
+  )
+```
+
+So far everyone seems to fit. So we are not filtering out anyone from this. 
+
+# Fit model for part 1 
+
+## Get the data ready: 
+
+```{r}
+# adding the visual angle related stuff
+
+part1_df <- part1_df %>%
+  left_join(participant_df) %>%
+  mutate(
+    va.ans.x = x_block5$data_to_va(num.ans.x, distToScreen, pixelsPerMM),
+    va.ans.y = y_block5$data_to_va(num.ans.y, distToScreen, pixelsPerMM),
+    va.resp.x = x_block5$data_to_va(num.resp.x, distToScreen, pixelsPerMM),
+    va.resp.y = y_block5$data_to_va(num.resp.y, distToScreen, pixelsPerMM)
+  ) %>%
+  mutate(va.error.x = va.resp.x - va.ans.x, va.error.y = va.resp.y - va.ans.y)
+```
+
+Get a sense of error distribution 
+
+```{r}
+#| layout-ncol: 2
+#| code-fold: true
+
+part1_df %>%
+  ggplot(aes(y = va.error.x, x = va.ans.y)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  labs(title = "Project to X-Axis Error (Vis Angle)")
+part1_df %>%
+  ggplot(aes(y = va.error.y, x = va.ans.x)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  labs(title = "Project to Y-Axis Error (Vis Angle)")
+```
+
+Note that for matching with part 2, we are interested in the second graph. 
+
+## Model Specification 
+
+Recall the we defined the following model for the "project from dot to axis" operator: 
+
+$$
+\begin{align*}
+\texttt{error}_i &\sim \mathcal{N}(\beta_0 + u_{\text{PID[i]}}, \sigma_{i, \text{PID}[i]}) \\ 
+\log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.x}_i) \\ 
+\text{or:} \log(\sigma_{i, j}) &\sim \mathcal{N}(\mu_\alpha + \log(\texttt{va.ans.x}_i), \sigma_\alpha)\\ 
+\alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
+\mu_\alpha &\sim N(0, 1) \\ 
+\sigma_\alpha &\sim \mathcal{N}^+(0, 1)
+\end{align*}
+$$
+
+Here is the specification we used for fitting: 
+
+```{r}
+#| label: brms specs
+
+# Recall that we defined error = resp - ans
+f <- bf(
+  va.error.y ~ (1 | participantId),
+  sigma ~ (1 | participantId) + offset(log(va.ans.x))
+)
+
+p <- c(
+  prior(normal(0, 1), class = Intercept),
+  prior(normal(0, 1), class = sd, group = participantId, lb = 0),
+  prior(normal(0, 1), class = Intercept, dpar = "sigma"),
+  prior(normal(0, 1), class = sd, group = participantId, dpar = sigma, lb = 0)
+)
+```
+
+Fit the model: 
+
+```{r}
+#| label: fit model for part 1
+
+m1 <- part1_df %>%
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p,
+    chains = 4,
+    cores = 4,
+    control = list(adapt_delta = 0.99),
+    iter = 6000,
+    file = here::here("analysis", "fitted_models", "exp2", "m1"),
+    file_refit = "on_change",
+    save_pars = save_pars(all = TRUE)
+  )
+```
+
+Get a sense of posterior fit: 
+
+```{r}
+summary(m1)
+plot(m1)
+```
+
+Note that the Bulk_ESS and Tail_ESS all indicate good fit. 
+
+Posterior predictive checks: 
+
+```{r}
+#| layout-ncol: 3
+#| code-fold: true
+pp_check(m1, ndraws = 100) +
+  theme(legend.position = c(0.9, 0.5)) +
+  theme(text = element_text(size = 12)) -> p1
+p1
+
+pp_check(m1, ndraws = 100, type = "pit_ecdf") +
+  theme(text = element_text(size = 12)) -> p2
+p2
+
+pp_check(m1, ndraws = 100, type = "pit_ecdf", plot_diff = TRUE) +
+  theme(text = element_text(size = 10)) -> p3
+p3
+```
+
+```{r}
+#| eval: false
+
+ggsave(
+  here::here("figs", "part2-task1-pp-check.pdf"),
+  p1,
+  width = 12,
+  height = 6,
+  units = "cm",
+  dpi = 300
+)
+ggsave(
+  here::here("figs", "part2-task1-pit-ecdf.pdf"),
+  p2,
+  height = 6,
+  width = 6,
+  units = "cm",
+  dpi = 300
+)
+```
+
+Plot existing data on top of prediction, for an average participant: 
+
+```{r}
+#| code-fold: true
+#| label: part 1 posterior fit check
+
+prediction_grid <- part1_df %>%
+  modelr::data_grid(
+    va.ans.x = modelr::seq_range(va.ans.x, n = 100),
+    participantId = unique(participantId)
+  ) %>%
+  add_predicted_draws(m1, ndraws = 100)
+
+ggplot(prediction_grid, aes(x = va.ans.x, y = .prediction)) +
+  stat_lineribbon(
+    .width = c(.95, .80, .50),
+    # alpha = 0.5,
+    linewidth = 0.5
+  ) +
+  scale_fill_brewer(palette = "Blues") +
+  geom_point(
+    data = part1_df,
+    aes(y = va.error.y, x = va.ans.x),
+    alpha = 0.5,
+    size = 0.5
+  ) +
+  labs(
+    title = "Part 1: Project to Y-axis",
+    y = "Error",
+    x = "Distance to Y-Axis"
+  ) +
+  # theme_minimal(base_size = 8) +
+  # coord_cartesian(ylim = c(-0.25, 0.4)) +
+  theme(legend.position = "none") -> p1
+
+p1
+```
+
+```{r}
+#| eval: false
+
+ggsave(
+  here::here("figs", "part2-task1-project-y.pdf"),
+  p1,
+  height = 8,
+  width = 8,
+  units = "cm",
+  dpi = 300
+)
+```
+
+
+## Prior sensitivity analysis -- Only Run if time permitting 
+
+To test whether our model is sensitive to prior specifications, we fit them on differnt priors: 
+
+```{r}
+#| eval: false
+# Wider — less informative
+p_wide <- c(
+  prior(normal(0, 5), class = Intercept),
+  prior(normal(0, 5), class = sd, group = participantId, lb = 0),
+  prior(normal(0, 5), class = Intercept, dpar = "sigma"),
+  prior(normal(0, 5), class = sd, group = participantId, dpar = sigma, lb = 0)
+)
+
+# Tighter — more informative
+p_tight <- c(
+  prior(normal(0, 0.1), class = Intercept),
+  prior(normal(0, 0.1), class = sd, group = participantId, lb = 0),
+  prior(normal(0, 0.1), class = Intercept, dpar = "sigma"),
+  prior(normal(0, 0.1), class = sd, group = participantId, dpar = sigma, lb = 0)
+)
+
+# Different family — heavier tails
+p_student <- c(
+  prior(student_t(3, 0, 1), class = Intercept),
+  prior(student_t(3, 0, 1), class = sd, group = participantId, lb = 0),
+  prior(student_t(3, 0, 1), class = Intercept, dpar = "sigma"),
+  prior(
+    student_t(3, 0, 1),
+    class = sd,
+    group = participantId,
+    dpar = sigma,
+    lb = 0
+  )
+)
+```
+
+```{r}
+#| eval: false
+m1_wide <- part1_df %>%
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p_wide,
+    chains = 4,
+    cores = 4,
+    control = list(adapt_delta = 0.99),
+    iter = 6000,
+    file = here::here("analysis", "fitted_models", "exp2", "m1_wide"),
+    file_refit = "on_change",
+    save_pars = save_pars(all = TRUE)
+  )
+
+m1_tight <- part1_df %>%
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p_tight,
+    chains = 4,
+    cores = 4,
+    control = list(adapt_delta = 0.99),
+    iter = 6000,
+    file = here::here("analysis", "fitted_models", "exp2", "m1_tight"),
+    file_refit = "on_change",
+    save_pars = save_pars(all = TRUE)
+  )
+
+m1_student <- part1_df %>%
+  brm(
+    formula = f,
+    data = .,
+    family = gaussian(),
+    prior = p_student,
+    chains = 4,
+    cores = 4,
+    control = list(adapt_delta = 0.99),
+    iter = 6000,
+    file = here::here("analysis", "fitted_models", "exp2", "m1_student"),
+    file_refit = "on_change",
+    save_pars = save_pars(all = TRUE)
+  )
+```
+
+All models fit without convergence issues. Now we combine posterior and plot them: 
+
+```{r}
+# Combine posteriors from all models
+models <- list(
+  "default (0,1)" = m1,
+  "wide (0,5)" = m1_wide,
+  "tight (0,0.1)" = m1_tight,
+  "student_t(3,0,1)" = m1_student
+)
+
+combined <- models %>%
+  imap_dfr(
+    ~ gather_draws(.x, b_Intercept, b_sigma_Intercept) %>%
+      mutate(prior = .y)
+  )
+```
+
+Interval plot: 
+
+```{r}
+combined %>%
+  # uncomment to see what variance instead of log(variance) is.
+  # mutate(
+  #   .value = if_else(.variable == "b_sigma_Intercept", exp(.value), .value)
+  # ) %>%
+  ggplot(aes(x = .value, y = prior)) +
+  stat_pointinterval(.width = c(.50, .95)) +
+  facet_wrap(~.variable, scales = "free_x") +
+  labs(x = "Estimate", y = "Prior specification")
+```
+
+Densities overlaid: 
+
+```{r}
+combined %>%
+  ggplot(aes(x = .value, color = prior, fill = prior)) +
+  stat_slab(alpha = 0.3) +
+  facet_wrap(~.variable, scales = "free") +
+  labs(x = "Estimate", y = NULL)
+```
+
+To see the actual table: 
+
+```{r}
+combined %>%
+  group_by(prior, .variable) %>%
+  median_qi(.value, .width = .95) %>%
+  select(prior, .variable, .value, .lower, .upper) %>%
+  arrange(.variable, prior)
+```
+
+We can also check random effects: 
+
+```{r}
+combined_sd <- models %>%
+  imap_dfr(
+    ~ gather_draws(
+      .x,
+      sd_participantId__Intercept,
+      sd_participantId__sigma_Intercept
+    ) %>%
+      mutate(prior = .y)
+  )
+```
+
+```{r}
+combined_sd %>%
+  ggplot(aes(x = .value, y = prior)) +
+  stat_pointinterval(.width = c(.50, .95)) +
+  facet_wrap(~.variable, scales = "free_x") +
+  labs(x = "Estimate", y = "Prior specification")
+```
+
+**Takeaway**: posteriors were robust to prior specification across default, wide, and heavy-tailed priors. The tight prior $\sigma = 0.1$ constrained the residual variance parameter, confirming it is unreasonably informative for this parameter; the remaining three specifications produced essentially identical posteriors. 
+
+# Infer model for part 2 
+
+**Step 1:** Extract participant-level draws (20 participants $\times$ 3000 per chain $\times$ 4 chains)
+
+```{r}
+m1_draws_df <- m1 %>%
+  spread_draws(
+    b_Intercept,
+    r_participantId[participantId, ],
+    b_sigma_Intercept,
+    r_participantId__sigma[participantId, ]
+  ) %>%
+  mutate(
+    mu = b_Intercept + r_participantId,
+    var_scale = exp(b_sigma_Intercept + r_participantId__sigma)
+  ) %>%
+  select(.draw, participantId, mu, var_scale)
+```
+
+
+**Step 2**: Then, we get a cross between participant and the stimuli they saw, in order to generate **predictions**: 
+
+```{r}
+predict_df <- participant_df %>%
+  rename(type = condition) %>%
+  mutate(type = ifelse(type == "pointArc", "point_arc", "point")) %>%
+  inner_join(
+    stimuli_df %>% filter(type != "line") %>% rename(ogIndex = index),
+    by = "type",
+    relationship = "many-to-many"
+  ) %>%
+  unnest(col = data) %>%
+  rename(num.ans.x = x, num.ans.y = y) %>%
+  mutate(
+    va.60 = x_moritz$data_to_va(60, distToScreen, pixelsPerMM),
+    va.ans.x = x_moritz$data_to_va(num.ans.x, distToScreen, pixelsPerMM),
+    va.ans.y = y_moritz$data_to_va(num.ans.y, distToScreen, pixelsPerMM),
+  )
+
+predict_df %>% head(5)
+```
+
+## Project Once 
+
+**Step 3: Draw the posterior prediction for project once to the y-axis:**
+
+```{r}
+posterior_predict_df <- map_dfr(
+  .progress = TRUE,
+  unique(predict_df$participantId),
+  function(pid) {
+    # 12,000 draws for this participant
+    d <- m1_draws_df %>%
+      filter(participantId == pid) %>%
+      arrange(.draw)
+
+    # 2,880 observations (48 trials × 60 dots)
+    obs <- predict_df %>%
+      filter(participantId == pid) %>%
+      select(ogIndex, va.60, va.ans.x, va.ans.y, pixelsPerMM, distToScreen)
+
+    cross_join(d, obs) %>%
+      mutate(
+        sigma = var_scale * va.ans.x, # dist to y-axis is va.ans.x
+        .prediction = rnorm(n(), mean = mu, sd = sigma),
+        pred_y = va.ans.y + .prediction,
+        w = 1 / (mu^2 + sigma^2) # inverse-mse
+      ) %>%
+      group_by(
+        .draw,
+        mu,
+        var_scale,
+        pixelsPerMM,
+        distToScreen,
+        va.60,
+        ogIndex
+      ) %>%
+      summarise(
+        va.1proj.mean = mean(pred_y),
+        va.1proj.median = median(pred_y),
+        va.1proj.weighted = sum(w * pred_y) / sum(w),
+        .groups = "drop_last"
+      ) %>%
+      mutate(
+        participantId = pid
+      )
+  }
+)
+```
+
+```{r}
+posterior_predict_df <- posterior_predict_df %>%
+  mutate(
+    num.1proj.mean = y_moritz$va_to_data(
+      va.1proj.mean,
+      distToScreen,
+      pixelsPerMM
+    ),
+    num.1proj.median = y_moritz$va_to_data(
+      va.1proj.median,
+      distToScreen,
+      pixelsPerMM
+    ),
+    num.1proj.weighted = y_moritz$va_to_data(
+      va.1proj.weighted,
+      distToScreen,
+      pixelsPerMM
+    )
+  )
+```
+
+```{r}
+#| eval: false
+#| echo: false
+
+saveRDS(
+  posterior_predict_df,
+  file = here::here("analysis/fitted_models/exp2/part2_posterior_1proj.rds")
+)
+
+posterior_predict_df <- readRDS(
+  file = here::here("analysis/fitted_models/exp2/part2_posterior_1proj.rds")
+)
+```
+
+### Posterior checks with `bayesplot` 
+
+First we get the data in the right format to plot with `bayesplot`: 
+
+```{r}
+#| code-fold: true
+
+# get the relevant ones for each strategy
+response_ordered <- part2_df %>% arrange(participantId, ogIndex)
+y <- response_ordered$num.resp.y
+
+# group can be any condition-level variable, or a combination
+group <- response_ordered %>%
+  left_join(part2.ans_df %>% select(ogIndex, type, flip, noise)) %>%
+  # we don't care about type, only care about noise and flip
+  mutate(
+    noise_label = ifelse(noise == "c(0, 0)", "Var 0", "Var 0.4"),
+    flip_label = ifelse(flip == FALSE, "Var Lower", "Var Upper")
+  ) %>%
+  mutate(g = paste(noise_label, flip_label, sep = " | ")) %>%
+  pull(g)
+
+yrep_mean <- posterior_predict_df %>%
+  ungroup() %>%
+  select(participantId, ogIndex, .draw, num.1proj.mean) %>%
+  arrange(participantId, ogIndex, .draw) %>%
+  unite("obs_id", participantId, ogIndex) %>%
+  pivot_wider(
+    id_cols = .draw,
+    names_from = obs_id,
+    values_from = num.1proj.mean
+  ) %>%
+  select(-.draw) %>%
+  as.matrix()
+
+yrep_median <- posterior_predict_df %>%
+  ungroup() %>%
+  select(participantId, ogIndex, .draw, num.1proj.median) %>%
+  arrange(participantId, ogIndex, .draw) %>%
+  unite("obs_id", participantId, ogIndex) %>%
+  pivot_wider(
+    id_cols = .draw,
+    names_from = obs_id,
+    values_from = num.1proj.median
+  ) %>%
+  select(-.draw) %>%
+  as.matrix()
+
+yrep_weighted <- posterior_predict_df %>%
+  ungroup() %>%
+  select(participantId, ogIndex, .draw, num.1proj.weighted) %>%
+  arrange(participantId, ogIndex, .draw) %>%
+  unite("obs_id", participantId, ogIndex) %>%
+  pivot_wider(
+    id_cols = .draw,
+    names_from = obs_id,
+    values_from = num.1proj.weighted
+  ) %>%
+  select(-.draw) %>%
+  as.matrix()
+```
+
+**KDE-Overlay**: 
+
+```{r}
+#| layout-ncol: 3
+#| code-fold: true
+ppc_dens_overlay(y, yrep_mean[sample(nrow(yrep_mean), 100), ]) +
+  labs(title = "Mean Strategy") +
+  coord_cartesian(xlim = c(0, 1))
+ppc_dens_overlay(y, yrep_median[sample(nrow(yrep_median), 100), ]) +
+  labs(title = "Median Strategy") +
+  coord_cartesian(xlim = c(0, 1))
+ppc_dens_overlay(y, yrep_weighted[sample(nrow(yrep_weighted), 100), ]) +
+  labs(title = "Weighted Strategy") +
+  coord_cartesian(xlim = c(0, 1))
+```
+
+**KDE-Overlay faceted by factor**: 
+
+```{r}
+#| layout-ncol: 3
+#| code-fold: true
+p1 <- ppc_dens_overlay_grouped(
+  y,
+  yrep_mean[sample(nrow(yrep_mean), 100), ],
+  group
+) +
+  labs(title = "Mean Strategy") +
+  coord_cartesian(xlim = c(0, 1))
+p2 <- ppc_dens_overlay_grouped(
+  y,
+  yrep_median[sample(nrow(yrep_median), 100), ],
+  group
+) +
+  labs(title = "Median Strategy") +
+  coord_cartesian(xlim = c(0, 1))
+p3 <- ppc_dens_overlay_grouped(
+  y,
+  yrep_weighted[sample(nrow(yrep_weighted), 100), ],
+  group
+) +
+  labs(title = "Weighted Strategy") +
+  coord_cartesian(xlim = c(0, 1))
+p1
+p2
+p3
+```
+
+```{r}
+#| echo: false
+#| eval: false
+
+ggsave(
+  here::here("figs/1proj_mean.pdf"),
+  p1 + scale_y_continuous(breaks = 0) + theme_tidybayes(base_size = 8),
+  width = 3.5,
+  height = 3.5 / 4 * 3,
+  unit = "in",
+  dpi = 300
+)
+```
+
+---
+
+**PIT-ECDFs**: 
+
+```{r}
+#| layout-ncol: 3
+#| code-fold: true
+ppc_pit_ecdf(y, yrep_mean) + labs(title = "Mean Strategy")
+ppc_pit_ecdf(y, yrep_median) + labs(title = "Median Strategy")
+ppc_pit_ecdf(y, yrep_weighted) + labs(title = "Weighted Strategy")
+```
+
+Grouped version: 
+
+```{r}
+#| layout-ncol: 3
+#| code-fold: true
+ppc_pit_ecdf_grouped(y, yrep_mean, group) + labs(title = "Mean Strategy")
+ppc_pit_ecdf_grouped(y, yrep_median, group) + labs(title = "Median Strategy")
+ppc_pit_ecdf_grouped(y, yrep_weighted, group) +
+  labs(title = "Weighted Strategy")
+```
+
+This demonstrates that the fit is ... not that great. 
+
+## Project Twice 
+
+Same step 1 and step 2 as before, so we don't generate anything new, but start from step 3 with generating `posterior_predict_df`: 
+
+**Step 3: Draw the posterior prediction for project once to the middle AND project twice to the y-axis:**
+
+```{r}
+posterior_predict_df <- map_dfr(
+  .progress = TRUE,
+  unique(predict_df$participantId),
+  function(pid) {
+    # 12,000 draws for this participant
+    d <- m1_draws_df %>%
+      filter(participantId == pid) %>%
+      arrange(.draw)
+
+    # 2,880 observations (48 trials × 60 dots)
+    obs <- predict_df %>%
+      filter(participantId == pid) %>%
+      select(ogIndex, va.60, va.ans.x, va.ans.y, pixelsPerMM, distToScreen)
+
+    cross_join(d, obs) %>%
+      mutate(
+        sigma = var_scale * abs(va.60 - va.ans.x), # dist to center
+        .prediction = rnorm(n(), mean = mu, sd = sigma),
+        pred_y = va.ans.y + .prediction,
+        w = 1 / (mu^2 + sigma^2) # inverse-mse
+      ) %>%
+      group_by(
+        .draw,
+        mu,
+        var_scale,
+        pixelsPerMM,
+        distToScreen,
+        va.60,
+        ogIndex
+      ) %>%
+      summarise(
+        va.1proj.mean = mean(pred_y),
+        va.1proj.median = median(pred_y),
+        va.1proj.weighted = sum(w * pred_y) / sum(w),
+        .groups = "drop_last"
+      ) %>%
+      mutate(
+        proj_noise = rnorm(n(), mean = mu, sd = var_scale * va.60),
+        va.2proj.mean = va.1proj.mean + proj_noise,
+        va.2proj.median = va.1proj.median + proj_noise,
+        va.2proj.weighted = va.1proj.weighted + proj_noise,
+        participantId = pid
+      )
+  }
+)
+```
+
+We then transform things from visual angle prediction to actual numerical value, for comparison against the actual response we got: 
+
+```{r}
+posterior_predict_df <- posterior_predict_df %>%
+  mutate(
+    num.2proj.mean = y_moritz$va_to_data(
+      va.2proj.mean,
+      distToScreen,
+      pixelsPerMM
+    ),
+    num.2proj.median = y_moritz$va_to_data(
+      va.2proj.median,
+      distToScreen,
+      pixelsPerMM
+    ),
+    num.2proj.weighted = y_moritz$va_to_data(
+      va.2proj.weighted,
+      distToScreen,
+      pixelsPerMM
+    ),
+  )
+```
+
+```{r}
+#| eval: false
+#| echo: false
+
+saveRDS(
+  posterior_predict_df,
+  file = here::here("analysis/fitted_models/exp2/part2_posterior_2proj.rds")
+)
+
+posterior_predict_df <- readRDS(here::here(
+  "analysis/fitted_models/exp2/part2_posterior_2proj.rds"
+))
+```
+
+### Posterior Checks with `bayesplot` 
+
+First we get the data format ready to be plotted using `bayesplot`: 
+
+```{r}
+response_ordered <- part2_df %>% arrange(participantId, ogIndex)
+y <- response_ordered$num.resp.y
+
+# group can be any condition-level variable, or a combination
+group <- response_ordered %>%
+  left_join(
+    part2.ans_df %>%
+      select(ogIndex, type, flip, noise)
+  ) %>%
+  mutate(
+    noise_label = ifelse(noise == "c(0, 0)", "Var 0", "Var 0.4"),
+    flip_label = ifelse(flip == FALSE, "Var Lower", "Var Upper")
+  ) %>%
+  mutate(g = paste(noise_label, flip_label, sep = " | ")) %>%
+  pull(g)
+
+yrep_mean <- posterior_predict_df %>%
+  ungroup() %>%
+  select(participantId, ogIndex, .draw, num.2proj.mean) %>%
+  arrange(participantId, ogIndex, .draw) %>%
+  unite("obs_id", participantId, ogIndex) %>%
+  pivot_wider(
+    id_cols = .draw,
+    names_from = obs_id,
+    values_from = num.2proj.mean
+  ) %>%
+  select(-.draw) %>%
+  as.matrix()
+
+yrep_median <- posterior_predict_df %>%
+  ungroup() %>%
+  select(participantId, ogIndex, .draw, num.2proj.median) %>%
+  arrange(participantId, ogIndex, .draw) %>%
+  unite("obs_id", participantId, ogIndex) %>%
+  pivot_wider(
+    id_cols = .draw,
+    names_from = obs_id,
+    values_from = num.2proj.median
+  ) %>%
+  select(-.draw) %>%
+  as.matrix()
+
+yrep_weighted <- posterior_predict_df %>%
+  ungroup() %>%
+  select(participantId, ogIndex, .draw, num.2proj.weighted) %>%
+  arrange(participantId, ogIndex, .draw) %>%
+  unite("obs_id", participantId, ogIndex) %>%
+  pivot_wider(
+    id_cols = .draw,
+    names_from = obs_id,
+    values_from = num.2proj.weighted
+  ) %>%
+  select(-.draw) %>%
+  as.matrix()
+```
+
+**KDE-plots**: 
+
+```{r}
+#| layout-ncol: 3
+ppc_dens_overlay(y, yrep_mean[sample(nrow(yrep_mean), 100), ]) +
+  labs(title = "Mean Strategy")
+ppc_dens_overlay(y, yrep_median[sample(nrow(yrep_median), 100), ]) +
+  labs(title = "Median Strategy")
+ppc_dens_overlay(y, yrep_weighted[sample(nrow(yrep_weighted), 100), ]) +
+  labs(title = "Weighted Mean Strategy")
+```
+
+**KDE grouped**: 
+
+```{r}
+p1 <- ppc_dens_overlay_grouped(
+  y,
+  yrep_mean[sample(nrow(yrep_mean), 100), ],
+  group = group
+) +
+  labs(title = "Mean Strategy") +
+  coord_cartesian(xlim = c(0, 1))
+p2 <- ppc_dens_overlay_grouped(
+  y,
+  yrep_median[sample(nrow(yrep_median), 100), ],
+  group = group
+) +
+  labs(title = "Median Strategy")
+p3 <- ppc_dens_overlay_grouped(
+  y,
+  yrep_weighted[sample(nrow(yrep_weighted), 100), ],
+  group = group
+) +
+  labs(title = "Weighted Mean Strategy")
+p1
+p2
+p3
+```
+
+```{r}
+#| echo: false
+#| eval: false
+
+ggsave(
+  here::here("figs/2proj_weighted.pdf"),
+  p3 + scale_y_continuous(breaks = 0) + theme_tidybayes(base_size = 8),
+  width = 3.5,
+  height = 3.5 / 4 * 3,
+  unit = "in",
+  dpi = 300
+)
+```
+
+---
+
+**PIT-ECDF**: 
+
+```{r}
+#| code-fold: true
+#| layout-ncol: 3
+ppc_pit_ecdf(y, yrep_mean) + labs(title = "Mean Strategy")
+ppc_pit_ecdf(y, yrep_median) + labs(title = "Median Strategy")
+ppc_pit_ecdf(y, yrep_weighted) + labs(title = "Weighted Mean Strategy")
+# ppc_pit_ecdf(y, yrep_mean, plot_diff = TRUE) +
+#   labs(title = "Mean Strategy")
+# ppc_pit_ecdf(y, yrep_median, plot_diff = TRUE) + labs(title = "Median Strategy")
+# ppc_pit_ecdf(y, yrep_weighted, plot_diff = TRUE) +
+#   labs(title = "Weighted Mean Strategy")
+```
+
+**PIT-ECDF Grouped**: 
+
+```{r}
+#| layout-ncol: 3
+#| code-fold: true
+ppc_pit_ecdf_grouped(y, yrep_mean, group) + labs(title = "Mean Strategy")
+ppc_pit_ecdf_grouped(y, yrep_median, group) + labs(title = "Median Strategy")
+ppc_pit_ecdf_grouped(y, yrep_weighted, group) +
+  labs(title = "Weighted Mean Strategy")
+```
+
+### Posterior Checks with `ggdist` 
+
+For better customization and easier to manipulate dataframes, we will use `stat_slab` in `ggdist` instead of `bayesplot::ppc_dens_overlay`. 
+
+We extract the shared layers across all three strategies first: 
+
+```{r}
+# get the plotting relevant data ready
+
+part2_joined <- part2_df %>%
+  left_join(
+    part2.ans_df %>% select(ogIndex, type, flip, noise),
+    by = join_by(type, ogIndex)
+  )
+
+# the density of the response that participants did
+participant_resp <- stat_slab(
+  data = part2_joined,
+  aes(x = num.resp.y, group = NULL, thickness = after_stat(pdf)),
+  fill = NA,
+  color = "darkblue",
+  linewidth = 1,
+  density = density_bounded(bounds = c(0, 1))
+)
+
+# the shared "annotation-like" details
+shared_layers <- list(
+  geom_vline(
+    data = part2.ans_df %>%
+      group_by(flip, noise) %>%
+      summarise(mean.y = mean(num.mean.y)),
+    aes(xintercept = mean.y),
+    linetype = "dashed",
+    color = "darkgray"
+  ),
+  facet_grid(
+    noise ~ flip,
+    labeller = labeller(
+      noise = c("c(0, 0)" = "Variability 0", "c(0, 0.4)" = "Variability .4"),
+      flip = c("TRUE" = "Variability Upper", "FALSE" = "Variability Lower")
+    )
+  ),
+  coord_cartesian(xlim = c(0, 1), ylim = c(-0.05, 1)),
+  scale_x_continuous(breaks = c(0, 0.5, 1)),
+  scale_y_continuous(breaks = 0)
+)
+```
+
+```{r}
+draw_subset <- sample(unique(posterior_predict_df$.draw), 100)
+
+# bias + var for facets
+biasVar <- posterior_predict_df %>%
+  ungroup(.) %>%
+  select(.draw, ogIndex, num.2proj.mean) %>%
+  left_join(
+    part2.ans_df %>%
+      select(ogIndex, type, flip, noise)
+  ) %>%
+  group_by(flip, noise) %>%
+  mean_qi(num.2proj.mean, .width = 0.68)
+
+
+p1 <- posterior_predict_df %>%
+  ungroup(.) %>%
+  filter(.draw %in% draw_subset) %>%
+  select(.draw, ogIndex, num.2proj.mean) %>%
+  left_join(
+    part2.ans_df %>%
+      select(ogIndex, type, flip, noise)
+  ) %>%
+  ggplot(aes(x = num.2proj.mean, group = .draw, thickness = after_stat(pdf))) +
+  stat_slab(
+    fill = NA,
+    color = "#7CCBA2",
+    alpha = 0.7,
+    size = 0.25,
+    density = density_bounded(bounds = c(0, 1))
+  ) +
+  participant_resp +
+  scale_thickness_shared() +
+  # bias and variannce from response
+  stat_pointinterval(
+    data = part2_joined,
+    aes(x = num.resp.y, group = NULL),
+    color = "darkblue",
+    point_interval = mean_qi,
+    .width = .68, # about +/- 1SD
+    inherit.aes = FALSE,
+    position = position_nudge(y = 0.05),
+    size = 1
+  ) +
+  geom_pointinterval(
+    data = biasVar,
+    aes(x = num.2proj.mean, xmin = .lower, xmax = .upper),
+    color = "#7CCBA2",
+    position = position_nudge(y = -0.05),
+    inherit.aes = FALSE,
+    size = 1
+  ) +
+  shared_layers +
+  labs(y = "", x = "numerical value", title = "Mean Strategy") +
+  theme_light(base_size = 8)
+
+p1
+```
+
+Median stategy with ggdist: 
+
+```{r}
+draw_subset <- sample(unique(posterior_predict_df$.draw), 100)
+
+# bias + var for facets
+biasVar <- posterior_predict_df %>%
+  ungroup(.) %>%
+  select(.draw, ogIndex, num.2proj.median) %>%
+  left_join(
+    part2.ans_df %>%
+      select(ogIndex, type, flip, noise)
+  ) %>%
+  group_by(flip, noise) %>%
+  mean_qi(num.2proj.median, .width = 0.68)
+
+p2 <- posterior_predict_df %>%
+  ungroup(.) %>%
+  filter(.draw %in% draw_subset) %>%
+  select(.draw, ogIndex, num.2proj.median) %>%
+  left_join(
+    part2.ans_df %>%
+      select(ogIndex, type, flip, noise)
+  ) %>%
+  ggplot(aes(
+    x = num.2proj.median,
+    group = .draw,
+    thickness = after_stat(pdf)
+  )) +
+  stat_slab(
+    fill = NA,
+    color = "#7CCBA2",
+    alpha = 0.7,
+    size = 0.25,
+    density = density_bounded(bounds = c(0, 1))
+  ) +
+  participant_resp +
+  scale_thickness_shared() +
+  stat_pointinterval(
+    data = part2_joined,
+    aes(x = num.resp.y, group = NULL),
+    color = "darkblue",
+    point_interval = mean_qi,
+    .width = .68, # about +/- 1SD
+    inherit.aes = FALSE,
+    position = position_nudge(y = 0.05),
+    size = 1
+  ) +
+  geom_pointinterval(
+    data = biasVar,
+    aes(x = num.2proj.median, xmin = .lower, xmax = .upper),
+    color = "#7CCBA2",
+    position = position_nudge(y = -0.05),
+    inherit.aes = FALSE,
+    size = 1
+  ) +
+  shared_layers +
+  labs(y = "", x = "numerical value", title = "Median Strategy") +
+  theme_light(base_size = 8)
+
+p2
+```
+
+Weighted mean strategy: 
+
+```{r}
+draw_subset <- sample(unique(posterior_predict_df$.draw), 100)
+
+# bias + var for facets
+biasVar <- posterior_predict_df %>%
+  ungroup(.) %>%
+  select(.draw, ogIndex, num.2proj.weighted) %>%
+  left_join(
+    part2.ans_df %>%
+      select(ogIndex, type, flip, noise)
+  ) %>%
+  group_by(flip, noise) %>%
+  mean_qi(num.2proj.weighted, .width = 0.68)
+
+p3 <- posterior_predict_df %>%
+  ungroup(.) %>%
+  filter(.draw %in% draw_subset) %>%
+  select(.draw, ogIndex, num.2proj.weighted) %>%
+  left_join(
+    part2.ans_df %>%
+      select(ogIndex, type, flip, noise)
+  ) %>%
+  ggplot(aes(
+    x = num.2proj.weighted,
+    group = .draw,
+    thickness = after_stat(pdf)
+  )) +
+  stat_slab(
+    fill = NA,
+    color = "#7CCBA2",
+    alpha = 0.7,
+    size = 0.25,
+    # density = density_bounded(bounds = c(0, 1))
+    # Note: the density goes beyond [0, 1] which is why we can't used density_bounded
+    density = "unbounded"
+  ) +
+  participant_resp +
+  stat_pointinterval(
+    data = part2_joined,
+    aes(x = num.resp.y, group = NULL),
+    color = "darkblue",
+    point_interval = mean_qi,
+    .width = .68, # about +/- 1SD
+    inherit.aes = FALSE,
+    position = position_nudge(y = 0.05),
+    size = 1
+  ) +
+  geom_pointinterval(
+    data = biasVar,
+    aes(x = num.2proj.weighted, xmin = .lower, xmax = .upper),
+    color = "#7CCBA2",
+    position = position_nudge(y = -0.05),
+    inherit.aes = FALSE,
+    size = 1
+  ) +
+  scale_thickness_shared() +
+  shared_layers +
+  labs(y = "", x = "numerical value", title = "Weighted Mean Strategy") +
+  theme_light(base_size = 8)
+
+p3
+```
+
+```{r}
+#| echo: false
+#| eval: false
+ggsave(
+  here::here(
+    "figs",
+    "part2_task2_mean.svg"
+  ),
+  p1,
+  width = 3,
+  height = 2.5,
+  units = c("in"),
+  dpi = 300
+)
+
+ggsave(
+  here::here(
+    "figs",
+    "part2_task2_median.svg"
+  ),
+  p2,
+  width = 3,
+  height = 2.5,
+  units = c("in"),
+  dpi = 300
+)
+
+ggsave(
+  here::here(
+    "figs",
+    "part2_task2_weighted.svg"
+  ),
+  p3,
+  width = 3,
+  height = 2.5,
+  units = c("in"),
+  dpi = 300
+)
+```
