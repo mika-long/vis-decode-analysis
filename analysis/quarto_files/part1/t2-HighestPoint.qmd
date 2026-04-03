@@ -1,5 +1,5 @@
 ---
-title: "Analysis --- Task 2 --- HighestPoint"
+title: "HighestPoint Operator"
 author: "Anonymous"
 date: today
 date-format: "iso"
@@ -41,7 +41,6 @@ bayesplot::bayesplot_theme_update(text = element_text(family = "sans"))
 
 # Overview / TLDR
 
-Task 2 is the `HighestPoint` Task. 
 For modeling the signed error on the **Y-axis**, we ran the following models: 
 
 - [Lomax](@sec-y-lomax)
@@ -63,13 +62,13 @@ Read in data and relevant scales:
 #| label: read-in-data
 #| code-fold: true
 
-task_df <- read_rds(here("data", "final", "task.rds"))
-participants <- read_rds(here("data", "final", "participants.rds"))
+task_df <- read_rds(here("data", "part1", "task.rds"))
+participants <- read_rds(here("data", "part1", "participants.rds"))
 exp1_x <- make_va_scale(data_min = -5, data_max = 5, px_min = 50, px_max = 585)
 exp1_y <- make_va_scale(data_min = 0, data_max = 1, px_min = 410, px_max = 15)
 ```
 
-Load data specific for task 2: 
+Load data specific for this task:  
 
 ```{r}
 #| label: task 2 load data
@@ -121,11 +120,9 @@ task2_df <- task_df %>%
   mutate(flat = (abs(data.left.grad) + abs(data.right.grad)) / 2)
 ```
 
-Save data for python analysis 
-
 ```{r}
 #| eval: false
-#| code-fold: true
+#| echo: false
 
 write_csv(task2_df, here("data", "processed", "task2.csv"))
 ```
@@ -914,7 +911,7 @@ pp_check(model.x.normal, ndraws = 100, type = "pit_ecdf") +
 
 task2.x.gaussian
 task2.x.gaussian.pit
- ```
+```
 
 ```{r}
 #| eval: false
