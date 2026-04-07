@@ -39,7 +39,7 @@ library(patchwork)
 library(here)
 
 # source the helper functions
-source(here("R", "helpers.R"))
+source(here::here("R", "helpers.R"))
 
 # theme setting
 bayesplot::bayesplot_theme_update(text = element_text(family = "sans"))

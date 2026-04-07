@@ -1,5 +1,9 @@
 ---
 title: "Analysis --- Task 1 --- Bisect Area"
+author: "Anonymous"
+html:
+  reference-location: margin
+  embed-resources: true
 ---
 
 ```{r}
