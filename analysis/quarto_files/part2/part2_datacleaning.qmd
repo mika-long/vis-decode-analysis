@@ -1,8 +1,11 @@
 ---
-title: "Data Cleaning and Descriptive Checks"
+title: "Part 2: Data Cleaning and Descriptive Checks"
+author: "Anonymous"
 format:
   html:
     callout-appearance: simple
+    reference-location: margin
+    embed-resources: true
 ---
 
 ```{r}
@@ -24,19 +27,33 @@ library(tidybayes)
 library(here)
 ```
 
+# Set up
+
 Read in response data
 
 ```{r}
-raw_df <- read_csv(here::here("data", "part_2", "exp2-pilot.csv")) %>%
+#| code-fold: true
+raw_df <- read_csv(here::here("data", "part2", "exp2-pilot.csv")) %>%
   as_tibble(.) %>%
   filter(status != "rejected")
 
 pilot_df <- raw_df %>% filter(responseId != "windowEvents")
 ```
 
+# Eye distance to screen 
+
+TODO
+
+# Correlation for the `ProjToAxis` task
+
+TODO
+
+# Timing
+
 On average, how long did people take? 
 
 ```{r}
+#| code-fold: true
 pilot_df %>%
   # no need for introduction
   filter(trialOrder >= 3, trialOrder <= 72) %>%
@@ -66,16 +83,20 @@ pilot_df %>%
 What about demographics? 
 
 ```{r}
+#| code-fold: true
 pilot_df %>%
   filter(trialId == "post_study") %>%
   select(participantId, responseId, answer) %>%
   pivot_wider(names_from = responseId, values_from = answer) %>%
-  select(-`gender-other`, -`feedback-text`)
+  select(-`gender-other`, -`feedback-text`) %>%
+  ggplot(aes(x = age, y = gender)) +
+  geom_dotplot()
 ```
 
 Gender is balanced: 
 
 ```{r}
+#| code-fold: true
 pilot_df %>%
   filter(trialId == "post_study") %>%
   select(participantId, responseId, answer) %>%
@@ -87,6 +108,7 @@ pilot_df %>%
 Mean age is 38. 
 
 ```{r}
+#| code-fold: true
 pilot_df %>%
   filter(trialId == "post_study") %>%
   select(participantId, responseId, answer) %>%
