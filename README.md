@@ -1,5 +1,19 @@
 ## Repository structure 
 
+#TODO： structure this around 
+
+For **section 4**, the compiled xxx for xx is: 
+- xxx, xxx 
+- xxx, xxx 
+
+For **section 5**, the compiled xxx for xx is: 
+- ... 
+
+---
+
+The rest of the structure is ... 
+
+
 - 📁 `analysis\`: contains Quarto notebooks for analyzing results for each task 
   - `quarto_files\`: R files using `brms` and `ggplot2` to analyze results. 
     - `part1`: files related to Section 4 of the paper. 
@@ -9,6 +23,7 @@
   - `stan_bin_files`: compiled stan binaries; not tracked 
 - 📁 `data\`: data collected from experiment, both raw and processed 
 - 📁 `output\`: where compiled `.qmd` files, in the form of `html`, sits. 
+  - `t1-....qmd` corresponds to section xxx. the BisectArea operator of the paper 
 - 📁 `R`: folder for R scripts 
   - `helper.R`: helper functions used across all tasks 
  
