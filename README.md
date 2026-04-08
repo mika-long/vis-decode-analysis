@@ -1,12 +1,16 @@
 # Overview 
 
 For **section 4**, the compiled html files for each decoding operator: 
-- Section ..., 
-- Section ..., 
+- Section 4.2.1: `analysis/quarto_files/part1/t3t5-Projection.qmd` and `output/analysis/quarto_files/part1/t3t5-Projection.html`
+- Section 4.2.2: `analysis/quarto_files/part1/t2-HighestPoint.qmd` and `output/analysis/quarto_files/part1/t2-HighestPoint.html`
+- Section 4.2.3: `analysis/quarto_files/part1/t4-MaxSlope.qmd` and `output/analysis/quarto_files/part1/t4-MaxSlope.html`
+- Section 4.2.4: `analysis/quarto_files/part1/t1-BisectArea.qmd` and `output/analysis/quarto_files/part1/t1-BisectArea.html`
 
 For **section 5**, the compiled html file correspondg to each section: 
-- Section ... -> 
+- Section 5.4.1: `analysis/quarto_files/part2/part2.qmd` and `output/analysis/quarto_files/part2/part2.html`
+- Section 5.4.2: `analysis/quarto_files/part2/part2.qmd` and `output/analysis/quarto_files/part2/part2.html`
 
+---
 
 ## Repository structure 
 
