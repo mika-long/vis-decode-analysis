@@ -1,5 +1,8 @@
 ---
 title: "MaxSlope Operator"
+author: "Anonymous"
+date: today
+date-format: "iso"
 html:
   reference-location: margin
   embed-resources: true
