@@ -890,7 +890,7 @@ Math model:
 
 $$
 \begin{align}
-\text{error_va}_{i} &\sim \text{Normal}(\mu_\text{PID[i]}, \sigma_{\text{PID[i]}}^2) \\
+\texttt{error\_va}_{i} &\sim \text{Normal}(\mu_\text{PID[i]}, \sigma_{\text{PID[i]}}^2) \\
 \mu_j &\sim \mathcal{N}(\bar{\mu}, \bar{\sigma}^2), j \in [16] \\ 
 \sigma_j &\sim \mathcal{N}^+(\alpha, \beta^2), j \in [16] \\ 
 \bar{\mu}, \alpha &\sim \mathcal{N}(0, 1)\\
@@ -1019,29 +1019,31 @@ model.x.normal %>%
 
 # From error on Y to error on X 
 
-Get the "average participant": 
+Create a dataframe for the "average participant": 
 
 ```{r}
+#| code-fold: true
 avg_pixelToMM <- participants %>% pull(pixelToMM) %>% mean(.)
 avg_distToScreen <- participants %>% pull(dist_to_screen) %>% mean(.)
 avg_participant <- tibble(
   pixelToMM = avg_pixelToMM,
-  distToScreen = avg_distToScreen
+  distToScreen = avg_distToScreen,
+  participantId = "avg_participant"
 )
+
+avg_participant
 ```
 
 Create dataframe for average participant and do posterior draws: 
 
 ```{r}
-newdata <- avg_participant %>% mutate(participantId = "avg_participant")
-
 # Y-error draws in visual angle space
-y_draws <- newdata %>%
+y_draws <- avg_participant %>%
   add_predicted_draws(
     model.y.weibull,
     re_formula = NULL, # include random effects
     allow_new_levels = TRUE,
-    # ndraws = 4000
+    seed = 1
   )
 ```
 
@@ -1090,6 +1092,7 @@ example_plot
 
 ```{r}
 #| code-fold: true
+
 # specific pdf we're working with
 f <- function(x) {
   dsgt(
@@ -1105,6 +1108,7 @@ f <- function(x) {
 
 va.ans.y <- exp1_y$data_to_va(y_val, avg_distToScreen, avg_pixelToMM)
 
+# here we go from errors on y to errors on x
 x_errors <- y_draws %>%
   mutate(
     va.pred.y = va.ans.y - .prediction,
