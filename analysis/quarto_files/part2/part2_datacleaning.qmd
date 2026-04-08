@@ -40,13 +40,100 @@ raw_df <- read_csv(here::here("data", "part2", "exp2-pilot.csv")) %>%
 pilot_df <- raw_df %>% filter(responseId != "windowEvents")
 ```
 
+We follow the same strategy as the first study, by checking 1) whether participant's screen to distance is above 200 mm; and 2) whether participant's response to the true answer is above 50%. 
+
 # Eye distance to screen 
 
-TODO
+```{r}
+#| code-fold: true
+
+p <- pilot_df %>%
+  filter(status == "completed") %>%
+  select(participantId, trialId, responseId, answer) %>%
+  filter(grepl("virtual", trialId))
+
+ball_positions <- p %>%
+  select(participantId, responseId, answer) %>%
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  mutate(`ball-positions` = gsub("\\[|\\]", "", `ball-positions`)) %>%
+  mutate(split_answer = str_split(`ball-positions`, ",")) %>%
+  mutate(numeric_vectors = map(split_answer, ~ as.numeric(.x))) %>%
+  unnest(split_answer) %>%
+  mutate(split_answer = as.numeric(split_answer)) %>%
+  group_by(participantId) %>%
+  summarise(
+    avg.ball.pos = sum(split_answer) / 5,
+    min.ball.pos = min(split_answer),
+    max.ball.pos = max(split_answer),
+    true_ball_pos = (avg.ball.pos * 5 - min.ball.pos - max.ball.pos) / 3
+  )
+
+calibrations <- p %>%
+  filter(grepl("pixelsPerMM|dist-calibration-MM", responseId)) %>%
+  select(-trialId) %>%
+  mutate(answer = as.numeric(answer)) %>%
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  rename(pixelToMM = pixelsPerMM, dist_to_screen = `dist-calibration-MM`)
+
+participants <- calibrations %>%
+  right_join(ball_positions, by = join_by(participantId)) %>%
+  mutate(
+    phy = dist_to_screen * tan(13.5 * pi / 180),
+    px = phy * pixelToMM,
+    square_pos = round(px + avg.ball.pos)
+  ) %>%
+  mutate(
+    ball.square.dist = (square_pos - true_ball_pos) / pixelToMM,
+    d = ball.square.dist / tan(13.5 * pi / 180)
+  ) %>%
+  select(participantId, pixelToMM, d) %>%
+  rename(dist_to_screen = d)
+
+# plot distance to screen distribution
+participants %>%
+  ggplot(aes(x = dist_to_screen)) +
+  geom_dotplot() +
+  labs(x = "distance to screen (mm)")
+```
+
+Everyone has `dist_to_screen` greater than 200 mm here, so we are not filtering any participant out here. 
 
 # Correlation for the `ProjToAxis` task
 
-TODO
+First we get the part 1 relevant data: 
+
+```{r}
+#| code-fold: true
+#| label: get part 1 relevant df
+part1_df <- pilot_df %>%
+  filter(str_detect(trialId, "block5_test")) %>%
+  select(participantId, trialOrder, responseId, answer) %>%
+  mutate(answer = as.numeric(answer)) %>%
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  dplyr::rename(
+    num.ans.x = `location-x`,
+    num.ans.y = `location-y`,
+    num.resp.x = `slider-x`,
+    num.resp.y = `slider-y`,
+    px.resp.x = `px-slider-x`,
+    px.resp.y = `px-slider-y`,
+    px.ans.x = `px-location-x`,
+    px.ans.y = `px-location-y`
+  )
+```
+
+Then we check correlation: 
+
+```{r}
+part1_df %>%
+  group_by(participantId) %>%
+  summarise(
+    correlation.x = cor(num.resp.x, num.ans.x),
+    correlation.y = cor(num.resp.y, num.ans.y),
+  )
+```
+
+Everyone has correlation above 0.50, so we keep all the data here and give everyone full bonus. 
 
 # Timing
 
@@ -54,8 +141,8 @@ On average, how long did people take?
 
 ```{r}
 #| code-fold: true
+
 pilot_df %>%
-  # no need for introduction
   filter(trialOrder >= 3, trialOrder <= 72) %>%
   group_by(participantId, trialOrder, cleanedDuration) %>%
   summarise(.) %>%
