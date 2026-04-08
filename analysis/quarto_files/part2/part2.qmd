@@ -1,15 +1,18 @@
 ---
-title: "Part 2"
+title: "Section 5 Analysis"
 author: "Anonymous"
 date: today
 date-format: "iso"
 format:
   html:
     reference-location: margin
+    embed-resources: true
 ---
 
 ```{r}
 #| code-fold: true
+#| label: set up
+#| echo: false
 
 library(tidyverse)
 library(jsonlite)
@@ -32,7 +35,9 @@ source(here("R", "helpers.R"))
 Read in response data: 
 
 ```{r}
-raw_df <- read_csv(here::here("data", "part_2", "exp2-pilot.csv")) %>%
+#| code-fold: true
+
+raw_df <- read_csv(here::here("data", "part2", "exp2-pilot.csv")) %>%
   as_tibble(.) %>%
   filter(status != "rejected")
 
@@ -112,6 +117,8 @@ participant_df <- participant_df %>%
 Read in stimuli data for experiment 2 from Moritz et al.: 
 
 ```{r}
+#| code-fold: true
+
 exp_json_data <- jsonlite::fromJSON(here::here(
   "data",
   "moritz",
@@ -184,6 +191,8 @@ x_moritz <- make_va_scale(
 y_moritz <- make_va_scale(data_min = 0, data_max = 1, px_min = 200, px_max = 0)
 ```
 
+:::{.callout-note collapse="true"}
+
 # See whether data is sampling correctly 
 
 ```{r}
@@ -201,43 +210,16 @@ part1_df %>% ggplot(aes(x = num.resp.x, y = num.resp.y)) + geom_bin2d()
 
 The above tells us that data is being sampled correctly. 
 
---- 
-
-Get a sense of whether participants answered the calibration task correctly: 
-
-```{r}
-participant_df %>% ggplot(aes(x = pixelsPerMM)) + geom_dotplot()
-participant_df %>% ggplot(aes(x = distToScreen)) + geom_dotplot()
-```
-
-These numbers look normal. 
-
----
-
-Calculate spearman correlation to determine whether we want to filter out participant who fail our check: 
-
-```{r}
-part1_df %>%
-  summarise(
-    rho = cor(num.ans.x, num.resp.x, method = "spearman"),
-    .by = participantId
-  )
-
-part1_df %>%
-  summarise(
-    rho = cor(num.ans.y, num.resp.y, method = "spearman"),
-    .by = participantId
-  )
-```
-
-So far everyone seems to fit. So we are not filtering out anyone from this. 
+:::
 
 # Fit model for part 1 
 
-## Get the data ready: 
+## Get the data ready
+
+... by adding the visual angle transformed data. 
 
 ```{r}
-# adding the visual angle related stuff
+#| code-fold: true
 
 part1_df <- part1_df %>%
   left_join(participant_df) %>%
@@ -268,7 +250,7 @@ part1_df %>%
   labs(title = "Project to Y-Axis Error (Vis Angle)")
 ```
 
-Note that for matching with part 2, we are interested in the second graph. 
+Note that for matching with part 2, we are *only interested in the second graph* for model fitting purposes. 
 
 ## Model Specification 
 
@@ -308,6 +290,8 @@ Fit the model:
 
 ```{r}
 #| label: fit model for part 1
+#| code-fold: true
+#| code-line-numbers: true
 
 m1 <- part1_df %>%
   brm(
@@ -319,7 +303,7 @@ m1 <- part1_df %>%
     cores = 4,
     control = list(adapt_delta = 0.99),
     iter = 6000,
-    file = here::here("analysis", "fitted_models", "exp2", "m1"),
+    file = here::here("analysis", "fitted_models", "part2", "m1"),
     file_refit = "on_change",
     save_pars = save_pars(all = TRUE)
   )
@@ -329,15 +313,18 @@ Get a sense of posterior fit:
 
 ```{r}
 summary(m1)
-plot(m1)
 ```
 
 Note that the Bulk_ESS and Tail_ESS all indicate good fit. 
 
-Posterior predictive checks: 
+```{r}
+plot(m1)
+```
+
+The four chains mix well. Now we move on to perform posterior predictive checks: 
 
 ```{r}
-#| layout-ncol: 3
+#| layout-ncol: 2
 #| code-fold: true
 pp_check(m1, ndraws = 100) +
   theme(legend.position = c(0.9, 0.5)) +
@@ -355,6 +342,7 @@ p3
 
 ```{r}
 #| eval: false
+#| echo: false
 
 ggsave(
   here::here("figs", "part2-task1-pp-check.pdf"),
@@ -414,6 +402,7 @@ p1
 
 ```{r}
 #| eval: false
+#| echo: false
 
 ggsave(
   here::here("figs", "part2-task1-project-y.pdf"),
@@ -425,13 +414,15 @@ ggsave(
 )
 ```
 
+## Prior sensitivity analysis
 
-## Prior sensitivity analysis -- Only Run if time permitting 
+:::{.callout-caution}
+The following is quite time-consuming. Only run this if your computer has good power. 
+:::
 
 To test whether our model is sensitive to prior specifications, we fit them on differnt priors: 
 
 ```{r}
-#| eval: false
 # Wider — less informative
 p_wide <- c(
   prior(normal(0, 5), class = Intercept),
@@ -464,7 +455,6 @@ p_student <- c(
 ```
 
 ```{r}
-#| eval: false
 m1_wide <- part1_df %>%
   brm(
     formula = f,
@@ -475,7 +465,7 @@ m1_wide <- part1_df %>%
     cores = 4,
     control = list(adapt_delta = 0.99),
     iter = 6000,
-    file = here::here("analysis", "fitted_models", "exp2", "m1_wide"),
+    file = here::here("analysis", "fitted_models", "part2", "m1_wide"),
     file_refit = "on_change",
     save_pars = save_pars(all = TRUE)
   )
@@ -490,7 +480,7 @@ m1_tight <- part1_df %>%
     cores = 4,
     control = list(adapt_delta = 0.99),
     iter = 6000,
-    file = here::here("analysis", "fitted_models", "exp2", "m1_tight"),
+    file = here::here("analysis", "fitted_models", "part2", "m1_tight"),
     file_refit = "on_change",
     save_pars = save_pars(all = TRUE)
   )
@@ -505,15 +495,17 @@ m1_student <- part1_df %>%
     cores = 4,
     control = list(adapt_delta = 0.99),
     iter = 6000,
-    file = here::here("analysis", "fitted_models", "exp2", "m1_student"),
+    file = here::here("analysis", "fitted_models", "part2", "m1_student"),
     file_refit = "on_change",
     save_pars = save_pars(all = TRUE)
   )
 ```
 
-All models fit without convergence issues. Now we combine posterior and plot them: 
+All models fit without convergence issues. Now we combine posteriors into a list and plot them: 
 
 ```{r}
+#| code-fold: true
+
 # Combine posteriors from all models
 models <- list(
   "default (0,1)" = m1,
@@ -532,6 +524,7 @@ combined <- models %>%
 Interval plot: 
 
 ```{r}
+#| code-fold: true
 combined %>%
   # uncomment to see what variance instead of log(variance) is.
   # mutate(
@@ -546,6 +539,7 @@ combined %>%
 Densities overlaid: 
 
 ```{r}
+#| code-fold: true
 combined %>%
   ggplot(aes(x = .value, color = prior, fill = prior)) +
   stat_slab(alpha = 0.3) +
@@ -556,6 +550,7 @@ combined %>%
 To see the actual table: 
 
 ```{r}
+#| code-fold: true
 combined %>%
   group_by(prior, .variable) %>%
   median_qi(.value, .width = .95) %>%
@@ -566,6 +561,7 @@ combined %>%
 We can also check random effects: 
 
 ```{r}
+#| code-fold: true
 combined_sd <- models %>%
   imap_dfr(
     ~ gather_draws(
@@ -575,9 +571,7 @@ combined_sd <- models %>%
     ) %>%
       mutate(prior = .y)
   )
-```
 
-```{r}
 combined_sd %>%
   ggplot(aes(x = .value, y = prior)) +
   stat_pointinterval(.width = c(.50, .95)) +
@@ -606,7 +600,6 @@ m1_draws_df <- m1 %>%
   select(.draw, participantId, mu, var_scale)
 ```
 
-
 **Step 2**: Then, we get a cross between participant and the stimuli they saw, in order to generate **predictions**: 
 
 ```{r}
@@ -633,7 +626,10 @@ predict_df %>% head(5)
 
 **Step 3: Draw the posterior prediction for project once to the y-axis:**
 
+Note that the following is going to take a while to run. On a mac mini it takes about 5 mins to fit. 
+
 ```{r}
+#| eval: false
 posterior_predict_df <- map_dfr(
   .progress = TRUE,
   unique(predict_df$participantId),
@@ -678,6 +674,7 @@ posterior_predict_df <- map_dfr(
 ```
 
 ```{r}
+#| eval: false
 posterior_predict_df <- posterior_predict_df %>%
   mutate(
     num.1proj.mean = y_moritz$va_to_data(
@@ -701,14 +698,17 @@ posterior_predict_df <- posterior_predict_df %>%
 ```{r}
 #| eval: false
 #| echo: false
-
 saveRDS(
   posterior_predict_df,
-  file = here::here("analysis/fitted_models/exp2/part2_posterior_1proj.rds")
+  file = here::here("analysis/fitted_models/part2/part2_posterior_1proj.rds")
 )
+```
 
+```{r}
+#| echo: false
+#| label: short cut to read in data
 posterior_predict_df <- readRDS(
-  file = here::here("analysis/fitted_models/exp2/part2_posterior_1proj.rds")
+  file = here::here("analysis/fitted_models/part2/part2_posterior_1proj.rds")
 )
 ```
 
@@ -779,6 +779,7 @@ yrep_weighted <- posterior_predict_df %>%
 ```{r}
 #| layout-ncol: 3
 #| code-fold: true
+
 ppc_dens_overlay(y, yrep_mean[sample(nrow(yrep_mean), 100), ]) +
   labs(title = "Mean Strategy") +
   coord_cartesian(xlim = c(0, 1))
@@ -795,6 +796,7 @@ ppc_dens_overlay(y, yrep_weighted[sample(nrow(yrep_weighted), 100), ]) +
 ```{r}
 #| layout-ncol: 3
 #| code-fold: true
+
 p1 <- ppc_dens_overlay_grouped(
   y,
   yrep_mean[sample(nrow(yrep_mean), 100), ],
@@ -847,7 +849,7 @@ ppc_pit_ecdf(y, yrep_median) + labs(title = "Median Strategy")
 ppc_pit_ecdf(y, yrep_weighted) + labs(title = "Weighted Strategy")
 ```
 
-Grouped version: 
+Faceted version: 
 
 ```{r}
 #| layout-ncol: 3
@@ -858,7 +860,7 @@ ppc_pit_ecdf_grouped(y, yrep_weighted, group) +
   labs(title = "Weighted Strategy")
 ```
 
-This demonstrates that the fit is ... not that great. 
+This demonstrates that the fit does not capture outliers. 
 
 ## Project Twice 
 
@@ -866,7 +868,12 @@ Same step 1 and step 2 as before, so we don't generate anything new, but start f
 
 **Step 3: Draw the posterior prediction for project once to the middle AND project twice to the y-axis:**
 
+Again, this is going to take a long time to run. 
+
 ```{r}
+#| code-fold: true
+#| eval: false
+
 posterior_predict_df <- map_dfr(
   .progress = TRUE,
   unique(predict_df$participantId),
@@ -917,6 +924,9 @@ posterior_predict_df <- map_dfr(
 We then transform things from visual angle prediction to actual numerical value, for comparison against the actual response we got: 
 
 ```{r}
+#| code-fold: true
+#| eval: false
+
 posterior_predict_df <- posterior_predict_df %>%
   mutate(
     num.2proj.mean = y_moritz$va_to_data(
@@ -940,14 +950,16 @@ posterior_predict_df <- posterior_predict_df %>%
 ```{r}
 #| eval: false
 #| echo: false
-
 saveRDS(
   posterior_predict_df,
-  file = here::here("analysis/fitted_models/exp2/part2_posterior_2proj.rds")
+  file = here::here("analysis/fitted_models/part2/part2_posterior_2proj.rds")
 )
+```
 
+```{r}
+#| echo: false
 posterior_predict_df <- readRDS(here::here(
-  "analysis/fitted_models/exp2/part2_posterior_2proj.rds"
+  "analysis/fitted_models/part2/part2_posterior_2proj.rds"
 ))
 ```
 
@@ -956,6 +968,7 @@ posterior_predict_df <- readRDS(here::here(
 First we get the data format ready to be plotted using `bayesplot`: 
 
 ```{r}
+#| code-fold: true
 response_ordered <- part2_df %>% arrange(participantId, ogIndex)
 y <- response_ordered$num.resp.y
 
@@ -1016,6 +1029,7 @@ yrep_weighted <- posterior_predict_df %>%
 
 ```{r}
 #| layout-ncol: 3
+#| code-fold: true
 ppc_dens_overlay(y, yrep_mean[sample(nrow(yrep_mean), 100), ]) +
   labs(title = "Mean Strategy")
 ppc_dens_overlay(y, yrep_median[sample(nrow(yrep_median), 100), ]) +
@@ -1024,9 +1038,11 @@ ppc_dens_overlay(y, yrep_weighted[sample(nrow(yrep_weighted), 100), ]) +
   labs(title = "Weighted Mean Strategy")
 ```
 
-**KDE grouped**: 
+**KDE faceted**: 
 
 ```{r}
+#| code-fold: true
+#| layout-ncol: 3
 p1 <- ppc_dens_overlay_grouped(
   y,
   yrep_mean[sample(nrow(yrep_mean), 100), ],
@@ -1082,7 +1098,7 @@ ppc_pit_ecdf(y, yrep_weighted) + labs(title = "Weighted Mean Strategy")
 #   labs(title = "Weighted Mean Strategy")
 ```
 
-**PIT-ECDF Grouped**: 
+**PIT-ECDF Faceted**: 
 
 ```{r}
 #| layout-ncol: 3
@@ -1100,6 +1116,7 @@ For better customization and easier to manipulate dataframes, we will use `stat_
 We extract the shared layers across all three strategies first: 
 
 ```{r}
+#| code-fold: true
 # get the plotting relevant data ready
 
 part2_joined <- part2_df %>%
@@ -1142,6 +1159,7 @@ shared_layers <- list(
 ```
 
 ```{r}
+#| code-fold: true
 draw_subset <- sample(unique(posterior_predict_df$.draw), 100)
 
 # bias + var for facets
@@ -1203,6 +1221,7 @@ p1
 Median stategy with ggdist: 
 
 ```{r}
+#| code-fold: true
 draw_subset <- sample(unique(posterior_predict_df$.draw), 100)
 
 # bias + var for facets
@@ -1266,6 +1285,7 @@ p2
 Weighted mean strategy: 
 
 ```{r}
+#| code-fold: true
 draw_subset <- sample(unique(posterior_predict_df$.draw), 100)
 
 # bias + var for facets

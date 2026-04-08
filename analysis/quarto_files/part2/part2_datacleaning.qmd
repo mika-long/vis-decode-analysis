@@ -1,6 +1,8 @@
 ---
 title: "Part 2: Data Cleaning and Descriptive Checks"
 author: "Anonymous"
+date: today
+date-format: "iso"
 format:
   html:
     callout-appearance: simple
@@ -128,8 +130,8 @@ Then we check correlation:
 part1_df %>%
   group_by(participantId) %>%
   summarise(
-    correlation.x = cor(num.resp.x, num.ans.x),
-    correlation.y = cor(num.resp.y, num.ans.y),
+    correlation.x = cor(num.resp.x, num.ans.x, method = "spearman"),
+    correlation.y = cor(num.resp.y, num.ans.y, method = "spearman"),
   )
 ```
 
