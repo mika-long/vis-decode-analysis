@@ -402,7 +402,7 @@ x_n &amp;\sim \mathcal{N}\!\left(\theta_n \cdot (x^{\text{med}}_n + \mu^{\text{m
 \bar\mu^{\text{med}},\ \bar\mu^{\text{med}}_{\log\sigma} &amp;\sim \mathcal{N}(0, 1) \\
 \bar\sigma^{\text{med}}_\mu,\ \bar\sigma^{\text{med}}_{\log\sigma} &amp;\sim \mathcal{N}^{+}(0, 1) \\[4pt]
 % Indexing
-n &amp;= 1, \ldots, N, \quad j[n] \in \{1, \ldots, J\}
+n &amp;= 1, \ldots, N, \quad j[n] \in \{1, \ldots, 16\}
 \end{align*}
 \]</span></p>
 <p>The hyperpriors we’re using here are directly obtained from <code>model.x.normal</code> from <code>t2-HighestPoint.qmd</code>.</p>
@@ -600,26 +600,21 @@ generated quantities {
 }</code></pre>
 </div>
 </div>
-<p>Note: this is the part of the code that corresponds to the informative prior:</p>
-<pre><code>mu_mod_mean ~ normal(0.01, 0.02); 
-mu_mod_sd ~ normal(0.04, 0.03); 
-log_sigma_mod_mean ~ normal(-1.37, 0.10); 
-log_sigma_mod_sd ~ normal(0.34, 0.10);</code></pre>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> model<span class="sc">$</span><span class="fu">sample</span>(</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> stan_data,</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>,</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">parallel_chains =</span> <span class="dv">4</span>,</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">iter_warmup =</span> <span class="dv">4000</span>,</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">iter_sampling =</span> <span class="dv">4000</span>,</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">adapt_delta =</span> <span class="fl">0.99</span>,</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">max_treedepth =</span> <span class="dv">15</span></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> model<span class="sc">$</span><span class="fu">sample</span>(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> stan_data,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">parallel_chains =</span> <span class="dv">4</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">iter_warmup =</span> <span class="dv">4000</span>,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">iter_sampling =</span> <span class="dv">4000</span>,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">adapt_delta =</span> <span class="fl">0.99</span>,</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">max_treedepth =</span> <span class="dv">15</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Get the summary from the fit and check the value of <code>rhat</code>:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>summary <span class="ot">&lt;-</span> fit<span class="sc">$</span><span class="fu">summary</span>()</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>summary <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">["</span>, variable)) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="fu">contains</span>(<span class="st">"rhat"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>summary <span class="ot">&lt;-</span> fit<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>summary <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">["</span>, variable)) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="fu">contains</span>(<span class="st">"rhat"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
@@ -630,7 +625,7 @@ log_sigma_mod_sd ~ normal(0.34, 0.10);</code></pre>
 </div>
 <p>All values are <code>1.00</code>, which is good. Next we check <code>BULK_ESS</code> and <code>TAIL_ESS</code>:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>summary <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">["</span>, variable)) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="fu">contains</span>(<span class="st">"ess"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>summary <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">["</span>, variable)) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="fu">contains</span>(<span class="st">"ess"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
@@ -643,13 +638,13 @@ log_sigma_mod_sd ~ normal(0.34, 0.10);</code></pre>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Overall</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">custom_pp_check</span>(</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  fit,</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  bayesplot<span class="sc">::</span>ppc_pit_ecdf,</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">transform =</span> \(x) x <span class="sc">-</span> task1_df<span class="sc">$</span>va.med.x,</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">ndraws =</span> <span class="cn">NULL</span></span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Overall</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">custom_pp_check</span>(</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  fit,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  bayesplot<span class="sc">::</span>ppc_pit_ecdf,</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">transform =</span> \(x) x <span class="sc">-</span> task1_df<span class="sc">$</span>va.med.x,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">ndraws =</span> <span class="cn">NULL</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -661,28 +656,28 @@ log_sigma_mod_sd ~ normal(0.34, 0.10);</code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">custom_pp_check</span>(</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  fit,</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  bayesplot<span class="sc">::</span>ppc_dens_overlay_grouped,</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">group =</span> <span class="fu">ifelse</span>(</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    task1_df<span class="sc">$</span>param.lambda <span class="sc">&lt;</span> <span class="dv">0</span>,</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"neg"</span>,</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ifelse</span>(task1_df<span class="sc">$</span>param.lambda <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="st">"pos"</span>, <span class="st">"zero"</span>)</span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>) <span class="ot">-&gt;</span> p1</span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="fu">custom_pp_check</span>(</span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>  fit,</span>
-<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>  bayesplot<span class="sc">::</span>ppc_pit_ecdf_grouped,</span>
-<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">group =</span> <span class="fu">ifelse</span>(</span>
-<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>    task1_df<span class="sc">$</span>param.lambda <span class="sc">&lt;</span> <span class="dv">0</span>,</span>
-<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"neg"</span>,</span>
-<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ifelse</span>(task1_df<span class="sc">$</span>param.lambda <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="st">"pos"</span>, <span class="st">"zero"</span>)</span>
-<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>) <span class="ot">-&gt;</span> p2</span>
-<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>p1</span>
-<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>p2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">custom_pp_check</span>(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  fit,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  bayesplot<span class="sc">::</span>ppc_dens_overlay_grouped,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">group =</span> <span class="fu">ifelse</span>(</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    task1_df<span class="sc">$</span>param.lambda <span class="sc">&lt;</span> <span class="dv">0</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"neg"</span>,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ifelse</span>(task1_df<span class="sc">$</span>param.lambda <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="st">"pos"</span>, <span class="st">"zero"</span>)</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>) <span class="ot">-&gt;</span> p1</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="fu">custom_pp_check</span>(</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>  fit,</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>  bayesplot<span class="sc">::</span>ppc_pit_ecdf_grouped,</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">group =</span> <span class="fu">ifelse</span>(</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>    task1_df<span class="sc">$</span>param.lambda <span class="sc">&lt;</span> <span class="dv">0</span>,</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"neg"</span>,</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ifelse</span>(task1_df<span class="sc">$</span>param.lambda <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="st">"pos"</span>, <span class="st">"zero"</span>)</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>) <span class="ot">-&gt;</span> p2</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>p1</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>p2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell quarto-layout-panel" data-layout-ncol="2">
 <div class="quarto-layout-row">
@@ -698,69 +693,69 @@ log_sigma_mod_sd ~ normal(0.34, 0.10);</code></pre>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>plot_df <span class="ot">&lt;-</span> task1_df <span class="sc">%&gt;%</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  modelr<span class="sc">::</span><span class="fu">data_grid</span>(</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">diff =</span> <span class="fu">seq</span>(</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>      <span class="sc">-</span><span class="fu">max</span>(<span class="fu">abs</span>(va.med.x <span class="sc">-</span> va.mod.x)),</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">max</span>(<span class="fu">abs</span>(va.med.x <span class="sc">-</span> va.mod.x)),</span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">length.out =</span> <span class="dv">100</span></span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    ), <span class="co"># pretend the mod id 0</span></span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">participantId =</span> <span class="fu">unique</span>(participantId)</span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">numericPID =</span> <span class="fu">as.numeric</span>(<span class="fu">factor</span>(participantId, <span class="at">levels =</span> <span class="fu">names</span>(id_mapping))),</span>
-<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">x_mod =</span> <span class="dv">0</span>,</span>
-<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">x_med =</span> diff</span>
-<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(</span>
-<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">spread_draws</span>(</span>
-<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>      fit,</span>
-<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>      mu_med[numericPID],</span>
-<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>      mu_mod[numericPID],</span>
-<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>      sigma_med[numericPID],</span>
-<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>      sigma_mod[numericPID]</span>
-<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="fu">join_by</span>(numericPID)</span>
-<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a>plot2_df <span class="ot">&lt;-</span> plot_df <span class="sc">%&gt;%</span></span>
-<span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb20-28"><a href="#cb20-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">inv_mse_med =</span> <span class="dv">1</span> <span class="sc">/</span> ((mu_med)<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> (sigma_med)<span class="sc">^</span><span class="dv">2</span>),</span>
-<span id="cb20-29"><a href="#cb20-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">inv_mse_mod =</span> <span class="dv">1</span> <span class="sc">/</span> ((x_mod <span class="sc">-</span> x_med <span class="sc">+</span> mu_mod)<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> (sigma_mod)<span class="sc">^</span><span class="dv">2</span>),</span>
-<span id="cb20-30"><a href="#cb20-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">theta =</span> inv_mse_med <span class="sc">/</span> (inv_mse_med <span class="sc">+</span> inv_mse_mod)</span>
-<span id="cb20-31"><a href="#cb20-31" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb20-32"><a href="#cb20-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb20-33"><a href="#cb20-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">y_rep =</span> <span class="fu">rnorm</span>(</span>
-<span id="cb20-34"><a href="#cb20-34" aria-hidden="true" tabindex="-1"></a>      <span class="fu">n</span>(),</span>
-<span id="cb20-35"><a href="#cb20-35" aria-hidden="true" tabindex="-1"></a>      theta <span class="sc">*</span> (x_med <span class="sc">+</span> mu_med) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">-</span> theta) <span class="sc">*</span> (x_mod <span class="sc">+</span> mu_mod),</span>
-<span id="cb20-36"><a href="#cb20-36" aria-hidden="true" tabindex="-1"></a>      <span class="fu">sqrt</span>((theta)<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> (sigma_med)<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">-</span> theta)<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> (sigma_mod)<span class="sc">^</span><span class="dv">2</span>)</span>
-<span id="cb20-37"><a href="#cb20-37" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb20-38"><a href="#cb20-38" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb20-39"><a href="#cb20-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-40"><a href="#cb20-40" aria-hidden="true" tabindex="-1"></a>plot3_df <span class="ot">&lt;-</span> plot2_df <span class="sc">%&gt;%</span></span>
-<span id="cb20-41"><a href="#cb20-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(diff) <span class="sc">%&gt;%</span></span>
-<span id="cb20-42"><a href="#cb20-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">median_qi</span>(y_rep, <span class="at">.width =</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.8</span>, <span class="fl">0.95</span>))</span>
-<span id="cb20-43"><a href="#cb20-43" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-44"><a href="#cb20-44" aria-hidden="true" tabindex="-1"></a>plot3_df <span class="sc">%&gt;%</span></span>
-<span id="cb20-45"><a href="#cb20-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> diff, <span class="at">y =</span> y_rep <span class="sc">-</span> diff)) <span class="sc">+</span></span>
-<span id="cb20-46"><a href="#cb20-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_lineribbon</span>(</span>
-<span id="cb20-47"><a href="#cb20-47" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">ymin =</span> .lower <span class="sc">-</span> diff, <span class="at">ymax =</span> .upper <span class="sc">-</span> diff),</span>
-<span id="cb20-48"><a href="#cb20-48" aria-hidden="true" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="fl">0.5</span></span>
-<span id="cb20-49"><a href="#cb20-49" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb20-50"><a href="#cb20-50" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(</span>
-<span id="cb20-51"><a href="#cb20-51" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> task1_df,</span>
-<span id="cb20-52"><a href="#cb20-52" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">x =</span> va.med.x <span class="sc">-</span> va.mod.x, <span class="at">y =</span> va.resp.x <span class="sc">-</span> va.med.x),</span>
-<span id="cb20-53"><a href="#cb20-53" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> <span class="fl">0.5</span>,</span>
-<span id="cb20-54"><a href="#cb20-54" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="fl">0.5</span></span>
-<span id="cb20-55"><a href="#cb20-55" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb20-56"><a href="#cb20-56" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">palette =</span> <span class="st">"Blues"</span>) <span class="sc">+</span></span>
-<span id="cb20-57"><a href="#cb20-57" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb20-58"><a href="#cb20-58" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"va(median) - va(mode)"</span>,</span>
-<span id="cb20-59"><a href="#cb20-59" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Signed Error in Visual Angle of Bisection Point"</span></span>
-<span id="cb20-60"><a href="#cb20-60" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb20-61"><a href="#cb20-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>) <span class="ot">-&gt;</span> p <span class="co"># note that x^mod is fixed to be 0.</span></span>
-<span id="cb20-62"><a href="#cb20-62" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-63"><a href="#cb20-63" aria-hidden="true" tabindex="-1"></a>p</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>plot_df <span class="ot">&lt;-</span> task1_df <span class="sc">%&gt;%</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  modelr<span class="sc">::</span><span class="fu">data_grid</span>(</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">diff =</span> <span class="fu">seq</span>(</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>      <span class="sc">-</span><span class="fu">max</span>(<span class="fu">abs</span>(va.med.x <span class="sc">-</span> va.mod.x)),</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">max</span>(<span class="fu">abs</span>(va.med.x <span class="sc">-</span> va.mod.x)),</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">length.out =</span> <span class="dv">100</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    ), <span class="co"># pretend the mod id 0</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">participantId =</span> <span class="fu">unique</span>(participantId)</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">numericPID =</span> <span class="fu">as.numeric</span>(<span class="fu">factor</span>(participantId, <span class="at">levels =</span> <span class="fu">names</span>(id_mapping))),</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">x_mod =</span> <span class="dv">0</span>,</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">x_med =</span> diff</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">spread_draws</span>(</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>      fit,</span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>      mu_med[numericPID],</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>      mu_mod[numericPID],</span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>      sigma_med[numericPID],</span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>      sigma_mod[numericPID]</span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="fu">join_by</span>(numericPID)</span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-26"><a href="#cb19-26" aria-hidden="true" tabindex="-1"></a>plot2_df <span class="ot">&lt;-</span> plot_df <span class="sc">%&gt;%</span></span>
+<span id="cb19-27"><a href="#cb19-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb19-28"><a href="#cb19-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">inv_mse_med =</span> <span class="dv">1</span> <span class="sc">/</span> ((mu_med)<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> (sigma_med)<span class="sc">^</span><span class="dv">2</span>),</span>
+<span id="cb19-29"><a href="#cb19-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">inv_mse_mod =</span> <span class="dv">1</span> <span class="sc">/</span> ((x_mod <span class="sc">-</span> x_med <span class="sc">+</span> mu_mod)<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> (sigma_mod)<span class="sc">^</span><span class="dv">2</span>),</span>
+<span id="cb19-30"><a href="#cb19-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">theta =</span> inv_mse_med <span class="sc">/</span> (inv_mse_med <span class="sc">+</span> inv_mse_mod)</span>
+<span id="cb19-31"><a href="#cb19-31" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb19-32"><a href="#cb19-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb19-33"><a href="#cb19-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">y_rep =</span> <span class="fu">rnorm</span>(</span>
+<span id="cb19-34"><a href="#cb19-34" aria-hidden="true" tabindex="-1"></a>      <span class="fu">n</span>(),</span>
+<span id="cb19-35"><a href="#cb19-35" aria-hidden="true" tabindex="-1"></a>      theta <span class="sc">*</span> (x_med <span class="sc">+</span> mu_med) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">-</span> theta) <span class="sc">*</span> (x_mod <span class="sc">+</span> mu_mod),</span>
+<span id="cb19-36"><a href="#cb19-36" aria-hidden="true" tabindex="-1"></a>      <span class="fu">sqrt</span>((theta)<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> (sigma_med)<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">-</span> theta)<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> (sigma_mod)<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb19-37"><a href="#cb19-37" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb19-38"><a href="#cb19-38" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb19-39"><a href="#cb19-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-40"><a href="#cb19-40" aria-hidden="true" tabindex="-1"></a>plot3_df <span class="ot">&lt;-</span> plot2_df <span class="sc">%&gt;%</span></span>
+<span id="cb19-41"><a href="#cb19-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(diff) <span class="sc">%&gt;%</span></span>
+<span id="cb19-42"><a href="#cb19-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">median_qi</span>(y_rep, <span class="at">.width =</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.8</span>, <span class="fl">0.95</span>))</span>
+<span id="cb19-43"><a href="#cb19-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-44"><a href="#cb19-44" aria-hidden="true" tabindex="-1"></a>plot3_df <span class="sc">%&gt;%</span></span>
+<span id="cb19-45"><a href="#cb19-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> diff, <span class="at">y =</span> y_rep <span class="sc">-</span> diff)) <span class="sc">+</span></span>
+<span id="cb19-46"><a href="#cb19-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_lineribbon</span>(</span>
+<span id="cb19-47"><a href="#cb19-47" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">ymin =</span> .lower <span class="sc">-</span> diff, <span class="at">ymax =</span> .upper <span class="sc">-</span> diff),</span>
+<span id="cb19-48"><a href="#cb19-48" aria-hidden="true" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="fl">0.5</span></span>
+<span id="cb19-49"><a href="#cb19-49" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb19-50"><a href="#cb19-50" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(</span>
+<span id="cb19-51"><a href="#cb19-51" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> task1_df,</span>
+<span id="cb19-52"><a href="#cb19-52" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">x =</span> va.med.x <span class="sc">-</span> va.mod.x, <span class="at">y =</span> va.resp.x <span class="sc">-</span> va.med.x),</span>
+<span id="cb19-53"><a href="#cb19-53" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> <span class="fl">0.5</span>,</span>
+<span id="cb19-54"><a href="#cb19-54" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="fl">0.5</span></span>
+<span id="cb19-55"><a href="#cb19-55" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb19-56"><a href="#cb19-56" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">palette =</span> <span class="st">"Blues"</span>) <span class="sc">+</span></span>
+<span id="cb19-57"><a href="#cb19-57" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb19-58"><a href="#cb19-58" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"va(median) - va(mode)"</span>,</span>
+<span id="cb19-59"><a href="#cb19-59" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Signed Error in Visual Angle of Bisection Point"</span></span>
+<span id="cb19-60"><a href="#cb19-60" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb19-61"><a href="#cb19-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>) <span class="ot">-&gt;</span> p <span class="co"># note that x^mod is fixed to be 0.</span></span>
+<span id="cb19-62"><a href="#cb19-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-63"><a href="#cb19-63" aria-hidden="true" tabindex="-1"></a>p</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -773,27 +768,28 @@ log_sigma_mod_sd ~ normal(0.34, 0.10);</code></pre>
 <p>We also check the posterior for the informative priors we used:</p>
 
 <div class="no-row-height column-margin column-container"><div class="">
+<p>For easier comparison, this is the prior we started working with:</p>
 <pre><code>mu_mod_mean ~ normal(0.01, 0.02); 
 mu_mod_sd ~ normal(0.04, 0.03); 
 log_sigma_mod_mean ~ normal(-1.37, 0.10); 
 log_sigma_mod_sd ~ normal(0.34, 0.10);</code></pre>
 </div></div><div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as_draws_rvars</span>(fit)<span class="sc">$</span>mu_mod_mean</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as_draws_rvars</span>(fit)<span class="sc">$</span>mu_mod_mean</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>rvar&lt;4000,4&gt;[1] mean ± sd:
 [1] 0.0051 ± 0.018 </code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as_draws_rvars</span>(fit)<span class="sc">$</span>mu_med_mean</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as_draws_rvars</span>(fit)<span class="sc">$</span>mu_med_mean</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>rvar&lt;4000,4&gt;[1] mean ± sd:
 [1] 0.052 ± 0.053 </code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as_draws_rvars</span>(fit)<span class="sc">$</span>log_sigma_mod_mean <span class="co"># %&gt;% exp(.)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as_draws_rvars</span>(fit)<span class="sc">$</span>log_sigma_mod_mean <span class="co"># %&gt;% exp(.)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>rvar&lt;4000,4&gt;[1] mean ± sd:
 [1] -1.5 ± 0.094 </code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as_draws_rvars</span>(fit)<span class="sc">$</span>log_sigma_med_mean <span class="co"># %&gt;% exp(.)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as_draws_rvars</span>(fit)<span class="sc">$</span>log_sigma_med_mean <span class="co"># %&gt;% exp(.)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>rvar&lt;4000,4&gt;[1] mean ± sd:
 [1] -1 ± 0.28 </code></pre>
@@ -803,10 +799,10 @@ log_sigma_mod_sd ~ normal(0.34, 0.10);</code></pre>
 <section id="non-centered-paramterization-uninformative-priors" class="level2">
 <h2 class="anchored" data-anchor-id="non-centered-paramterization-uninformative-priors">Non-centered paramterization (uninformative priors)</h2>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">cmdstan_model</span>(</span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"analysis/stan_files/task1.weighted.avg.nonc.normal.stan"</span>)</span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>model</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">cmdstan_model</span>(</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"analysis/stan_files/task1.weighted.avg.nonc.normal.stan"</span>)</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>model</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>data {
   int&lt;lower=1&gt; N;   // total number of observations
@@ -909,21 +905,21 @@ mu_mod_sd ~ normal(0.04, 0.3);
 log_sigma_mod_mean ~ normal(-1.37, 1); # &lt;- increased variance by 10 
 log_sigma_mod_sd ~ normal(0.34, 1); # &lt;- increased variance by 10 </code></pre>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> model<span class="sc">$</span><span class="fu">sample</span>(</span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> stan_data,</span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>,</span>
-<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">parallel_chains =</span> <span class="dv">4</span>,</span>
-<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">iter_warmup =</span> <span class="dv">4000</span>,</span>
-<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">iter_sampling =</span> <span class="dv">4000</span>,</span>
-<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">adapt_delta =</span> <span class="fl">0.99</span>,</span>
-<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">max_treedepth =</span> <span class="dv">15</span></span>
-<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> model<span class="sc">$</span><span class="fu">sample</span>(</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> stan_data,</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>,</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">parallel_chains =</span> <span class="dv">4</span>,</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">iter_warmup =</span> <span class="dv">4000</span>,</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">iter_sampling =</span> <span class="dv">4000</span>,</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">adapt_delta =</span> <span class="fl">0.99</span>,</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">max_treedepth =</span> <span class="dv">15</span></span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The above is giving us 0.4 % divergent transitions. So not bad, but also not zero. Also the entire fitting took about 10 minutes.</p>
 <p>Get the summary from the fit and check the value of <code>rhat</code>:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>summary <span class="ot">&lt;-</span> fit<span class="sc">$</span><span class="fu">summary</span>()</span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>summary <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">["</span>, variable)) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="fu">contains</span>(<span class="st">"rhat"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>summary <span class="ot">&lt;-</span> fit<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>summary <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">["</span>, variable)) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="fu">contains</span>(<span class="st">"rhat"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
@@ -934,7 +930,7 @@ log_sigma_mod_sd ~ normal(0.34, 1); # &lt;- increased variance by 10 </code></pr
 </div>
 <p>Next we check <code>BULK_ESS</code> and <code>TAIL_ESS</code>:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>summary <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">["</span>, variable)) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="fu">contains</span>(<span class="st">"ess"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>summary <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">["</span>, variable)) <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="fu">contains</span>(<span class="st">"ess"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
@@ -946,30 +942,30 @@ log_sigma_mod_sd ~ normal(0.34, 1); # &lt;- increased variance by 10 </code></pr
 <p>Posterior Predictive Check:</p>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">custom_pp_check</span>(</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  fit,</span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>  bayesplot<span class="sc">::</span>ppc_dens_overlay_grouped,</span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">group =</span> <span class="fu">ifelse</span>(</span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>    task1_df<span class="sc">$</span>param.lambda <span class="sc">&lt;</span> <span class="dv">0</span>,</span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"neg"</span>,</span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ifelse</span>(task1_df<span class="sc">$</span>param.lambda <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="st">"pos"</span>, <span class="st">"zero"</span>)</span>
-<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a><span class="fu">custom_pp_check</span>(</span>
-<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>  fit,</span>
-<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>  bayesplot<span class="sc">::</span>ppc_pit_ecdf,</span>
-<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">transform =</span> \(x) x <span class="sc">-</span> task1_df<span class="sc">$</span>va.med.x,</span>
-<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">ndraws =</span> <span class="cn">NULL</span></span>
-<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a><span class="fu">custom_pp_check</span>(</span>
-<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a>  fit,</span>
-<span id="cb36-18"><a href="#cb36-18" aria-hidden="true" tabindex="-1"></a>  bayesplot<span class="sc">::</span>ppc_pit_ecdf_grouped,</span>
-<span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">group =</span> <span class="fu">ifelse</span>(</span>
-<span id="cb36-20"><a href="#cb36-20" aria-hidden="true" tabindex="-1"></a>    task1_df<span class="sc">$</span>param.lambda <span class="sc">&lt;</span> <span class="dv">0</span>,</span>
-<span id="cb36-21"><a href="#cb36-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">"neg"</span>,</span>
-<span id="cb36-22"><a href="#cb36-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ifelse</span>(task1_df<span class="sc">$</span>param.lambda <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="st">"pos"</span>, <span class="st">"zero"</span>)</span>
-<span id="cb36-23"><a href="#cb36-23" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb36-24"><a href="#cb36-24" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">custom_pp_check</span>(</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  fit,</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  bayesplot<span class="sc">::</span>ppc_dens_overlay_grouped,</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">group =</span> <span class="fu">ifelse</span>(</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>    task1_df<span class="sc">$</span>param.lambda <span class="sc">&lt;</span> <span class="dv">0</span>,</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"neg"</span>,</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ifelse</span>(task1_df<span class="sc">$</span>param.lambda <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="st">"pos"</span>, <span class="st">"zero"</span>)</span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a><span class="fu">custom_pp_check</span>(</span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>  fit,</span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>  bayesplot<span class="sc">::</span>ppc_pit_ecdf,</span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">transform =</span> \(x) x <span class="sc">-</span> task1_df<span class="sc">$</span>va.med.x,</span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">ndraws =</span> <span class="cn">NULL</span></span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a><span class="fu">custom_pp_check</span>(</span>
+<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a>  fit,</span>
+<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a>  bayesplot<span class="sc">::</span>ppc_pit_ecdf_grouped,</span>
+<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">group =</span> <span class="fu">ifelse</span>(</span>
+<span id="cb35-20"><a href="#cb35-20" aria-hidden="true" tabindex="-1"></a>    task1_df<span class="sc">$</span>param.lambda <span class="sc">&lt;</span> <span class="dv">0</span>,</span>
+<span id="cb35-21"><a href="#cb35-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">"neg"</span>,</span>
+<span id="cb35-22"><a href="#cb35-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ifelse</span>(task1_df<span class="sc">$</span>param.lambda <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="st">"pos"</span>, <span class="st">"zero"</span>)</span>
+<span id="cb35-23"><a href="#cb35-23" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb35-24"><a href="#cb35-24" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell quarto-layout-panel" data-layout-ncol="3">
 <div class="quarto-layout-row">
@@ -986,22 +982,22 @@ log_sigma_mod_sd ~ normal(0.34, 1); # &lt;- increased variance by 10 </code></pr
 </div>
 <p>Examine posterior:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as_draws_rvars</span>(fit)<span class="sc">$</span>mu_mod_mean</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as_draws_rvars</span>(fit)<span class="sc">$</span>mu_mod_mean</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>rvar&lt;4000,4&gt;[1] mean ± sd:
 [1] -0.0034 ± 0.034 </code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as_draws_rvars</span>(fit)<span class="sc">$</span>mu_med_mean</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as_draws_rvars</span>(fit)<span class="sc">$</span>mu_med_mean</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>rvar&lt;4000,4&gt;[1] mean ± sd:
 [1] 0.052 ± 0.049 </code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as_draws_rvars</span>(fit)<span class="sc">$</span>log_sigma_mod_mean <span class="sc">%&gt;%</span> <span class="fu">exp</span>(.)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as_draws_rvars</span>(fit)<span class="sc">$</span>log_sigma_mod_mean <span class="sc">%&gt;%</span> <span class="fu">exp</span>(.)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>rvar&lt;4000,4&gt;[1] mean ± sd:
 [1] 0.055 ± 0.032 </code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as_draws_rvars</span>(fit)<span class="sc">$</span>log_sigma_med_mean <span class="sc">%&gt;%</span> <span class="fu">exp</span>(.)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as_draws_rvars</span>(fit)<span class="sc">$</span>log_sigma_med_mean <span class="sc">%&gt;%</span> <span class="fu">exp</span>(.)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>rvar&lt;4000,4&gt;[1] mean ± sd:
 [1] 0.37 ± 0.1 </code></pre>
