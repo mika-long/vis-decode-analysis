@@ -1,12 +1,11 @@
 ---
 title: "MaxSlope Operator"
 author: "Anonymous"
-date: today
+date: "2026-04-07"
 date-format: "iso"
 html:
   reference-location: margin
   embed-resources: true
-author: "Anonymous"
 execute: 
   freeze: auto
 ---
@@ -162,9 +161,8 @@ write_csv(task4_df, here("data", "processed", "task4.csv"))
 ```
 
 ```{r}
-#| code-fold: true
-#| layout-ncol: 2
 #| eval: false
+#| echo: false
 
 ## Plot relations
 
@@ -177,9 +175,8 @@ task4_df %>%
 ```
 
 ```{r}
-#| layout-ncol: 2
-#| code-fold: true
 #| eval: false
+#| echo: false
 
 # Checking to see if there's any obvious relation between signed error and parameters of the distribution.
 # nothing apparent.
@@ -266,7 +263,7 @@ model.exponential <- task4_df %>%
     prior = p,
     chains = 4,
     cores = 4,
-    file = here("analysis", "fitted_models", "task4.exponential"),
+    file = here("analysis", "fitted_models", "part1", "task4.exponential"),
     file_refit = "on_change",
     save_pars = save_pars(all = TRUE),
     iter = 6000
@@ -301,40 +298,9 @@ model.exponential %>%
   stat_halfeye()
 ```
 
-Overlay plot: 
-
-```{r}
-#| code-fold: true
-prediction <- task4_df %>%
-  mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
-  mutate(error = ifelse(error < tolerance, tolerance, error)) %>%
-  add_predicted_draws(model.exponential, re_formula = NA)
-
-prediction %>%
-  ggplot() +
-  stat_slab(aes(x = .prediction), fill = "skyblue", alpha = 0.8) +
-  geom_dots(
-    data = task4_df,
-    aes(x = abs(va.resp.slope - va.ans.slope))
-  )
-```
-
-```{r}
-#| code-fold: true
-task4_df %>%
-  modelr::data_grid(error = 0) %>%
-  add_predicted_draws(model.exponential, re_formula = NA) %>%
-  ggplot() +
-  stat_slab(aes(x = .prediction), fill = "lightblue", alpha = 1) +
-  geom_dots(
-    data = task4_df,
-    aes(x = abs(va.resp.slope - va.ans.slope))
-  )
-```
-
 # Lomax Model {#sec-lomax}
 
-Lomax is Pareto Type II distribution, which is implemented in `cmdstanr`. We had similar models for task 2. 
+Lomax is Pareto Type II distribution, which is implemented in `cmdstanr`. 
 
 ```{r}
 lomax_family <- custom_family(
@@ -356,7 +322,7 @@ stan_funs <- "
 "
 ```
 
-Specify formula and prior^[Note that the Half-Cauchy prior for hyperpriors led to divergent transitions, so we switched to truncated normal for priors]: 
+Specify formula and prior: 
 
 ```{r}
 # Define the formula for the model
@@ -404,15 +370,15 @@ model.lomax <- task4_df %>%
     stanvars = stanvar(scode = stan_funs, block = "functions"),
     chains = 4,
     cores = 4,
-    file = here("analysis", "fitted_models", "task4.lomax"),
-    file_refit = "always",
+    file = here("analysis", "fitted_models", "part1", "task4.lomax"),
+    file_refit = "on_change",
     control = list(adapt_delta = 0.99),
     iter = 6000,
     save_pars = save_pars(all = TRUE)
   )
 ```
 
-Check fit:
+Check summary and fit:
 
 ```{r}
 # pairs(model.lomax)
@@ -442,12 +408,8 @@ model.lomax %>%
 Define custom functions^[Check out this [link](https://cran.r-project.org/web/packages/brms/vignettes/brms_customfamilies.html?utm_source=chatgpt.com) for more details.] for posterior predictive check (`pp_check`) and model comparison (`loo`):
 
 ```{r}
-#| eval: false
-# update(model.lomax, recompile = TRUE)
-# TODO: use this https://rok-cesnovar.github.io/misc/exposing_cmdstanr_udf.html to debug
 expose_functions(model.lomax, vectorize = TRUE)
 
-# Define the posterior_predict function in R as per vignette
 posterior_predict_lomax <- function(i, draws, ...) {
   alpha <- draws$dpars$alpha[i]
   lambda <- draws$dpars$lambda[i]
@@ -465,26 +427,9 @@ log_lik_lomax <- function(i, prep) {
 
 ```{r}
 #| layout-ncol: 2
-#| eval: false
+
 pp_check(model.lomax, ndraws = 100)
 pp_check(model.lomax, ndraws = 100, type = "pit_ecdf")
-```
-
-Overlay plot:
-
-```{r}
-#| eval: false
-prediction <- task4_df %>%
-  mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
-  add_predicted_draws(model.lomax, ndraws = 100)
-
-prediction %>%
-  ggplot() +
-  stat_slab(aes(x = .prediction), fill = "lightblue", alpha = 1) +
-  geom_dots(
-    data = task4_df,
-    aes(x = abs(va.resp.slope - va.ans.slope))
-  )
 ```
 
 # Weibull distribution {#sec-weibull}
@@ -540,10 +485,11 @@ model.weibull <- task4_df %>%
     prior = p,
     chains = 4,
     cores = 4,
-    file = here("analysis", "fitted_models", "task4.weibull"),
+    file = here("analysis", "fitted_models", "part1", "task4.weibull"),
     file_refit = "on_change",
     save_pars = save_pars(all = TRUE),
-    iter = 6000
+    iter = 6000,
+    adapt_delta = 0.95,
   )
 ```
 
@@ -607,11 +553,10 @@ model.weibull %>%
   stat_halfeye()
 ```
 
-Overlay plot:
-
 ```{r}
-#| code-fold: true
-#| layout-ncol: 2
+#| echo: false
+#| eval: false
+#| label: Weibull overlay
 
 # prediction <- task4_df %>%
 #   mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>%
@@ -644,7 +589,6 @@ Posterior draws + strip plot of actual answers:
 
 ```{r}
 #| code-fold: true
-#| layout-ncol: 3
 
 task4_df %>%
   modelr::data_grid(error = 0, participantId = unique(participantId)) %>%
@@ -736,8 +680,8 @@ model.lognormal <- task4_df %>%
     prior = p,
     chains = 4,
     cores = 4,
-    file = here("analysis", "fitted_models", "task4.lognormal"),
-    file_refit = "always",
+    file = here("analysis", "fitted_models", "part1", "task4.lognormal"),
+    file_refit = "on_change",
     save_pars = save_pars(all = TRUE),
     control = list(adapt_delta = 0.95),
     iter = 6000
@@ -758,10 +702,9 @@ pp_check(model.lognormal, ndraws = 100)
 pp_check(model.lognormal, ndraws = 100, type = "pit_ecdf")
 ```
 
-Overlay plot:
-
 ```{r}
-#| code-fold: true
+#| eval: false
+#| echo: false
 prediction <- task4_df %>%
   mutate(
     error = abs(va.resp.slope - va.ans.slope)
@@ -780,7 +723,9 @@ prediction %>%
 ```
 
 ```{r}
-#| code-fold: true
+#| eval: false
+#| echo: false
+
 task4_df %>%
   modelr::data_grid(error = 0) %>%
   add_predicted_draws(model.lognormal, re_formula = NA, ndraws = 100) %>%
@@ -797,14 +742,13 @@ task4_df %>%
 # Model Comparison {#sec-model-compare}
 
 ```{r}
-#| eval: false
+#| cache: true
 loo(
   model.exponential,
-  model.laplace,
-  # model.lomax,
+  model.lomax,
   model.weibull,
-  model.lognormal #,
-  # moment_match = TRUE
+  model.lognormal,
+  moment_match = TRUE
 )
 ```
 
@@ -815,10 +759,10 @@ The Weibull model performs the best.
 
 pp_check(model.exponential, ndraws = 100, type = "pit_ecdf") +
   labs(title = "Exponential")
-# pp_check(model.lomax, ndraws = 100, type = "pit_ecdf") +
-#   labs(title = "Lomax")
-# pp_check(model.weibull, ndraws = 100, type = "pit_ecdf") +
-#   labs(title = "Weibull")
+pp_check(model.lomax, ndraws = 100, type = "pit_ecdf") +
+  labs(title = "Lomax")
+pp_check(model.weibull, ndraws = 100, type = "pit_ecdf") +
+  labs(title = "Weibull")
 pp_check(model.lognormal, ndraws = 100, type = "pit_ecdf") +
   labs(title = "Log-Normal")
 ```
