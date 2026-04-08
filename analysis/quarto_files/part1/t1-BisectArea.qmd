@@ -163,11 +163,11 @@ custom_pp_check <- function(
 
 # Fit `stan` models 
 
-## Centered Parameterization
+## Centered Parameterization (informative priors)
 
 **Spoiler: The following model has divergent transitions after fitting.**
 
-We run this anyway to make out analysis complete. Note this is NOT the model we adopt. 
+We run this anyway to make out analysis complete. Note this is NOT the model we actually fit, but we list here nonetheless as the math model and the stan specifications are easier to map to each other.  
 
 ```{r}
 model <- cmdstan_model(here::here(
@@ -175,6 +175,35 @@ model <- cmdstan_model(here::here(
 ))
 model
 ``` 
+
+here is the corresponding math model: 
+
+$$
+\begin{align*}
+% Likelihood
+x_n &\sim \mathcal{N}\!\left(\theta_n \cdot (x^{\text{med}}_n + \mu^{\text{med}}_{j[n]}) + (1 - \theta_n) \cdot (x^{\text{mod}}_n + \mu^{\text{mod}}_{j[n]}),\ \ \tilde\sigma_n\right) \\[4pt]
+\tilde\sigma_n &= \sqrt{\theta_n^2 \cdot (\sigma^{\text{med}}_{j[n]})^2 + (1 - \theta_n)^2 \cdot (\sigma^{\text{mod}}_{j[n]})^2} \\[4pt]
+% Weights (deterministic, inverse-MSE pooling)
+\theta_n &= \frac{\text{invMSE}^{\text{med}}_n}{\text{invMSE}^{\text{med}}_n + \text{invMSE}^{\text{mod}}_n} \\[4pt]
+\text{invMSE}^{\text{med}}_n &= \left[(\mu^{\text{med}}_{j[n]})^2 + (\sigma^{\text{med}}_{j[n]})^2\right]^{-1} \\[2pt]
+\text{invMSE}^{\text{mod}}_n &= \left[(x^{\text{mod}}_n - x^{\text{med}}_n + \mu^{\text{mod}}_{j[n]})^2 + (\sigma^{\text{mod}}_{j[n]})^2\right]^{-1} \\[6pt]
+% Participant-level parameters
+\mu^{\text{mod}}_j &\sim \mathcal{N}(\bar\mu^{\text{mod}},\ \bar\sigma^{\text{mod}}_\mu) \\
+\sigma^{\text{mod}}_j &\sim \text{Lognormal}(\bar\mu^{\text{mod}}_{\log\sigma},\ \bar\sigma^{\text{mod}}_{\log\sigma}) \\
+\mu^{\text{med}}_j &\sim \mathcal{N}(\bar\mu^{\text{med}},\ \bar\sigma^{\text{med}}_\mu) \\
+\sigma^{\text{med}}_j &\sim \text{Lognormal}(\bar\mu^{\text{med}}_{\log\sigma},\ \bar\sigma^{\text{med}}_{\log\sigma}) \\[6pt]
+% Hyperpriors — mod (informative, from brms fit)
+\bar\mu^{\text{mod}} &\sim \mathcal{N}(0.01,\ 0.02) \\
+\bar\sigma^{\text{mod}}_\mu &\sim \mathcal{N}^{+}(0.04,\ 0.03) \\
+\bar\mu^{\text{mod}}_{\log\sigma} &\sim \mathcal{N}(-1.37,\ 0.10) \\
+\bar\sigma^{\text{mod}}_{\log\sigma} &\sim \mathcal{N}^{+}(0.34,\ 0.10) \\[6pt]
+% Hyperpriors — med (weakly informative)
+\bar\mu^{\text{med}},\ \bar\mu^{\text{med}}_{\log\sigma} &\sim \mathcal{N}(0, 1) \\
+\bar\sigma^{\text{med}}_\mu,\ \bar\sigma^{\text{med}}_{\log\sigma} &\sim \mathcal{N}^{+}(0, 1) \\[4pt]
+% Indexing
+n &= 1, \ldots, N, \quad j[n] \in \{1, \ldots, J\}
+\end{align*}
+$$
 
 Fit the stan model: 
 
@@ -190,6 +219,21 @@ fit <- model$sample(
   adapt_delta = 0.99, # Number of sampling iterations (e.g., 2000)
   parallel_chains = 4
 )
+```
+
+```{r}
+#| echo: false
+#| eval: false
+fit$save_object(here::here(
+  "analysis/fitted_models/part1/task1.centered.param.rds"
+))
+```
+
+```{r}
+#| echo: false
+fit <- read_rds(here::here(
+  "analysis/fitted_models/part1/task1.centered.param.rds"
+))
 ```
 
 ```{r}
@@ -249,7 +293,9 @@ custom_pp_check(
 Note this is also the model we use in the actual paper. 
 
 ```{r}
-model <- cmdstan_model("analysis/stan_files/task1.weighted.avg.nonc.stan")
+model <- cmdstan_model(here::here(
+  "analysis/stan_files/task1.weighted.avg.nonc.stan"
+))
 model
 ```
 
@@ -573,26 +619,4 @@ as_draws_rvars(fit)$mu_mod_mean
 as_draws_rvars(fit)$mu_med_mean
 as_draws_rvars(fit)$log_sigma_mod_mean %>% exp(.)
 as_draws_rvars(fit)$log_sigma_med_mean %>% exp(.)
-```
-
-## Mixture model 
-
-```{r}
-model <- cmdstan_model(
-  here::here("analysis/stan_files/task1.mix.stan")
-)
-model
-```
-
-```{r}
-#| eval: false
-fit <- model$sample(
-  data = stan_data,
-  chains = 4,
-  parallel_chains = 4,
-  iter_warmup = 4000,
-  iter_sampling = 4000,
-  adapt_delta = 0.99,
-  max_treedepth = 15
-)
 ```
