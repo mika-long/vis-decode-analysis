@@ -96,7 +96,6 @@ task5_df <- task_df %>%
 
 ```{r}
 #| eval: false
-#| code-fold: true
 #| echo: false
 task5_df %>% write.csv(here("data", "processed", "task5.csv"))
 ```
@@ -145,8 +144,8 @@ Math model:
 $$
 \begin{align}
 \texttt{error}_i &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_{i, \text{PID}[i]}) \\ 
-\mu_j &\sim \mathcal{N}(\overline{\mu}, \overline{\sigma}^2)\\ 
 \log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.y}_i) \\ 
+\mu_j &\sim \mathcal{N}(\overline{\mu}, \overline{\sigma}^2)\\ 
 \alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
 \mu_\alpha, \bar{\mu} &\sim N(0, 1) \\ 
 \sigma_\alpha, \bar{\sigma} &\sim \mathcal{N}^+(0, 1)
@@ -201,7 +200,7 @@ m.5.x.va <- task5_df %>%
     cores = 4,
     control = list(adapt_delta = 0.99),
     iter = 6000,
-    file = here("analysis", "fitted_models", "task5.x"),
+    file = here("analysis", "fitted_models", "part1", "task5.x"),
     file_refit = "on_change",
     save_pars = save_pars(all = TRUE)
   )
@@ -351,16 +350,17 @@ ggsave(
 This time we look at error on $y$-axis: 
 
 ```{r}
+#| code-fold: true
 task5_df %>%
   ggplot(aes(x = va.ans.x, y = va.resp.y - va.ans.y)) +
   geom_point(alpha = 0.5)
 ```
 
-We use a similar model: 
+We use a similar math model to the first part: 
 
 $$
 \begin{align*}
-\texttt{error}_i &\sim \mathcal{N}(0, \sigma_{i, \text{PID}[i]}) \\ 
+\texttt{error}_i &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_{i, \text{PID}[i]}) \\ 
 \log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.x}_i) \\ 
 \alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
 \mu_\alpha &\sim N(0, 1) \\ 
@@ -415,7 +415,7 @@ m.5.y.va <- task5_df %>%
     cores = 4,
     control = list(adapt_delta = 0.99),
     iter = 6000,
-    file = here("analysis", "fitted_models", "task5.y"),
+    file = here("analysis", "fitted_models", "part1", "task5.y"),
     file_refit = "on_change",
     save_pars = save_pars(all = TRUE)
   )
@@ -581,15 +581,16 @@ task3_df %>%
 task3_df %>% ggplot(aes(x = va.resp.y - va.ans.y)) + geom_dots()
 ```
 
-Math: 
+Math model: 
 
 $$
 \begin{align*}
-\texttt{error}_i &\sim \mathcal{N}(0, \sigma_{i, \text{PID}[i]}) \\ 
+\texttt{error}_i &\sim \mathcal{N}(\mu_{\text{PID}[i]}, \sigma_{i, \text{PID}[i]}) \\ 
 \log(\sigma_{i, j}) &= \alpha_j + \log(\texttt{va.ans.x}_i) \\ 
+\mu_j &\sim \mathcal{N}(\mu_\mu, \sigma_\mu) \\ 
 \alpha_j &\sim N(\mu_\alpha, \sigma_\alpha) \\ 
-\mu_\alpha &\sim N(0, 1) \\ 
-\sigma_\alpha &\sim N(0, 1)
+\mu_\mu, \mu_\alpha &\sim N(0, 1) \\ 
+\sigma_mu, \sigma_\alpha &\sim N^+(0, 1)
 \end{align*}
 $$
 
@@ -637,7 +638,7 @@ m3 <- task3_df %>%
     prior = p,
     chains = 4,
     cores = 4,
-    file = here("analysis", "fitted_models", "task3"),
+    file = here("analysis", "fitted_models", "part1", "task3"),
     file_refit = "on_change",
     save_pars = save_pars(all = TRUE),
     control = list(adapt_delta = 0.99),
