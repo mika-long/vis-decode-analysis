@@ -214,7 +214,7 @@ Math model:
 
 $$
 \begin{align*}
-\text{error_i} &\sim \text{Exponential}(\lambda_{\text{PID}[i]}) \\ 
+\texttt{error\_i} &\sim \text{Exponential}(\lambda_{\text{PID}[i]}) \\ 
 \log(\lambda_j) &\sim \mathcal{N}(\mu_\lambda, \sigma_\lambda) \\ 
 \mu_\lambda &\sim \mathcal{N}(0, 1) \\ 
 \sigma_\lambda &\sim \mathcal{N}^+(0, 1) 
@@ -300,9 +300,21 @@ model.exponential %>%
 
 # Lomax Model {#sec-lomax}
 
-Lomax is Pareto Type II distribution, which is implemented in `cmdstanr`. 
+Lomax is Pareto Type II distribution. 
+
+Math model: 
+
+$$
+\begin{align*}\text{error}_i &\sim \text{Lomax}(\lambda_{\text{PID}[i]}, \alpha_{\text{PID}[i]}) \\ 
+\log(\lambda_j) &\sim \text{Normal}(\mu_\lambda, \sigma_\lambda^2) \\ 
+\log(\alpha_j) &\sim \text{Normal}(\mu_\alpha, \sigma_\alpha^2) \\ 
+\mu_\lambda, \mu_\alpha &\sim \mathcal{N}(0, 1) \\ 
+\sigma_\lambda, \sigma_\alpha &\sim \mathcal{N}^+(0, 1)
+\end{align*}
+$$
 
 ```{r}
+# define the lomax family
 lomax_family <- custom_family(
   "lomax",
   dpars = c("mu", "lambda", "alpha"), # includes mu as required
@@ -437,6 +449,20 @@ pp_check(model.lomax, ndraws = 100, type = "pit_ecdf")
 - [wikipedia](https://en.wikipedia.org/wiki/Weibull_distribution)
 - [stan](https://mc-stan.org/docs/functions-reference/positive_continuous_distributions.html#weibull-distribution)
 - it's also implemented in brms! So unlike the [Lomax model](@sec-lomax), we don't need to write custom functions. 
+
+Math model: 
+
+$$
+\begin{align}
+\texttt{error}_i &\sim \text{Weibull}(\mu_{\text{PID}[i]}, k_{\text{PID}[i]}) \\
+\log(\mu_j) &= \alpha_j \\ 
+\log(k_j) &= \beta_j \\ 
+\alpha_j &\sim \mathcal{N}(\mu_\alpha, \sigma_\alpha) \\ 
+\beta_j &\sim \mathcal{N}(\mu_\beta, \sigma_\beta) \\ 
+\mu_\alpha, \mu_\beta &\sim \mathcal{N}(0, 1) \\ 
+\sigma_\alpha, \sigma_beta &\sim \mathcal{N}^+(0, 1)
+\end{align}
+$$
 
 Specify formula and prior: 
 

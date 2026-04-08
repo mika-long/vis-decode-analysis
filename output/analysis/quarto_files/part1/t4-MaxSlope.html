@@ -271,7 +271,7 @@ window.Quarto = {
 <p>Math model:</p>
 <p><span class="math display">\[
 \begin{align*}
-\text{error_i} &amp;\sim \text{Exponential}(\lambda_{\text{PID}[i]}) \\
+\texttt{error\_i} &amp;\sim \text{Exponential}(\lambda_{\text{PID}[i]}) \\
 \log(\lambda_j) &amp;\sim \mathcal{N}(\mu_\lambda, \sigma_\lambda) \\
 \mu_\lambda &amp;\sim \mathcal{N}(0, 1) \\
 \sigma_\lambda &amp;\sim \mathcal{N}^+(0, 1)
@@ -357,25 +357,35 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 </section>
 <section id="sec-lomax" class="level1 page-columns page-full">
 <h1>Lomax Model</h1>
-<p>Lomax is Pareto Type II distribution, which is implemented in <code>cmdstanr</code>.</p>
+<p>Lomax is Pareto Type II distribution.</p>
+<p>Math model:</p>
+<p><span class="math display">\[
+\begin{align*}\text{error}_i &amp;\sim \text{Lomax}(\lambda_{\text{PID}[i]}, \alpha_{\text{PID}[i]}) \\
+\log(\lambda_j) &amp;\sim \text{Normal}(\mu_\lambda, \sigma_\lambda^2) \\
+\log(\alpha_j) &amp;\sim \text{Normal}(\mu_\alpha, \sigma_\alpha^2) \\
+\mu_\lambda, \mu_\alpha &amp;\sim \mathcal{N}(0, 1) \\
+\sigma_\lambda, \sigma_\alpha &amp;\sim \mathcal{N}^+(0, 1)
+\end{align*}
+\]</span></p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>lomax_family <span class="ot">&lt;-</span> <span class="fu">custom_family</span>(</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"lomax"</span>,</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">dpars =</span> <span class="fu">c</span>(<span class="st">"mu"</span>, <span class="st">"lambda"</span>, <span class="st">"alpha"</span>), <span class="co"># includes mu as required</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">links =</span> <span class="fu">c</span>(<span class="st">"identity"</span>, <span class="st">"log"</span>, <span class="st">"log"</span>), <span class="co"># appropriate links</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">lb =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, <span class="dv">0</span>, <span class="dv">0</span>), <span class="co"># appropriate bounds</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">"real"</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>stan_funs <span class="ot">&lt;-</span> <span class="st">"</span></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="st">  real lomax_lpdf(real y, real mu, real lambda, real alpha) {</span></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="st">    return pareto_type_2_lpdf(y | 0, lambda, alpha);  </span></span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="st">  }</span></span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="st">  real lomax_rng(real mu, real lambda, real alpha) {</span></span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="st">    return pareto_type_2_rng(0, lambda, alpha);  </span></span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="st">  }</span></span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="st">"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define the lomax family</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>lomax_family <span class="ot">&lt;-</span> <span class="fu">custom_family</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"lomax"</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">dpars =</span> <span class="fu">c</span>(<span class="st">"mu"</span>, <span class="st">"lambda"</span>, <span class="st">"alpha"</span>), <span class="co"># includes mu as required</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">links =</span> <span class="fu">c</span>(<span class="st">"identity"</span>, <span class="st">"log"</span>, <span class="st">"log"</span>), <span class="co"># appropriate links</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">lb =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, <span class="dv">0</span>, <span class="dv">0</span>), <span class="co"># appropriate bounds</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">"real"</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>stan_funs <span class="ot">&lt;-</span> <span class="st">"</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="st">  real lomax_lpdf(real y, real mu, real lambda, real alpha) {</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="st">    return pareto_type_2_lpdf(y | 0, lambda, alpha);  </span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="st">  }</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="st">  real lomax_rng(real mu, real lambda, real alpha) {</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="st">    return pareto_type_2_rng(0, lambda, alpha);  </span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="st">  }</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="st">"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Specify formula and prior:</p>
 <div class="cell">
@@ -493,6 +503,18 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <li><a href="https://mc-stan.org/docs/functions-reference/positive_continuous_distributions.html#weibull-distribution">stan</a></li>
 <li>it’s also implemented in brms! So unlike the <a href="@sec-lomax">Lomax model</a>, we don’t need to write custom functions.</li>
 </ul>
+<p>Math model:</p>
+<p><span class="math display">\[
+\begin{align}
+\texttt{error}_i &amp;\sim \text{Weibull}(\mu_{\text{PID}[i]}, k_{\text{PID}[i]}) \\
+\log(\mu_j) &amp;= \alpha_j \\
+\log(k_j) &amp;= \beta_j \\
+\alpha_j &amp;\sim \mathcal{N}(\mu_\alpha, \sigma_\alpha) \\
+\beta_j &amp;\sim \mathcal{N}(\mu_\beta, \sigma_\beta) \\
+\mu_\alpha, \mu_\beta &amp;\sim \mathcal{N}(0, 1) \\
+\sigma_\alpha, \sigma_beta &amp;\sim \mathcal{N}^+(0, 1)
+\end{align}
+\]</span></p>
 <p>Specify formula and prior:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="fu">bf</span>(</span>
