@@ -210,18 +210,12 @@ task1_corr <- task1_df %>%
     sd = sd(correlation.x),
     lb = mean - 2 * sd,
     ub = mean + 2 * sd
-  ) %>%
+  ) 
+
+task1_corr %>%
   filter(correlation.x < 0.5)
 
-task1_df %>%
-  group_by(participantId) %>%
-  summarise(correlation.x = cor(data.select.x, data.ans.x)) %>%
-  mutate(
-    mean = mean(correlation.x),
-    sd = sd(correlation.x),
-    lb = mean - 2 * sd,
-    ub = mean + 2 * sd
-  ) %>%
+task1_corr %>% 
   ggplot(aes(x = correlation.x)) +
   geom_dotplot()
 ```
@@ -230,9 +224,11 @@ Given that most participants have correlation > 0.5, we filter out participant w
 
 ```{r}
 exclude_participants <- c(
-  task1_corr %>% pull(participantId),
+  task1_corr %>% filter(correlation.x < 0.5) %>% pull(participantId),
   exclude_participants
 )
+
+exclude_participants
 ```
 
 :::{.callout-note collapse="true" appearance="simple"}
@@ -273,8 +269,6 @@ This participant is selecting -5 or 5 all the time. Clearly demonstrated low eff
 :::
 
 ```{r}
-#| layout-ncol: 2
-#| code-fold: true
 #| eval: false
 #| echo: false
 
@@ -396,6 +390,8 @@ exclude_participants <- c(
   exclude_participants,
   task2_corr %>% pull(participantId)
 )
+
+exclude_participants
 ```
 
 :::{.callout-note title="Further examination" collapse="true"}
@@ -431,8 +427,6 @@ task2_df %>%
 
 
 ```{r}
-#| layout-ncol: 2
-#| code-fold: true
 #| eval: false
 #| echo: false
 
@@ -452,8 +446,6 @@ task2_df %>% ggplot(aes(x = data.ans.y - data.select.y)) + geom_dots()
 ```
 
 ```{r}
-#| layout-ncol: 2
-#| code-fold: true
 #| eval: false
 #| echo: false
 
@@ -516,19 +508,20 @@ Calculation correlation and exclude participants:
 
 ```{r}
 #| code-fold: true
-# can't calculat correlation on y because the standard deviation is 0.
-# we use x as an approximation
+# note that can't calculat correlation on y because the standard deviation is 0.
+# so we use x as an approximation
 
 task3_corr <- task3_df %>%
   group_by(participantId) %>%
-  summarise(correlation = suppressWarnings(cor(data.select.x, data.ans.x))) %>%
-  filter(is.na(correlation) | correlation < 0.9)
+  summarise(correlation.x = suppressWarnings(cor(data.select.x, data.ans.x))) %>%
+  filter(is.na(correlation.x) | correlation.x < 0.5)
 
 task3_corr
 ```
 
 ```{r}
 exclude_participants <- c(exclude_participants, pull(task3_corr, participantId))
+exclude_participants
 ```
 
 :::{.callout-note title="Further examine" collapse="true"}
@@ -557,58 +550,6 @@ task3_plot("67fd4f955123c6d79ae66a3a")
 ```
 
 :::
-
-Verify that the scales are correct:
-
-```{r}
-#| eval: false
-#| echo: false
-#| code-fold: true
-#| label: task 3 verify
-
-# verify that the results are of correct scale
-task3_df %>% ggplot(aes(x = data.select.x - data.ans.x)) + geom_dots()
-
-task3_df %>% ggplot(aes(x = data.select.y - data.ans.y)) + geom_dots()
-
-task3_df %>% ggplot(aes(x = va.resp.x - va.ans.x)) + geom_dots()
-
-task3_df %>% ggplot(aes(x = va.resp.y - va.ans.y)) + geom_dots()
-```
-
-It is not very normal that we have a bunch of selections that have this big of a variation on y ... 
-
-```{r}
-task3_df %>% filter(abs(data.select.y - data.ans.y) > 0.2)
-```
-
-Hmm it is very clear that this participant only selected values very close to 1 ... which is NOT what we wanted ... 
-
-Distribution of signed error:
-
-```{r}
-#| code-fold: true
-
-task3_df %>%
-  ggplot(aes(x = va.resp.y - va.ans.y)) +
-  geom_dots() +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "black") +
-  labs(title = "Task 3 -- Find dot on curve where y == 0.5")
-```
-
-Relationship between distance from the y-axes and the signed distribution:
-
-```{r}
-#| code-fold: true
-#| layout-ncol: 2
-
-task3_df %>%
-  ggplot(aes(x = va.ans.x, y = va.resp.y - va.ans.y)) +
-  geom_point(alpha = 0.5) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "black")
-
-task3_df %>% ggplot(aes(x = va.resp.y - va.ans.y)) + geom_dots()
-```
 
 ## Task 4 -- `MaxSlope` -- find maximum slope 
 
@@ -641,6 +582,7 @@ Get data:
 
 ```{r}
 #| label: get task 4 data 
+#| code-fold: true
 
 task4_df <- task_df %>%
   filter(task == "task4") %>%
@@ -709,10 +651,7 @@ Calculate correlation:
 task4_corr <- task4_df %>%
   group_by(participantId) %>%
   summarise(
-    correlation = cor(
-      data_to_screen_slope(data.resp.slope),
-      data_to_screen_slope(data.ans.slope)
-    )
+    correlation = cor(va.resp.slope, va.ans.slope)
   ) %>%
   filter(correlation < 0.5)
 
@@ -721,10 +660,10 @@ task4_corr
 
 ```{r}
 exclude_participants <- c(exclude_participants, pull(task4_corr, participantId))
+exclude_participants
 ```
 
 ```{r}
-#| code-fold: true
 #| eval: false
 #| echo: false 
 
@@ -763,32 +702,7 @@ task4_df %>%
   stat_ecdf()
 ```
 
-If we map the mathematical slope to the actual slope, this is what we get: 
-
-- y axis range [0, 1] correspond to 395 px -> 395px / unit 
-- x axis range [-5, 5] correspond to 535 px -> 53.5 px / unit 
-
 ```{r}
-task4_df %>%
-  ggplot(aes(
-    x = data_to_screen_slope(data.resp.slope),
-    y = data_to_screen_slope(data.ans.slope)
-  )) +
-  geom_point(alpha = 0.5) +
-  coord_equal()
-
-task4_df %>%
-  ggplot(aes(
-    x = data_to_screen_slope(data.resp.slope) -
-      data_to_screen_slope(data.ans.slope)
-  )) +
-  geom_dots()
-```
-
-```{r}
-#| layout-ncol: 2
-#| code-fold: true
-#| output: false
 #| eval: false 
 #| echo: false
 
@@ -901,73 +815,6 @@ task5_plot("67eedf7be13ffb77c677d4dd")
 
 :::
 
-```{r}
-#| eval: false
-#| code-fold: true
-#| label: task 5 verify
-#| echo: false 
-
-# Verify that the results are in the right scale: 
-
-task5_df %>% ggplot(aes(x = data.ans.x - data.resp.x)) + geom_dots()
-
-task5_df %>%
-  ggplot(aes(x = va.resp.x - va.ans.x)) +
-  geom_dots()
-
-task5_df %>% ggplot(aes(x = va.resp.y - va.ans.y)) + geom_dots()
-
-```
-
-## `ProjectToAxis_X` Project from dot to X axes
-
-Distribution of signed error: 
-
-```{r}
-#| code-fold: true
-
-task5_df %>%
-  ggplot(aes(x = va.resp.x - va.ans.x)) +
-  geom_dots() +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "black")
-```
-
-Relationship between signed error (in visual angle space) and distance to X-axes: 
-
-```{r}
-#| code-fold: true
-
-task5_df %>%
-  ggplot(aes(x = va.ans.y, y = va.resp.x - va.ans.x)) +
-  geom_point(alpha = 0.5) +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "gray")
-```
-
-```{r}
-#| code-fold: true
-
-task5_df %>%
-  ggplot(aes(x = va.ans.x, y = va.resp.y - va.ans.y)) +
-  geom_point(alpha = 0.5) +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "gray") 
-
-task5_df %>% filter(va.resp.y - va.ans.y > 1)
-```
-
-```{r}
-task5_df %>%
-  filter(va.resp.y - va.ans.y > 1) %>%
-  ggplot(aes(x = data.ans.x, y = data.ans.y, color = "answer")) +
-  geom_point() +
-  geom_point(aes(x = data.resp.x, y = data.resp.y, color = "select")) +
-  xlim(-5, 5) +
-  ylim(0, 1)
-```
-
-Have reason to suspect that this participant really isn't answering the questions nicely ... 
-
----
-
 # How long on average did people spend? 
 
 ```{r}
@@ -994,15 +841,13 @@ exclude_participants %>% as_tibble() %>% count(value)
 Save the cleaned files: 
 
 ```{r}
-#| eval: false 
-
 task_df %>% filter(!participantId %in% exclude_participants) -> task_df
 
 saveRDS(task_df, file = here::here("data", "part1", "task.rds"))
 
 participants %>%
-  filter(!participantId %in% exclude_participants) # %>%
-  # saveRDS(., "../../data/final/participants.rds")
+  filter(!participantId %in% exclude_participants) %>%
+  saveRDS(., here::here("data", "part1", "participants.rds"))
 ```
 
 
