@@ -49,10 +49,7 @@ For modeling the signed error on the **Y-axis**, we ran the following models:
 - [Log-Normal](@sec-y-logNormal)
 - [Gamma](@sec-y-gamma)
 
-For modeling the signed error on the **X-axis**, we ran the following models: 
-
-- [Normal](@sec-x-normal) --- this is the one used for hyper-priors. 
-- [Laplace](@sec-x-laplace) --- this is the best-performing one. 
+For later fitting purposes, we also modeled the signed error on the **X-axis** to obtain hyper-priors. 
 
 # Set up
 
@@ -173,9 +170,9 @@ task2_df %>%
   labs(title = "Signed error on X-Axis against skewness")
 ```
 
-# Task 2 --- Error on Y
+# Error on Y
 
-## Lomax distribution {#sec-y-lomax}
+## Error on Y, Lomax distribution {#sec-y-lomax}
 
 [Wikipedia](https://en.wikipedia.org/wiki/Lomax_distribution). Note that `alpha` is shape and `lambda` is scale. 
 This is the [stan reference](https://mc-stan.org/docs/functions-reference/positive_lower-bounded_distributions.html#pareto-type-2-distribution). 
@@ -264,7 +261,7 @@ model.y.lomax <- task2_df %>%
     stanvars = stanvar(scode = stan_funs, block = "functions"),
     chains = 4,
     cores = 4,
-    file = here("analysis", "fitted_models", "task2.y.lomax"),
+    file = here("analysis", "fitted_models", "part1", "task2.y.lomax"),
     file_refit = "on_change",
     iter = 10000,
     control = list(adapt_delta = 0.99, max_treedepth = 15),
@@ -275,25 +272,39 @@ model.y.lomax <- task2_df %>%
 Check fit and posterior check: 
 
 ```{r}
-#| warning: true
 summary(model.y.lomax)
 plot(model.y.lomax)
 ```
 
-Observe that we have `Rhat = 1.01` for the `sd(lambda_Intercept)`, suggesting that the model fit is not necessarily the best. 
-
-Nevertheless, we still check the posterior to further confirm: 
+Perform posterior predictive checks: 
 
 ```{r}
-#| layout-ncol: 2
+#| code-fold: true
 expose_functions(model.y.lomax, vectorize = TRUE)
 
-# Define the posterior_predict function in R as per vignette
+# Define the posterior_predict function in R as per the following vignette
+# https://cran.r-project.org/web/packages/brms/vignettes/brms_customfamilies.html
 posterior_predict_lomax <- function(i, draws, ...) {
   lambda <- draws$dpars$lambda[i]
   alpha <- draws$dpars$alpha[i]
   lomax_rng(0, lambda, alpha)
 }
+
+# define custom log likelihood function for loo comparison
+
+log_lik_lomax <- function(i, prep) {
+  mu <- brms::get_dpar(prep, "mu", i = i)
+  lambda <- brms::get_dpar(prep, "lambda", i = i)
+  alpha <- brms::get_dpar(prep, "alpha", i = i)
+  y <- prep$data$Y[i]
+
+  # Lomax log-density: log(alpha) - log(lambda) - (alpha+1) * log(1 + y/lambda)
+  log(alpha) - log(lambda) - (alpha + 1) * log1p(y / lambda)
+}
+```
+
+```{r}
+#| layout-ncol: 2
 
 pp_check(model.y.lomax, ndraws = 100)
 pp_check(model.y.lomax, ndraws = 100, type = "pit_ecdf")
@@ -340,9 +351,7 @@ task2_df %>%
   )
 ```
 
-We have a very big outlier around  `error.y = 10000`. 
-
-## Exponential Distribution {#sec-y-exponential}
+## Error on Y, Exponential Distribution {#sec-y-exponential}
 
 Math model: 
 
@@ -394,7 +403,7 @@ model.y.exponential <- task2_df %>%
     prior = p,
     chains = 4,
     cores = 4,
-    file = here("analysis", "fitted_models", "task2.y.exponential"),
+    file = here("analysis", "fitted_models", "part1", "task2.y.exponential"),
     file_refit = "on_change",
     control = list(adapt_delta = 0.99),
     iter = 6000,
@@ -450,10 +459,10 @@ task2_df %>%
   )
 ```
 
-Overlay plot: 
-
 ```{r}
-#| code-fold: true
+#| label: exponential overlay plot
+#| echo: false
+#| eval: false
 task2_df %>%
   modelr::data_grid(error.y = 0) %>%
   add_predicted_draws(model.y.exponential, re_formula = NA) %>%
@@ -466,7 +475,21 @@ task2_df %>%
 p
 ```
 
-## Weibull {#sec-y-weibull}
+## Error on Y, Weibull {#sec-y-weibull}
+
+Math formula: 
+
+$$
+\begin{align}
+\texttt{error}_i &\sim \text{Weibull}(\mu_{\text{PID}[i]}, k_{\text{PID}[i]}) \\
+\log(\mu_j) &= \alpha_j \\ 
+\log(k_j) &= \beta_j \\ 
+\alpha_j &\sim \mathcal{N}(\mu_\alpha, \sigma_\alpha) \\ 
+\beta_j &\sim \mathcal{N}(\mu_\beta, \sigma_\beta) \\ 
+\mu_\alpha, \mu_\beta &\sim \mathcal{N}(0, 1) \\ 
+\sigma_\alpha, \sigma_beta &\sim \mathcal{N}^+(0, 1)
+\end{align}
+$$
 
 Specify formula and prior: 
 
@@ -522,7 +545,7 @@ model.y.weibull <- task2_df %>%
     prior = p,
     chains = 4,
     cores = 4,
-    file = here("analysis", "fitted_models", "task2.y.weibull"),
+    file = here("analysis", "fitted_models", "part1", "task2.y.weibull"),
     file_refit = "on_change",
     save_pars = save_pars(all = TRUE),
     control = list(adapt_delta = 0.99),
@@ -553,6 +576,7 @@ p2
 ```{r}
 #| label: ggsave the ppchecks for best model
 #| eval: false
+#| echo: false
 
 ggsave(
   here("figs", "task2.y.weibull.ppcheck.pdf"),
@@ -574,11 +598,11 @@ ggsave(
 
 ```
 
-Overlay plot: 
-
 ```{r}
+#| label: Weibull overlay plot
 #| eval: false
-#| code-fold: true
+#| echo: false
+
 task2_df %>%
   modelr::data_grid(error.y = 0) %>%
   add_predicted_draws(model.y.weibull, re_formula = NA) %>%
@@ -595,6 +619,7 @@ p
 Posterior retrodictive plot: 
 
 ```{r}
+#| code-fold: true
 task2_df %>%
   modelr::data_grid(error.y = 0, participantId = unique(participantId)) %>%
   add_predicted_draws(model.y.weibull, ndraws = 100) %>%
@@ -639,7 +664,20 @@ ggsave(
 )
 ```
 
-## Log-Normal {#sec-y-logNormal}
+## Error on Y, Log-Normal {#sec-y-logNormal}
+
+Math formula: 
+$$
+\begin{align*}
+\texttt{error.y}_i &\sim \text{Log-Normal}(\mu_{\text{PID}[i]},\ \sigma_{\text{PID}[i]}) \\
+\mu_j &= \alpha_j \\
+\log(\sigma_j) &= \beta_j \\
+\alpha_j &\sim \mathcal{N}(\mu_\alpha,\ \tau_\alpha) \\
+\beta_j &\sim \mathcal{N}(\mu_\beta,\ \tau_\beta) \\
+\mu_\alpha,\ \mu_\beta &\sim \mathcal{N}(0, 1) \\
+\tau_\alpha,\ \tau_\beta &\sim \mathcal{N}^{+}(0, 1)
+\end{align*}
+$$
 
 Specify formula and prior: 
 
@@ -692,7 +730,7 @@ model.y.lognormal <- task2_df %>%
     prior = p,
     chains = 4,
     cores = 4,
-    file = here("analysis", "fitted_models", "task2.y.lognormal"),
+    file = here("analysis", "fitted_models", "part1", "task2.y.lognormal"),
     file_refit = "on_change",
     save_pars = save_pars(all = TRUE),
     control = list(adapt_delta = 0.99),
@@ -731,7 +769,21 @@ task2_df %>%
 p
 ```
 
-## Gamma {#sec-y-gamma}
+## Error on Y, Gamma {#sec-y-gamma}
+
+Math formula: 
+
+$$
+\begin{align*}
+\texttt{error.y}_i &\sim \text{Gamma}(\mu_{\text{PID}[i]},\ k_{\text{PID}[i]}) \\
+\mu_j &= \alpha_j^{-1} \\
+\log(k_j) &= \beta_j \\
+\alpha_j &\sim \mathcal{N}(\mu_\alpha,\ \tau_\alpha) \\
+\beta_j &\sim \mathcal{N}(\mu_\beta,\ \tau_\beta) \\
+\mu_\alpha,\ \mu_\beta &\sim \mathcal{N}(0, 1) \\
+\tau_\alpha,\ \tau_\beta &\sim \mathcal{N}^{+}(0, 1)
+\end{align*}
+$$
 
 Specify formula and prior: 
 
@@ -784,11 +836,11 @@ model.y.gamma <- task2_df %>%
     prior = p,
     chains = 4,
     cores = 4,
-    file = here("analysis", "fitted_models", "task2.y.gamma"),
+    file = here("analysis", "fitted_models", "part1", "task2.y.gamma"),
     file_refit = "on_change",
     save_pars = save_pars(all = TRUE),
     control = list(adapt_delta = 0.99),
-    iter = 8000
+    iter = 6000
   )
 ```
 
@@ -809,12 +861,13 @@ pp_check(model.y.gamma, type = "pit_ecdf")
 
 ## LOO Comparison {#sec-y-loo}
 
-Note that we won't use [Lomax](#sec-y-lomax) and [Gamma](#sec-y-gamma) in the model comparison, because the models have divergent transitions after fitting and demonstrate poor calibration. 
+Note that we won't use [Gamma](#sec-y-gamma) in the model comparison, because the models have divergent transitions after fitting and demonstrate poor calibration. 
 
 Loo comparison: 
 
 ```{r}
 brms::loo(
+  model.y.lomax,
   model.y.exponential,
   model.y.lognormal,
   model.y.weibull,
@@ -826,9 +879,9 @@ brms::loo(
 
 Weibull is the best model. 
 
-# Task 2 -- HighestPoint -- Error on X 
+---
 
-## Normal distribution {#sec-x-normal}
+## Error on X, Normal distribution {#sec-x-normal}
 
 Math model: 
 
@@ -1427,9 +1480,9 @@ Recall that the when using a custom `brms` family, we need to define our own fun
 expose_functions(model.x.laplace, vectorize = TRUE)
 
 # # Define log-likelihood function for Laplace distribution
-# laplace_lpdf <- function(y, mu, sigma) {
-#   -log(2 * sigma) - abs(y - mu) / sigma
-# }
+laplace_lpdf <- function(y, mu, sigma) {
+  -log(2 * sigma) - abs(y - mu) / sigma
+}
 
 # Define log-likelihood function for brms
 log_lik_laplace <- function(i, prep) {
