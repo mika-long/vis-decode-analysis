@@ -118,9 +118,9 @@ window.Quarto = {
   <li><a href="#set-up" id="toc-set-up" class="nav-link active" data-scroll-target="#set-up">Set up</a></li>
   <li><a href="#fit-stan-models" id="toc-fit-stan-models" class="nav-link" data-scroll-target="#fit-stan-models">Fit <code>stan</code> models</a>
   <ul class="collapse">
-  <li><a href="#centered-parameterization" id="toc-centered-parameterization" class="nav-link" data-scroll-target="#centered-parameterization">Centered Parameterization</a></li>
-  <li><a href="#non-centered-parameterization-informative-prior" id="toc-non-centered-parameterization-informative-prior" class="nav-link" data-scroll-target="#non-centered-parameterization-informative-prior">Non-centered parameterization — Informative prior</a></li>
-  <li><a href="#non-centered-paramterization-uninformative-prior" id="toc-non-centered-paramterization-uninformative-prior" class="nav-link" data-scroll-target="#non-centered-paramterization-uninformative-prior">Non-centered paramterization — Uninformative prior</a></li>
+  <li><a href="#centered-parameterization-informative-priors" id="toc-centered-parameterization-informative-priors" class="nav-link" data-scroll-target="#centered-parameterization-informative-priors">Centered Parameterization (informative priors)</a></li>
+  <li><a href="#non-centered-parameterization-informative-priors" id="toc-non-centered-parameterization-informative-priors" class="nav-link" data-scroll-target="#non-centered-parameterization-informative-priors">Non-centered parameterization (informative priors)</a></li>
+  <li><a href="#non-centered-paramterization-uninformative-priors" id="toc-non-centered-paramterization-uninformative-priors" class="nav-link" data-scroll-target="#non-centered-paramterization-uninformative-priors">Non-centered paramterization (uninformative priors)</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -282,8 +282,8 @@ window.Quarto = {
 </section>
 <section id="fit-stan-models" class="level1 page-columns page-full">
 <h1>Fit <code>stan</code> models</h1>
-<section id="centered-parameterization" class="level2">
-<h2 class="anchored" data-anchor-id="centered-parameterization">Centered Parameterization</h2>
+<section id="centered-parameterization-informative-priors" class="level2">
+<h2 class="anchored" data-anchor-id="centered-parameterization-informative-priors">Centered Parameterization (informative priors)</h2>
 <p><strong>Spoiler: The following model has divergent transitions after fitting.</strong></p>
 <p>We run this anyway to make out analysis complete. Note this is NOT the model we actually fit, but we list here nonetheless as the math model and the stan specifications are easier to map to each other.</p>
 <div class="cell">
@@ -405,6 +405,7 @@ x_n &amp;\sim \mathcal{N}\!\left(\theta_n \cdot (x^{\text{med}}_n + \mu^{\text{m
 n &amp;= 1, \ldots, N, \quad j[n] \in \{1, \ldots, J\}
 \end{align*}
 \]</span></p>
+<p>The hyperpriors we’re using here are directly obtained from <code>model.x.normal</code> from <code>t2-HighestPoint.qmd</code>.</p>
 <p>Fit the stan model:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> model<span class="sc">$</span><span class="fu">sample</span>(</span>
@@ -495,8 +496,8 @@ n &amp;= 1, \ldots, N, \quad j[n] \in \{1, \ldots, J\}
 </div>
 </div>
 </section>
-<section id="non-centered-parameterization-informative-prior" class="level2 page-columns page-full">
-<h2 class="anchored" data-anchor-id="non-centered-parameterization-informative-prior">Non-centered parameterization — Informative prior</h2>
+<section id="non-centered-parameterization-informative-priors" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="non-centered-parameterization-informative-priors">Non-centered parameterization (informative priors)</h2>
 <p>Note this is also the model we use in the actual paper.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">cmdstan_model</span>(here<span class="sc">::</span><span class="fu">here</span>(</span>
@@ -799,8 +800,8 @@ log_sigma_mod_sd ~ normal(0.34, 0.10);</code></pre>
 </div>
 </div>
 </section>
-<section id="non-centered-paramterization-uninformative-prior" class="level2">
-<h2 class="anchored" data-anchor-id="non-centered-paramterization-uninformative-prior">Non-centered paramterization — Uninformative prior</h2>
+<section id="non-centered-paramterization-uninformative-priors" class="level2">
+<h2 class="anchored" data-anchor-id="non-centered-paramterization-uninformative-priors">Non-centered paramterization (uninformative priors)</h2>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">cmdstan_model</span>(</span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"analysis/stan_files/task1.weighted.avg.nonc.normal.stan"</span>)</span>
@@ -902,11 +903,11 @@ generated quantities {
 }</code></pre>
 </div>
 </div>
-<p>So this is the prior we’re using now:</p>
-<pre><code>mu_mod_mean ~ normal(0, 0.5); 
+<p>So this is the uninformative priors we’re using now:</p>
+<pre><code>mu_mod_mean ~ normal(0, 0.5); # &lt;- NEW 
 mu_mod_sd ~ normal(0.04, 0.3); 
-log_sigma_mod_mean ~ normal(-1.37, 1); 
-log_sigma_mod_sd ~ normal(0.34, 1); </code></pre>
+log_sigma_mod_mean ~ normal(-1.37, 1); # &lt;- increased variance by 10 
+log_sigma_mod_sd ~ normal(0.34, 1); # &lt;- increased variance by 10 </code></pre>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> model<span class="sc">$</span><span class="fu">sample</span>(</span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> stan_data,</span>

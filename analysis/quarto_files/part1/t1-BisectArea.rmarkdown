@@ -614,3 +614,4 @@ as_draws_rvars(fit)$mu_med_mean
 as_draws_rvars(fit)$log_sigma_mod_mean %>% exp(.)
 as_draws_rvars(fit)$log_sigma_med_mean %>% exp(.)
 ```
+
