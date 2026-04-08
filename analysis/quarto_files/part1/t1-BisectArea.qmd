@@ -43,8 +43,8 @@ Read in data
 #| label: read-in-data
 #| code-fold: true
 
-task_df <- read_rds(paste0(here(), "/data/final/task.rds"))
-participants <- read_rds(paste0(here(), "/data/final/participants.rds"))
+task_df <- read_rds(here("data", "part1", "task.rds"))
+participants <- read_rds(here("data", "part1", "participants.rds"))
 exp1_x <- make_va_scale(data_min = -5, data_max = 5, px_min = 50, px_max = 585)
 exp1_y <- make_va_scale(data_min = 0, data_max = 1, px_min = 410, px_max = 15)
 ```
@@ -84,8 +84,6 @@ task1_df <- task_df %>%
     va.mod.x = exp1_x$data_to_va(param.mu, dist_to_screen, pixelToMM)
   )
 ```
-
-Save processed data for python fitting: 
 
 ```{r}
 #| eval: false
@@ -156,14 +154,25 @@ custom_pp_check <- function(
 }
 ```
 
-## Centered Parameterization 
+:::{.callout-important}
+# TLDR 
 
-Spoiler: The following model has divergent transitions after fitting.  
+* centered parameterization is the most straight-forward mapping form math model to fitted model, but it creates problems for sampling (e.g., going into a funnel)
+* non-centered parameteriation makes things easier to fit; the informative prior was obtained from `HighestPoint_X` operator.  
+:::
+
+# Fit `stan` models 
+
+## Centered Parameterization
+
+**Spoiler: The following model has divergent transitions after fitting.**
+
+We run this anyway to make out analysis complete. Note this is NOT the model we adopt. 
 
 ```{r}
-#| eval: false
-
-model <- cmdstan_model("analysis/stan_files/task1.weighted.avg.stan")
+model <- cmdstan_model(here::here(
+  "analysis/stan_files/task1.weighted.avg.stan"
+))
 model
 ``` 
 
@@ -187,6 +196,8 @@ fit <- model$sample(
 summary <- fit$summary()
 summary
 ```
+
+Observe that we have `rhat` values not equal to 1, suggesting that the model has not converged. 
 
 Density overlay plot: 
 
@@ -231,46 +242,29 @@ custom_pp_check(
     )
   )
 )
-
-# custom_pp_check(fit, bayesplot::ppc_pit_ecdf_grouped, group = ifelse(task1_df$param.lambda < 0, "neg", ifelse(task1_df$param.lambda > 0, "pos", "zero")))
-```
-
-```{r}
-task1_df %>%
-  mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
-  unnest_rvars() %>%
-  ggplot(aes(x = param.lambda, y = y_rep)) +
-  ggdist::stat_lineribbon() +
-  geom_point(aes(y = va.resp.x - va.med.x)) +
-  scale_fill_brewer(palette = "Blues")
-```
-
-```{r}
-#| echo: false
-#| eval: false
-
-# facetted plot for each participant
-task1_df %>%
-  mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
-  unnest_rvars() %>%
-  ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) +
-  ggdist::stat_lineribbon() +
-  geom_point(aes(y = va.resp.x - va.med.x)) +
-  facet_wrap(~participantId) +
-  scale_fill_brewer(palette = "Blues")
 ```
 
 ## Non-centered parameterization --- Informative prior
 
+Note this is also the model we use in the actual paper. 
+
 ```{r}
-#| eval: false
 model <- cmdstan_model("analysis/stan_files/task1.weighted.avg.nonc.stan")
 model
 ```
 
+Note: this is the part of the code that corresponds to the informative prior: 
+
+```
+mu_mod_mean ~ normal(0.01, 0.02); 
+mu_mod_sd ~ normal(0.04, 0.03); 
+log_sigma_mod_mean ~ normal(-1.37, 0.10); 
+log_sigma_mod_sd ~ normal(0.34, 0.10);
+```
+
 ```{r}
 #| output: false
-#| eval: false
+#| eval: true
 
 fit <- model$sample(
   data = stan_data,
@@ -286,22 +280,26 @@ fit <- model$sample(
 ```{r}
 #| eval: false
 #| echo: false
-fit$save_object("analysis/fitted_models/task1.informative.prior.rds")
+fit$save_object(here::here(
+  "analysis/fitted_models/part1/task1.informative.prior.rds"
+))
 ```
 
 ```{r}
-#| output: false
-fit <- read_rds("analysis/fitted_models/task1.informative.prior.rds")
+#| echo: false
+fit <- read_rds(here::here(
+  "analysis/fitted_models/part1/task1.informative.prior.rds"
+))
+```
+
+Get the summary from the fit and check the value of `rhat`: 
+
+```{r}
 summary <- fit$summary()
-```
-
-Check Rhat: 
-
-```{r}
 summary %>% filter(!grepl("\\[", variable)) %>% select(contains("rhat"))
 ```
 
-Check `BULK_ESS` and `TAIL_ESS`: 
+All values are `1.00`, which is good. Next we check `BULK_ESS` and `TAIL_ESS`: 
 
 ```{r}
 summary %>% filter(!grepl("\\[", variable)) %>% select(contains("ess"))
@@ -323,6 +321,8 @@ custom_pp_check(
 
 ```{r}
 #| code-fold: true
+#| layout-ncol: 2
+
 custom_pp_check(
   fit,
   bayesplot::ppc_dens_overlay_grouped,
@@ -452,49 +452,44 @@ ggsave(
 )
 ```
 
-```{r}
-#| layout-ncol: 2
+We also check the posterior for the informative priors we used: 
 
-# plot_data <- task1_df %>%
-#   mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>% # signed error
-#   unnest_rvars()
-
-# # param.lambda on x-axis
-# plot_data %>%
-#   ggplot(aes(x = param.lambda, y = y_rep)) +
-#   ggdist::stat_lineribbon(linewidth = 0.5) +
-#   geom_point(aes(y = va.resp.x - va.med.x), size = 0.5) +
-#   scale_fill_brewer(palette = "Blues")
-
-# # x.med - x.mod on X axis
-# plot_data %>%
-#   ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) +
-#   ggdist::stat_lineribbon(size = 0.5) +
-#   geom_point(aes(y = va.resp.x - va.med.x), alpha = 0.5, size = 0.5) +
-#   # facet_wrap(~ participantId) +
-#   scale_fill_brewer(palette = "Blues") +
-#   labs(x = "x^med - x^mod", y = "Signed error") +
-#   theme_minimal(base_size = 8) -> p
-
-# p
+:::{.column-margin}
 ```
+mu_mod_mean ~ normal(0.01, 0.02); 
+mu_mod_sd ~ normal(0.04, 0.03); 
+log_sigma_mod_mean ~ normal(-1.37, 0.10); 
+log_sigma_mod_sd ~ normal(0.34, 0.10);
+```
+:::
 
 ```{r}
 as_draws_rvars(fit)$mu_mod_mean
 as_draws_rvars(fit)$mu_med_mean
-as_draws_rvars(fit)$log_sigma_mod_mean %>% exp(.)
-as_draws_rvars(fit)$log_sigma_med_mean %>% exp(.)
+as_draws_rvars(fit)$log_sigma_mod_mean # %>% exp(.)
+as_draws_rvars(fit)$log_sigma_med_mean # %>% exp(.)
 ```
 
 ## Non-centered paramterization --- Uninformative prior 
 
 ```{r}
-#| output: false
-
 model <- cmdstan_model(
-  "analysis/stan_files/task1.weighted.avg.nonc.normal.stan"
+  here::here("analysis/stan_files/task1.weighted.avg.nonc.normal.stan")
 )
+model
+```
 
+So this is the prior we're using now: 
+
+```
+mu_mod_mean ~ normal(0, 0.5); 
+mu_mod_sd ~ normal(0.04, 0.3); 
+log_sigma_mod_mean ~ normal(-1.37, 1); 
+log_sigma_mod_sd ~ normal(0.34, 1); 
+```
+
+```{r}
+#| eval: false
 fit <- model$sample(
   data = stan_data,
   chains = 4,
@@ -504,17 +499,45 @@ fit <- model$sample(
   adapt_delta = 0.99,
   max_treedepth = 15
 )
-
-fit$save_object("analysis/fitted_models/task1.non.informative.prior.rds")
-
-# hmm I keep getting these divergent transitions ...
-# note that the saved model still has divergent transitions ...
-# maybe I should try iter_warmup = 5000 and iter_sampling = 5000 ...?
 ```
+
+The above is giving us 0.4 % divergent transitions. So not bad, but also not zero. Also the entire fitting took about 10 minutes. 
+
+```{r}
+#| echo: false
+#| eval: false
+fit$save_object(here::here(
+  "analysis/fitted_models/part1/task1.non.informative.prior.rds"
+))
+```
+
+```{r}
+#| echo: false
+
+fit <- read_rds(here::here(
+  "analysis/fitted_models/part1/task1.non.informative.prior.rds"
+))
+```
+
+Get the summary from the fit and check the value of `rhat`: 
+
+```{r}
+summary <- fit$summary()
+summary %>% filter(!grepl("\\[", variable)) %>% select(contains("rhat"))
+```
+
+Next we check `BULK_ESS` and `TAIL_ESS`: 
+
+```{r}
+summary %>% filter(!grepl("\\[", variable)) %>% select(contains("ess"))
+``` 
 
 Posterior Predictive Check: 
 
 ```{r}
+#| code-fold: true
+#| layout-ncol: 3
+
 custom_pp_check(
   fit,
   bayesplot::ppc_dens_overlay_grouped,
@@ -543,20 +566,7 @@ custom_pp_check(
 )
 ```
 
-```{r}
-task1_df %>%
-  mutate(y_rep = as_draws_rvars(fit)$y_rep - va.med.x) %>%
-  unnest_rvars() %>%
-  ggplot(aes(x = va.med.x - va.mod.x, y = y_rep)) +
-  ggdist::stat_lineribbon(size = 0.5) +
-  geom_point(aes(y = va.select.x - va.med.x), alpha = 0.5, size = 0.5) +
-  # facet_wrap(~ participantId) +
-  scale_fill_brewer(palette = "Blues") +
-  labs(x = "x^med - x^mod", y = "Signed error") +
-  theme_minimal(base_size = 8) -> p
-
-p
-```
+Examine posterior: 
 
 ```{r}
 as_draws_rvars(fit)$mu_mod_mean
@@ -565,4 +575,24 @@ as_draws_rvars(fit)$log_sigma_mod_mean %>% exp(.)
 as_draws_rvars(fit)$log_sigma_med_mean %>% exp(.)
 ```
 
-<!-- Most of the difference seems to be in the `sigma` related stuff ...?  -->
+## Mixture model 
+
+```{r}
+model <- cmdstan_model(
+  here::here("analysis/stan_files/task1.mix.stan")
+)
+model
+```
+
+```{r}
+#| eval: false
+fit <- model$sample(
+  data = stan_data,
+  chains = 4,
+  parallel_chains = 4,
+  iter_warmup = 4000,
+  iter_sampling = 4000,
+  adapt_delta = 0.99,
+  max_treedepth = 15
+)
+```

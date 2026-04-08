@@ -1,7 +1,7 @@
 data {
   int<lower=1> N;              // total number of observations
   int<lower=1> J;              // number of participants
-  int<lower=1, upper=J> id[N]; // participant ID for each observation
+  array[N] int<lower=1, upper=J> id; // participant ID for each observation
   vector[N] x;                 // observed values
   vector[N] x_med;             // known median values
   vector[N] x_mod;             // known mode values
@@ -35,7 +35,7 @@ transformed parameters {
   for (j in 1:J) {
     // Transform log parameters to natural scale
     sigma_mod[j] = exp(log_sigma_mod[j]); 
-    simga_med[j] = exp(log_sigma_med[j]); 
+    sigma_med[j] = exp(log_sigma_med[j]); 
   }
   
   // Weights for each observation
