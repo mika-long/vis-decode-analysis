@@ -14,7 +14,6 @@ execute:
 #| echo: false
 #| output: false
 #| label: setup
-
 library(tidyverse)
 library(ggplot2)
 library(sgt)
@@ -57,7 +56,6 @@ Read in data and relevant scales:
 ```{r}
 #| label: read-in-data
 #| code-fold: true
-
 task_df <- read_rds(here("data", "part1", "task.rds"))
 participants <- read_rds(here("data", "part1", "participants.rds"))
 exp1_x <- make_va_scale(data_min = -5, data_max = 5, px_min = 50, px_max = 585)
@@ -92,7 +90,6 @@ Get task-related specific data:
 
 ```{r}
 #| label: get task 4 data
-
 task4_df <- task_df %>%
   filter(task == "task4") %>%
   select(-slider.x, -slider.y) %>%
@@ -156,14 +153,12 @@ task4_df <- task_df %>%
 ```{r}
 #| echo: false
 #| eval: false
-
 write_csv(task4_df, here("data", "processed", "task4.csv"))
 ```
 
 ```{r}
 #| eval: false
 #| echo: false
-
 ## Plot relations
 
 task4_df %>% ggplot(aes(x = data.resp.slope - data.ans.slope)) + geom_dots()
@@ -177,7 +172,6 @@ task4_df %>%
 ```{r}
 #| eval: false
 #| echo: false
-
 # Checking to see if there's any obvious relation between signed error and parameters of the distribution.
 # nothing apparent.
 
@@ -237,7 +231,6 @@ p <- c(
 #| eval: false
 #| echo: false
 #| label: check stan code
-
 task4_df %>%
   mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
   get_prior(f, data = .)
@@ -252,7 +245,6 @@ Fit the model:
 ```{r}
 #| output: false
 #| label: fit exponential
-
 model.exponential <- task4_df %>%
   mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
   # brms need rsp > 0 for exp
@@ -287,7 +279,6 @@ pp_check(model.exponential, ndraws = 100, type = "pit_ecdf")
 ```{r}
 #| eval: false
 #| echo: false
-
 # model.exponential %>% get_variables()
 
 model.exponential %>%
@@ -356,7 +347,6 @@ p <- c(
 ```{r}
 #| eval: false
 #| echo: false
-
 task4_df %>%
   mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
   mutate(error = ifelse(error < tolerance, tolerance, error)) %>%
@@ -370,7 +360,6 @@ task4_df %>%
 ```{r}
 #| output: false
 #| label: fit lomax
-
 model.lomax <- task4_df %>%
   mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
   mutate(error = ifelse(error < tolerance, tolerance, error)) %>%
@@ -401,7 +390,6 @@ plot(model.lomax)
 ```{r}
 #| eval: false
 #| echo: false
-
 # Check the posterior distribution of parameters, alpha and lambda:
 
 model.lomax %>%
@@ -417,7 +405,7 @@ model.lomax %>%
   geom_vline(xintercept = 1e-10, linetype = "dashed", color = "gray")
 ```
 
-Define custom functions^[Check out this [link](https://cran.r-project.org/web/packages/brms/vignettes/brms_customfamilies.html?utm_source=chatgpt.com) for more details.] for posterior predictive check (`pp_check`) and model comparison (`loo`):
+Define custom functions^[Check out this [link](https://cran.r-project.org/web/packages/brms/vignettes/brms_customfamilies.html) for more details.] for posterior predictive check (`pp_check`) and model comparison (`loo`):
 
 ```{r}
 expose_functions(model.lomax, vectorize = TRUE)
@@ -439,7 +427,6 @@ log_lik_lomax <- function(i, prep) {
 
 ```{r}
 #| layout-ncol: 2
-
 pp_check(model.lomax, ndraws = 100)
 pp_check(model.lomax, ndraws = 100, type = "pit_ecdf")
 ```
@@ -485,7 +472,6 @@ p <- c(
 ```{r}
 #| eval: false
 #| echo: false
-
 task4_df %>%
   mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
   mutate(error = ifelse(error < tolerance, tolerance, error)) %>%
@@ -501,7 +487,6 @@ Fit the model:
 ```{r}
 #| output: false
 #| label: fit weibull
-
 model.weibull <- task4_df %>%
   mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
   mutate(error = ifelse(error < tolerance, tolerance, error)) %>% # brms needs value to be > 0
@@ -529,7 +514,6 @@ plot(model.weibull)
 ```{r}
 #| layout-ncol: 2
 #| code-fold: true
-
 pp_check(model.weibull, ndraws = 100) +
   coord_cartesian(xlim = c(0, 10)) +
   theme(text = element_text(size = 12)) +
@@ -545,7 +529,6 @@ p2
 ```{r}
 #| echo: false
 #| eval: false
-
 ggsave(
   here("figs", "task4-pp-check.pdf"),
   p1,
@@ -568,7 +551,6 @@ ggsave(
 ```{r}
 #| eval: false
 #| echo: false
-
 # model.weibull %>% get_variables()
 
 model.weibull %>%
@@ -583,7 +565,6 @@ model.weibull %>%
 #| echo: false
 #| eval: false
 #| label: Weibull overlay
-
 # prediction <- task4_df %>%
 #   mutate(error = abs(data_to_screen_slope(data.ans.slope) - data_to_screen_slope(data.select.slope))) %>%
 #   add_predicted_draws(model.weibull, ndraws = 100)
@@ -615,7 +596,6 @@ Posterior draws + strip plot of actual answers:
 
 ```{r}
 #| code-fold: true
-
 task4_df %>%
   modelr::data_grid(error = 0, participantId = unique(participantId)) %>%
   add_predicted_draws(model.weibull, ndraws = 100) %>% # ndraws = 100
@@ -685,7 +665,6 @@ p <- c(
 ```{r}
 #| echo: false
 #| eval: false
-
 task4_df %>%
   mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
   get_prior(data = ., formula = f)
@@ -696,7 +675,6 @@ Fit the model:
 ```{r}
 #| output: false
 #| label: fit lognormal
-
 model.lognormal <- task4_df %>%
   mutate(error = abs(va.resp.slope - va.ans.slope)) %>%
   mutate(error = ifelse(error < tolerance, tolerance, error)) %>% # brms needs value to be > 0
@@ -751,7 +729,6 @@ prediction %>%
 ```{r}
 #| eval: false
 #| echo: false
-
 task4_df %>%
   modelr::data_grid(error = 0) %>%
   add_predicted_draws(model.lognormal, re_formula = NA, ndraws = 100) %>%
@@ -782,7 +759,6 @@ The Weibull model performs the best.
 
 ```{r}
 #| layout-ncol: 2
-
 pp_check(model.exponential, ndraws = 100, type = "pit_ecdf") +
   labs(title = "Exponential")
 pp_check(model.lomax, ndraws = 100, type = "pit_ecdf") +
