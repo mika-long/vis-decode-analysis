@@ -117,24 +117,64 @@ p_og <- exp2 %>%
     betweenvars = "mark",
     idvar = "assignmentid"
   ) %>%
-  plot_results(., normalized_error)
+  plot_results(., normalized_error) +
+  theme(text = element_text(size = 9), legend.position = "none") +
+  scale_x_continuous(
+    breaks = seq(0, 0.09, by = 0.01)
+  ) +
+  scale_y_discrete(labels = c("0,0" = "0", "0,0.4" = "0.4"))
+
 
 p_og
+```
+
+```{r}
+#| eval: false
+#| echo: false
+ggsave(
+  here::here("figs/og_recreated.svg"),
+  p_og,
+  width = 3.5,
+  height = 2.5,
+  units = "in"
+)
 ```
 
 ## Adding Additional Factors to OG Graph 
 
 ```{r}
-exp2 %>%
+p_og_facet <- exp2 %>%
   summarySEwithin(
     data = .,
-    measurevar = "normalized_error",
-    withinvars = c("variability", "flip"), # <- new
+    measurevar = "error",
+    withinvars = c("variability", "flip"),
     betweenvars = "mark",
     idvar = "assignmentid"
   ) %>%
-  plot_results(., normalized_error) +
-  facet_grid(flip ~ .)
+  plot_results(., error) +
+  # facet_wrap(flip ~ ., ncol = 1) +
+  theme(text = element_text(size = 9), legend.position = "none") +
+  scale_y_discrete(labels = c("0,0" = "0", "0,0.4" = "0.4")) +
+  # coord_cartesian(xlim = c(-0.01, 0.08)) +
+  scale_x_continuous(
+    breaks = seq(-1, 1, by = 0.01)
+  ) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray")
+
+p_og_facet
+```
+
+```{r}
+#| echo: false 
+#| eval: false 
+ggsave(
+  here::here("figs/p_og_facet.svg"),
+  p_og_facet,
+  width = 3.5,
+  height = 2.5,
+  units = "in",
+  dpi = 300
+)
 ```
 
 ## Recalculate error 
@@ -249,7 +289,7 @@ This appears to just be due to rounding error. So this confirms that indeed `err
 Using the exact same calculations, we obtain the following: 
 
 ```{r}
-exp2 %>%
+p_NewError <- exp2 %>%
   rename(ref_error = error) %>%
   mutate(
     actual_error = reportedaverage - data_average,
@@ -263,10 +303,32 @@ exp2 %>%
     idvar = "assignmentid"
   ) %>%
   plot_results(., normalized_actual_error) +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "gray")
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
+  theme(text = element_text(size = 9), legend.position = "none") +
+  scale_y_discrete(labels = c("0,0" = "0", "0,0.4" = "0.4")) +
+  coord_cartesian(xlim = c(-0.01, 0.08)) +
+  scale_x_continuous(
+    breaks = seq(-1, 1, by = 0.01)
+  )
+
+p_NewError
 ```
 
-If we don't use the "normalization", and facet by the factor of `flip`, then we get this: 
+```{r}
+#| echo: false 
+#| eval: false 
+ggsave(
+  here::here("figs/newError.svg"),
+  p_NewError,
+  width = 3.5,
+  height = 2.5,
+  units = "in",
+  dpi = 300
+)
+```
+
+
+If we don't use the "normalization", and ~~facet by the factor of `flip`, then we get this:~~ (following Matt's advice we are not going to facet by `flip`) 
 
 ```{r}
 exp2 %>%
@@ -283,14 +345,14 @@ exp2 %>%
     idvar = "assignmentid"
   ) %>%
   plot_results(., actual_error) +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
-  facet_grid(flip ~ .)
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray") # +
+# facet_grid(flip ~ .)
 ```
 
 We can also make the direction look nicer and easier to read: 
 
 ```{r}
-exp2 %>%
+p_newError_facet <- exp2 %>%
   rename(ref_error = error) %>%
   mutate(
     actual_error = reportedaverage - data_average,
@@ -298,14 +360,34 @@ exp2 %>%
   ) %>%
   summarySEwithin(
     data = .,
-    measurevar = "normalized_actual_error",
+    measurevar = "actual_error",
     withinvars = c("variability", "flip"),
     betweenvars = "mark",
     idvar = "assignmentid"
   ) %>%
-  plot_results(., normalized_actual_error) +
+  plot_results(., actual_error) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
-  facet_grid(flip ~ .)
+  # facet_wrap(flip ~ ., ncol = 1) +
+  theme(text = element_text(size = 9), legend.position = "none") +
+  scale_x_continuous(
+    breaks = seq(-1, 1, by = 0.01)
+  ) +
+  scale_y_discrete(labels = c("0,0" = "0", "0,0.4" = "0.4")) # +
+# oord_cartesian(xlim = c(-0.01, 0.1))
+
+p_newError_facet
+```
+
+```{r}
+#| echo: false 
+#| eval: false 
+ggsave(
+  here::here("figs/newError_facet.svg"),
+  p_newError_facet,
+  width = 3.5,
+  height = 2.5,
+  units = "in"
+)
 ```
 
 ---
