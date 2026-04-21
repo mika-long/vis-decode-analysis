@@ -327,7 +327,7 @@ ggsave(
   here::here("figs/newError.svg"),
   p_NewError,
   width = 3.5,
-  height = 2.5,
+  height = 2,
   units = "in",
   dpi = 300
 )
