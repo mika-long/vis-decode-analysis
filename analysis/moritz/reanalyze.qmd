@@ -50,8 +50,14 @@ exp2_dotX <- read.csv(
   check.names = FALSE
 )
 
+# line
+exp2_line <- read.csv(
+  here::here("data", "moritz", "exp", "exp2-line.csv"),
+  check.names = FALSE
+)
+
 # combine
-raw_exp2 <- rbind(exp2_dotArc, exp2_dotX) %>%
+raw_exp2 <- rbind(exp2_dotArc, exp2_dotX, exp2_line) %>%
   as_tibble(.)
 
 exp2 <- raw_exp2 %>%
@@ -99,7 +105,11 @@ plot_results <- function(data, xvar) {
       alpha = .8
     ) +
     theme(legend.position = "top") +
-    scale_fill_manual(values = c("#76B7B2", "#E15759")) # + # take out "#59A14F"
+    scale_fill_manual(values = c("#59A14F", "#76B7B2", "#E15759")) +
+    scale_y_discrete(
+      labels = c("0,0" = "0", "0,0.4" = "0.4"),
+      expand = expansion(add = c(0.1, 0.5))
+    )
 }
 ```
 
@@ -117,15 +127,14 @@ p_og <- exp2 %>%
     betweenvars = "mark",
     idvar = "assignmentid"
   ) %>%
+  # mutate(variability = factor(variability)) %>%
   plot_results(., normalized_error) +
   theme(text = element_text(size = 9), legend.position = "none") +
   scale_x_continuous(
     breaks = seq(0, 0.09, by = 0.01)
-  ) +
-  scale_y_discrete(labels = c("0,0" = "0", "0,0.4" = "0.4"))
+  )
 
-
-p_og
+p_og # + theme(aspect.ratio = 1/4)
 ```
 
 ```{r}
@@ -135,7 +144,7 @@ ggsave(
   here::here("figs/og_recreated.svg"),
   p_og,
   width = 3.5,
-  height = 2.5,
+  height = 2,
   units = "in"
 )
 ```
@@ -154,8 +163,6 @@ p_og_facet <- exp2 %>%
   plot_results(., error) +
   # facet_wrap(flip ~ ., ncol = 1) +
   theme(text = element_text(size = 9), legend.position = "none") +
-  scale_y_discrete(labels = c("0,0" = "0", "0,0.4" = "0.4")) +
-  # coord_cartesian(xlim = c(-0.01, 0.08)) +
   scale_x_continuous(
     breaks = seq(-1, 1, by = 0.01)
   ) +
@@ -171,7 +178,7 @@ ggsave(
   here::here("figs/p_og_facet.svg"),
   p_og_facet,
   width = 3.5,
-  height = 2.5,
+  height = 2,
   units = "in",
   dpi = 300
 )
@@ -305,7 +312,6 @@ p_NewError <- exp2 %>%
   plot_results(., normalized_actual_error) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
   theme(text = element_text(size = 9), legend.position = "none") +
-  scale_y_discrete(labels = c("0,0" = "0", "0,0.4" = "0.4")) +
   coord_cartesian(xlim = c(-0.01, 0.08)) +
   scale_x_continuous(
     breaks = seq(-1, 1, by = 0.01)
@@ -326,7 +332,6 @@ ggsave(
   dpi = 300
 )
 ```
-
 
 If we don't use the "normalization", and ~~facet by the factor of `flip`, then we get this:~~ (following Matt's advice we are not going to facet by `flip`) 
 
@@ -371,9 +376,7 @@ p_newError_facet <- exp2 %>%
   theme(text = element_text(size = 9), legend.position = "none") +
   scale_x_continuous(
     breaks = seq(-1, 1, by = 0.01)
-  ) +
-  scale_y_discrete(labels = c("0,0" = "0", "0,0.4" = "0.4")) # +
-# oord_cartesian(xlim = c(-0.01, 0.1))
+  )
 
 p_newError_facet
 ```
@@ -385,7 +388,7 @@ ggsave(
   here::here("figs/newError_facet.svg"),
   p_newError_facet,
   width = 3.5,
-  height = 2.5,
+  height = 2,
   units = "in"
 )
 ```
