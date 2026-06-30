@@ -210,12 +210,12 @@ task1_corr <- task1_df %>%
     sd = sd(correlation.x),
     lb = mean - 2 * sd,
     ub = mean + 2 * sd
-  ) 
+  )
 
 task1_corr %>%
   filter(correlation.x < 0.5)
 
-task1_corr %>% 
+task1_corr %>%
   ggplot(aes(x = correlation.x)) +
   geom_dotplot()
 ```
@@ -449,7 +449,7 @@ task2_df %>% ggplot(aes(x = data.ans.y - data.select.y)) + geom_dots()
 #| eval: false
 #| echo: false
 
-# Checking relations, focusing on the **x** axes: 
+# Checking relations, focusing on the **x** axes:
 
 task2_df %>%
   filter(!participantId %in% exclude_participants) %>%
@@ -496,7 +496,7 @@ task3_df <- task_df %>%
       mean.cent = FALSE
     )
   ) %>%
-    mutate(
+  mutate(
     va.resp.x = exp1_x$data_to_va(data.select.x, dist_to_screen, pixelToMM),
     va.resp.y = exp1_y$data_to_va(data.select.y, dist_to_screen, pixelToMM),
     va.ans.x = exp1_x$data_to_va(data.ans.x, dist_to_screen, pixelToMM),
@@ -513,7 +513,9 @@ Calculation correlation and exclude participants:
 
 task3_corr <- task3_df %>%
   group_by(participantId) %>%
-  summarise(correlation.x = suppressWarnings(cor(data.select.x, data.ans.x))) %>%
+  summarise(
+    correlation.x = suppressWarnings(cor(data.select.x, data.ans.x))
+  ) %>%
   filter(is.na(correlation.x) | correlation.x < 0.5)
 
 task3_corr
@@ -706,7 +708,7 @@ task4_df %>%
 #| eval: false 
 #| echo: false
 
-# Let's see if there's any obvious relation between signed error and parameters of the distribution: 
+# Let's see if there's any obvious relation between signed error and parameters of the distribution:
 
 task4_df %>%
   ggplot(aes(y = data.select.slope - data.ans.slope, x = dist_to_screen)) +
@@ -830,6 +832,30 @@ df %>%
   60
 ```
 
+# Calculate demographics related information 
+
+Per reviewer request, we also calculate demographics related information. 
+
+```{r}
+# check gender
+df %>%
+  filter(!participantId %in% exclude_participants) %>%
+  filter(responseId == "gender") %>%
+  count(answer)
+
+# check age
+df %>%
+  filter(!participantId %in% exclude_participants) %>%
+  filter(responseId == "age") %>%
+  mutate(answer = as.numeric(answer)) %>%
+  pull(answer) -> age
+
+min(age)
+max(age)
+mean(age)
+sd(age)
+```
+
 # Save the cleaned data
 
 Count the number of times participants are excluded^[Given that we have five tasks, the maximum number of times that a participant can be excluded is 5]: 
@@ -850,4 +876,9 @@ participants %>%
   saveRDS(., here::here("data", "part1", "participants.rds"))
 ```
 
+```{r}
+# Check data
 
+d1 <- readRDS(here::here("data", "part1", "task.rds"))
+d2 <- readRDS(here::here("data", "part1", "participants.rds")) # UGH WHY 16 here ...
+```
