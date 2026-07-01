@@ -224,6 +224,7 @@ pilot_df %>%
 min(age)
 max(age)
 sd(age)
+mean(age)
 ```
 
 4 our of 20 people provided textual feedback; similar to the ones that Moritz et al. obtained. 
