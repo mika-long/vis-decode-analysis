@@ -875,7 +875,6 @@ exclude_participants %>% as_tibble() %>% count(value)
 Save the cleaned files: 
 
 ```{r}
-#| eval: false 
 task_df %>% filter(!participantId %in% exclude_participants) -> task_df
 
 saveRDS(task_df, file = here::here("data", "part1", "task.rds"))
