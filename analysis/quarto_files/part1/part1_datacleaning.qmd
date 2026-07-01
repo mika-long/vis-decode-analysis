@@ -151,6 +151,14 @@ participants %>%
 From the above histogram, two participants have `dist_to_screen` less than 200 mm. This indicates that they did not press the space bar in the calibration tasks as instructed, thus we do not include these participants in our analysis. 
 
 ```{r}
+# add these participants to filter out
+exclude_participants <- c(
+  participants %>% filter(dist_to_screen <= 200) %>% pull(participantId),
+  exclude_participants
+)
+```
+
+```{r}
 participants %>% filter(dist_to_screen > 200) -> participants
 ```
 
@@ -864,14 +872,6 @@ Count the number of times participants are excluded^[Given that we have five tas
 exclude_participants %>% as_tibble() %>% count(value)
 ```
 
-Also check the participants:
-
-```{r}
-task_df %>%
-  filter(!participantId %in% exclude_participants) %>%
-  count(participantId)
-```
-
 Save the cleaned files: 
 
 ```{r}
@@ -883,12 +883,4 @@ saveRDS(task_df, file = here::here("data", "part1", "task.rds"))
 participants %>%
   filter(!participantId %in% exclude_participants) %>%
   saveRDS(., here::here("data", "part1", "participants.rds"))
-```
-
-```{r}
-#| eval: false 
-# Check data
-
-d1 <- readRDS(here::here("data", "part1", "task.rds"))
-d2 <- readRDS(here::here("data", "part1", "participants.rds"))
 ```
