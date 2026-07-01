@@ -864,9 +864,18 @@ Count the number of times participants are excluded^[Given that we have five tas
 exclude_participants %>% as_tibble() %>% count(value)
 ```
 
+Also check the participants:
+
+```{r}
+task_df %>%
+  filter(!participantId %in% exclude_participants) %>%
+  count(participantId)
+```
+
 Save the cleaned files: 
 
 ```{r}
+#| eval: false 
 task_df %>% filter(!participantId %in% exclude_participants) -> task_df
 
 saveRDS(task_df, file = here::here("data", "part1", "task.rds"))
@@ -877,8 +886,9 @@ participants %>%
 ```
 
 ```{r}
+#| eval: false 
 # Check data
 
 d1 <- readRDS(here::here("data", "part1", "task.rds"))
-d2 <- readRDS(here::here("data", "part1", "participants.rds")) # UGH WHY 16 here ...
+d2 <- readRDS(here::here("data", "part1", "participants.rds"))
 ```
