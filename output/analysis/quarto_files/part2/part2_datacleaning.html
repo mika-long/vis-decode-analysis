@@ -2,11 +2,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.8.26">
+<meta name="generator" content="quarto-1.8.27">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Anonymous">
+<meta name="dcterms.date" content="2026-07-01">
 
 <title>Part 2: Data Cleaning and Descriptive Checks</title>
 <style>
@@ -3504,6 +3505,12 @@ window.onload = function() {
           </div>
   </div>
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">2026-07-01</p>
+    </div>
+  </div>
   
     
   </div>
@@ -3619,13 +3626,13 @@ window.onload = function() {
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>part1_df <span class="sc">%&gt;%</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(participantId) <span class="sc">%&gt;%</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">correlation.x =</span> <span class="fu">cor</span>(num.resp.x, num.ans.x),</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">correlation.y =</span> <span class="fu">cor</span>(num.resp.y, num.ans.y),</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">correlation.x =</span> <span class="fu">cor</span>(num.resp.x, num.ans.x, <span class="at">method =</span> <span class="st">&quot;spearman&quot;</span>),</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">correlation.y =</span> <span class="fu">cor</span>(num.resp.y, num.ans.y, <span class="at">method =</span> <span class="st">&quot;spearman&quot;</span>),</span>
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source type="application/json">
-{"columns":[{"label":["participantId"],"name":[1],"type":["chr"],"align":["left"]},{"label":["correlation.x"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["correlation.y"],"name":[3],"type":["dbl"],"align":["right"]}],"data":[{"1":"5c787104f5b67c0001d5b39d","2":"0.9974761","3":"0.9988492"},{"1":"5e9e19d808b9931ef37373c6","2":"0.9999571","3":"0.9998763"},{"1":"600c167e28de48080e812884","2":"0.9989297","3":"0.9997435"},{"1":"63d1aa0a1c6b33e628e50c18","2":"0.9983483","3":"0.9996403"},{"1":"63fa78f21e485a372c6528fa","2":"0.9995947","3":"0.9994856"},{"1":"66042d8fc8f0421abb8ecf06","2":"0.9980499","3":"0.9994128"},{"1":"662c299e6db88649ff13ccae","2":"0.9979069","3":"0.9982814"},{"1":"66a926551ab3748f5d5348aa","2":"0.9993079","3":"0.9995513"},{"1":"66ff44c7da088df3cdf9cd0f","2":"0.9996526","3":"0.9979226"},{"1":"67255b7d44e290655c0ed3cf","2":"0.9997184","3":"0.9997290"},{"1":"674cb1e5dd135ab435dece3f","2":"0.9991471","3":"0.9992289"},{"1":"6941ab4f0423e9fd1598fdf1","2":"0.9995171","3":"0.9994883"},{"1":"6980ff10f40903e69dd2e00a","2":"0.9997566","3":"0.9988893"},{"1":"6987a0a0d6e08cdbcc9dacdd","2":"0.9989427","3":"0.9994836"},{"1":"6993a8f8d63073ac0203d4f5","2":"0.9995420","3":"0.9999377"},{"1":"69a7a4b14701d7b678dea5ca","2":"0.9994237","3":"0.9994370"},{"1":"69b1693b2eda15f31fb40cbd","2":"0.9995480","3":"0.9997616"},{"1":"69b341f2cae8e4abe9c15c25","2":"0.9999417","3":"0.9987879"},{"1":"69b57e288616ee6ce6d7c3de","2":"0.9997565","3":"0.9991768"},{"1":"69c070352a785292d9a6597c","2":"0.9999121","3":"0.9992917"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":["participantId"],"name":[1],"type":["chr"],"align":["left"]},{"label":["correlation.x"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["correlation.y"],"name":[3],"type":["dbl"],"align":["right"]}],"data":[{"1":"5c787104f5b67c0001d5b39d","2":"0.9636364","3":"0.9878788"},{"1":"5e9e19d808b9931ef37373c6","2":"1.0000000","3":"1.0000000"},{"1":"600c167e28de48080e812884","2":"1.0000000","3":"1.0000000"},{"1":"63d1aa0a1c6b33e628e50c18","2":"1.0000000","3":"0.9878788"},{"1":"63fa78f21e485a372c6528fa","2":"1.0000000","3":"1.0000000"},{"1":"66042d8fc8f0421abb8ecf06","2":"1.0000000","3":"1.0000000"},{"1":"662c299e6db88649ff13ccae","2":"1.0000000","3":"0.9878788"},{"1":"66a926551ab3748f5d5348aa","2":"0.9878788","3":"0.9969651"},{"1":"66ff44c7da088df3cdf9cd0f","2":"1.0000000","3":"0.9878788"},{"1":"67255b7d44e290655c0ed3cf","2":"1.0000000","3":"0.9878788"},{"1":"674cb1e5dd135ab435dece3f","2":"0.9878788","3":"1.0000000"},{"1":"6941ab4f0423e9fd1598fdf1","2":"1.0000000","3":"1.0000000"},{"1":"6980ff10f40903e69dd2e00a","2":"1.0000000","3":"0.9118583"},{"1":"6987a0a0d6e08cdbcc9dacdd","2":"1.0000000","3":"0.9757576"},{"1":"6993a8f8d63073ac0203d4f5","2":"1.0000000","3":"1.0000000"},{"1":"69a7a4b14701d7b678dea5ca","2":"1.0000000","3":"1.0000000"},{"1":"69b1693b2eda15f31fb40cbd","2":"1.0000000","3":"1.0000000"},{"1":"69b341f2cae8e4abe9c15c25","2":"1.0000000","3":"1.0000000"},{"1":"69b57e288616ee6ce6d7c3de","2":"1.0000000","3":"1.0000000"},{"1":"69c070352a785292d9a6597c","2":"1.0000000","3":"1.0000000"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 </div>
@@ -3724,6 +3731,45 @@ window.onload = function() {
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">age =</span> <span class="fu">as.numeric</span>(age)) <span class="sc">%&gt;%</span></span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(age) <span class="sc">%&gt;%</span></span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>(.)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 38.15</code></pre>
+</div>
+</div>
+<p>Let’s also obtain additional information such as min and max and sd:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>pilot_df <span class="sc">%&gt;%</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(trialId <span class="sc">==</span> <span class="st">&quot;post_study&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(participantId, responseId, answer) <span class="sc">%&gt;%</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> responseId, <span class="at">values_from =</span> answer) <span class="sc">%&gt;%</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="st">`</span><span class="at">gender-other</span><span class="st">`</span>, <span class="sc">-</span><span class="st">`</span><span class="at">feedback-text</span><span class="st">`</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">age =</span> <span class="fu">as.numeric</span>(age)) <span class="sc">%&gt;%</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(age) <span class="ot">-&gt;</span> age</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="fu">min</span>(age)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 20</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">max</span>(age)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 62</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sd</span>(age)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 14.47421</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(age)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 38.15</code></pre>
