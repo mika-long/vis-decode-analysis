@@ -3490,6 +3490,7 @@ window.onload = function() {
   </ul></li>
   <li><a href="#how-long-on-average-did-people-spend" id="toc-how-long-on-average-did-people-spend" class="nav-link" data-scroll-target="#how-long-on-average-did-people-spend">How long on average did people spend?</a></li>
   <li><a href="#calculate-demographics-related-information" id="toc-calculate-demographics-related-information" class="nav-link" data-scroll-target="#calculate-demographics-related-information">Calculate demographics related information</a></li>
+  <li><a href="#check-if-response-had-text-on-strategy" id="toc-check-if-response-had-text-on-strategy" class="nav-link" data-scroll-target="#check-if-response-had-text-on-strategy">Check if response had text on strategy</a></li>
   <li><a href="#save-the-cleaned-data" id="toc-save-the-cleaned-data" class="nav-link" data-scroll-target="#save-the-cleaned-data">Save the cleaned data</a></li>
   </ul>
 </nav>
@@ -4350,11 +4351,30 @@ window.onload = function() {
 </div>
 </div>
 </section>
+<section id="check-if-response-had-text-on-strategy" class="level1">
+<h1>Check if response had text on strategy</h1>
+<p>Per reviewer feedback let’s check if they said anything about the strategy they took.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span>participantId <span class="sc">%in%</span> exclude_participants) <span class="ot">-&gt;</span> task_df</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>combined_df <span class="sc">%&gt;%</span></span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span>participantId <span class="sc">%in%</span> exclude_participants) <span class="sc">%&gt;%</span></span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(responseId <span class="sc">==</span> <span class="st">&quot;strategy&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(answer)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source type="application/json">
+{"columns":[{"label":["answer"],"name":[1],"type":["chr"],"align":["left"]}],"data":[{"1":""},{"1":""},{"1":""},{"1":""},{"1":""},{"1":""},{"1":"Just my sitting posture and sight."},{"1":""},{"1":"Sometimes I used my left hand on the other line to line it up with the dot."},{"1":""},{"1":"I just tried to \"eyeball\" everything so it looked as right as possible to me."},{"1":"leaning back slightly"},{"1":"just my eyes"},{"1":"I followed Instructions"},{"1":""},{"1":""}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+</section>
 <section id="save-the-cleaned-data" class="level1 page-columns page-full">
 <h1>Save the cleaned data</h1>
 <p>Count the number of times participants are excluded<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>:</p>
 <div class="no-row-height column-margin column-container"><div id="fn2"><p><sup>2</sup> Given that we have five tasks, the maximum number of times that a participant can be excluded is 5</p></div></div><div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>exclude_participants <span class="sc">%&gt;%</span> <span class="fu">as_tibble</span>() <span class="sc">%&gt;%</span> <span class="fu">count</span>(value)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>exclude_participants <span class="sc">%&gt;%</span> <span class="fu">as_tibble</span>() <span class="sc">%&gt;%</span> <span class="fu">count</span>(value)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source type="application/json">
@@ -4365,13 +4385,11 @@ window.onload = function() {
 </div>
 <p>Save the cleaned files:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>task_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="sc">!</span>participantId <span class="sc">%in%</span> exclude_participants) <span class="ot">-&gt;</span> task_df</span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(task_df, <span class="at">file =</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;part1&quot;</span>, <span class="st">&quot;task.rds&quot;</span>))</span>
-<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>participants <span class="sc">%&gt;%</span></span>
-<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span>participantId <span class="sc">%in%</span> exclude_participants) <span class="sc">%&gt;%</span></span>
-<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">saveRDS</span>(., here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;part1&quot;</span>, <span class="st">&quot;participants.rds&quot;</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(task_df, <span class="at">file =</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;part1&quot;</span>, <span class="st">&quot;task.rds&quot;</span>))</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>participants <span class="sc">%&gt;%</span></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span>participantId <span class="sc">%in%</span> exclude_participants) <span class="sc">%&gt;%</span></span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">saveRDS</span>(., here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;part1&quot;</span>, <span class="st">&quot;participants.rds&quot;</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 
