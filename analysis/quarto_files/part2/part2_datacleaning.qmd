@@ -208,4 +208,23 @@ pilot_df %>%
   mean(.)
 ```
 
+Let's also obtain additional information such as min and max and sd: 
+
+```{r}
+#| code-fold: true 
+
+pilot_df %>%
+  filter(trialId == "post_study") %>%
+  select(participantId, responseId, answer) %>%
+  pivot_wider(names_from = responseId, values_from = answer) %>%
+  select(-`gender-other`, -`feedback-text`) %>%
+  mutate(age = as.numeric(age)) %>%
+  pull(age) -> age
+
+min(age)
+max(age)
+sd(age)
+mean(age)
+```
+
 4 our of 20 people provided textual feedback; similar to the ones that Moritz et al. obtained. 
