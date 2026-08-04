@@ -28,7 +28,6 @@ The goal is to:
 
 1. Recreate the analysis that Moritz et al. produced for their second experiment, and 
 2. Perform a different kind of error analysis.
-<!-- as well as analyze particpant's whose strategies are closely mapped to the mental averaging and median strategy.  -->
 
 Reading in data from Exp 2 (excluding the `line` condition): 
 
