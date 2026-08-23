@@ -371,7 +371,7 @@ p_newError_facet <- exp2 %>%
   ) %>%
   plot_results(., actual_error) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
-  # facet_wrap(flip ~ ., ncol = 1) +
+  facet_wrap(flip ~ ., ncol = 1) +
   theme(text = element_text(size = 9), legend.position = "none") +
   scale_x_continuous(
     breaks = seq(-1, 1, by = 0.01)
@@ -386,6 +386,67 @@ p_newError_facet
 ggsave(
   here::here("figs/newError_facet.svg"),
   p_newError_facet,
+  width = 3.5,
+  height = 2,
+  units = "in"
+)
+```
+
+Adding code to plot this separately ... 
+
+```{r}
+exp2 %>%
+  rename(ref_error = error) %>%
+  mutate(
+    actual_error = reportedaverage - data_average,
+    normalized_actual_error = ifelse(flip == TRUE, -actual_error, actual_error)
+  ) %>%
+  summarySEwithin(
+    data = .,
+    measurevar = "normalized_actual_error",
+    withinvars = c("variability", "flip"),
+    betweenvars = "mark",
+    idvar = "assignmentid"
+  ) %>%
+  filter(flip == FALSE) %>%
+  plot_results(., normalized_actual_error) +
+  theme(text = element_text(size = 9), legend.position = "none") +
+  coord_cartesian(xlim = c(-0.015, 0.06)) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray") -> p1
+
+exp2 %>%
+  rename(ref_error = error) %>%
+  mutate(
+    actual_error = reportedaverage - data_average,
+    normalized_actual_error = ifelse(flip == TRUE, -actual_error, actual_error)
+  ) %>%
+  summarySEwithin(
+    data = .,
+    measurevar = "normalized_actual_error",
+    withinvars = c("variability", "flip"),
+    betweenvars = "mark",
+    idvar = "assignmentid"
+  ) %>%
+  filter(flip == TRUE) %>%
+  plot_results(., normalized_actual_error) +
+  theme(text = element_text(size = 9), legend.position = "none") +
+  coord_cartesian(xlim = c(-0.015, 0.06)) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray") -> p2
+```
+
+```{r}
+#| echo: false 
+#| eval: false 
+ggsave(
+  here::here("figs/newError_facet_1.svg"),
+  p1,
+  width = 3.5,
+  height = 2,
+  units = "in"
+)
+ggsave(
+  here::here("figs/newError_facet_2.svg"),
+  p2,
   width = 3.5,
   height = 2,
   units = "in"
