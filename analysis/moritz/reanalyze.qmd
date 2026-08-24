@@ -440,18 +440,35 @@ exp2 %>%
 ggsave(
   here::here("figs/newError_facet_1.svg"),
   p1,
-  width = 3.5,
+  width = 1.75,
   height = 2,
   units = "in"
 )
 ggsave(
   here::here("figs/newError_facet_2.svg"),
   p2,
+  width = 1.75,
+  height = 2,
+  units = "in"
+)
+```
+
+```{r}
+#| echo: false 
+#| eval: false 
+library(patchwork)
+
+p_combined <- (p1 | p2)
+ggsave(
+  here::here("figs/newError_facet_combined.svg"),
+  p_combined,
   width = 3.5,
   height = 2,
   units = "in"
 )
 ```
+
+
 
 ---
 
